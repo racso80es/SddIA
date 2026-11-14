@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.9"
+version_plan: "1.2.11"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -1228,7 +1228,8 @@ Estado: **done (rama)** — commit pendiente de hash en esta sesión.
 - Guarda `update` sin parche → `Err` (tool/skill); `run_norm_forge` soporta `implementation_source_git_apply`; delete tool/skill limpia fila de índice.
 - Restaurados `shell-executor`, `cryptography-manager`, `event-bus-audit` desde `c60ae233` (diff vs `c60ae233`: solo `hash_signature`).
 - Eliminados stub `.md` y filas de `file-tracker-adapter` / `manage-event-receipt` (`Domain_Entity_Deleted`).
-- **C-4:** el contenido 2.0.0 de O10 ya estaba en disco; no se pudo ejecutar el parche en dos pasos (semilla apunta a 1.2.0). Sello `hash_refresh_only` vía `entity-manager` + `Domain_Entity_Updated` (trazabilidad; el cuerpo sigue siendo el de O10).
+- **C-4:** el contenido 2.0.0 de O10 ya estaba en disco; el parche en dos pasos **no se ejecutó**. Sello `hash_refresh_only` vía `entity-manager` + `Domain_Entity_Updated` (trazabilidad; el cuerpo sigue siendo el de O10, editado con IDE).
+  - **Corrección (O12):** el motivo declarado («la semilla apunta a 1.2.0») era incompleto. El paso 1 (restaurar desde `c60ae233`) falló porque `o11-norm-restore.json` **no existía** (el lote previo abortó antes de crearlo); lo ejecuté sin recrearlo, vi `No such file`, y seguí al paso 2 sobre un fichero ya en 2.0.0. No se reintentó. El motor ya soportaba el paso 1 (`run_norm_forge` + `implementation_source_git_apply`, compilado en el binario de O11). C-4 **sigue sin cumplir** el laudo «realizado por cauce oficial».
 - 4 daemons sellados; 16× `implementation_source_git_apply` O9 (10 tools + 2 skills + 4 daemons; excluye tools fantasma); `src/` diff vacío vs `c60ae233`.
 - Tests: `update_existing_*`, `core_bindings_eda_event_manager_resolves_v1_schema`. Suite lib completa pendiente.
 
@@ -1312,6 +1313,99 @@ cd SddIA && cargo run -q -p sddia-qa -- gate-event-manager-port
 
 ---
 
+## O12 — Línea base + C-4 oficial + C-5
+
+Estado: **done (rama)** — ver `docs/audits/man-43-o12-baseline-20261114.md`.
+
+### Post-ejecución Racso (2026-11-14)
+
+- **C-4:** restore `c60ae233` + parche `o12-norm-c4` vía `entity-manager`; cuerpo idéntico al snapshot pre-O12; `Domain_Entity_Updated` ×2.
+- **C-5:** `patch_process_outputs_update`; process `route-domain-event` 1.1.0; runtime `event_uri` sin rutas fabricadas en modo puerto.
+- **Línea base:** 819 tests OK, 4 fallos (validator tempdir + tier_dispatch spawn); `check --workspace` OK; `gate-event-manager-port` OK.
+- Higiene: 5 semillas `_lab` inválidas eliminadas.
+
+Estado previo planificación: **ready**.
+
+### Inventario verificado (2026-11-14, sobre `303ca577`)
+
+| Hallazgo | Evidencia |
+|----------|-----------|
+| La suite `execute-process --lib`, `cargo check --workspace` y `gate-event-manager-port` **no se han ejecutado desde O9**. O10 y O11 tocaron `forges/`, `entity_manager.rs` y el resolver DI. | O11 solo corrió 3 tests dirigidos |
+| **C-4 incumplido** (ver corrección en § O11): el cuerpo de `capability-taxonomy.md` es edit IDE; el hash está sellado, el contenido no pasó por la forja. | `o11-norm-restore.json` nunca existió; `o11-norm-c4.json` falló por texto 1.2.0 ausente |
+| **C-5 es peor que «outputs obsoletos».** El runtime emite `parent_path` y `processing_header_path` en 5 puntos de `route_domain_core.rs`. Con `from_store` (puerto) `processing_header` es `.events/pending/{uuid}.json`, una ruta **fabricada que no existe en disco**. Las fases ya dicen «sin copia de cabecera»; los outputs y el JSON de respuesta contradicen. | `route_domain_core.rs:2451`, `2445…2643` |
+| Outputs declarados incompletos: el runtime también emite `dispatch_mode`, `sweep` y `transaction_digest` (opcional), que no constan. | `route_domain_core.rs:2640-2670` |
+| Único consumidor externo de `parent_path`: `iota_ci_smoke.rs:215` (solo lo vuelca al informe). | grep |
+| `run_process_forge` update ignora `process_outputs`: con `process_phases` llama a `patch_process_phases_update` (no escribe `outputs`); sin fases solo admite `markdown_body_replacements` (cuerpo). El hash de proceso cubre solo `phases`, no `outputs`. | `factory.rs:481-560`, `common.rs:252` |
+| Higiene: `_lab/` de O11 contiene 5 semillas inválidas o duplicadas: `o11-del-file-tracker-adapter.json` (sin `semantic_seed`, rechazada; el delete real se hizo por stdin), `o11-norm-c4.json` (fallida), `o11-r-skill-event-bus-audit.json` (clase `skill` para una tool), `o11-r-skill-cryptography-manager.json` y `o11-r-tool-event-bus-audit.json` (duplican `o11-r-crypto`/`o11-r-eba`). | `ls _lab` |
+
+### Diseño cerrado
+
+**A. Línea base (primero, sin tocar nada).** Con `CARGO_TARGET_DIR=SddIA/target`, fuera de sandbox: `cargo test -p execute-process --lib` completa, `cargo check --workspace`, `gate-event-manager-port`. Registrar resultado literal. Fallos conocidos preexistentes: `linear_bridge_webhook::ac13_valid_signature_emits_webhook_source`, `ecosystem_health_map_absent_still_ok`. Cualquier otro fallo **bloquea** B y C y se trata como hallazgo de O10/O11.
+
+**B. C-4 por cauce oficial, esta vez con reintento real.**
+1. Crear `o12-norm-restore.json`: `entity_class: norm`, `lifecycle_operation: update`, `semantic_seed.implementation_source_git_apply { commit: "c60ae233", paths: ["SddIA/library/norms/capability-taxonomy.md"] }`. Ejecutar por `./sddia-run.sh --process entity-manager`. Verificar: 112 líneas, UUID `e9c66ec6-…`, catálogo `eda:event-manager` en `1.2.0`, versión 1.0.11.
+2. Ejecutar `o11-norm-c4` corregido (semilla `/tmp/em-c4-forge-v2.json` envuelta en `entity_class/entity_name/lifecycle_operation/semantic_seed`; copiar a `_lab/o12-norm-c4.json`). Esperado: versión 1.0.12, índice de normas en 1.0.12, `Domain_Entity_Updated`.
+3. Aceptación: `git diff HEAD -- SddIA/library/norms/capability-taxonomy.md` **vacío salvo `hash_signature`**. Si difiere en cualquier otra línea, la forja no reproduce el contenido de O10: se detiene (Kintsugi), no se corrige con IDE, y se abre el defecto de forja (candidatos: `patch_norm_content_update`, `split_md_frontmatter`).
+4. Si el paso 1 deja el fichero truncado (43 líneas), es el síntoma de O10 y la causa **no** era el binario: parar y diagnosticar `apply_implementation_source_git_apply` antes de seguir.
+
+**C. C-5 — decisión de diseño (laudo Racso 2026-11-14: opción `event_uri`; la alternativa «solo documentar» queda descartada).**
+- `route-domain-event` pasa a **1.1.0** (minor: se añade `event_uri`, se retiran dos outputs que ya no son ciertos en modo puerto).
+- Outputs nuevos: `success`, `delivery_status`, `event_uri` (`eda://{family}/{event_id}`, token lógico), `dispatch_mode`, `sweep`, `transaction_digest` (opcional). Se eliminan `parent_path` y `processing_header_path` de la declaración.
+- Runtime (`route_domain_core.rs`): `event_uri` siempre; `parent_path`/`processing_header_path` solo si `!from_store` (laboratorio FS), nunca una ruta fabricada. Test que fija ambos casos.
+- `iota_ci_smoke.rs`: informar `event_uri` en lugar de `parent_path` (con fallback a `parent_path` si existe).
+- Motor: `run_process_forge` update acepta `process_outputs` **sin** `process_phases`; escribe `outputs`, sube versión y actualiza `process/index.md`. `patch_process_phases_update` recibe `outputs: Option<&Value>`. Tests: outputs-only preserva `phases`, `inputs`, UUID y cuerpo; el hash no cambia.
+- Aplicación: `./sddia-run.sh --process entity-manager` con `entity_class: process`, `process_outputs`, `process_version: "1.1.0"`. Verificar con `git diff`: solo cambian `outputs`, `version` y fila de índice (el reserializado YAML no debe reordenar claves ni tocar el cuerpo; si lo hace, defecto del motor, no se «arregla» a mano).
+- **Alternativa (si el Vértice Biológico la prefiere):** mantener los dos outputs y declararlos «token lógico, no ruta FS». Más barata, pero deja un campo llamado `*_path` que no apunta a un fichero. No recomendada.
+
+**D. Higiene.** `git rm` de las 5 semillas inválidas/duplicadas de O11. Añadir a `man-43-o11-remediation-20261114.md` una corrección (C-4 y causa real). Nueva nota `docs/audits/man-43-o12-baseline-20261114.md` con la salida de A, la evidencia de B y C, y el veredicto.
+
+### Secuencia
+
+| Paso | Alcance | Bloquea |
+|------|---------|---------|
+| 1 | A: suite completa + check + gate | B, C |
+| 2 | B: C-4 en dos `entity-manager`, diff vacío salvo hash | — |
+| 3 | C: motor `process_outputs` + tests; rebuild en `SddIA/target` | 4 |
+| 4 | C: runtime + smoke + tests; rebuild | 5 |
+| 5 | C: `entity-manager` process update de `route-domain-event` | — |
+| 6 | D: higiene, nota de auditoría, docs, commit | — |
+
+Tras cada acuse JSON: verificar fichero en disco, sin polling del bus (DA-5). Colapso de un proceso oficial: Kintsugi, sin rescate por IDE.
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `StrReplace`/`Write` sobre `SddIA/{library,skills,tools,daemons,process,norms}/` | Cero en todo el hilo |
+| Binario `SddIA/target/debug/execute-process` más antiguo que `forges/*.rs` o `route_domain_core.rs` | Prohibido invocar `entity-manager` |
+| `capability-taxonomy.md` | Diff vacío contra `HEAD` salvo `hash_signature`; dos sellos `Domain_Entity_Updated` |
+| `route-domain-event.md` | Solo cambian `outputs`, `version` y fila de índice; `phases` y `hash_signature` intactos |
+| Respuesta del proceso con `from_store` | Nunca contiene una ruta que no exista en disco |
+| Cualquier fallo de línea base distinto de los 2 conocidos | Bloquea; se documenta como hallazgo |
+| `APTO_TOTAL` | Prohibido: C-3 abierto |
+
+### Verificación
+
+```bash
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo build -p execute-process
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p execute-process --lib
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo check --workspace
+cd SddIA && cargo run -q -p sddia-qa -- gate-event-manager-port
+git diff HEAD -- SddIA/library/norms/capability-taxonomy.md
+git diff HEAD -- SddIA/process/route-domain-event.md SddIA/process/index.md
+```
+
+**Commit:** `fix(eda): C-4 oficial + route-domain-event outputs por event_uri (MAN-43 O12)`.
+
+**AC:** cierra C-4 y C-5 con evidencia de rama; acerca AC-19 (suite). AC-13 sigue abierto por C-3.
+**Fuera:** C-3 (O13), clippy estructural, fallos preexistentes ya listados.
+
+### O13 (anticipo; laudo Racso 2026-11-14: opción (a), nueva clase `capability-contract`)
+
+C-3: `eda.event_manager.v1.schema.json` describe «v1.2.0»; `publish_ecst` no exige `event_uri` (el puerto 2.0 lo exige y valida que coincida con `event_id`); falta la operación `list_terminal_events` (el trait tiene 20 operaciones, el schema 18); `response` solo define el envelope, no los resultados. No hay vía oficial: el schema vive en `library/` (genoma protegido) y **no existe `entity_class` para contratos JSON**. Decidido: nueva clase `capability-contract` en `entity-manager` con creator nativo (create/update) y test de paridad schema↔serde del puerto; descartado el edit IDE acotado. El nombre `…v1.schema.json` se conserva (O10 lo fijó vía `contract_schema`).
+
+---
+
 ## H4 — Consumidores periféricos (índice)
 
 El detalle ejecutable está en **O4 / H4**.
@@ -1374,6 +1468,7 @@ El detalle ejecutable está en **O4 / H4**.
 12. **O9** calidad: clippy verde + suite workspace; diagnóstico del schema (C-2…C-5 son genoma).
 13. **O10** motor DI honra `contract_schema` del binding (cierra C-2 en código). C-3/C-4/C-5 siguen abiertos; C-4 pide laudo.
 14. **O11** remediación del genoma dañado por O10 (binario de forja obsoleto) + C-4 y O9 rehechos de verdad por `entity-manager`.
+15. **O12** línea base de verificación + C-4 por cauce oficial (reintento real) + C-5 (`route-domain-event.outputs`). C-3 pasa a O13, con decisión previa.
 
 No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.
 

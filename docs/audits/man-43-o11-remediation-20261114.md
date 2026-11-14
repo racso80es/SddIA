@@ -20,7 +20,7 @@ Sello O11: `Domain_Entity_Updated` con UUID canónico en restauraciones; `Domain
 
 ## C-4
 
-El parche bifásico (`em-c4-forge-v2.json`) falló porque el catálogo ya estaba en 2.0.0. Cierre operativo: `hash_refresh_only` + `Domain_Entity_Updated`. **Pendiente laudo:** prosa/Directriz 2.0 sellada solo parcialmente respecto al story «dos updates por entity-manager».
+El parche bifásico falló en O11 porque la semilla de restore no existía (no por límite del motor). **O12** completó C-4 por cauce oficial. Cierre operativo: `hash_refresh_only` + `Domain_Entity_Updated`. **Pendiente laudo:** prosa/Directriz 2.0 sellada solo parcialmente respecto al story «dos updates por entity-manager».
 
 ## Pendiente
 

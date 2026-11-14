@@ -7,7 +7,8 @@ use super::common::{
     parse_frontmatter, patch_action_content_update, merge_daemon_capabilities,
     patch_daemon_declaration,
     patch_artifact_body_replacements, patch_hash_signature_refresh, patch_norm_content_update,
-    patch_process_phases_update, refresh_process_hash, repo_tool_base, required_str, sha256_canon,
+    patch_process_outputs_update, patch_process_phases_update, refresh_process_hash, repo_tool_base,
+    required_str, sha256_canon,
     str_field, sync_action_index_row, sync_daemons_index_census, sync_event_family_class_count,
     sync_events_root_family_count, update_library_norm_index_version, update_process_index_version,
     norm_integrity_hash, generate_uuid,
@@ -538,6 +539,43 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                     inputs_patch,
                     workspace_template.as_deref(),
                     inputs.get("process_context"),
+                )?;
+                if patch.old_version != patch.new_version {
+                    update_process_index_version(
+                        &dest_root.join("index.md"),
+                        &name,
+                        &patch.new_version,
+                    )?;
+                }
+                let mut out = json!({
+                    "handoff_entity_uuid": patch.entity_uuid,
+                    "handoff_hash_signature_new": patch.new_hash,
+                    "handoff_hash_signature_old": patch.old_hash,
+                    "handoff_version": patch.new_version,
+                });
+                if let (Value::Object(base), Value::Object(ext)) =
+                    (&mut out, forge_outputs_extra(&dest, &name))
+                {
+                    for (k, v) in ext {
+                        base.insert(k, v);
+                    }
+                }
+                return Ok(out);
+            }
+            let outputs_only = inputs
+                .get("process_outputs")
+                .or_else(|| inputs.get("outputs"))
+                .filter(|o| {
+                    o.as_array()
+                        .map(|a| !a.is_empty())
+                        .unwrap_or(false)
+                });
+            if let Some(outs) = outputs_only {
+                let explicit_ver = optional_str(inputs, "process_version");
+                let patch = patch_process_outputs_update(
+                    &process_path,
+                    outs,
+                    explicit_ver.as_deref(),
                 )?;
                 if patch.old_version != patch.new_version {
                     update_process_index_version(

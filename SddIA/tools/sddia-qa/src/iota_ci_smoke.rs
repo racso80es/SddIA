@@ -212,7 +212,10 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
             "delivery_status": delivery_status,
             "transaction_digest": digest,
             "witness_processed": witness_ok,
-            "parent_path": data.get("parent_path"),
+            "event_uri": data
+                .get("event_uri")
+                .cloned()
+                .or_else(|| data.get("parent_path").cloned()),
         }))
     })();
 

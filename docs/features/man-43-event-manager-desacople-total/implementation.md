@@ -130,6 +130,7 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O8.1** | `done (rama)` | `route-domain-event` v1.0.2 sin `fs.persist` en fases; schema v1 fuera |
 | **O9** | `done (rama)` | Gate `rustc` verde; clippy residual acotado a `execute-process` (excluido por norma); C-2 latente |
 | **O10** | `done (rama)` | `contract_schema` en resolver/gate/validador; C-2 cerrado; C-4 taxonomía 1.0.12 / eda 2.0.0; O9 tools/skills/daemons sellados vía entity-manager |
+| **O12** | `done` | Línea base; C-4 por cauce oficial; C-5 `event_uri` + process 1.1.0; 4 fallos lib documentados |
 | **O11** | `done` | Remediación forja O10: binario canónico, guarda anti-sobrescritura, restauración 3 `.md`, delete stubs, sellos daemons/O9, `hash_refresh` taxonomía (contenido 2.0.0 heredado de O10) |
 
 ### Backlog técnico O0
@@ -187,6 +188,10 @@ Cerrado en rama. **Hallazgo normativo:** `rust-warning-gate` §1 excluye Clippy;
 ### Backlog técnico O10
 
 Cerrado en rama: `BindingRow` + `contract_schema_file`; validador usa `contract_schema_rel`; gate lee fila de bindings; forja norm/tool/skill/daemon ampliada (`artifact_yaml/body`, `hash_refresh`, `implementation_source_git_apply`); `capability-taxonomy` **1.0.12** / catálogo **2.0.0**; O9 genoma sellado vía entity-manager. Verificación: test `core_bindings_eda_event_manager_resolves_v1_schema` (tras `cargo test -p execute-process --lib`). C-3 (schema v1.2.0) y C-5 (`route-domain-event.outputs`) siguen abiertos; AC-13 abierto.
+
+### Backlog técnico O12 (cerrado en rama)
+
+Ejecutado (`plan.md` § O12). Auditoría: `docs/audits/man-43-o12-baseline-20261114.md`. Línea base completa (suite lib, `cargo check --workspace`, `gate-event-manager-port`; no corridas desde O9). C-4 por cauce oficial en dos `entity-manager` (restore desde `c60ae233` + parche); en O11 el paso 1 nunca se ejecutó porque su semilla no existía, no por límite del motor. C-5: `route-domain-event` 1.1.0 con `event_uri`; el runtime deja de fabricar `processing_header_path` en modo puerto; `run_process_forge` update admite `process_outputs` sin fases. Higiene de 5 semillas `_lab` de O11. C-3 pasa a O13 (laudo: nueva clase `capability-contract` en `entity-manager`; sin edit IDE). C-5 decidido: `event_uri`.
 
 ### Backlog técnico O11 (cerrado en rama)
 

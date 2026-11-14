@@ -2323,6 +2323,28 @@ fn handle_subscriber(
     (sid, status)
 }
 
+fn domain_event_uri_token(event_id: &str) -> String {
+    format!("eda://domain/{event_id}")
+}
+
+fn merge_route_result_identity(
+    data: &mut Map<String, Value>,
+    repo: &Path,
+    from_store: bool,
+    event_uuid: &str,
+    event_path: &Path,
+    processing_header: &Path,
+) {
+    data.insert("event_uri".into(), json!(domain_event_uri_token(event_uuid)));
+    if !from_store {
+        data.insert("parent_path".into(), json!(rel_event_path(repo, event_path)));
+        data.insert(
+            "processing_header_path".into(),
+            json!(rel_event_path(repo, processing_header)),
+        );
+    }
+}
+
 /// Ejecuta enrutamiento ECST/fan-out de un evento de dominio.
 pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: bool) -> Value {
     let bus = match ensure_event_bus_topology(repo) {
@@ -2408,6 +2430,22 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
         }
     };
 
+    let processing_header = if from_store {
+        repo.join(format!(".events/pending/{event_uuid}.json"))
+    } else {
+        match ensure_processing_header(repo, &bus, &event_uuid, &event_path) {
+            Ok(p) => p,
+            Err(e) => {
+                return json!({
+                    "success": false,
+                    "exitCode": 1,
+                    "data": null,
+                    "error": e,
+                });
+            }
+        }
+    };
+
     inject_domain_entity_topology_defaults(&mut event);
     let payload = event.get("payload").cloned().unwrap_or(json!({}));
     let origin_topology = resolve_origin_topology(&payload);
@@ -2436,33 +2474,28 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
             })),
             Some(&event_path),
         );
+        let mut data = Map::from_iter([
+            ("success".into(), json!(false)),
+            (
+                "delivery_status".into(),
+                json!({ ECST_GATE_SUBSCRIBER: "failed" }),
+            ),
+        ]);
+        merge_route_result_identity(
+            &mut data,
+            repo,
+            from_store,
+            &event_uuid,
+            &event_path,
+            &processing_header,
+        );
         return json!({
             "success": false,
             "exitCode": 1,
-            "data": {
-                "success": false,
-                "delivery_status": { ECST_GATE_SUBSCRIBER: "failed" },
-                "parent_path": rel_event_path(repo, &event_path),
-            },
+            "data": Value::Object(data),
             "error": ecst_errors.join("; "),
         });
     }
-
-    let processing_header = if from_store {
-        repo.join(format!(".events/pending/{event_uuid}.json"))
-    } else {
-        match ensure_processing_header(repo, &bus, &event_uuid, &event_path) {
-            Ok(p) => p,
-            Err(e) => {
-                return json!({
-                    "success": false,
-                    "exitCode": 1,
-                    "data": null,
-                    "error": e,
-                });
-            }
-        }
-    };
 
     let subs_path = repo.join(&bus.subscriptions);
     let registry: Value = match fs::read_to_string(&subs_path) {
@@ -2503,16 +2536,24 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
                 "parent_path": rel_event_path(repo, &event_path),
             }),
         );
+        let mut data = Map::from_iter([
+            ("success".into(), json!(true)),
+            ("disposition".into(), json!("dead-letter")),
+            ("reason".into(), json!("no_subscriber")),
+            ("dead_letter_path".into(), json!(rel_event_path(repo, &dl))),
+        ]);
+        merge_route_result_identity(
+            &mut data,
+            repo,
+            from_store,
+            &event_uuid,
+            &event_path,
+            &processing_header,
+        );
         return json!({
             "success": true,
             "exitCode": 0,
-            "data": {
-                "success": true,
-                "disposition": "dead-letter",
-                "reason": "no_subscriber",
-                "parent_path": rel_event_path(repo, &event_path),
-                "dead_letter_path": rel_event_path(repo, &dl),
-            },
+            "data": Value::Object(data),
         });
     }
 
@@ -2527,17 +2568,24 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
 
     if subscribers.is_empty() {
         let sweep = try_sweep_event(repo, &bus, &event_uuid, Some(&registry));
+        let mut data = Map::from_iter([
+            ("success".into(), json!(true)),
+            ("delivery_status".into(), json!({})),
+            ("dispatch_mode".into(), json!(dispatch_mode)),
+            ("sweep".into(), sweep),
+        ]);
+        merge_route_result_identity(
+            &mut data,
+            repo,
+            from_store,
+            &event_uuid,
+            &event_path,
+            &processing_header,
+        );
         return json!({
             "success": true,
             "exitCode": 0,
-            "data": {
-                "success": true,
-                "delivery_status": {},
-                "parent_path": rel_event_path(repo, &event_path),
-                "processing_header_path": rel_event_path(repo, &processing_header),
-                "dispatch_mode": dispatch_mode,
-                "sweep": sweep,
-            },
+            "data": Value::Object(data),
         });
     }
 
@@ -2636,19 +2684,28 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
     let all_success = delivery_status.is_empty()
         || delivery_status.values().all(|v| status_is_terminal_ok(v));
 
-    let mut result_data = json!({
-        "success": all_success || skip_only,
-        "delivery_status": delivery_status,
-        "parent_path": rel_event_path(repo, &event_path),
-        "processing_header_path": rel_event_path(repo, &processing_header),
-        "dispatch_mode": dispatch_mode,
-    });
+    let mut result_data = Map::from_iter([
+        ("success".into(), json!(all_success || skip_only)),
+        (
+            "delivery_status".into(),
+            json!(delivery_status),
+        ),
+        ("dispatch_mode".into(), json!(dispatch_mode)),
+    ]);
+    merge_route_result_identity(
+        &mut result_data,
+        repo,
+        from_store,
+        &event_uuid,
+        &event_path,
+        &processing_header,
+    );
 
     {
         let ev = recover_lock(&event_arc);
         if let Some(ds) = ev.get("delivery_state").and_then(|v| v.as_object()) {
             if let Some(d) = ds.get("transaction_digest").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()) {
-                result_data["transaction_digest"] = json!(d);
+                result_data.insert("transaction_digest".into(), json!(d));
             }
         }
     }
@@ -2656,7 +2713,7 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
     let mut result = json!({
         "success": all_success || skip_only,
         "exitCode": if all_success || skip_only { 0 } else { 1 },
-        "data": result_data,
+        "data": Value::Object(result_data),
     });
 
     if !all_success && !skip_only {
@@ -2739,6 +2796,15 @@ mod blocking_tests {
             .map(|m| m.is_empty())
             .unwrap_or(false);
         assert!(delivery, "expected empty delivery_status (sink), got {out}");
+        let data = out.get("data").and_then(|v| v.as_object()).expect("data");
+        assert_eq!(
+            data.get("event_uri"),
+            Some(&json!(format!("eda://domain/{event_id}")))
+        );
+        assert!(
+            !data.contains_key("processing_header_path"),
+            "store mode must not fabricate processing_header_path: {out}"
+        );
     }
 
     #[test]

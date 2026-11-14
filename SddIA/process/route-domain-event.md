@@ -13,8 +13,10 @@ name: route-domain-event
 outputs:
 - success: boolean
 - delivery_status: mapa subscriber_id → status
-- parent_path: ruta relativa del padre en pending/
-- processing_header_path: ruta relativa de cabecera en processing/
+- event_uri: token lógico eda://{family}/{event_id}
+- dispatch_mode: string; sync | async
+- sweep: objeto resumen de barrido del puerto
+- transaction_digest: string opcional; digest DLT cuando aplica
 phases:
 - intent: Resolver el ECST por EventManagerPort (token event_file_path); validar frente a la Clase; Nack/DLQ en el puerto si falla el gate.
   name: Lectura y validación ECST
@@ -33,7 +35,7 @@ phases:
   name: Promoción testigos
 porcentaje_de_exito: null
 uuid: c8e91f2a-4b6d-4e1a-9f03-2d7e5a684b10
-version: 1.0.2
+version: 1.1.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

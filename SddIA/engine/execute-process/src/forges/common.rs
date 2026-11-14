@@ -417,6 +417,80 @@ pub fn patch_process_phases_update(
     })
 }
 
+/// Update solo de `outputs`: preserva `phases`, `hash_signature`, uuid y cuerpo.
+pub fn patch_process_outputs_update(
+    process_path: &Path,
+    outputs: &Value,
+    process_version: Option<&str>,
+) -> Result<ProcessPhasesPatchResult, String> {
+    if !outputs.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
+        return Err("process_outputs debe ser array no vacío".into());
+    }
+    let text = fs::read_to_string(process_path).map_err(|e| e.to_string())?;
+    let (yaml, body) = split_md_frontmatter(&text)?;
+    let fm_val: Value = serde_yaml::from_str(&yaml).map_err(|e| e.to_string())?;
+    let mut map = match fm_val {
+        Value::Object(m) => m,
+        _ => return Err("frontmatter no es objeto YAML".into()),
+    };
+
+    let entity_uuid = map
+        .get("uuid")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if entity_uuid.is_empty() {
+        return Err("uuid ausente en frontmatter".into());
+    }
+    let old_hash = map
+        .get("hash_signature")
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
+    let old_version = map
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("1.0.0")
+        .to_string();
+    let new_version = process_version
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| bump_semver_patch(&old_version));
+    let new_hash = old_hash.clone().unwrap_or_else(|| {
+        map.get("phases")
+            .map(sha256_phases_integrity)
+            .unwrap_or_else(|| "sha256:0".into())
+    });
+
+    map.insert("outputs".into(), outputs.clone());
+    map.insert("version".into(), Value::String(new_version.clone()));
+    map.insert(
+        "hash_signature".into(),
+        Value::String(new_hash.clone()),
+    );
+
+    let yaml_out = serde_yaml::to_string(&Value::Object(map)).map_err(|e| e.to_string())?;
+    let yaml_out = yaml_out
+        .strip_prefix("---\n")
+        .unwrap_or(&yaml_out)
+        .trim_end()
+        .to_string();
+    let body = body.trim_start_matches('\n');
+    let mut out = format!("---\n{yaml_out}\n---\n\n{body}");
+    if !out.ends_with('\n') {
+        out.push('\n');
+    }
+    fs::write(process_path, out).map_err(|e| e.to_string())?;
+
+    Ok(ProcessPhasesPatchResult {
+        entity_uuid,
+        old_hash,
+        new_hash,
+        old_version,
+        new_version,
+    })
+}
+
 /// Actualiza columna Versión en `process/index.md` para `name`.
 pub fn update_process_index_version(
     index_path: &Path,
