@@ -1,0 +1,1977 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+   Compiling kalma2-bridge v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/interfaces/kalma2-bridge)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.63s
+warning: the following packages contain code that will be rejected by a future version of Rust: imap-proto v0.10.2
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 2`
+     Running unittests src/main.rs (target/debug/deps/antigravity_cli_executor-c8465fee07af3461)
+
+running 11 tests
+test tests::argv_default_uses_sandbox_not_skip ... ok
+test tests::argv_effort_and_model_whitelisted ... ok
+test tests::argv_skip_requires_dual_opt_in ... ok
+test tests::classify_agy_error_table ... ok
+test tests::compose_prompt_prefixes_system ... ok
+test tests::effort_rejects_unknown ... ok
+test tests::map_auth_not_logged_into_antigravity ... ok
+test tests::map_auth_required ... ok
+test tests::map_success_envelope ... ok
+test tests::merge_infer_fields_into_params ... ok
+test tests::spawn_stub_returns_json ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src/main.rs (target/debug/deps/bus_operator-6b7d33319d829b99)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/cryptography_manager-113c4608303f8571)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/email_watcher-5a90fa200bf92abb)
+
+running 21 tests
+test tests::bootstrap_takes_highest_n_uids ... ok
+test tests::contiguous_watermark_skips_high_uid_gap ... ok
+test tests::first_poll_uses_all_not_since ... ok
+test tests::header_value_decodes_rfc2047_subject ... ok
+test tests::header_value_tolerates_replacement_char_in_line ... ok
+test tests::heartbeat_keepalive_matches_sibling_centinels ... ok
+test tests::imap_identity_changes_when_user_changes ... ok
+test tests::imap_identity_normalizes_case_and_whitespace ... ok
+test tests::incremental_poll_uses_uid_range ... ok
+test tests::list_id_is_captured ... ok
+test tests::once_branch_does_not_spawn_keepalive_worker ... ok
+test tests::once_envelope_json_io_contract ... ok
+test tests::plan_poll_prioritizes_unseen_and_caps_batch ... ok
+test tests::resolve_watermark_ceiling_resets_stale_high_uid ... ok
+test tests::resolve_watermark_identity_mismatch_resets ... ok
+test tests::resolve_watermark_legacy_skips_identity_check ... ok
+test tests::resolve_watermark_same_identity_within_ceiling ... ok
+test tests::rfc2047_q_decodes_spanish_meeting_subject ... ok
+test tests::snippet_truncates ... ok
+test tests::watermark_roundtrip_persists_last_uid ... ok
+test tests::watermark_skips_uids_already_seen ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/ephemeral_cache_purger-34a65a447630314f)
+
+running 6 tests
+test jail::tests::accept_default_prefix ... ok
+test jail::tests::human_size_binary_gb ... ok
+test jail::tests::purge_deletes_fixture ... ok
+test jail::tests::reject_root_home_relative ... ok
+test jail::tests::reject_symlink_component ... ok
+test jail::tests::simulate_does_not_delete ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/event_bus_audit-3bdd392a1a30f8f2)
+
+running 14 tests
+test tests::circuit_coverage_emits_four_codes ... ok
+test tests::cumulo_table_ids_do_not_resolve_events_queue_paths ... ok
+test tests::github_bridge_dump_is_non_ecst_sink_not_structural ... ok
+test tests::kaizen_emit_redb_uses_store_not_pending_file ... ok
+test tests::needs_kaizen_ignores_historical_dl_and_fracture_stale ... ok
+test tests::parse_timestamp_accepts_z_suffix ... ok
+test tests::redb_audit_catalog_mismatch_on_presented ... ok
+test tests::redb_audit_marks_success_sin_efecto_and_tracker_outbound_shield ... ok
+test tests::redb_audit_residual_pending_with_fracture_trace ... ok
+test tests::run_audit_with_core_cumulo_does_not_join_events_dir ... ok
+test tests::store_audit_counts_dead_letter_without_json_files ... ok
+test tests::store_unavailable_emits_anomaly_not_silent_empty_scan ... ok
+test tests::utf8_prefix_does_not_split_emdash ... ok
+test tests::witness_regex_extracts_uuid ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.88s
+
+     Running unittests src/main.rs (target/debug/deps/event_watcher-3d54050171d48914)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/execute_process-242541ec9cbf1665)
+
+running 857 tests
+test core::env::tests::local_overrides_global_in_merged_dict ... ok
+test core::fracture_pbi::tests::enrich_finds_renamed_open_by_hash ... ok
+test core::fracture_pbi::tests::resolve_already_open_same_hash ... ok
+test core::fracture_pbi::tests::resolve_deduped_by_process ... ok
+test core::fracture_pbi::tests::resolve_regression_when_closed_in_done ... ok
+test core::fracture_pbi::tests::scan_tolerates_malformed_frontmatter_duplicate_keys ... ok
+test core::fracture_signatures::tests::f_eda_store_lock_suppress_matches_catalog ... ok
+test core::fracture_signatures::tests::refined_child_requires_scope ... ok
+test core::parser::tests::parses_kalma2_frontmatter ... ok
+test core::repo::tests::finds_repo_from_cwd ... ok
+test core::resolver::tests::ac_resolve_core_when_absent_from_domain ... ok
+test core::resolver::tests::ac_resolve_domain_precedes_core ... ok
+test core::resolver::tests::ac_resolve_domain_root_only ... ok
+test core::resolver::tests::ac_resolve_missing_errors ... ok
+test core::resolver::tests::ac_resolve_no_single_core_hardcode ... ok
+test core::resolver::tests::load_kalma2_def ... ok
+test core::resolver::tests::process_creator_optional_jurisdiction_inputs_are_defaultable ... ok
+test core::resolver::tests::resolves_kalma2_by_filename ... ok
+test core::store_lock_contention::tests::matches_redb_and_refine_literals ... ok
+test engine::accept_pr::tests::enrich_inputs_infers_tracker_from_persist_when_missing ... ok
+test engine::accept_pr::tests::enrich_inputs_prefers_presented_tracker_ref ... ok
+test engine::accept_pr::tests::sync_accept_pr_process_hash_signature ... ok
+test engine::accept_pr::tests::sync_skips_hygiene_without_merge_commit ... ok
+test engine::accept_pr::tests::t_a2_canon_two_payloads_bool_force ... ok
+test engine::accept_pr::tests::t_a2_illegit_no_remote_origin_string ... ok
+test engine::accept_pr::tests::t_a2_local_ok_closed_branch ... ok
+test engine::accept_pr::tests::t_a2_remote_miss_hygiene_failure_visible ... ok
+test engine::accept_pr::tests::t_a2_seal_adjudicate_idempotent ... ok
+test engine::accept_pr::tests::t_a2_seal_fail_hard_without_merge_hash ... ok
+test engine::accept_pr::tests::t_a2_seal_fail_soft_when_merge_hash_present ... ok
+test engine::accept_pr::tests::t_a2_sync_adjudicate_idempotent ... ok
+test engine::accept_pr::tests::t_a2_sync_fail_hard_without_merge_hash ... ok
+test engine::accept_pr::tests::t_a2_sync_fail_soft_when_merge_hash_present ... ok
+test engine::accept_pr::tests::t_adu_ca7_scan_presented_ignores_disk_only_json ... ok
+test engine::accept_pr::tests::t_adu_ca7_scan_presented_via_port ... ok
+test engine::accept_pr::tests::t_adu_ca8_remote_absent_is_ok ... ok
+test engine::accept_pr::tests::t_adu_ca9_remote_auth_fail_no_closed_branch ... ok
+test engine::accept_pr::tests::t_redb_ca3_scan_presented_from_store_only ... ok
+test engine::actions::tests::emit_resealed_links_presented_event_id ... ok
+test engine::actions::tests::emit_tracker_sync_failed_no_secrets_in_pending ... ok
+test engine::actions::tests::emit_validation_started_writes_pending ... ok
+test engine::actions::tests::emit_work_initiated_fail_soft_invalid_source ... ok
+test engine::actions::tests::emit_work_initiated_writes_pending_without_provider_fields ... ok
+test engine::actions::tests::merged_alta_inserts_store_row_before_route ... ok
+test engine::actions::tests::pr_emits_carry_tracker_ref_when_provided ... ok
+test engine::agent_runtime::tests::agent_runtime_cwd_is_outside_repo_when_project_bound ... ok
+test engine::agent_runtime::tests::blocked_propagates_data_message_to_entry_error ... ok
+test engine::agent_runtime::tests::branch_name_coalesces_from_pr_branch ... ok
+test engine::agent_runtime::tests::configured_cli_can_await ... ok
+test engine::agent_runtime::tests::configured_cli_can_block ... ok
+test engine::agent_runtime::tests::configured_cli_marks_executed ... ok
+test engine::agent_runtime::tests::execution_id_reentry_refreshes_stale_frontmatter ... ok
+test engine::agent_runtime::tests::execution_phase_timeout_floor_2400 ... ok
+test engine::agent_runtime::tests::llm_profile_high_is_injected_in_payload ... ok
+test engine::agent_runtime::tests::llm_profile_missing_agent_md_is_fail_soft ... ok
+test engine::agent_runtime::tests::llm_profile_none_does_not_spawn ... ok
+test engine::agent_runtime::tests::not_configured_returns_simulated ... ok
+test engine::agent_runtime::tests::parse_env_timeout_secs_ignores_empty ... ok
+test engine::agent_runtime::tests::payload_includes_execution_id ... ok
+test engine::agent_runtime::tests::persist_ref_falls_back_from_workspace_state ... ok
+test engine::agent_runtime::tests::ppr_doc_triage_agent_failed_is_fail_soft ... ok
+test engine::agent_runtime::tests::reconcile_persist_execution_id_skips_handoff ... ok
+test engine::agent_runtime::tests::reentry_guard_skips_spawn ... ok
+test engine::agent_runtime::tests::relay_flag_forces_simulated_even_with_command ... ok
+test engine::agent_runtime::tests::resolve_timeout_secs_honors_hook_env_180 ... ok
+test engine::agent_runtime::tests::runtime_evidence_forwards_native_state_flags ... ok
+test engine::agent_runtime::tests::timeout_kills_hanging_command ... ok
+test engine::agent_runtime::tests::verification_handoff_without_branch_does_not_spawn ... ok
+test engine::agent_runtime::tests::verification_handoff_without_execution_id_does_not_spawn ... ok
+test engine::agent_runtime::tests::verification_missing_local_ref_fails_before_spawn_when_checkout_unavailable ... ok
+test engine::agent_runtime::tests::workspace_mcp_smoke_initialize_when_binary_present ... ok
+test engine::aiua_intent::tests::dispatch_habit_borra_emits_mute_without_utterance ... ok
+test engine::aiua_intent::tests::dispatch_habit_requires_subject_hint ... ok
+test engine::aiua_intent::tests::dispatch_rejects_unknown_and_incomplete ... ok
+test engine::aiua_intent::tests::dispatch_sdlc_writes_domain_not_pending ... ok
+test engine::aiua_intent::tests::dispatch_suite_missing_id_fails ... ok
+test engine::aiua_intent::tests::extract_delegar_habito_fence ... ok
+test engine::aiua_intent::tests::extract_first_fence ... ok
+test engine::aiua_intent::tests::extract_first_of_two_fences ... ok
+test engine::aiua_intent::tests::extract_rejects_broken_json_and_unknown_is_still_parseable ... ok
+test engine::aiua_intent::tests::genome_lists_delegar_habito_motor ... ok
+test engine::append_mayeuta_hypothesis::tests::extract_trace_from_cumulo_template ... ok
+test engine::append_mayeuta_hypothesis::tests::prompt_contains_kernel_and_forbids_invented_paths ... ok
+test engine::append_mayeuta_hypothesis::tests::run_absent_and_done_fail_open ... ok
+test engine::append_mayeuta_hypothesis::tests::run_without_llm_cli_fail_open_leaves_pbi ... ok
+test engine::append_mayeuta_hypothesis::tests::truncate_caps_at_15_lines ... ok
+test engine::append_mayeuta_hypothesis::tests::upsert_inserts_before_criterio_and_is_idempotent ... ok
+test engine::capability_di_gate::tests::ac_p1_ok ... ok
+test engine::capability_di_gate::tests::ac_p1_real_repo_feature_phase ... ok
+test engine::capability_di_gate::tests::ac_p1_real_repo_feature_phase_blind_via_resolver ... ok
+test engine::capability_di_gate::tests::ac_p2_schema_mismatch ... ok
+test engine::capability_di_gate::tests::ac_p3_not_indexed ... ok
+test engine::capability_di_gate::tests::email_triage_pref_query_phase_bound_in_real_repo ... ok
+test engine::capability_di_gate::tests::memory_pref_query_rejects_unbound_delegate ... ok
+test engine::capability_di_gate::tests::provider_mismatch_without_provides ... ok
+test engine::capability_di_gate::tests::telegram_pref_query_phase_bound_in_real_repo ... ok
+test engine::capability_di_output_validator::tests::ac_r8_dlq_written ... ok
+test engine::capability_di_output_validator::tests::ac_r8_schema_mismatch ... ok
+test engine::capability_di_output_validator::tests::ac_r8_valid_payload ... ok
+test engine::capability_di_output_validator::tests::ac_tracker_lifecycle_emit_v2_body ... ok
+test engine::capability_di_output_validator::tests::contract_schema_with_non_standard_name_is_resolved_by_binding ... ok
+test engine::capability_di_reactor::tests::ac_r6_drain_resolved_ecst_ack ... ok
+test engine::capability_di_reactor::tests::ac_r6_emit_pending_non_blocking ... ok
+test engine::capability_di_resolver::tests::core_bindings_eda_event_manager_resolves_v1_schema ... ok
+test engine::capability_di_resolver::tests::di_binding_shape ... ok
+test engine::capability_di_resolver::tests::resolve_ambiguous_when_row_not_in_catalog ... ok
+test engine::capability_di_resolver::tests::resolve_blind_ok ... ok
+test engine::capability_di_resolver::tests::resolve_missing_binding ... ok
+test engine::capability_di_resolver::tests::resolve_prefers_delegate_provider_over_binding_row ... ok
+test engine::capability_di_resolver::tests::resolve_real_repo_feature_blind ... ok
+test engine::capability_di_resolver::tests::resolver_falls_back_to_contract_name_schema ... ok
+test engine::capability_di_resolver::tests::resolver_honours_declared_contract_schema ... ok
+test engine::capability_di_resolver::tests::resolver_rejects_contract_schema_with_path ... ok
+test engine::capsule_digest::tests::digest_changes_when_src_changes ... ok
+test engine::capsule_digest::tests::digest_stable_for_same_crate ... ok
+test engine::capsule_paths::tests::anchored_accepts_conformant_artifact ... ok
+test engine::capsule_paths::tests::anchored_rejects_without_witness ... ok
+test engine::capsule_paths::tests::legacy_returns_first_profile_file ... ok
+test engine::capsules::tests::aut52_tool_invoke_error_message_includes_linear_transport_detail ... ok
+test engine::capsules::tests::finalize_capsule_respects_exit_code_field ... ok
+test engine::capsules::tests::native_shell_markers_are_not_rewritten_to_sentinel ... ok
+test engine::capsules::tests::parse_capsule_last_line_json ... ok
+test engine::capsules::tests::shell_wasm_followup_native_missing_canonical_not_retry ... ok
+test engine::capsules::tests::shell_wasm_followup_prefers_native_without_rewriting ... ok
+test engine::capsules::tests::tool_invoke_error_message_surfaces_linear_auth_code ... ok
+test engine::capsules::tests::wasmtime_candidates_include_home_dot_wasmtime ... ok
+test engine::cerbero_di_envelope::tests::ac_r5_rbac_deny_never_reaches_envelope_regression ... ok
+test engine::cerbero_di_envelope::tests::ac_r9_missing_required_schema_mismatch ... ok
+test engine::cerbero_di_envelope::tests::ac_r9_tampered_contract_incoherent ... ok
+test engine::cerbero_di_envelope::tests::ac_r9_valid_envelope_ok ... ok
+test engine::cerbero_di_rbac::tests::ac_r5_allow_when_context_matches ... ok
+test engine::cerbero_di_rbac::tests::ac_r5_gate_pass_cerbero_deny ... ok
+test engine::cerbero_di_rbac::tests::resolve_policies_from_inputs ... ok
+test engine::cli_detach::tests::allowlist_detaches_ppr_not_radamanto ... ok
+test engine::cli_detach::tests::emit_detach_pec_writes_orchestration_not_instance_customization ... ok
+test engine::cli_detach::tests::force_detach_any_process ... ok
+test engine::cli_detach::tests::foreground_wins_over_force_and_allowlist ... ok
+test engine::cli_detach::tests::spawn_orphan_returns_before_child_sleep ... ok
+test engine::crypto_broker::tests::crypto_broker_generate_uuid ... ok
+test engine::delivery_close::tests::adjudicate_eda_fail_soft_is_idempotent ... ok
+test engine::delivery_close::tests::current_branch_from_list_reads_star ... ok
+test engine::delivery_close::tests::dcc_fracture_emits_on_failed_forge_phase ... ok
+test engine::delivery_close::tests::dcc_fracture_still_emits_on_rbac_revocation_and_evol_gate_failed ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_diff_seal_block ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_evolution_gate_block ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_forge_dns ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_forge_gh_api_connect ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_forge_title_metachar ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_git_manager_capsule_missing ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_pre_pr_qa_gate_block ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_push_non_fast_forward ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_remote_push_dns ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_remote_push_hook_evol_gate ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_sddia_qa_missing ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_sello_pr_url_missing ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_shell_executor_wasm_fallback_marker ... ok
+test engine::delivery_close::tests::dcc_fracture_suppressed_on_workflow_scope ... ok
+test engine::delivery_close::tests::dcc_halt_skips_post_push_phases ... ok
+test engine::delivery_close::tests::dcc_hook_evol_gate_trace_matches_canonical ... ok
+test engine::delivery_close::tests::dcc_hygiene_failed_is_fail_soft_when_pr_url_present ... ok
+test engine::delivery_close::tests::dcc_hygiene_failed_without_pr_stays_causal ... ok
+test engine::delivery_close::tests::dcc_lab_binary_missing_trace_positives_and_negatives ... ok
+test engine::delivery_close::tests::dcc_non_ff_fetch_first_variant_suppressed ... ok
+test engine::delivery_close::tests::dcc_non_ff_not_suppressed_outside_remote_push_phase ... ok
+test engine::delivery_close::tests::dcc_push_blocked_skips_post_push_phases_prior_push_not_ok ... ok
+test engine::delivery_close::tests::dcc_snapshot_failed_never_fail_soft ... ok
+test engine::delivery_close::tests::dcc_transient_network_trace_positives_and_pr_url_negative ... ok
+test engine::delivery_close::tests::eda_blocked_with_delivery_push_only_gets_fail_soft ... ok
+test engine::delivery_close::tests::eda_blocked_with_pr_url_gets_fail_soft_and_aggregator_success ... ok
+test engine::delivery_close::tests::eda_blocked_without_physical_stays_causal ... ok
+test engine::delivery_close::tests::evolution_phase_blocks_unregistered_material_ca12 ... [HEAD desacoplado 73103597] test: ca12 dcc
+ 1 file changed, 1 insertion(+)
+ create mode 100644 SddIA/tools/_ca12_smoke_probe.txt
+ok
+test engine::delivery_close::tests::stamp_dcc_hook_evol_block_sets_friction ... ok
+test engine::delivery_close::tests::stamp_dcc_network_block_gh_api_connect ... ok
+test engine::delivery_close::tests::stamp_dcc_network_block_sets_friction_and_aggregator_fails ... ok
+test engine::delivery_close::tests::stamp_dcc_workflow_scope_block_sets_friction ... ok
+test engine::delivery_close::tests::sync_dcc_process_hash_signature ... ok
+test engine::diff_seal::tests::accept_pr_merge_blocks_when_seal_stale ... ok
+test engine::diff_seal::tests::apply_seal_writes_frontmatter_fields ... ok
+test engine::diff_seal::tests::aut53_scoped_persist_ref_ignores_sibling_fixture_apto_without_seal ... ok
+test engine::diff_seal::tests::aut53_scoped_persist_ref_still_blocks_stale_seal_on_cycle ... ok
+test engine::diff_seal::tests::aut54_legacy_sweep_skips_lab_fixture_apto_without_seal ... ok
+test engine::diff_seal::tests::aut54_legacy_sweep_still_checks_non_fixture_persist ... ok
+test engine::diff_seal::tests::ci_verify_fails_on_digest_mismatch ... ok
+test engine::diff_seal::tests::ci_verify_fails_when_apto_without_seal_fields ... ok
+test engine::diff_seal::tests::ci_verify_passes_when_seal_matches ... ok
+test engine::diff_seal::tests::digest_excludes_validacion_md_from_diff ... ok
+test engine::diff_seal::tests::persist_ref_from_docs_path_extracts_slug ... ok
+test engine::diff_seal::tests::persist_ref_is_lab_fixture_detects_slug ... ok
+test engine::diff_seal::tests::reseal_commits_when_digest_changes ... ok
+test engine::dlt_telemetry_anchor::tests::config_error_detects_capsule_traces ... ok
+test engine::dlt_telemetry_anchor::tests::digest_rejects_batched_and_empty ... ok
+test engine::dlt_telemetry_anchor::tests::no_skip_when_simulate ... ok
+test engine::dlt_telemetry_anchor::tests::persist_external_skips_seal_under_lab_simulate ... ok
+test engine::dlt_telemetry_anchor::tests::persist_proof_writes_digest ... ok
+test engine::dlt_telemetry_anchor::tests::skip_when_no_wallet_no_simulate ... ok
+test engine::domain_authority::tests::allow_explicit_software_slug_even_if_git_false ... ok
+test engine::domain_authority::tests::allow_legacy_git_required_without_slug ... ok
+test engine::domain_authority::tests::core_project_slug_allowed_with_instance_software_forge_profile ... ok
+test engine::domain_authority::tests::deny_other_codex_slug ... ok
+test engine::domain_authority::tests::deny_when_git_not_required_and_no_software_slug ... ok
+test engine::domain_authority::tests::emit_fracture_on_deny_materializes_system_fracture ... ok
+test engine::domain_authority::tests::external_project_requires_software_forge_and_codex ... ok
+test engine::domain_authority::tests::friction_id_project_git_invalid_prefix ... ok
+test engine::domain_authority::tests::kalma2_assistant_denied_even_with_project_slug ... ok
+test engine::domain_authority::tests::non_member_process_always_allowed ... ok
+test engine::domain_mutation::tests::emit_domain_mutation_create_writes_pending ... ok
+test engine::domain_mutation::tests::emit_domain_mutation_rejects_invalid_lifecycle_hash ... ok
+test engine::domain_profile::tests::active_codex_ref_sets_slug ... ok
+test engine::domain_profile::tests::default_git_required_true ... ok
+test engine::domain_profile::tests::instance_when_no_input ... ok
+test engine::domain_profile::tests::precedence_input_over_instance ... ok
+test engine::done_gate::tests::ac17_git_still_requires_pbi_archived ... ok
+test engine::done_gate::tests::ac18_linear_done_defers_archive ... ok
+test engine::done_gate::tests::ac18_linear_in_review_rejects ... ok
+test engine::done_gate::tests::ac19_both_linear_down_fallback_git_archive ... ok
+test engine::done_gate::tests::ac20_pre_push_reads_local_proof_without_network ... ok
+test engine::done_gate::tests::ac23_resolve_linear_gate_from_fixture_manifest ... ok
+test engine::done_gate::tests::di_other_projects_unchanged ... ok
+test engine::done_gate::tests::proof_roundtrip_no_network ... ok
+test engine::done_gate::tests::resolve_core_degrades_without_tracker_ref ... ok
+test engine::done_gate::tests::resolve_core_linear_with_tracker_ref ... ok
+test engine::ecst_input_loader::tests::verify_rejects_mismatch_on_mock_port ... ok
+test engine::ecst_validation::tests::linear_direct_cycle_events_ecst ... ok
+test engine::ecst_validation::tests::linear_direct_cycle_events_minimal_and_forbidden_provider_fields ... ok
+test engine::ecst_validation::tests::loads_domain_entity_created_schema ... ok
+test engine::ecst_validation::tests::loads_fracture_clarification_requested_schema ... ok
+test engine::ecst_validation::tests::pull_request_audited_forbidden_excludes_invariantes_prose ... ok
+test engine::ecst_validation::tests::pull_request_merged_accepts_agents_present_or_absent ... ok
+test engine::ecst_validation::tests::pull_request_resealed_required_fields ... ok
+test engine::ecst_validation::tests::validates_domain_entity_created_payload ... ok
+test engine::eda_bus_topology::tests::adu_ca5_docs_prefix_features_then_fixes ... ok
+test engine::eda_bus_topology::tests::adu_ca6_feat_fix_refactor_unchanged ... ok
+test engine::eda_bus_topology::tests::aut70_fracture_dead_letter_not_kaizen_finalized ... ok
+test engine::eda_bus_topology::tests::aut72_tracker_stamp_dead_letter_kaizen_finalized_with_proof ... ok
+test engine::eda_bus_topology::tests::aut72_tracker_stamp_dead_letter_not_kaizen_finalized ... ok
+test engine::eda_bus_topology::tests::promote_witness_does_not_materialize_subscriber_json ... ok
+test engine::eda_contract_parity::broken_requests_are_rejected_by_schema ... ok
+test engine::eda_contract_parity::every_trait_operation_has_a_typed_valid_request_and_a_negative_case ... ok
+test engine::eda_contract_parity::schema_operation_enum_equals_trait_operations ... ok
+test engine::eda_contract_parity::trait_has_the_nineteen_known_operations ... ok
+test engine::eda_contract_parity::unknown_operation_is_rejected ... ok
+test engine::eda_contract_parity::valid_typed_requests_validate_against_schema ... ok
+test engine::eda_coverage::index_parse_tests::parse_index_row_without_backticks ... ok
+test engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_cli_outputs_no_event_path ... ok
+test engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_engine_sources_clean ... ok
+test engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_genome_domain_codex_processes ... ok
+test engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_genome_frontmatter ... ok
+test engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_no_virtual_event_paths_workspace ... ok
+test engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_port_sources_clean ... ok
+test engine::eda_event_token_hygiene::tests::write_fractal_event_seal_exposes_event_uri_only ... ok
+test engine::eda_port::scoped_tests::mock_stays_installed_across_ops ... ok
+test engine::eda_port::scoped_tests::productive_not_left_in_thread_local_after_op ... ok
+test engine::eda_port::test_harness::harness_duplicate_ack_noop_is_idempotent ... ok
+test engine::eda_port::test_harness::harness_fail_write_is_deterministic ... ok
+test engine::eda_port::test_harness::harness_steal_lease_returns_event_to_pending ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_bypass_new_norm ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_dlt_gas_version_not_transport ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_dlt_object_lock_not_opaque ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_dlt_publish_error_not_prompt ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_dns_not_hook_recursion ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_generic_failed_not_prompt ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_genomic_orphan_still_eda ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_head_sha_blank_not_hook ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_heartbeat_not_from_action_name ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_heartbeat_starvation ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_orphan_lock_not_eda ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_pr_title_metachar_not_hook ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_prepush_evol_gate_not_hook_recursion ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_prosthetic_exit3_not_unclassified ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_recursion_verdict ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_shell_executor_wasm_fallback_not_head_sha ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_snapshot_branch_exists_not_unclassified ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_snapshot_gitignore_not_head_sha ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_snapshot_missing_branch_sibling_not_branch_exists ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::analyze_fracture_kaizen_workflow_scope_not_hook ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::enrich_colaps_unclassified_emits_clarification ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::enrich_finds_deduped_process_pbi_not_hash_path ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::enrich_fracture_pbi_kaizen_e2e ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::enrich_returns_no_target_without_pbi ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::enrich_unclassified_emits_fracture_clarification_requested ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::enrich_uses_repo_catalog_and_announces_load_fallback ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::fracture_corpus_regression ... ok
+test engine::enrich_fracture_pbi_kaizen::tests::upsert_replaces_placeholder ... ok
+test engine::entity_manager::tests::capability_contract_delete_is_rejected_explicitly ... ok
+test engine::entity_manager::tests::capability_contract_is_native_only_pilot_class ... ok
+test engine::entity_manager::tests::event_creator_inputs_hash_refresh_materializes ... ok
+test engine::entity_manager::tests::process_creator_inputs_include_declared_jurisdiction_fields ... ok
+test engine::entity_manager::tests::process_creator_inputs_propagate_contract_payload ... ok
+test engine::execution_workspace_report::tests::exempt_skips_persist ... ok
+test engine::execution_workspace_report::tests::inject_elapsed_ms_sets_field ... ok
+test engine::execution_workspace_report::tests::persist_writes_execution_report_with_phases ... ok
+test engine::execution_workspace_report::tests::phase_timing_roundtrip ... ok
+test engine::executor::tests::barrier_helpers_classify_statuses ... ok
+test engine::executor::tests::barrier_sequence_skips_close_after_simulated_relay_without_validacion ... ok
+test engine::executor::tests::barrier_sequence_skips_verification_after_failed_execution ... ok
+test engine::executor::tests::barrier_sequence_stop_after_design_skips_tekton ... ok
+test engine::executor::tests::empty_delegates_are_not_agent_only ... ok
+test engine::executor::tests::forge_already_present_skips_barrier ... ok
+test engine::executor::tests::is_dedalo_design_phase_names ... ok
+test engine::executor::tests::persist_phase_reports_json_writes_file ... ok
+test engine::executor::tests::simulated_relay_blocks_close_without_validacion ... ok
+test engine::executor::tests::skipped_barrier_entry_marks_verification ... ok
+test engine::executor::tests::work_initiated_hooks_tekton_delegate_only ... ok
+test engine::executor::tests::workspace_init_failed_skips_design_execution_and_verification ... ok
+test engine::git_porcelain::tests::porcelain_line_modified_octal ... ok
+test engine::git_porcelain::tests::unescape_octal_utf8_path ... ok
+test engine::handlers::aiua_stimulus::tests::extract_infer_text_prefers_text_then_raw_response_object ... ok
+test engine::handlers::aiua_stimulus::tests::invoke_aiua_core_concatenates_genome ... ok
+test engine::handlers::aiua_stimulus::tests::invoke_aiua_core_preface_uses_frontmatter_name ... ok
+test engine::handlers::aiua_stimulus::tests::lab_mock_empty_memories_yields_duration_and_thought_id ... ok
+test engine::handlers::aiua_stimulus::tests::lab_mock_overlay_delegar_habito_does_not_join_ingest ... ok
+test engine::handlers::aiua_stimulus::tests::lab_mock_overlay_intent_dispatches_domain_without_tqm ... ok
+test engine::handlers::aiua_stimulus::tests::lab_rate_limited_primary_falls_back_to_gemini ... ok
+test engine::handlers::aiua_stimulus::tests::normalize_effort_accepts_case_insensitive_whitelist ... ok
+test engine::handlers::aiua_stimulus::tests::process_genome_combustion_is_llm_router ... ok
+test engine::handlers::aiua_stimulus::tests::process_genome_has_no_kalma2_ui_coupling ... ok
+test engine::handlers::aiua_stimulus::tests::usage_tokens_omits_empty_object ... ok
+test engine::handlers::daemon_heartbeat::tests::alive_still_healthy ... ok
+test engine::handlers::daemon_heartbeat::tests::baseline_falls_back_to_started_when_no_heartbeat ... ok
+test engine::handlers::daemon_heartbeat::tests::baseline_prefers_newer_heartbeat_in_steady_state ... ok
+test engine::handlers::daemon_heartbeat::tests::baseline_prefers_newer_started_at_on_cold_start ... ok
+test engine::handlers::daemon_heartbeat::tests::degraded_not_healthy_missed_zero ... ok
+test engine::handlers::daemon_heartbeat::tests::legacy_absent_status_healthy ... ok
+test engine::handlers::daemon_heartbeat::tests::lock_predates_boot_uses_started_at ... ok
+test engine::handlers::daemon_heartbeat::tests::orphan_lock_dead_pid_emits_fracture_once ... ok
+test engine::handlers::daemon_heartbeat::tests::orphan_lock_pre_boot_does_not_emit ... ok
+test engine::handlers::daemon_heartbeat::tests::orphan_lock_redb_does_not_write_pending_json ... ok
+test engine::handlers::daemon_heartbeat::tests::parse_proc_stat_btime_reads_unix_epoch ... ok
+test engine::handlers::daemon_heartbeat::tests::side_channel_heartbeat_is_audited_without_telemetry ... ok
+test engine::handlers::daemon_heartbeat::tests::suspend_skew_detected_when_wall_runs_ahead_of_mono ... ok
+test engine::handlers::daemon_heartbeat::tests::thresholds_from_ssot_not_hardcoded_const ... ok
+test engine::handlers::email_digest_preference_reply::tests::foreign_namespace_skips ... ok
+test engine::handlers::email_digest_preference_reply::tests::ign_does_not_emit ... ok
+test engine::handlers::email_digest_preference_reply::tests::max_emits_priority_without_addr ... ok
+test engine::handlers::email_digest_preference_reply::tests::max_loop_triggers_p_exempt_c ... ok
+test engine::handlers::email_digest_preference_reply::tests::mute_emits_muted_true ... ok
+test engine::handlers::email_digest_preference_reply::tests::unknown_token_skipped_expired ... ok
+test engine::handlers::email_noise_digest::tests::email_noise_digest_empty_preserves_tokens ... ok
+test engine::handlers::email_noise_digest::tests::email_noise_digest_empty_updates_cursor_no_notify ... ok
+test engine::handlers::email_noise_digest::tests::email_noise_digest_filters_and_normalizes ... ok
+test engine::handlers::email_noise_digest::tests::email_noise_digest_markup_tokens_no_pii ... ok
+test engine::handlers::email_noise_digest::tests::email_noise_digest_notify_failure_keeps_cursor ... ok
+test engine::handlers::email_noise_digest::tests::email_noise_digest_skip_and_clamp ... ok
+test engine::handlers::email_noise_digest::tests::email_noise_digest_tie_break_alpha_and_rule ... ok
+test engine::handlers::email_noise_digest::tests::email_noise_digest_truncates_under_cap ... ok
+test engine::handlers::email_noise_digest::tests::email_noise_digest_unknown_from ... ok
+test engine::handlers::email_quick_action::tests::gate_skips_invalid_action ... ok
+test engine::handlers::email_quick_action::tests::persist_archive_writes_proof ... ok
+test engine::handlers::email_triage::tests::cold_start_noreply_is_c_noreply_without_llm ... ok
+test engine::handlers::email_triage::tests::conjugacion_prompt_omitted_when_empty_present_when_partial ... ok
+test engine::handlers::email_triage::tests::email_triage_does_not_invoke_iota_publisher ... ok
+test engine::handlers::email_triage::tests::emit_triaged_copies_from_subject_not_snippet ... ok
+test engine::handlers::email_triage::tests::explicit_priority_max_exempts_noreply_wall ... ok
+test engine::handlers::email_triage::tests::extract_actionable_from_encoded_meeting_subject ... ok
+test engine::handlers::email_triage::tests::failed_capsule_meeting_subject_still_actionable ... ok
+test engine::handlers::email_triage::tests::failed_capsule_sets_classification_error_passive ... ok
+test engine::handlers::email_triage::tests::infer_degraded_when_require_zero_tokens_subject_without_date ... ok
+test engine::handlers::email_triage::tests::infer_not_degraded_when_subject_elevates ... ok
+test engine::handlers::email_triage::tests::infer_not_degraded_when_tokens_nonzero ... ok
+test engine::handlers::email_triage::tests::inferred_priority_max_does_not_exempt ... ok
+test engine::handlers::email_triage::tests::l_guard_keywords_exclude_commercial_d3 ... ok
+test engine::handlers::email_triage::tests::list_headers_are_deterministic_noise ... ok
+test engine::handlers::email_triage::tests::list_headers_beat_mute ... ok
+test engine::handlers::email_triage::tests::llm_output_blob_reads_data_text ... ok
+test engine::handlers::email_triage::tests::llm_passive_meeting_subject_elevates_to_actionable ... ok
+test engine::handlers::email_triage::tests::mute_active_closes_preference_without_llm ... ok
+test engine::handlers::email_triage::tests::mute_hint_computrabajo_matches_domain_label ... ok
+test engine::handlers::email_triage::tests::noreply_is_noise ... ok
+test engine::handlers::email_triage::tests::p_exempt_requires_explicit_active_high ... ok
+test engine::handlers::email_triage::tests::parse_triage_blob_prefers_json_in_prose ... ok
+test engine::handlers::email_triage::tests::proposed_priority_max_does_not_exempt ... ok
+test engine::handlers::email_triage::tests::query_subject_key_is_never_plaintext_addr ... ok
+test engine::handlers::email_triage::tests::rfc2047_q_decodes_spanish_meeting_subject ... ok
+test engine::handlers::email_triage::tests::tokens_from_nested_telemetry_receipt ... ok
+test engine::handlers::email_triage::tests::verbosity_does_not_conclude_triaje_c ... ok
+test engine::handlers::forge_hu::tests::aut50_ca5_forge_hu_returns_tracker_ref ... ok
+test engine::handlers::forge_pbi::tests::ac_0b2_without_tracker_no_capsule ... ok
+test engine::handlers::forge_pbi::tests::ac_0b_creates_tracker_ref_with_parent ... ok
+test engine::handlers::forge_pbi::tests::aut50_ca1_tracker_without_usable_parent_fails ... ok
+test engine::handlers::forge_pbi::tests::aut50_ca2_historia_ref_issue_used_as_parent ... ok
+test engine::handlers::forge_pbi::tests::distill_title_ac1_plain_phrase ... ok
+test engine::handlers::forge_pbi::tests::distill_title_ac2_heading_wins_over_prose ... ok
+test engine::handlers::forge_pbi::tests::distill_title_ac3_truncates_at_word_boundary ... ok
+test engine::handlers::forge_pbi::tests::distill_title_ac4_empty_or_useless ... ok
+test engine::handlers::forge_pbi::tests::forge_key_stable_for_same_raw_idea ... ok
+test engine::handlers::forge_pbi::tests::lock_after_create_returns_ids_and_retry_same_issue ... ok
+test engine::handlers::forge_pbi::tests::prior_from_child_description_matches_forge_key ... ok
+test engine::handlers::forge_pbi::tests::retry_without_ledger_reuses_child_by_forge_key ... ok
+test engine::handlers::forge_pbi::tests::store_lock_classifier_matches_redb_message ... ok
+test engine::handlers::forge_pbi::tests::tipo_label_key_maps_bug_fix_and_kaizen ... ok
+test engine::handlers::heartbeat_audit_thresholds::tests::overlay_wins_over_core ... ok
+test engine::handlers::heartbeat_audit_thresholds::tests::thresholds_from_ssot_json ... ok
+test engine::handlers::instance_creator::tests::creates_topology_and_skips_smoke ... ok
+test engine::handlers::instance_creator::tests::domain_profile_codex_unknown_without_manifest ... ok
+test engine::handlers::instance_creator::tests::domain_profile_from_manifest_consumer ... ok
+test engine::handlers::instance_creator::tests::domain_profile_never_overwrites ... ok
+test engine::handlers::instance_creator::tests::domain_profile_skipped_on_forge_profile ... ok
+test engine::handlers::instance_creator::tests::engineering_domain_profile_software_forge_opt_in ... ok
+test engine::handlers::instance_creator::tests::materializes_llm_registry_once ... ok
+test engine::handlers::instance_creator::tests::replaces_empty_local_paths_stub ... ok
+test engine::handlers::instance_creator::tests::smoke_native_without_skip ... ok
+test engine::handlers::kalma2::tests::kalma2_classifies_fix_heuristic ... ok
+test engine::handlers::kalma2::tests::kalma2_event_carries_project_slug ... ok
+test engine::handlers::kalma2::tests::kalma2_execute_plumbs_top_level_correlation_id ... ok
+test engine::handlers::kalma2::tests::kalma2_extracts_pbi_ref_with_spaces ... ok
+test engine::handlers::kalma2::tests::kalma2_fallback_without_llm_cli ... ok
+test engine::handlers::kalma2::tests::kalma2_honors_preassigned_correlation_id ... ok
+test engine::handlers::kalma2::tests::kalma2_invalid_correlation_id_falls_back_to_new_uuid ... ok
+test engine::handlers::kalma2::tests::kalma2_rejects_unknown_process ... ok
+test engine::handlers::mayeuta::tests::filter_c_blocks_commands ... ok
+test engine::handlers::phagocyte_recovered_fracture_pbis::tests::apply_documental_skips_outside_pending ... ok
+test engine::handlers::phagocyte_recovered_fracture_pbis::tests::parse_last_heartbeat_from_trace ... ok
+test engine::handlers::phagocyte_recovered_fracture_pbis::tests::phagocyte_predicate_trace_before_lock ... ok
+test engine::handlers::phagocyte_recovered_fracture_pbis::tests::phagocyte_skip_unparseable_trace ... ok
+test engine::handlers::refine::tests::ac_0c_creates_tracker_ref_when_missing ... ok
+test engine::handlers::refine::tests::ac_0c_skips_create_when_tracker_ref_present ... ok
+test engine::handlers::refine::tests::ac_ref_1_refine_pbi_emits_and_seals ... ok
+test engine::handlers::refine::tests::ac_ref_2_without_tracker_no_capsule ... ok
+test engine::handlers::refine_item::dor::tests::dor_pbi_requires_four_sections ... ok
+test engine::handlers::refine_item::dor::tests::type_from_labels ... ok
+test engine::handlers::refine_item::prepare::tests::generates_frontmatter_for_plain_body ... ok
+test engine::handlers::refine_item::tracker_ref::tests::divergent_fm_conflicts ... ok
+test engine::handlers::refine_item::tracker_ref::tests::empty_fm_seals_identifier ... ok
+test engine::handlers::refine_item::tracker_ref::tests::equal_ignore_ascii_case_seals_canonical ... ok
+test engine::handlers::refine_item::tracker_ref::tests::missing_fm_seals_identifier ... ok
+test engine::handlers::sync_client_assets::tests::resolves_codex_kalma2_uuid ... ok
+test engine::handlers::system_vitality::tests::bus_topology_green_without_fractal_directories ... ok
+test engine::handlers::system_vitality::tests::cerbero_green_with_frontmatter ... ok
+test engine::handlers::system_vitality::tests::cerbero_red_when_execution_contexts_missing ... ok
+test engine::handlers::system_vitality::tests::redb_ca4_vitality_and_fracture_go_to_store ... ok
+test engine::handlers::system_vitality::tests::redb_ca5_locked_store_is_green_topology ... ok
+test engine::handlers::task_queue_manager::tests::build_bug_fix_inputs ... ok
+test engine::handlers::task_queue_manager::tests::child_env_full_cycle_no_l2 ... ok
+test engine::handlers::task_queue_manager::tests::child_env_l2_skip_declares_skipped_l2 ... ok
+test engine::handlers::task_queue_manager::tests::derive_slug_from_hash ... ok
+test engine::handlers::task_queue_manager::tests::dispatchable_processes_not_in_cli_detach_allowlist ... ok
+test engine::handlers::task_queue_manager::tests::explicit_fix_name_in_kalma2_prompt ... ok
+test engine::handlers::task_queue_manager::tests::extract_pbi_ignores_inert_bucket_paths ... ok
+test engine::handlers::task_queue_manager::tests::extract_pbi_migrated_deuda_tecnica_paths ... ok
+test engine::handlers::task_queue_manager::tests::extract_pbi_prefers_pending_over_inert_when_both_present ... ok
+test engine::handlers::task_queue_manager::tests::extract_pbi_with_spaces_and_emdash ... ok
+test engine::handlers::task_queue_manager::tests::fix_name_wins_when_prompt_also_mentions_pr_number ... ok
+test engine::handlers::task_queue_manager::tests::load_pbi_body_reads_file ... ok
+test engine::handlers::task_queue_manager::tests::lock_key_stable_for_path_variants ... ok
+test engine::handlers::task_queue_manager::tests::lock_key_uses_document_id_across_pending_done ... ok
+test engine::handlers::task_queue_manager::tests::pending_pbi_path_accepted_for_archive_gate ... ok
+test engine::handlers::task_queue_manager::tests::pr_anchor_in_inputs_rejected_as_slug_incident_98be62a3 ... ok
+test engine::handlers::task_queue_manager::tests::pr_in_task_text_does_not_imply_full_cycle ... ok
+test engine::handlers::task_queue_manager::tests::refactor_child_keeps_suggested_branch_and_persist_ref ... ok
+test engine::handlers::task_queue_manager::tests::refactor_child_persist_ref_fallback_from_cumulo ... ok
+test engine::handlers::task_queue_manager::tests::single_flight_empty_recent_lock_not_purged ... ok
+test engine::handlers::task_queue_manager::tests::single_flight_same_pbi_different_correlation_ids ... ok
+test engine::handlers::task_queue_manager::tests::single_flight_second_acquire_hits_while_guard_lives ... ok
+test engine::handlers::task_queue_manager::tests::suggested_branch_from_pbi_frontmatter ... ok
+test engine::handlers::telegram_fallback::tests::pref_context_hint_populated_when_store_has_active_pref ... ok
+test engine::handlers::telegram_fallback::tests::run_synthesized_with_pref_context_smoke_without_chat_id ... ok
+test engine::handlers::telegram_gateway::tests::callback_data_rejects_oversize ... ok
+test engine::handlers::telegram_gateway::tests::callback_event_type ... ok
+test engine::handlers::telegram_gateway::tests::transmute_todo_to_kaizen ... ok
+test engine::handlers::tracker_backlog_query::tests::issue_kind_respects_labels ... ok
+test engine::handlers::tracker_linear_markdown_sync::tests::scrub_redacts_env_lines ... ok
+test engine::handlers::tracker_markdown_apply::tests::ac14_cancelled_moves_and_emits_pbi_cancelled ... ok
+test engine::handlers::tracker_markdown_apply::tests::ac14_title_updates_frontmatter_not_filename ... ok
+test engine::handlers::tracker_markdown_apply::tests::ac15_diverged_keeps_file_and_warns ... ok
+test engine::handlers::tracker_markdown_apply::tests::ac16_sync_branch_not_default ... ok
+test engine::handlers::tracker_markdown_apply::tests::resolve_finds_pending_fixture ... ok
+test engine::handlers::tracker_markdown_apply::tests::run_rejects_tampered_inline_event_against_store ... ok
+test engine::handlers::tracker_stamp::tests::ac2_origin_seal_moves_pbi_refined_to_todo ... ok
+test engine::handlers::tracker_stamp::tests::ac2_pbi_refined_delegated_to_origin ... ok
+test engine::handlers::tracker_stamp::tests::ac2_state_stamp_uses_live_op_and_schema ... ok
+test engine::handlers::tracker_stamp::tests::ac2b_hu_refined_delegated_to_origin ... ok
+test engine::handlers::tracker_stamp::tests::ac3_delivery_committed_done ... ok
+test engine::handlers::tracker_stamp::tests::ac4_pbi_cancelled ... ok
+test engine::handlers::tracker_stamp::tests::aut63_hu_forged_backlog_stamp ... ok
+test engine::handlers::tracker_stamp::tests::aut75_genome_narrative_parity ... ok
+test engine::handlers::tracker_stamp::tests::classify_no_op_missing_ref_with_pbi_is_failed ... ok
+test engine::handlers::tracker_stamp::tests::classify_no_op_without_tracker_ref_is_skipped ... ok
+test engine::handlers::tracker_stamp::tests::delivery_committed_without_trunk_direct_no_ops ... ok
+test engine::handlers::tracker_stamp::tests::file_provider_stamps_column_on_pbi_refined ... ok
+test engine::handlers::tracker_stamp::tests::file_provider_work_initiated_stamps_column_without_capsule ... ok
+test engine::handlers::tracker_stamp::tests::forge_processes_keep_tracker_context_out ... ok
+test engine::handlers::tracker_stamp::tests::lab_cycle_work_to_merged_stamps ... ok
+test engine::handlers::tracker_stamp::tests::no_op_without_tracker_ref ... ok
+test engine::handlers::tracker_stamp::tests::stamp_ignores_fix_label_without_pbi ... ok
+test engine::handlers::tracker_stamp::tests::stamp_ignores_hu_parent_mismatch ... ok
+test engine::handlers::tracker_stamp::tests::stamp_ignores_missing_pbi_label ... ok
+test engine::handlers::tracker_stamp::tests::stamp_validation_started_in_lab ... ok
+test engine::handlers::tracker_stamp::tests::update_issue_state_request_errors_when_map_lacks_key ... ok
+test engine::handlers::tracker_stamp::tests::update_issue_state_request_maps_canonical_to_linear_name ... ok
+test engine::handlers::tracker_stamp::tests::work_initiated_records_persist_ref_without_done ... ok
+test engine::handlers::tracker_stamp::tests::work_initiated_stamps_with_opaque_pbi_ref_only ... ok
+test engine::handlers::tracker_sync_replay::tests::ac6_discards_todo_when_in_progress ... ok
+test engine::handlers::tracker_sync_replay::tests::discard_when_issue_already_at_or_past_target ... ok
+test engine::handlers::tracker_sync_replay::tests::replay_fallback_only_with_lab_mock ... ok
+test engine::handlers::tracker_sync_replay::tests::run_rejects_tampered_inline_event_against_store ... ok
+test engine::handlers::tracker_sync_replay::tests::state_rank_orders_cycle ... ok
+test engine::handlers::user_preference::tests::cross_channel_activate_query_revoke_via_ingest ... ok
+test engine::handlers::user_preference::tests::ingest_hashes_subject_hint_from_habit ... ok
+test engine::invoke_orchestrator::tests::prefers_debug_when_strictly_newer ... ok
+test engine::invoke_orchestrator::tests::prefers_release_when_debug_is_older ... ok
+test engine::item_lifecycle_frontmatter::tests::column_patch_in_progress ... ok
+test engine::item_lifecycle_frontmatter::tests::forge_lines_no_legacy_status ... ok
+test engine::item_lifecycle_frontmatter::tests::refine_strips_status_and_sets_column ... ok
+test engine::item_lifecycle_frontmatter::tests::seal_markdown_accepts_linear_yaml_fence ... ok
+test engine::lifecycle_phase_action::tests::aut75_argos_apto_sets_validated ... ok
+test engine::lifecycle_phase_action::tests::aut75_argos_no_apto_returns_in_progress ... ok
+test engine::lifecycle_phase_action::tests::aut75_forge_closed_when_execution_skipped ... ok
+test engine::lifecycle_phase_action::tests::aut75_stamp_subscriber_does_not_move_state ... ok
+test engine::lifecycle_phase_action::tests::pr_opened_remote_request_uses_linear_state_name ... ok
+test engine::linear_direct_cycle_e2e::tests::ac10_core_self_without_tracker_still_green ... ok
+test engine::linear_direct_cycle_e2e::tests::ac7_branch_pr_full_cycle_with_comments ... ok
+test engine::linear_direct_cycle_e2e::tests::ac8_trunk_direct_delivery_committed ... ok
+test engine::linear_direct_cycle_e2e::tests::ac9_no_secrets_in_pending_events ... ok
+test engine::linear_done_gate_both_e2e::tests::ac21_merge_stamp_then_apply_archives_without_manual_pbi_move ... ok
+test engine::linear_done_gate_both_e2e::tests::ac21b_stamp_outbound_suppresses_poll_echo ... ok
+test engine::linear_done_gate_both_e2e::tests::ac21d_no_manifest_sets_done_gate_linear ... ok
+test engine::llm_interaction_audit::tests::active_when_set ... ok
+test engine::llm_interaction_audit::tests::dedup_row ... ok
+test engine::llm_interaction_audit::tests::inactive_without_field ... ok
+test engine::llm_interaction_audit::tests::lifecycle_peaje_absent_llm_audit_is_not_blocked ... ok
+test engine::llm_interaction_audit::tests::lifecycle_peaje_inactive_is_blocked ... ok
+test engine::llm_interaction_audit::tests::rejects_invalid_entity_type ... ok
+test engine::llm_interaction_audit::tests::shell_has_uuid_v4_and_karma2_header ... ok
+test engine::materialize_ci_chronic_failure_pbi::tests::ci_chronic_materialize_creates_and_idempotent ... ok
+test engine::materialize_ci_chronic_failure_pbi::tests::ci_chronic_materialize_idempotent_in_done ... ok
+test engine::materialize_ci_chronic_failure_pbi::tests::slugify_job_name_normalizes ... ok
+test engine::materialize_fracture_pbi::tests::fracture_trace_hash_deterministic ... ok
+test engine::materialize_fracture_pbi::tests::materialize_burst_after_done_opens_single_regression ... ok
+test engine::materialize_fracture_pbi::tests::materialize_dedupes_open_pbi_same_process_different_trace ... ok
+test engine::materialize_fracture_pbi::tests::materialize_fracture_pbi_creates_and_idempotent ... ok
+test engine::materialize_fracture_pbi::tests::materialize_fracture_pbi_missing_field ... ok
+test engine::materialize_fracture_pbi::tests::materialize_opens_regression_when_closed_in_done ... ok
+test engine::materialize_fracture_pbi::tests::remote_hash_open_blocks_and_done_only_is_regression ... ok
+test engine::materialize_fracture_pbi::tests::self_hosted_linear_ignores_orphan_markdown ... ok
+test engine::materialize_fracture_pbi::tests::slugify_truncates_and_normalizes ... ok
+test engine::materialize_fracture_pbi::tests::unconfigured_does_not_write_markdown ... ok
+test engine::materialize_kaizen_alert_doc::tests::kaizen_alert_doc_hash_deterministic_and_order_invariant ... ok
+test engine::materialize_kaizen_alert_doc::tests::materialize_dedupes_open_doc_same_files_different_review ... ok
+test engine::materialize_kaizen_alert_doc::tests::materialize_kaizen_alert_doc_creates_and_idempotent ... ok
+test engine::materialize_kaizen_alert_doc::tests::materialize_kaizen_alert_doc_rejects_empty_files ... ok
+test engine::notify_humanized_pr_merged::tests::notify_humanized_commit_summary_from_data_parses ... ok
+test engine::notify_humanized_pr_merged::tests::notify_humanized_prompt_git_failsoft_omits_subject_files ... ok
+test engine::notify_humanized_pr_merged::tests::notify_humanized_prompt_includes_kernel_and_ecst_not_anomaly ... ok
+test engine::notify_humanized_pr_merged::tests::notify_humanized_prompt_injects_git_facts_only_from_summary ... ok
+test engine::notify_humanized_pr_merged::tests::notify_humanized_prompt_truncated_note ... ok
+test engine::notify_humanized_pr_merged::tests::notify_humanized_skipped_when_not_merged ... ok
+test engine::notify_humanized_pr_merged::tests::notify_humanized_synthesis_from_capsule_reads_result_text ... ok
+test engine::notify_humanized_pr_merged::tests::notify_humanized_truncate_max_two_lines ... ok
+test engine::notify_humanized_pr_merged::tests::tg_ca4_assemble_ready_synthesis ... ok
+test engine::notify_humanized_pr_merged::tests::tg_ca4_prompt_castellano_no_english_business_value ... ok
+test engine::notify_humanized_pr_merged::tests::tg_ca5_assemble_omission_explicit ... ok
+test engine::persist_pec_correlation_proof::tests::persist_skips_without_correlation_id ... ok
+test engine::persist_pec_correlation_proof::tests::persist_writes_namespaced_proof ... ok
+test engine::persist_pec_correlation_proof::tests::route_persists_proof_then_purges_parent ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::delivery_phase_failed_stamps_title_friction ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::filter_snapshot_commit_files_skips_untracked_todos_ajeno ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::filter_snapshot_skips_starter_kit_dev_vault ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::map_arguments_3_to_pr_title_metachar ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::map_shell_metachar_error_to_pr_body_metachar ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::parse_porcelain_paths_cquoted_unicode_and_delete ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::parse_porcelain_paths_rename ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::parse_porcelain_paths_untracked_and_modified ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::parse_star_branch_from_branch_list_local ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::porcelain_excluding_preserved_untracked_todos_filters_ajeno ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::pr_body_file_path_is_safe_token ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::resolve_pr_body_file_dir_from_persist_ref ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::sanitize_shell_argv_token_specimen_gt ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::snapshot_branch_aligned_requires_exact_name ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::snapshot_branch_mismatch_sets_error_code ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::snapshot_dirty_failure_sets_error_code ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::snapshot_hash_advanced_requires_both_refs_move ... ok
+test engine::phase_capsules::delivery_close_kaizen_tests::snapshot_vault_keeps_env_example ... ok
+test engine::phase_capsules::emit_presented_tests::emit_presented_blocks_missing_pr_url ... ok
+test engine::phase_capsules::emit_presented_tests::presented_seal_skips_gh_view_when_forja_already_attempted_gh ... ok
+test engine::phase_capsules::emit_presented_tests::presented_seal_skips_gh_view_without_forja_blocked_flag ... ok
+test engine::phase_capsules::emit_presented_tests::presented_seal_uses_state_pr_url_without_gh ... ok
+test engine::phase_capsules::emit_presented_tests::resolve_pr_url_prefers_state_over_inputs ... ok
+test engine::phase_capsules::evolution_audit_ca12_tests::evolution_audit_gate_blocks_unregistered_material_ca12 ... [HEAD desacoplado fac316e4] test: ca12 unregistered material
+ 1 file changed, 1 insertion(+)
+ create mode 100644 SddIA/tools/_ca12_smoke_probe.txt
+ok
+test engine::phase_capsules::evolution_audit_ca12_tests::evolution_audit_gate_skip_lab ... ok
+test engine::phase_capsules::evolution_audit_ca12_tests::evolution_gate_args_include_sync_base_not_if_touched ... ok
+test engine::phase_capsules::evolution_audit_ca12_tests::is_delete_push_uses_local_sha_zeros_not_remote ... d_local=1 d_real=0
+ok
+test engine::phase_capsules::evolution_audit_ca12_tests::pre_push_hook_runs_evolution_gate_only_when_no_branches_ca7 ... z0=0 z1=1 z2=1
+ok
+test engine::phase_capsules::feature_dcc_parent_fail_soft_tests::aggregator_treats_parent_fail_soft_as_success ... ok
+test engine::phase_capsules::feature_dcc_parent_fail_soft_tests::hard_when_child_succeeded ... ok
+test engine::phase_capsules::feature_dcc_parent_fail_soft_tests::hard_when_push_but_apertura_failed_without_fail_soft ... ok
+test engine::phase_capsules::feature_dcc_parent_fail_soft_tests::hard_when_snapshot_failed_without_physical_threshold ... ok
+test engine::phase_capsules::feature_dcc_parent_fail_soft_tests::physical_fallback_from_remote_phase_executed ... ok
+test engine::phase_capsules::feature_dcc_parent_fail_soft_tests::soft_when_pr_url_and_hygiene_error ... ok
+test engine::phase_capsules::feature_dcc_parent_fail_soft_tests::soft_when_push_and_child_fail_soft_phase ... ok
+test engine::phase_capsules::feature_dcc_parent_fail_soft_tests::soft_when_telemetry_io_failed_after_push ... ok
+test engine::phase_capsules::index_integrity_audit_tests::index_integrity_gate_blocks_corrupt_process_hash ... ok
+test engine::phase_capsules::index_integrity_audit_tests::index_integrity_gate_skip_lab ... ok
+test engine::phase_terminal::tests::blocked_status_is_global_failure ... ok
+test engine::phase_terminal::tests::code_priority_cerbero_before_di_gate ... ok
+test engine::phase_terminal::tests::fail_soft_declared_does_not_fail_global ... ok
+test engine::phase_terminal::tests::ppr_blocked_phase_matches_witness_semantics ... ok
+test engine::phase_terminal::tests::t1_mix_executed_and_failed_is_global_failure ... ok
+test engine::phase_terminal::tests::t2_skipped_simulated_awaiting_are_not_failure ... ok
+test engine::phase_terminal::tests::t2b_argos_block_without_phase_failure ... ok
+test engine::phase_terminal::tests::t3_cerbero_config_error_code_propagated ... ok
+test engine::phase_terminal::tests::t4_di_gate_failed_fixture ... ok
+test engine::phase_terminal::tests::t5_cerbero_rbac_failed_fixture ... ok
+test engine::phase_terminal::tests::t6_capsule_invoke_failed_fixture ... ok
+test engine::phase_terminal::tests::t7_agent_runtime_failed_fixture ... ok
+test engine::phase_terminal::tests::t8_persistencia_capability_failed ... ok
+test engine::phase_terminal::tests::t9_regression_62b201cf_persistencia_oficial ... ok
+test engine::policy_validator::tests::parses_contexts_from_norm_file ... ok
+test engine::policy_validator::tests::policy_validator_agent_policies_ok ... ok
+test engine::policy_validator::tests::policy_validator_rejects_unknown_context ... ok
+test engine::policy_validator::tests::policy_validator_tool_domain_ok ... ok
+test engine::policy_validator::tests::policy_validator_tracker_operations_tool_ok ... ok
+test engine::progress_trace::tests::emit_skipped_without_correlation_id ... ok
+test engine::progress_trace::tests::emit_writes_under_progress_leaf_not_telemetry ... ok
+test engine::progress_trace::tests::end_message_includes_agent_verdict ... ok
+test engine::progress_trace::tests::io_failure_does_not_panic ... ok
+test engine::progress_trace::tests::map_phase_name_covers_spec_and_closure ... ok
+test engine::progress_trace::tests::short_verdict_prefers_phase_message_then_handoff ... ok
+test engine::progress_trace::tests::unknown_phase_defaults_implementation_with_raw_metadata ... ok
+test engine::project_binding::tests::bind_core_dot_project_root ... ok
+test engine::project_binding::tests::bind_core_ignores_inputs_trunk_direct_override ... ok
+test engine::project_binding::tests::bind_core_still_rejects_absolute_nested_real_project ... ok
+test engine::project_binding::tests::bind_core_tolerates_absolute_refine_lab_in_index ... ok
+test engine::project_binding::tests::bind_external_rejects_relative ... ok
+test engine::project_binding::tests::codex_event_without_authority_is_no_subscriber ... ok
+test engine::project_binding::tests::contract_1_3_0_accepts_done_gate_linear_after_hu_b ... ok
+test engine::project_binding::tests::contract_accepts_1_1_0_and_rejects_bad_env_ref ... ok
+test engine::project_binding::tests::contract_accepts_1_2_0_tracker_and_rejects_bad_provider ... ok
+test engine::project_binding::tests::contract_accepts_1_3_0_tracker_todo_and_done_gate_git ... ok
+test engine::project_binding::tests::contract_accepts_state_map_validated_and_rejects_unknown_key ... ok
+test engine::project_binding::tests::contract_rejects_bad_version_uuid_and_enum ... ok
+test engine::project_binding::tests::doc_path_stays_inside_project_root ... ok
+test engine::project_binding::tests::file_default_and_rejects_both_and_contradiction ... ok
+test engine::project_binding::tests::inputs_override_recorded_on_bind ... ok
+test engine::project_binding::tests::main_push_double ... ok
+test engine::project_binding::tests::precedence_inputs_over_project_over_default ... ok
+test engine::project_binding::tests::unregistered_and_missing_git_and_nested ... ok
+test engine::pull_request_review::tests::handoff_skips_without_verdict ... ok
+test engine::pull_request_review::tests::ppr_fail_soft_friction_patterns ... ok
+test engine::pull_request_review::tests::resolve_pr_branch_falls_back_to_branch_name ... ok
+test engine::pull_request_review::tests::resolve_pr_branch_prefers_pr_branch ... ok
+test engine::pull_request_review::tests::t_a3_blocked_err_classifier ... ok
+test engine::pull_request_review::tests::t_a3_no_true_pending_f5_convention ... ok
+test engine::pull_request_review::tests::t_a3_skip_verdict ... ok
+test engine::purge_sandbox_cache::tests::gate_accepts_cargo_target ... ok
+test engine::purge_sandbox_cache::tests::gate_rejects_home ... ok
+test engine::qa_attestation::tests::branch_slug_strips_feat_prefix ... ok
+test engine::qa_attestation::tests::ppr_verdict_from_validacion_frontmatter ... ok
+test engine::qa_attestation::tests::validate_docs_only_blocks_active_delta ... ok
+test engine::qa_attestation::tests::validate_ok_full_profile ... ok
+test engine::qa_attestation::tests::validate_rejects_bad_verdict ... ok
+test engine::qa_attestation::tests::validate_rejects_expired ... ok
+test engine::qa_attestation::tests::validate_rejects_tree_mismatch ... ok
+test engine::qa_attestation::tests::worktree_allows_only_validacion_in_persist ... ok
+test engine::qa_profile::tests::docs_only_skips_rbac_phase ... ok
+test engine::qa_profile::tests::event_payload_qa_profile ... ok
+test engine::qa_profile::tests::full_profile_does_not_skip ... ok
+test engine::radamanto_batch_core::tests::allowlist_latency_exempt_without_catalog ... ok
+test engine::radamanto_batch_core::tests::bare_process_names_resolve_as_process ... ok
+test engine::radamanto_batch_core::tests::ci_job_failed_ca9_neg_empty_map_zero_degraded ... ok
+test engine::radamanto_batch_core::tests::ci_job_failed_quota_emits_chronic_then_skips ... ok
+test engine::radamanto_batch_core::tests::ci_job_failed_retries_emit_when_unsealed ... ok
+test engine::radamanto_batch_core::tests::ci_job_failed_writes_ledger_not_stats ... ok
+test engine::radamanto_batch_core::tests::cognitive_quota_alert_without_degraded_emit ... ok
+test engine::radamanto_batch_core::tests::fire_completed_and_failed_are_not_hollow ... ok
+test engine::radamanto_batch_core::tests::hollow_by_cycle_phase ... ok
+test engine::radamanto_batch_core::tests::ppr_detached_child_failure_is_hollow ... ok
+test engine::radamanto_batch_core::tests::process_entity_is_latency_exempt_via_type ... ok
+test engine::radamanto_batch_core::tests::success_rate_min_lookup_by_entity_type ... ok
+test engine::radamanto_batch_core::tests::t_a2_hollow_config_error_not_podado ... ok
+test engine::radamanto_batch_core::tests::t_a2_hollow_entity_revoked_self ... ok
+test engine::radamanto_batch_core::tests::t_a2_hollow_rbac_denied_not_podado ... ok
+test engine::radamanto_batch_core::tests::t_a2_hollow_revoked_other_provider_not_podado ... ok
+test engine::radamanto_batch_core::tests::thresholds_110_process_intact ... ok
+test engine::residual_runner::tests::adu_ca1_phase_reports_alone_suffice ... ok
+test engine::residual_runner::tests::adu_ca1_verdict_skips_when_documental_blocked ... ok
+test engine::residual_runner::tests::adu_ca2_verdict_invokes_when_documental_ok ... ok
+test engine::route_domain_core::aut52_route_redb::aut52_route_domain_batch_rejects_redb_path ... ok
+test engine::route_domain_core::aut52_route_redb::aut52_runtime_db_path_is_detected ... ok
+test engine::route_domain_core::blocking_tests::adu_ca11_pec_failed_has_fase_motivo_no_failed_slash ... ok
+test engine::route_domain_core::blocking_tests::adu_ca12_awaiting_agents_shown_completed_hidden ... ok
+test engine::route_domain_core::blocking_tests::adu_ca13_notice_and_without_notice ... ok
+test engine::route_domain_core::blocking_tests::adu_ca3_dedupe_same_key_skips_second ... ok
+test engine::route_domain_core::blocking_tests::adu_ca4_different_commit_not_suppressed ... ok
+test engine::route_domain_core::blocking_tests::aiua_process_requested_maps_like_kalma2 ... ok
+test engine::route_domain_core::blocking_tests::assemble_sdlc_forbidden_process_fails ... ok
+test engine::route_domain_core::blocking_tests::assemble_telegram_empty_text_skips ... ok
+test engine::route_domain_core::blocking_tests::aut63_kaizen_idea_captured_l_a4_intentional_sink_routes ... ok
+test engine::route_domain_core::blocking_tests::batch_anchor_error_fallback_prefixed ... ok
+test engine::route_domain_core::blocking_tests::batch_anchor_error_prefers_last_causa ... ok
+test engine::route_domain_core::blocking_tests::capsule_error_trace_falls_back_to_feedback ... ok
+test engine::route_domain_core::blocking_tests::capsule_error_trace_opaque_only_when_empty ... ok
+test engine::route_domain_core::blocking_tests::capsule_error_trace_prefers_error_field ... ok
+test engine::route_domain_core::blocking_tests::classify_publish_error_vs_unreachable ... ok
+test engine::route_domain_core::blocking_tests::consumer_profile_skips_forge_actions ... ok
+test engine::route_domain_core::blocking_tests::dispatch_persist_pec_proof_writes_file ... ok
+test engine::route_domain_core::blocking_tests::dlt_telemetry_simulate_writes_proof ... ok
+test engine::route_domain_core::blocking_tests::dlt_telemetry_skip_config_missing_does_not_fail ... ok
+test engine::route_domain_core::blocking_tests::dlt_transient_network_trace_positives_and_opaque_negative ... ok
+test engine::route_domain_core::blocking_tests::domain_process_catalog_inputs_include_ecst ... ok
+test engine::route_domain_core::blocking_tests::email_triaged_actionable_builds_poke ... ok
+test engine::route_domain_core::blocking_tests::email_triaged_noise_yields_no_telegram ... ok
+test engine::route_domain_core::blocking_tests::emit_dlt_batch_fracture_issues_inputs_without_version_still_emits ... ok
+test engine::route_domain_core::blocking_tests::emit_dlt_batch_fracture_publish_error_friction ... ok
+test engine::route_domain_core::blocking_tests::emit_dlt_batch_fracture_suppressed_on_enetunreach ... ok
+test engine::route_domain_core::blocking_tests::emit_dlt_batch_fracture_suppressed_on_gas_version_mismatch ... ok
+test engine::route_domain_core::blocking_tests::emit_dlt_batch_fracture_suppressed_on_object_lock ... ok
+test engine::route_domain_core::blocking_tests::emit_dlt_batch_fracture_writes_pending ... ok
+test engine::route_domain_core::blocking_tests::enqueue_dlt_reanchor_writes_queue_file ... ok
+test engine::route_domain_core::blocking_tests::local_only_events_do_not_invoke_iota_and_external_seals_the_store ... ok
+test engine::route_domain_core::blocking_tests::local_qa_event_detection ... ok
+test engine::route_domain_core::blocking_tests::promote_failure_keeps_delegation_status ... ok
+test engine::route_domain_core::blocking_tests::pull_request_iota_config_missing_still_fails ... ok
+test engine::route_domain_core::blocking_tests::pull_request_merged_subscription_is_humanized_action_not_telegram_tool ... ok
+test engine::route_domain_core::blocking_tests::resolve_dlt_reanchor_respects_cumulo ... ok
+test engine::route_domain_core::blocking_tests::resolve_reanchor_finds_dead_letter_when_pending_gone ... ok
+test engine::route_domain_core::blocking_tests::resolve_reanchor_finds_processed_when_pending_gone ... ok
+test engine::route_domain_core::blocking_tests::resolve_reanchor_keeps_live_pending_path ... ok
+test engine::route_domain_core::blocking_tests::resolve_reanchor_none_when_all_buckets_empty ... ok
+test engine::route_domain_core::blocking_tests::simulate_batch_preseal_stamps_lab_sim_without_capsule ... ok
+test engine::route_domain_core::blocking_tests::sync_route_guard_sets_and_restores_env ... ok
+test engine::route_domain_core::blocking_tests::telegram_message_for_pec_includes_correlation ... ok
+test engine::route_domain_core::blocking_tests::telegram_message_for_pr_merged_canonical_without_pr_url ... ok
+test engine::route_domain_core::blocking_tests::telegram_message_for_pr_merged_includes_pr_url ... ok
+test engine::route_domain_core::blocking_tests::telegram_message_for_pr_merged_uses_payload_target_branch ... ok
+test engine::route_domain_core::blocking_tests::tg_ca1_pec_accept_pr_success_silent ... ok
+test engine::route_domain_core::blocking_tests::tg_ca2_pec_ppr_failed_silent ... ok
+test engine::route_domain_core::blocking_tests::tg_ca3_pec_non_silent_adu_contract ... ok
+test engine::route_domain_core::blocking_tests::validate_blocking_rejects_unknown_event ... ok
+test engine::route_domain_core::blocking_tests::validate_blocking_rejects_wrong_target_agent ... ok
+test engine::route_domain_core::blocking_tests::witness_local_qa_a55f1d12_subscriber_exit_one ... ok
+test engine::route_domain_core::tier_dispatch::aut70_native_action_err_surfaces_without_fallback ... ok
+test engine::route_domain_core::tier_dispatch::store_backed_native_capsule_does_not_use_cognitive_runtime ... ok
+test engine::route_domain_core::tier_dispatch::tier_none_does_not_spawn_and_cognitive_receives_ecst_and_workspace ... ok
+test engine::suite_execution_requested::tests::emit_suite_execution_requested_rejects_missing_suite ... ok
+test engine::suite_execution_requested::tests::emit_suite_execution_requested_writes_domain_event ... ok
+test engine::sync_entity_index::tests::sync_entity_index_audit_existing_action ... ok
+test engine::sync_entity_index::tests::sync_entity_index_delete_idempotent ... ok
+test engine::sync_entity_index::tests::sync_entity_index_local_topology_skip ... ok
+test engine::sync_entity_index::tests::sync_entity_index_norm_noop ... ok
+test engine::telemetry_receipt::tests::extract_from_thermodynamic_cost_in_body ... ok
+test engine::telemetry_receipt::tests::maps_thermodynamic_cost_to_receipt ... ok
+test engine::telemetry_receipt::tests::merge_sums_tokens_and_or_degraded ... ok
+test engine::thermodynamic::tests::adu_ca13_notice_orphan_then_merge_done ... ok
+test engine::thermodynamic::tests::adu_ca13_notice_priority_hygiene_over_orphan ... ok
+test engine::thermodynamic::tests::attach_receipt_from_state_to_ref_payload ... ok
+test engine::thermodynamic::tests::completed_without_skip_is_not_hollow ... ok
+test engine::thermodynamic::tests::derive_awaiting_agents_priority ... ok
+test engine::thermodynamic::tests::derive_completed_without_simulated ... ok
+test engine::thermodynamic::tests::derive_initialized_when_simulated ... ok
+test engine::thermodynamic::tests::derive_none_for_non_lifecycle ... ok
+test engine::thermodynamic::tests::derive_ppr_simulated_is_initialized ... ok
+test engine::thermodynamic::tests::derive_stop_after_is_awaiting_not_completed ... ok
+test engine::thermodynamic::tests::emit_initialized_pec_writes_orchestration ... ok
+test engine::thermodynamic::tests::fire_failed_is_not_hollow ... ok
+test engine::thermodynamic::tests::hollow_initialized_is_cycle_phase_not_lab_flag ... ok
+test engine::thermodynamic::tests::hollow_lab_skip_closure_on_success ... ok
+test engine::tracker_item_document::tests::parse_linear_fence_and_seal_refined ... ok
+test engine::tracker_item_document::tests::roundtrip_file_markdown ... ok
+test engine::tracker_lifecycle_port::tests::layout_follows_cumulo_and_backlog_ignores_other_dirs ... ok
+test engine::tracker_lifecycle_port::tests::resolver_file_does_not_open_remote_and_linear_does_not_open_backlog ... ok
+test engine::tracker_lifecycle_port::tests::same_verb_input_on_file_and_linear ... ok
+test engine::tracker_lifecycle_port::tests::substrate_file_reads_buckets_remote_does_not ... ok
+test engine::tracker_operations_gate::tests::ac_rbac_1_stamp_process_allows_create_issue_gate ... ok
+test engine::tracker_operations_gate::tests::ac_rbac_1_tracker_process_allows_create_issue ... ok
+test engine::tracker_operations_gate::tests::ac_rbac_2_feature_rejects_create_issue ... ok
+test engine::tracker_operations_gate::tests::ac_rbac_3_norm_excludes_delete_keeps_create ... ok
+test engine::tracker_operations_gate::tests::ac_wh_1_norm_includes_signed_webhooks ... ok
+test engine::tracker_operations_gate::tests::done_state_transition_blocked_outside_tracker_stamp ... ok
+test engine::tracker_operations_gate::tests::forge_pbi_allows_create_issue_gate ... ok
+test engine::tracker_operations_gate::tests::refine_item_allows_create_issue_gate ... ok
+test engine::tracker_outbound::tests::ac2_update_issue_description_writes_jsonl ... ok
+test engine::tracker_outbound::tests::ac_out_1_accepted_writes_five_fields ... ok
+test engine::tracker_outbound::tests::ac_out_1_create_issue_uses_result_ref ... ok
+test engine::tracker_outbound::tests::ac_out_1_fetch_does_not_write ... ok
+test engine::tracker_outbound::tests::ac_out_2_line_has_no_token_or_graphql_body ... ok
+test engine::tracker_outbound::tests::provides_matches_binding_row ... ok
+test engine::tracker_outbound::tests::records_only_the_resolved_provider ... ok
+test engine::tracker_pbi_meta::tests::attach_opaque_pbi_ref_from_objectives_for_merged_seal ... ok
+test engine::tracker_pbi_meta::tests::looks_like_issue_identifier_rejects_paths ... ok
+test engine::tracker_pbi_meta::tests::objectives_tracker_ref_feeds_the_seal ... ok
+test engine::tracker_pbi_meta::tests::presented_event_id_from_store_rows ... ok
+test engine::tracker_pbi_meta::tests::presented_in_store_yields_tracker_ref ... ok
+test engine::tracker_pbi_meta::tests::resolve_lifecycle_from_objectives_tracker_ref_only ... ok
+test engine::tracker_pbi_meta::tests::resolve_lifecycle_pbi_ref_as_identifier_not_path ... ok
+test engine::tracker_pbi_meta::tests::resolve_tracker_ref_from_opaque_pbi_ref_without_file ... ok
+test engine::tracker_pbi_meta::tests::tracker_ref_from_pbi_reads_frontmatter ... ok
+test engine::validacion_runtime_parity::tests::detects_kalma2_bridge_in_persist_docs ... ok
+test engine::verify_process_integrity::tests::verify_skips_contract_and_index ... ok
+test engine::workspace_init::tests::detector_accepts_bug_fix_with_project_slug_only ... ok
+test engine::workspace_init::tests::detector_accepts_delegates_git_manager ... ok
+test engine::workspace_init::tests::detector_accepts_requires_capability_without_delegates ... ok
+test engine::workspace_init::tests::detector_rejects_unrelated_phase ... ok
+test engine::workspace_init::tests::distill_mission_strips_pbi_yaml_dump ... ok
+test engine::workspace_init::tests::maybe_emit_validation_started_is_aut75_noop ... ok
+test engine::workspace_init::tests::maybe_emit_validation_started_skips_simulated ... ok
+test engine::workspace_init::tests::maybe_emit_work_initiated_only_propagates_after_phase1 ... ok
+test engine::workspace_init::tests::path_in_scope_accepts_pbi_ref_with_unicode_after_unescape ... ok
+test engine::workspace_init::tests::path_in_scope_accepts_tracker_peaje_audit ... ok
+test engine::workspace_init::tests::refactor_prefix_is_not_rewritten_to_feat ... ok
+test engine::workspace_init::tests::refactorization_default_prefix_is_refactor ... ok
+test engine::workspace_init::tests::run_checkout_failure_stops_before_base_and_persist ... ayuda: Usando 'master' como el nombre de la rama inicial. Este nombre de rama predeterminado
+ayuda: está sujeto a cambios. Para configurar el nombre de la rama inicial para usar en todos
+ayuda: de sus nuevos repositorios, reprimiendo esta advertencia, llama a:
+ayuda: 
+ayuda: 	git config --global init.defaultBranch <nombre>
+ayuda: 
+ayuda: Los nombres comúnmente elegidos en lugar de 'master' son 'main', 'trunk' y
+ayuda: 'development'. Se puede cambiar el nombre de la rama recién creada mediante este comando:
+ayuda: 
+ayuda: 	git branch -m <nombre>
+Inicializado repositorio Git vacío en /tmp/.tmp72Rsos/.git/
+[master (commit-raíz) 5a2ceed] init
+ 3 files changed, 6 insertions(+)
+ create mode 100644 README.md
+ create mode 100644 SddIA/core/cumulo.paths.json
+ create mode 120000 SddIA/target
+ok
+test engine::workspace_init::tests::run_clean_tree_checks_out_work_branch_before_base_sync ... ayuda: Usando 'master' como el nombre de la rama inicial. Este nombre de rama predeterminado
+ayuda: está sujeto a cambios. Para configurar el nombre de la rama inicial para usar en todos
+ayuda: de sus nuevos repositorios, reprimiendo esta advertencia, llama a:
+ayuda: 
+ayuda: 	git config --global init.defaultBranch <nombre>
+ayuda: 
+ayuda: Los nombres comúnmente elegidos en lugar de 'master' son 'main', 'trunk' y
+ayuda: 'development'. Se puede cambiar el nombre de la rama recién creada mediante este comando:
+ayuda: 
+ayuda: 	git branch -m <nombre>
+Inicializado repositorio Git vacío en /tmp/.tmp0RJ4GD/repo/.git/
+[master (commit-raíz) ed8470a] init
+ 3 files changed, 6 insertions(+)
+ create mode 100644 README.md
+ create mode 100644 SddIA/core/cumulo.paths.json
+ create mode 120000 SddIA/target
+Inicializado repositorio Git vacío en /tmp/.tmp0RJ4GD/origin.git/
+To /tmp/.tmp0RJ4GD/origin.git
+ * [new branch]      HEAD -> main
+rama 'main' configurada para rastrear 'origin/main'.
+Clonando en '/tmp/.tmp0RJ4GD/other'...
+hecho.
+[main db7caac] advance
+ 1 file changed, 1 insertion(+)
+ create mode 100644 advance.txt
+To /tmp/.tmp0RJ4GD/origin.git
+   ed8470a..db7caac  main -> main
+ok
+test engine::workspace_init::tests::run_dirty_outside_scope_aborts_without_system_fracture ... ayuda: Usando 'master' como el nombre de la rama inicial. Este nombre de rama predeterminado
+ayuda: está sujeto a cambios. Para configurar el nombre de la rama inicial para usar en todos
+ayuda: de sus nuevos repositorios, reprimiendo esta advertencia, llama a:
+ayuda: 
+ayuda: 	git config --global init.defaultBranch <nombre>
+ayuda: 
+ayuda: Los nombres comúnmente elegidos en lugar de 'master' son 'main', 'trunk' y
+ayuda: 'development'. Se puede cambiar el nombre de la rama recién creada mediante este comando:
+ayuda: 
+ayuda: 	git branch -m <nombre>
+Inicializado repositorio Git vacío en /tmp/.tmpAif11a/.git/
+[master (commit-raíz) ed8470a] init
+ 3 files changed, 6 insertions(+)
+ create mode 100644 README.md
+ create mode 100644 SddIA/core/cumulo.paths.json
+ create mode 120000 SddIA/target
+ok
+test engine::workspace_init::tests::run_reentry_on_branch_skips_git_sync_when_dirty_only_in_persist ... ayuda: Usando 'master' como el nombre de la rama inicial. Este nombre de rama predeterminado
+ayuda: está sujeto a cambios. Para configurar el nombre de la rama inicial para usar en todos
+ayuda: de sus nuevos repositorios, reprimiendo esta advertencia, llama a:
+ayuda: 
+ayuda: 	git config --global init.defaultBranch <nombre>
+ayuda: 
+ayuda: Los nombres comúnmente elegidos en lugar de 'master' son 'main', 'trunk' y
+ayuda: 'development'. Se puede cambiar el nombre de la rama recién creada mediante este comando:
+ayuda: 
+ayuda: 	git branch -m <nombre>
+Inicializado repositorio Git vacío en /tmp/.tmpL0alMG/.git/
+[master (commit-raíz) 478489d] init
+ 3 files changed, 6 insertions(+)
+ create mode 100644 README.md
+ create mode 100644 SddIA/core/cumulo.paths.json
+ create mode 120000 SddIA/target
+Cambiado a nueva rama 'fix/reentry-persist'
+ok
+test engine::workspace_init::tests::run_skips_git_when_profile_git_not_required ... ok
+test engine::workspace_init::tests::tekton_delegate_detector ... ok
+test engine::workspace_init::tests::workspace_init_emits_work_initiated_after_phase1 ... ok
+test engine::workspace_init::tests::workspace_init_respects_lab_skip_work_initiated ... ok
+test envelope::tests::envelope_serializes_exit_code_field ... ok
+test forges::capability_contract::tests::adopt_inserts_block_and_is_byte_reversible ... ok
+test forges::capability_contract::tests::adopt_into_empty_object_is_valid_json ... ok
+test forges::capability_contract::tests::adopt_is_idempotent_and_keeps_uuid ... ok
+test forges::capability_contract::tests::all_repo_capability_contracts_carry_valid_identity ... ok
+test forges::capability_contract::tests::create_over_existing_without_identity_is_error ... ok
+test forges::capability_contract::tests::create_rejects_identity_in_seed_and_invalid_schema ... ok
+test forges::capability_contract::tests::create_writes_identity_and_is_idempotent ... ok
+test forges::capability_contract::tests::dangerous_names_are_rejected ... ok
+test forges::capability_contract::tests::delete_is_error ... ok
+test forges::capability_contract::tests::directory_comes_from_cumulo_not_hardwired ... ok
+test forges::capability_contract::tests::manual_edit_is_detected_as_hash_drift ... ok
+test forges::capability_contract::tests::patch_keeps_uuid_updates_hash_and_version ... ok
+test forges::capability_contract::tests::patch_on_identity_is_error ... ok
+test forges::capability_contract::tests::patch_producing_invalid_schema_writes_nothing ... ok
+test forges::capability_contract::tests::patch_requires_adopted_contract_and_new_version ... ok
+test forges::capability_contract::tests::semver_validation ... ok
+test forges::capability_contract::tests::update_without_patch_or_adopt_is_error ... ok
+test forges::common::tests::append_row_idempotent_by_name ... ok
+test forges::common::tests::bump_semver_patch_increments ... ok
+test forges::common::tests::canon_json_sorted_matches_python_separators ... ok
+test forges::common::tests::merge_daemon_capabilities_appends_yaml_and_index_cell ... ok
+test forges::common::tests::parse_frontmatter_reads_uuid_when_workspace_template_ends_with_delimiter ... ok
+test forges::common::tests::patch_daemon_declaration_keeps_uuid_and_bumps_index_version ... ok
+test forges::common::tests::refresh_process_hash_feature_bugfix ... ignored, one-off: refresh hash_signature on process YAMLs
+test forges::common::tests::refresh_process_hash_replaces_quoted_value ... ok
+test forges::common::tests::split_md_frontmatter_preserves_capability_taxonomy_catalog ... ok
+test forges::common::tests::sync_daemons_index_census_updates_footer ... ok
+test forges::factory::tests::ac_juris_default_non_membership_writes_core ... ok
+test forges::factory::tests::ac_juris_domain_flag_writes_domain_root ... ok
+test forges::factory::tests::ac_smoke_domain_no_core_executable ... ok
+test forges::factory::tests::ac_uniq_alias_cross_root_aborts ... ok
+test forges::factory::tests::ac_uniq_packing_name_blocks_core_create ... ok
+test forges::factory::tests::catalog_cognitive_roles_match_the_contract ... ok
+test forges::factory::tests::cognitive_role_index_does_not_add_a_row ... ok
+test forges::factory::tests::ev_aud_003_create_fail_closed_deletes_artifact_if_index_write_fails ... ok
+test forges::factory::tests::ev_aud_003_create_persists_requested_phases_not_stub ... ok
+test forges::factory::tests::ev_aud_003_evolution_audit_fixture_recreates_without_stub ... ok
+test forges::factory::tests::event_hash_refresh_update_on_repo_work_initiated ... ok
+test forges::factory::tests::hash_refresh_delivery_committed_targets_codex ... ok
+test forges::factory::tests::process_forge_body_replacement_seals_phases_hash_not_artifact_hash ... ok
+test forges::factory::tests::process_forge_update_with_phases_adds_requires_capability_preserves_inputs ... ok
+test forges::factory::tests::process_forge_update_without_phases_remains_hash_only ... ok
+test forges::factory::tests::resolve_event_contract_prefers_codex_delivery_committed ... ok
+test forges::factory::tests::run_norm_forge_emits_dependencies_and_hard_constraints ... ok
+test forges::factory::tests::tool_forge_canon_matches_python_shape ... ok
+test forges::factory::tests::tool_forge_hash_signature_deterministic_with_lab_sha256 ... ok
+test forges::factory::tests::update_existing_skill_without_patch_is_error ... ok
+test forges::factory::tests::update_existing_tool_without_patch_is_error ... ok
+
+test result: ok. 856 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 40.54s
+
+     Running unittests src/main.rs (target/debug/deps/execute_process-89575439e5f0f670)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/dlt_telemetry.rs (target/debug/deps/dlt_telemetry-55cd83d92e99555f)
+
+running 2 tests
+test fractal_fanout_simulate_persists_proof_then_purges ... ok
+test fractal_fanout_skip_config_does_not_dead_letter ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.51s
+
+     Running tests/eda_store_io_matrix_fractal.rs (target/debug/deps/eda_store_io_matrix_fractal-e10787b37b3151d8)
+
+running 5 tests
+test fractal_domain_matrix_redb_sample ... ok
+test fractal_orchestration_matrix_redb ... ok
+test fractal_telemetry_matrix_mock ... ok
+test fractal_telemetry_matrix_redb ... ok
+test route_telemetry_loads_from_store_without_json_file ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.49s
+
+     Running tests/eda_store_io_matrix_pending.rs (target/debug/deps/eda_store_io_matrix_pending-3457ff0056b1ae4b)
+
+running 4 tests
+test pending_bus_matrix_mock_all_catalog_types ... ok
+test pending_bus_matrix_redb_all_catalog_types ... ok
+test pending_bus_matrix_redb_stratified_sample ... ok
+test tm8_presented_has_pending_subscriber_rows_after_stamp ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.14s
+
+     Running tests/event_store_writers.rs (target/debug/deps/event_store_writers-cf8df704b354034a)
+
+running 6 tests
+test mock_publish_does_not_materialize_redb_file ... ok
+test progress_frames_land_in_the_store ... ok
+test redb_domain_event_has_no_new_json ... ok
+test redb_two_subscriber_processing_rows ... ok
+test terminal_witness_exists_redb_skipped_without_fs_witness ... ok
+test terminal_witness_exists_redb_without_fs_witness ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.80s
+
+     Running tests/memory_evolution_ingest.rs (target/debug/deps/memory_evolution_ingest-3c278a53bd7b03b0)
+
+running 3 tests
+test ingests_telemetry_captured_to_vector_store ... ok
+test json_fallback_is_not_used ... ok
+test memory_evolution_ingest_persists_to_lancedb ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.51s
+
+     Running unittests src/lib.rs (target/debug/deps/file_tracker_adapter-c26268636399c335)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/file_tracker_adapter-80b45016f552fa02)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/filesystem_manager-06bf3762f2133cb7)
+
+running 4 tests
+test tests::dot_lists_project_root ... ok
+test tests::empty_target_path_is_not_scope_escape ... ok
+test tests::patch_applies_and_rejects_mismatch ... ok
+test tests::rejects_parent_dir ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/gemini_http_infer-842d3355f972de65)
+
+running 19 tests
+test tests::classify_error_code_table ... ok
+test tests::effort_maps_to_thinking_level ... ok
+test tests::empty_candidate_uses_finish_reason ... ok
+test tests::extract_text_from_candidate ... ok
+test tests::generate_url_joins_model ... ok
+test tests::generation_config_merges_temperature_and_thinking ... ok
+test tests::generation_config_omitted_when_empty ... ok
+test tests::map_404_catalog_prefixes_unavailable ... ok
+test tests::mock_result_prefixes_lab ... ok
+test tests::payload_has_no_model_slug_literal ... ok
+test tests::payload_includes_system_instruction ... ok
+test tests::required_fields_reject_empty_model ... ok
+test tests::thinking_level_alias_camel_case ... ok
+test tests::thinking_level_empty_is_none ... ok
+test tests::thinking_level_from_env ... ok
+test tests::thinking_level_invalid_errors ... ok
+test tests::thinking_level_request_beats_env ... ok
+test tests::thinking_level_request_normalizes_high ... ok
+test tests::timeout_ms_overrides_env ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/git_manager-8cd84f6c5108ffcf)
+
+running 4 tests
+test tests::checkout_create_if_not_exists_when_branch_exists_is_idempotent ... ok
+test tests::git_add_rejected_as_ignored_english_gitignore ... ok
+test tests::git_add_rejected_as_ignored_not_generic_fail ... ok
+test tests::git_add_rejected_as_ignored_spanish_gitignore ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/commit_summary.rs (target/debug/deps/commit_summary-0a34baf26a827035)
+
+running 6 tests
+test commit_summary_rejects_extra_keys ... ayuda: Usando 'master' como el nombre de la rama inicial. Este nombre de rama predeterminado
+ayuda: está sujeto a cambios. Para configurar el nombre de la rama inicial para usar en todos
+ayuda: de sus nuevos repositorios, reprimiendo esta advertencia, llama a:
+ayuda: 
+ayuda: 	git config --global init.defaultBranch <nombre>
+ayuda: 
+ayuda: Los nombres comúnmente elegidos en lugar de 'master' son 'main', 'trunk' y
+ayuda: 'development'. Se puede cambiar el nombre de la rama recién creada mediante este comando:
+ayuda: 
+ayuda: 	git branch -m <nombre>
+Inicializado repositorio Git vacío en /tmp/gm-cs-126387-1794857498335325844/.git/
+[master (commit-raíz) b41f4ff] root
+ok
+test commit_summary_rejects_max_files_out_of_range ... ayuda: Usando 'master' como el nombre de la rama inicial. Este nombre de rama predeterminado
+ayuda: está sujeto a cambios. Para configurar el nombre de la rama inicial para usar en todos
+ayuda: de sus nuevos repositorios, reprimiendo esta advertencia, llama a:
+ayuda: 
+ayuda: 	git config --global init.defaultBranch <nombre>
+ayuda: 
+ayuda: Los nombres comúnmente elegidos en lugar de 'master' son 'main', 'trunk' y
+ayuda: 'development'. Se puede cambiar el nombre de la rama recién creada mediante este comando:
+ayuda: 
+ayuda: 	git branch -m <nombre>
+Inicializado repositorio Git vacío en /tmp/gm-cs-126387-1794857498345373422/.git/
+[master (commit-raíz) b41f4ff] root
+ok
+test commit_summary_rejects_unsafe_ref ... ayuda: Usando 'master' como el nombre de la rama inicial. Este nombre de rama predeterminado
+ayuda: está sujeto a cambios. Para configurar el nombre de la rama inicial para usar en todos
+ayuda: de sus nuevos repositorios, reprimiendo esta advertencia, llama a:
+ayuda: 
+ayuda: 	git config --global init.defaultBranch <nombre>
+ayuda: 
+ayuda: Los nombres comúnmente elegidos en lugar de 'master' son 'main', 'trunk' y
+ayuda: 'development'. Se puede cambiar el nombre de la rama recién creada mediante este comando:
+ayuda: 
+ayuda: 	git branch -m <nombre>
+Inicializado repositorio Git vacío en /tmp/gm-cs-126387-1794857498354764198/.git/
+[master (commit-raíz) b41f4ff] root
+ok
+test commit_summary_root_commit_inner_failure ... ayuda: Usando 'master' como el nombre de la rama inicial. Este nombre de rama predeterminado
+ayuda: está sujeto a cambios. Para configurar el nombre de la rama inicial para usar en todos
+ayuda: de sus nuevos repositorios, reprimiendo esta advertencia, llama a:
+ayuda: 
+ayuda: 	git config --global init.defaultBranch <nombre>
+ayuda: 
+ayuda: Los nombres comúnmente elegidos en lugar de 'master' son 'main', 'trunk' y
+ayuda: 'development'. Se puede cambiar el nombre de la rama recién creada mediante este comando:
+ayuda: 
+ayuda: 	git branch -m <nombre>
+Inicializado repositorio Git vacío en /tmp/gm-cs-126387-1794857498364335718/.git/
+[master (commit-raíz) b41f4ff] root
+ok
+test commit_summary_subject_and_files_first_parent ... ayuda: Usando 'master' como el nombre de la rama inicial. Este nombre de rama predeterminado
+ayuda: está sujeto a cambios. Para configurar el nombre de la rama inicial para usar en todos
+ayuda: de sus nuevos repositorios, reprimiendo esta advertencia, llama a:
+ayuda: 
+ayuda: 	git config --global init.defaultBranch <nombre>
+ayuda: 
+ayuda: Los nombres comúnmente elegidos en lugar de 'master' son 'main', 'trunk' y
+ayuda: 'development'. Se puede cambiar el nombre de la rama recién creada mediante este comando:
+ayuda: 
+ayuda: 	git branch -m <nombre>
+Inicializado repositorio Git vacío en /tmp/gm-cs-126387-1794857498376640405/.git/
+[master (commit-raíz) b41f4ff] root
+[master 5eee8aa] add two files
+ 2 files changed, 2 insertions(+)
+ create mode 100644 a.txt
+ create mode 100644 b.txt
+ok
+test commit_summary_truncates_subject_and_files ... ayuda: Usando 'master' como el nombre de la rama inicial. Este nombre de rama predeterminado
+ayuda: está sujeto a cambios. Para configurar el nombre de la rama inicial para usar en todos
+ayuda: de sus nuevos repositorios, reprimiendo esta advertencia, llama a:
+ayuda: 
+ayuda: 	git config --global init.defaultBranch <nombre>
+ayuda: 
+ayuda: Los nombres comúnmente elegidos en lugar de 'master' son 'main', 'trunk' y
+ayuda: 'development'. Se puede cambiar el nombre de la rama recién creada mediante este comando:
+ayuda: 
+ayuda: 	git branch -m <nombre>
+Inicializado repositorio Git vacío en /tmp/gm-cs-126387-1794857498396035480/.git/
+[master (commit-raíz) b41f4ff] root
+[master 33d831a] ABCDEFGHIJKLMNOPQRSTUVWXYZ
+ 5 files changed, 5 insertions(+)
+ create mode 100644 f0.txt
+ create mode 100644 f1.txt
+ create mode 100644 f2.txt
+ create mode 100644 f3.txt
+ create mode 100644 f4.txt
+ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running unittests src/main.rs (target/debug/deps/github_bridge_watcher-08168d73c233cc36)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/github_raw_fetcher-d6c76363aa5fa148)
+
+running 2 tests
+test tests::rejects_missing_asset_path ... ok
+test tests::sha256_prefix ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/io_choke-b443c532233b5aad)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/iota_immutable_publisher-bcb92113f7668f8e)
+
+running 4 tests
+test tests::format_relay_publish_error_includes_status_and_body ... ok
+test tests::lab_simulate_returns_digest ... ok
+test tests::merkle_array_payload_returns_root_and_proofs ... ok
+test tests::rejects_missing_action ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/iota_publish_relay-2dc49fe10721d5bb)
+
+running 6 tests
+test tests::grace_boundary_eq_is_outside ... ok
+test tests::grace_refused_does_not_kill ... ok
+test tests::health_url_strips_publish_path ... ok
+test tests::healthy_ticks_alive_no_kill ... ok
+test tests::post_grace_no_child_ticks_degraded ... ok
+test tests::post_grace_refused_kills_and_ticks_degraded ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/kalma2_bridge-be9759c333cbe104)
+
+running 51 tests
+test tests::accepted_body_identity_correlation_event ... ok
+test tests::aiua_genome_has_no_kalma2_ui_coupling ... ok
+test tests::aiua_handler_never_calls_kalma2_interact ... ok
+test tests::aiua_interact_route_before_static ... ok
+test tests::bridge_execute_path_has_no_eda_write_helpers ... ok
+test tests::build_status_body_projects_email_triaged ... ok
+test tests::build_status_body_projects_email_triaged_from_proof_after_purge ... ok
+test tests::build_status_body_resolves_proof_after_pec_gone ... ok
+test tests::client_timeout_is_at_least_gemini ... ok
+test tests::email_inbox_filters_actionable_only ... ok
+test tests::email_routes_exist_in_dispatch ... ok
+test tests::find_pec_by_correlation_prefers_latest_timestamp ... ok
+test tests::find_pec_proof_reads_namespaced_json ... ok
+test tests::flatten_aiua_wui_extracts_envelope_data ... ok
+test tests::flatten_aiua_wui_omits_tokens_when_absent ... ok
+test tests::flatten_aiua_wui_preserves_gemini_model_unavailable ... ok
+test tests::flatten_aiua_wui_rejects_business_failure ... ok
+test tests::flatten_aiua_wui_sanitizes_http_status_503_prefix_alone ... ok
+test tests::flatten_aiua_wui_sanitizes_incident_503_blob ... ok
+test tests::list_trace_files_sorted_by_timestamp ... ok
+test tests::native_elf_rejects_script_content ... ok
+test tests::progress_stream_emits_store_frames_in_seq_order ... ok
+test tests::progress_stream_replay_arrives_on_first_read ... ok
+test tests::progress_stream_route_before_static ... ok
+test tests::project_status_awaiting_agents_from_cycle_phase ... ok
+test tests::project_status_completed_from_pec ... ok
+test tests::project_status_failed_phase_overrides_awaiting_agents_pec ... ok
+test tests::project_status_initialized_from_cycle_phase ... ok
+test tests::project_status_phase_end_survives_later_awaiting_agents_pec ... ok
+test tests::project_status_routed_from_delivery ... ok
+test tests::prosthetic_exit_3_does_not_emit_fracture ... ok
+test tests::resolve_mayeuta_llm_missing_emits_literal_trace ... ok
+test tests::resolve_mayeuta_llm_override_rejects_non_elf ... ok
+test tests::resolve_mayeuta_llm_prefers_env_override_elf ... ok
+test tests::resolve_mayeuta_llm_prefers_release_over_debug ... ok
+test tests::resolve_orchestrator_finds_debug_binary ... ok
+test tests::resolve_orchestrator_prefers_newer_release_elf ... ok
+test tests::sanitize_does_not_remap_timeout_or_join_literals ... ok
+test tests::sanitize_maps_agy_auth_and_timeout ... ok
+test tests::sanitize_maps_agy_network_issue ... ok
+test tests::sanitize_maps_google_json_503_without_tool_prefix ... ok
+test tests::spawn_orchestrator_process_name_is_parametrized ... ok
+test tests::sse_progress_frame_format ... ok
+test tests::sse_telemetry_frame_format ... ok
+test tests::stale_runtime_gate_409_in_production ... ok
+test tests::sync_assets_handler_is_fire_and_forget ... ok
+test tests::sync_assets_route_exists_in_dispatch ... ok
+test tests::system_health_fuses_runtime_binary_parity ... ok
+test tests::telemetry_routes_exist_in_dispatch ... ok
+test tests::uuid_v4ish_accepts_canonical ... ok
+test tests::wui_aiua_pulse_and_setbusy_and_ctrl_enter_intact ... ok
+
+test result: ok. 51 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.13s
+
+     Running unittests src/main.rs (target/debug/deps/linear_bridge_watcher-084ce070c98a97b3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/linear_tracker_adapter-ebb3da558a82084c)
+
+running 14 tests
+test tests::aut68_create_child_uses_parent_team_and_insensitive_pbi ... ok
+test tests::aut68_missing_label_names_team ... ok
+test tests::aut68_name_eq_ignore_case ... ok
+test tests::aut70_update_mutations_declare_id ... ok
+test tests::auth_missing_without_lab ... ok
+test tests::create_issue_envelope_no_token ... ok
+test tests::create_issue_lab_ac0a ... ok
+test tests::create_issue_lab_errors_ac0a2 ... ok
+test tests::envelope_never_contains_token ... ok
+test tests::four_operations_lab_inline ... ok
+test tests::list_issues_query_includes_label_filter ... ok
+test tests::mock_http_server_list_issues ... ok
+test tests::project_scope_blocks_edit_and_archive ... ok
+test tests::state_errors_do_not_mutate_in_lab ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/main.rs (target/debug/deps/llm_router-b3211de7ffc6975c)
+
+running 7 tests
+test tests::adapter_bin_name_strips_prefix ... ok
+test tests::detect_cycle_rejects_loop ... ok
+test tests::retryable_set ... ok
+test tests::route_fallback_on_rate_limited ... ok
+test tests::route_missing_registry ... ok
+test tests::route_no_fallback_on_auth ... ok
+test tests::select_by_affinity_then_id ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/manage_event_receipt-20e0669df1926df7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/markdown_table_editor-f20f8b6aee1496c7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/mayeuta_llm-ece5a6ba3ea21422)
+
+running 7 tests
+test tests::heuristic_detects_bug_fix ... ok
+test tests::parse_classify_json_line ... ok
+test tests::receipt_degraded_without_usage ... ok
+test tests::receipt_parses_usage_json ... ok
+test tests::split_command_handles_quotes ... ok
+test tests::synthesize_fails_without_cli_env ... ok
+test tests::synthesize_with_echo_mock ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/read_event_subscriptions-b16e02231ffe609c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/repo_retention_purger-86b5f642d52a6ac9)
+
+running 13 tests
+test jail::tests::allows_tmp_under_repo ... ok
+test jail::tests::rejects_events_redb ... ok
+test jail::tests::rejects_native_debug_bins ... ok
+test jail::tests::rejects_parent_dir ... ok
+test lock::tests::lock_is_exclusive ... ok
+test plan::tests::apply_rejects_bad_digest ... ok
+test plan::tests::native_bins_flag_in_plan ... ok
+test plan::tests::simulate_produces_stable_digest ... ok
+test slice_events::tests::filesystem_mode_empty ... ok
+test slice_target::tests::dep_generation_keeps_rlib_and_rmeta ... ok
+test slice_target::tests::dep_hold_incomplete_generation ... ok
+test slice_target::tests::dep_logical_name_strips_hash ... ok
+test slice_target::tests::incremental_keeps_two_sessions_per_crate ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 47.24s
+
+     Running unittests src/main.rs (target/debug/deps/repo_retention_purger-3fb03b4abe191500)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/sandbox_breacher-2ef41b97675d9595)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/schema_corruptor-84738705ff659560)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_core-bfb1ea27ed366fd5)
+
+running 11 tests
+test ports::event_manager::contract::tests::builtin_v2_schema_uri_resolves_to_catalog_schema ... ok
+test ports::event_manager::contract::tests::event_uri_roundtrip ... ok
+test ports::event_manager::contract::tests::publish_token_maps_pending_to_domain ... ok
+test ports::event_manager::contract::tests::rejects_queue_state_as_family ... ok
+test ports::event_manager::contract_suite::tests::suite_passes_on_memory_mock ... ok
+test ports::event_manager::event_manager_factory::tests::major_mismatch_on_role_is_rejected ... ok
+test ports::event_manager::event_manager_factory::tests::test_role_resolves_memory_mock ... ok
+test ports::event_manager::version_gate::tests::accepts_minor_and_patch_under_caret_2 ... ok
+test ports::event_manager::version_gate::tests::rejects_v1_consumers ... ok
+test tests::reexports_sddia_io_envelope_surface ... ok
+test tests::shared_kernel_markers_are_stable ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_core_memory-577466d49fb28ea3)
+
+running 3 tests
+test models::evolution_node::tests::test_evolution_event_sha256_id ... ok
+test services::inference_binding::tests::embedding_is_nonzero_nonconstant_and_repeatable ... ok
+test services::inference_binding::tests::empty_input_is_rejected ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_daemon_runtime-cbc25ee111314096)
+
+running 20 tests
+test eda_sweep::fractal_dlq_tests::all_ok_not_terminal_with_failure ... ok
+test eda_sweep::fractal_dlq_tests::progress_sweep_leaf_does_not_purge_progress_dirs ... ok
+test eda_sweep::fractal_dlq_tests::terminal_with_failure_moves_to_dead_letter ... ok
+test github_bridge::tests::attach_tracker_reads_objectives_at_head ... ayuda: Usando 'master' como el nombre de la rama inicial. Este nombre de rama predeterminado
+ayuda: está sujeto a cambios. Para configurar el nombre de la rama inicial para usar en todos
+ayuda: de sus nuevos repositorios, reprimiendo esta advertencia, llama a:
+ayuda: 
+ayuda: 	git config --global init.defaultBranch <nombre>
+ayuda: 
+ayuda: Los nombres comúnmente elegidos en lugar de 'master' son 'main', 'trunk' y
+ayuda: 'development'. Se puede cambiar el nombre de la rama recién creada mediante este comando:
+ayuda: 
+ayuda: 	git branch -m <nombre>
+Inicializado repositorio Git vacío en /tmp/sddia-gh-bridge-git-a8159dd5-7eaa-4b11-b639-00e0dba7d51d/.git/
+[master (commit-raíz) 7d77acb] obj
+ 2 files changed, 9 insertions(+)
+ create mode 100644 docs/fixes/demo/objectives.md
+ create mode 100644 docs/fixes/other/objectives.md
+ok
+test github_bridge::tests::build_bus_event_leaves_delivery_state_empty ... ok
+test github_bridge::tests::failure_emits_once_cancelled_skipped ... ok
+test github_bridge::tests::materialize_stamps_catalog_plan ... ok
+test github_bridge::tests::unknown_job_maps_workflow_github_actions ... ok
+test linear_bridge::tests::ac11_issue_without_hu_pbi_label_skipped ... ok
+test linear_bridge::tests::ac11_state_backlog_to_todo_emits_poll_event ... ok
+test linear_bridge::tests::ac12_outbound_record_suppresses_event ... ok
+test linear_bridge::tests::ac12_sync_id_in_comment_suppresses ... ok
+test linear_bridge_webhook::tests::ac13_invalid_signature_emits_nothing ... ok
+test linear_bridge_webhook::tests::ac13_valid_signature_emits_webhook_source ... ok
+test linear_bridge_webhook::tests::ac22_event_envelope_never_contains_secret ... ok
+test tests::lock_excludes_duplicate_pid ... ok
+test tests::resolve_execute_process_elf_skips_older_debug ... ok
+test tests::tick_defaults_alive ... ok
+test tests::tick_rejects_unknown_status ... ok
+test tests::tick_with_status_degraded_writes_payload ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.34s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_ecosystem_health-8dd2cbcf5bcd54c3)
+
+running 7 tests
+test tests::daemon_green_alive_compat ... ok
+test tests::daemon_red_missed_beats_degraded ... ok
+test tests::daemon_yellow_on_heartbeat_degraded ... ok
+test tests::ecosystem_health_daemon_red_on_missed_cycles ... ok
+test tests::ecosystem_health_map_absent_still_ok ... FAILED
+test tests::ecosystem_health_no_adapter_family ... ok
+test tests::ecosystem_health_skill_gray_without_samples ... ok
+
+failures:
+
+---- tests::ecosystem_health_map_absent_still_ok stdout ----
+
+thread 'tests::ecosystem_health_map_absent_still_ok' (126949) panicked at ecosystem-health/src/lib.rs:940:9:
+assertion `left == right` failed
+  left: String("DEGRADED")
+ right: "absent"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::ecosystem_health_map_absent_still_ok
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p sddia-ecosystem-health --lib`
+     Running unittests src/lib.rs (target/debug/deps/sddia_eda_catalog-86cc22254d828577)
+
+running 5 tests
+test tests::missing_registry_is_no_subscriber ... ok
+test tests::reconcile_is_noop_under_event_manager ... ok
+test tests::stamp_uses_catalog_not_emitter_keys ... ok
+test tests::subscriber_id_joins_agent_and_process ... ok
+test tests::unknown_event_is_no_subscriber ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_event_manager_host-f5d96b8921f49310)
+
+running 15 tests
+test config::tests::absolute_valid_accepted ... ok
+test config::tests::absolute_with_parent_rejected ... ok
+test config::tests::default_redb_when_no_vault ... ok
+test config::tests::empty_rejected ... ok
+test config::tests::global_used_when_instance_absent ... ok
+test config::tests::precedence_so_over_instance_over_global ... ok
+test config::tests::productive_rejects_fs_provider ... ok
+test config::tests::relative_path_joins_repo_root ... ok
+test config::tests::relative_traversal_rejected ... ok
+test tests::default_resolves_redb_on_tempdir ... ok
+test tests::fs_role_opens_configured_root ... ok
+test tests::rejects_contract_below_required_range ... ok
+test tests::test_role_resolves_memory_mock ... ok
+test tests::vault_relative_redb_path_used ... ok
+test tests::with_productive_port_drops_adapter_after_op ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_evolution_register-da98c43a689e37e0)
+
+running 26 tests
+test tests::alta_idempotent_and_duplicate ... ok
+test tests::alta_idempotent_when_already_persisted ... ok
+test tests::alta_requires_fecha ... ok
+test tests::baja_emits_rutas ... ok
+test tests::baja_requires_rutas_eliminadas ... ok
+test tests::eda_coverage_plus_other_material_still_blocks ... ok
+test tests::eda_coverage_ssot_exempt_from_material_gate ... ok
+test tests::evolution_only_placeholder_fails_without_material ... ok
+test tests::hash_mismatch ... ok
+test tests::hash_newline_and_crlf_stable ... ok
+test tests::hash_stable ... ok
+test tests::lib_source_has_no_git ... ok
+test tests::lockfile_in_diff_with_relacionado_is_ok ... ok
+test tests::lockfile_in_diff_without_relacionado_is_unregistered ... ok
+test tests::material_covered ... ok
+test tests::material_unregistered ... ok
+test tests::modificacion_emits_detail_and_index ... ok
+test tests::non_v4_stem_in_diff_reports_id_not_uuid_v4 ... ok
+test tests::non_v4_stem_precedes_material_unregistered ... ok
+test tests::not_indexed ... ok
+test tests::placeholder_format_rejected ... ok
+test tests::prefix_cover ... ok
+test tests::rehash_patches_placeholder ... ok
+test tests::self_only_evolution_ok ... ok
+test tests::suggest_relacionado_complements_lockfile_and_adapter_cards ... ok
+test tests::universe_audit_validates_not_in_diff ... ok
+
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/sddia_evolution_register-42ef3b155140a9ec)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_infrastructure_external_capsule_event-582795376b56a300)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/capsule_dummy.rs (target/debug/deps/eda_event_manager_capsule_dummy-65e9eb96404d5df3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/e2e_dummy.rs (target/debug/deps/e2e_dummy-a302806f17a141f8)
+
+running 1 test
+test e2e_suite_on_dummy_capsule ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_infrastructure_fs_event-460548831ad3d9f9)
+
+running 1 test
+test tests::contract_suite_on_fs_tempdir ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_infrastructure_lancedb_evolution-59f86fcb981c8735)
+
+running 5 tests
+test tests::duplicate_ids_are_idempotent ... ok
+test tests::evolution_roundtrip_after_reopen ... ok
+test tests::import_legacy_json_is_idempotent ... ok
+test tests::schema_mismatch_is_rejected ... ok
+test tests::wrong_vector_dimension_is_rejected ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.56s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_infrastructure_lancedb_preferences-c85d0de2972a67a2)
+
+running 7 tests
+test tests::duplicate_revision_ids_are_idempotent ... ok
+test tests::knn_omits_revoked_even_if_vector_near ... ok
+test tests::migrate_preserves_json_and_filter_parity ... ok
+test tests::preferences_knn_orders_known_vectors ... ok
+test tests::preferences_roundtrip_after_reopen ... ok
+test tests::table_exists_false_when_path_missing ... ok
+test tests::wrong_vector_dimension_is_rejected ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.77s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_infrastructure_lancedb_thought-1db88abd2b22103a)
+
+running 6 tests
+test tests::schema_mismatch_is_rejected ... ok
+test tests::store_thought_emits_thought_persisted_when_bus_configured ... ok
+test tests::thought_children_filtered_by_parent ... ok
+test tests::thought_knn_orders_known_vectors ... ok
+test tests::thought_roundtrip_after_reopen ... ok
+test tests::wrong_vector_dimension_is_rejected ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.87s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_infrastructure_redb_event-e4d540285210f7c5)
+
+running 1 test
+test tests::contract_suite_on_redb_tempdir ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+     Running unittests src/lib.rs (target/debug/deps/sddia_io-865d967cc5af8045)
+
+running 1 test
+test outbound_lab::tests::lab_sim_digest_has_prefix ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/sddia_qa-d50932cdf7c52bc4)
+
+running 20 tests
+test gate_eda_unit_no_real_backend::tests::allowlisted_integration_path_skipped_by_collector ... ok
+test gate_eda_unit_no_real_backend::tests::detects_event_store_open_in_unit_test ... ok
+test gate_event_manager_port::tests::ignores_cfg_test_block ... ok
+test gate_evolution::tests::git_timed_kills_process_within_budget_ca14 ... ok
+test gate_evolution::tests::map_fetch_outcome_timeout_ca14 ... ok
+test gate_evolution::tests::material_prefixes_exclude_evolution ... ok
+test gate_evolution::tests::path_is_material_matches_prefix_boundaries ... ok
+test gate_evolution::tests::range_touches_material_detects_genome_paths ... ok
+test gate_evolution::tests::resolve_base_fresh_origin_main_skips_fetch_ca6 ... Inicializado repositorio Git vacío en /tmp/.tmp7vvKpA/.git/
+[main (commit-raíz) b8e6db7] init
+ok
+test gate_evolution::tests::resolve_base_sync_fetch_timeout_declares_outcome_ca14 ... Inicializado repositorio Git vacío en /tmp/.tmpYJuTDn/.git/
+[main (commit-raíz) a0e2d53] init
+FAILED
+test migrate_evolution_history::tests::hash_parity_with_evolution_register ... ok
+test migrate_evolution_history::tests::lote_borrador_is_l4 ... ok
+test migrate_evolution_history::tests::lote_nombre_is_l3 ... ok
+test migrate_evolution_history::tests::lote_skip_canonical ... ok
+test migrate_evolution_history::tests::map_tipo_default_modificacion ... ok
+test verify_compiled_capsules::tests::discovers_execute_process_and_sddia_qa ... ok
+test verify_hooks::tests::detects_missing_executable_bit ... ok
+test verify_hooks::tests::fix_is_idempotent ... ok
+test workspace_prune::tests::hook_timing_jsonl_append_from_hook_common ... ok
+test workspace_prune::tests::prune_empty_is_idempotent ... ok
+
+failures:
+
+---- gate_evolution::tests::resolve_base_sync_fetch_timeout_declares_outcome_ca14 stdout ----
+
+thread 'gate_evolution::tests::resolve_base_sync_fetch_timeout_declares_outcome_ca14' (127145) panicked at tools/sddia-qa/src/gate_evolution.rs:1071:9:
+assertion `left == right` failed
+  left: Some("skipped")
+ right: Some("timeout")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    gate_evolution::tests::resolve_base_sync_fetch_timeout_declares_outcome_ca14
+
+test result: FAILED. 19 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+error: test failed, to rerun pass `-p sddia-qa --bin sddia-qa`
+     Running unittests src/lib.rs (target/debug/deps/sddia_runtime_parity-3d7d478bff9eb1c1)
+
+running 1 test
+test tests::merge_touch_detects_organ_paths ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/sddia_workspace_server-8375cfce5914b27c)
+
+running 9 tests
+test sandbox::tests::canonicalize_failure_on_existing_path_is_io ... ok
+test sandbox::tests::parent_dir_is_escape ... ok
+test server::tests::fs_list_missing_target_path_is_tool_args_missing ... ok
+test server::tests::fs_read_schema_in_tools_list ... ok
+test server::tests::resource_read_empty_file_uri_is_not_escape ... ok
+test server::tests::resource_read_rejects_escape ... ok
+test server::tests::run_check_denied_off_whitelist ... ok
+test server::tests::symlink_escape_on_read ... ok
+test vault::tests::os_env_wins_over_vault_except_precedence_keys ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running unittests src/main.rs (target/debug/deps/send_telegram_notification-f278569efbbf859c)
+
+running 5 tests
+test tests::lab_mock_includes_reply_markup_flag ... ok
+test tests::lab_mock_outbound_returns_success_shape ... ok
+test tests::rejects_empty_message ... ok
+test tests::rejects_reply_markup_without_keyboard ... ok
+test tests::serialize_reply_markup_none_on_absent ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/main.rs (target/debug/deps/shell_executor-6d417afe0d46f925)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/telegram_gateway-bfbe3122fa5ece5e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/telegram_watcher-1b221a8126f4f67c)
+
+running 2 tests
+test tests::extract_callback_from_allowed_shape ... ok
+test tests::extract_callback_rejects_oversize ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/thought_graph_access-4d8663216b0dab1f)
+
+running 3 tests
+test tests::required_operation_rejects_empty ... ok
+test tests::search_empty_store_returns_empty_memories ... ok
+test tests::store_returns_node_id_and_emits_thought_persisted ... FAILED
+
+failures:
+
+---- tests::store_returns_node_id_and_emits_thought_persisted stdout ----
+
+thread 'tests::store_returns_node_id_and_emits_thought_persisted' (127237) panicked at tools/thought-graph-access/src/main.rs:187:14:
+called `Result::unwrap()` on an `Err` value: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::store_returns_node_id_and_emits_thought_persisted
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.64s
+
+error: test failed, to rerun pass `-p thought-graph-access --bin thought-graph-access`
+     Running unittests src/main.rs (target/debug/deps/transit_event_payload-3d0939d61b6ed526)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/user_preference_core-c67fd415a40353e1)
+
+running 12 tests
+test tests::canonical_subject_key_collapses_display_name_and_is_not_plaintext ... ok
+test tests::canonical_subject_key_from_hint_hashes_and_collapses ... ok
+test tests::embedding_absent_deserializes_to_none ... ok
+test tests::get_active_skips_revoked ... ok
+test tests::json_store_trait_roundtrip ... ok
+test tests::preference_from_event_payload_hashes_hint_and_defaults_mute ... ok
+test tests::preference_from_event_payload_keeps_precomputed_subject_key ... ok
+test tests::proposed_not_returned_by_default ... ok
+test tests::purge_removes_revision_from_store ... ok
+test tests::put_and_reopen_active_preference ... ok
+test tests::revoke_stops_query ... ok
+test tests::specific_scope_beats_global_same_predicate ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/main.rs (target/debug/deps/user_preference_store-aff30a475ff5f030)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/wasi_poc-e1774b8334e7f279)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests execute_process
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests file_tracker_adapter
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests repo_retention_purger
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_core_memory
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_daemon_runtime
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_ecosystem_health
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_eda_catalog
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_event_manager_host
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_evolution_register
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_infrastructure_external_capsule_event
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_infrastructure_fs_event
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_infrastructure_lancedb_evolution
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_infrastructure_lancedb_preferences
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_infrastructure_lancedb_thought
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_infrastructure_redb_event
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_io
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_runtime_parity
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests user_preference_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 3 targets failed:
+    `-p sddia-ecosystem-health --lib`
+    `-p sddia-qa --bin sddia-qa`
+    `-p thought-graph-access --bin thought-graph-access`

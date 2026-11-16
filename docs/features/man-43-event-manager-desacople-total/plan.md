@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.16"
+version_plan: "1.2.17"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -1715,6 +1715,183 @@ SddIA/target/debug/sddia-qa gate-evolution --range --sync-base
 
 Auditoría: `docs/audits/man-43-o14b-event-token-20261114.md` (**APTO_PARCIAL**). Oráculo `eda_event_token_hygiene` 5/0; motor y genoma contractual migrados; `execute-process --lib` 854/0; `linear-tracker-adapter` 14/0. Residual workspace: `ephemeral-cache-purger::jail::tests::purge_deletes_fixture` (fuera del alcance token EDA). Pendiente: evolution + gate + commit único antes de O14c.
 
+**Cierre (2026-11-16).** Commit `f4f0fecd`; evolution `bc17f9a8`; `gate-evolution` `EVOL_OK`. Oráculo 5/5, `execute-process --lib` OK, `linear-tracker-adapter` OK; `ephemeral-cache-purger` corregido con mutex. Residual workspace: `sddia-daemon-runtime::linear_bridge_webhook::tests::ac13_valid_signature_emits_webhook_source`. En el cierre lo anoté como «flaky/paralelo»; el diagnóstico de O14c lo corrige (es determinista).
+
+---
+
+## O14c — Ruta virtual residual + matriz AC-1…AC-19 / F-01…F-12 + dossier con veredicto propuesto (siguiente hilo)
+
+Entrada: HEAD `503c6aec` (rama `docs/man-43-post-merge-handoff`). O14c ejecuta C + D de O14. Antes cierra el último fallo de `cargo test --workspace`, porque la matriz exige AC-12 verde y un fallo no puede reclasificarse como «no bloqueante» (lección O12).
+
+### Hallazgos medidos (2026-11-16, HEAD `503c6aec`)
+
+| Hallazgo | Evidencia | Afecta |
+|----------|-----------|--------|
+| **El residual no es flaky.** `ac13_valid_signature_emits_webhook_source` falla también con `--test-threads=1`: `NotFound` en `linear_bridge_webhook.rs:316` (`fs::read_to_string(&paths[0])`). Corrige la nota de cierre de O14b. | `cargo test -p sddia-daemon-runtime ac13_valid -- --test-threads=1` → 0/1 | AC-12 |
+| Causa: `materialize_pending` (`linear_bridge.rs:284-294`) graba en Redb con `record_ecst_productive` y luego **fabrica** `PathBuf(".events/pending/{event_id}.json")`, una ruta que no existe en disco. La propagan `assimilate_tracker_items`/`assimilate_list_issues`/`process_signed_webhook` → `Vec<PathBuf>`. Es el mismo patrón de token que retiró O14b, con otro nombre. | lectura del código | AC-3, AC-4 |
+| El patrón también aparece en el motor: `route_domain_core::materialize_pending_domain_event` publica por puerto (`eda_port::publish_ecst`) y devuelve `rel_event_path(pending_virtual_event_path(..))`, un `String` `.events/pending/…`. **22 llamadas** (`delivery_close`, `forge_pbi`, `tracker_sync_replay`, `refine_item`, …) lo guardan como `event_path`/`event_rel`. | `route_domain_core.rs:283-310` | AC-3, AC-4 |
+| **Hueco del oráculo O14b:** `eda_event_token_hygiene` solo busca los nombres `target_path`/`event_file_path`/`orchestration_event_path` en `execute-process`, `event-watcher`, `sddia-qa`, el genoma y el puerto. No mira la *forma* del valor (ruta virtual `.events/…`) ni `sddia-daemon-runtime`, `interfaces/*` ni el resto de `tools/*`. | `eda_event_token_hygiene.rs:28-148` | AC-3, AC-4 |
+| 57 `.rs` fuera de `tests/` citan `.events/`. Los que más: `route_domain_core` 48, `event-bus-audit` 23, `kalma2-bridge` 13, `repo-retention-purger/slice_events` 12, `aiua_stimulus` 11, `daemon_heartbeat` 10, `sddia-daemon-runtime/lib.rs` 9, `system_vitality` 9. Ninguno está clasificado todavía (productivo / comentario / `cfg(test)` / token virtual / lista blanca E-2). | `grep -rlI '\.events/' --include=*.rs --exclude-dir={target,tests}` | AC-4, AC-5 |
+| El árbol tiene cambios que no son de O14b: `SddIA/core/eda-coverage.json` (+343/−91), `SddIA/Cargo.toml` (`[profile.dev]` debug reducido, ajeno a MAN-43), borrados en `Documentacion/` y `docs/tmp/`, scripts `clean-project-ephemeral*`, `.SddIA/state/forge-pbi/*`, `_lab/`, `LAB-MD-APPLY-GIT`, `docs/audits/Auditoria_LLM_001.md`. El dossier no puede citar evidencia medida sobre un árbol sucio sin decir cuál. | `git status --short` | AC-12, AC-13 |
+| Documentación desfasada: `implementation.md` (fila O14b «Pendiente commit»), nota O14b («workspace pendiente»), backlog O14b («Pendiente»). | lectura | AC-14 |
+
+### Laudos del Vértice Biológico (2026-11-16)
+
+- **G-1 = (a).** Corte duro, igual que en O14b. Toda función que publica por puerto devuelve la identidad del evento como `EventUri` (`eda://{family}/{event_id}`, `EventUri::as_canonical()`), nunca una ruta `.events/…`. Los consumidores resuelven por puerto (`get_event`). Abarca el daemon (`sddia-daemon-runtime`) **y** el motor (`execute-process`) en la misma ola. Sin alias de transición. El test AC-13 del webhook conserva todos sus asserts y lee el evento por puerto.
+- **G-2 = (a).** El oráculo `eda_event_token_hygiene` se amplía en *forma* y en *ámbito*:
+  - **(iv) forma:** prohibido en código productivo cualquier literal o `format!`/`join` que construya `.events/{pending|domain|processing|processed|telemetry|…}/…` como valor de retorno o salida JSON.
+  - **(v) ámbito:** todo el workspace Rust (`engine/*`, `sddia-daemon-runtime`, `daemons/*`, `interfaces/*`, `tools/*`, `sddia-core`, crates de soporte).
+  - Excepciones solo por lista escrita en el propio test: E-2 (fichero real), código `#[cfg(test)]`/`tests/`, comentarios y rutas de higiene (purga/retención) que se justifiquen una a una en el dossier.
+  - Debe verse **rojo** antes del fix.
+- **G-3 = (a).**
+  - `SddIA/core/eda-coverage.json` se regenera con `audit-eda-coverage --scan` **después** de B (sobre el código final) y entra en el commit de O14c como evidencia.
+  - `SddIA/Cargo.toml` `[profile.dev]` queda fuera de los commits MAN-43. **Resuelto (2026-11-16):** se conserva en el commit propio `15a56a5d` `chore(build)`. HEAD de entrada de O14c: `15a56a5d`.
+  - `Documentacion/`, `docs/tmp/`, `clean-project-ephemeral*`, `sddia-clean-ephemeral.sh`, `.SddIA/state/forge-pbi/*`, `_lab/`, `LAB-MD-APPLY-GIT` y `docs/audits/Auditoria_LLM_001.md` no entran en los commits de O14c. El dossier los lista como «árbol no comprometido en el momento de la medición».
+  - El staging es **explícito por ruta** (`skill:git-manager`); prohibido `git add -A`/`.`.
+
+### Inventario de superficie (medido, HEAD `503c6aec`)
+
+**Daemon (`sddia-daemon-runtime`):**
+
+| Símbolo | Hoy | Tras G-1 | Consumidores |
+|---------|-----|----------|--------------|
+| `linear_bridge::materialize_pending` (`:284`) | `Result<PathBuf>` virtual | `Result<EventUri>` | `assimilate_tracker_items` |
+| `linear_bridge::assimilate_tracker_items` / `assimilate_list_issues` (`:305`, `:317`) | `(Vec<PathBuf>, WatcherState)` | `(Vec<EventUri>, WatcherState)` | `linear_bridge_webhook`, `daemons/linear-bridge-watcher/src/main.rs` (2), `sddia-qa/{eda_e2e_lab,iota_ci_smoke,lab_teardown}` |
+| `linear_bridge_webhook::process_signed_webhook` (`:87`) | `Vec<PathBuf>` | `Vec<EventUri>` | tests del módulo (8 usos), servidor del webhook |
+| `eda_sweep::list_witnesses` (`:445`) | `Vec<PathBuf>` | **clasificar en B1**: si es ruta virtual de testigo → identificadores por puerto; si no, se justifica en el dossier | `eda_sweep` (6) |
+
+**Motor (`execute-process`):**
+
+| Símbolo | Hoy | Tras G-1 |
+|---------|-----|----------|
+| `route_domain_core::materialize_pending_domain_event` (`:293`) | `Result<String>` = `rel_event_path(pending_virtual_event_path(..))` | `Result<EventUri>` |
+| `eda_bus_topology::pending_virtual_event_path` (4 usos) y `route_domain_core` (3) | fabrica `PathBuf` virtual | se elimina o se queda en `#[cfg(test)]` |
+| Llamadas productivas (17) | `delivery_close` 2, `domain_authority` 1, `forge_hu` 1, `forge_pbi` 3, `refine_item/run` 2, `refine` 1, `tracker_markdown_apply` 2, `tracker_sync_replay` 1, `materialize_fracture_pbi` 1, `route_domain_core` 1, `workspace_init` 1 | reciben `EventUri` |
+| Llamadas de test de integración (5) | `tests/event_store_writers.rs` 4, `tests/memory_evolution_ingest.rs` 1 | leen por puerto |
+| Clave de salida CLI `"event_path"` (8) | `delivery_close:93`, `forge_pbi:522`, `refine_item/run:604`, `instance_creator:527`, `forge_hu:151`, `refine:225`, `refine:406` (+ assert `refine:515`) | `"event_uri"` (cadena canónica) |
+
+**Genoma:** solo `process/audit-telemetry-compliance-breach.md` cita `event_path`. Los procesos cuyo JSON de salida cambia (`delivery-close-cycle`, `forge-pbi`, `refine-item`, `forge-hu`, `refine`, `instance-creator`) se comprueban en B4: si declaran la salida en frontmatter, se actualizan **vía `entity-manager`** (SemVer MAJOR por entidad); si no la declaran, no se tocan y se anota en el dossier.
+
+### Diseño
+
+**A. Base y árbol.**
+1. `git fetch origin main` + `SddIA/target/debug/sddia-qa gate-evolution --range --sync-base`. Si `origin/main` avanzó, rehacer el inventario sobre la base nueva.
+2. Aplicar G-3: no se toca el árbol ajeno, solo se fija la lista de rutas que **sí** entrarán en los commits.
+3. `env | grep '^SDDIA'` vacío; `df -h SddIA/target /tmp` con margen (lección O9 `StorageFull`).
+4. Línea base roja documentada: `cargo test -p sddia-daemon-runtime -- --test-threads=1` → log `docs/audits/man-43-o14c-baseline-daemon-runtime.log` (1 fallo esperado: `ac13_valid_signature_emits_webhook_source`).
+
+**B. Paso 0: rutas virtuales (G-1, G-2).**
+1. **Oráculo rojo (G-2).** Ampliar `eda_event_token_hygiene` con dos tests:
+   - `eda_event_token_hygiene_no_virtual_event_paths_workspace` (iv + v): recorre los `.rs` del workspace, ignora bloques `#[cfg(test)]` y `tests/`, y busca constructores de `.events/…`. Las listas `VIRTUAL_PATH_ALLOW` (E-2 + higiene) y `SCAN_EXCLUDE` van escritas en el test con su motivo.
+   - `eda_event_token_hygiene_cli_outputs_no_event_path`: ninguna salida JSON productiva usa la clave `"event_path"`.
+   - `cargo test -p execute-process --lib eda_event_token_hygiene` → **rojo**, como mínimo sobre `linear_bridge.rs:294` y `route_domain_core.rs` → log `docs/audits/man-43-o14c-oracle-red.log`. Un oráculo que nunca falló no vale.
+   - El resultado del rojo **es** la clasificación inicial de los 57 ficheros: cada acierto se resuelve en B2–B3 o pasa a la lista de excepciones con su justificación.
+2. **Daemon.** Cambiar las firmas de la tabla a `EventUri` (`sddia-core` ya es dependencia del crate). Migrar `linear-bridge-watcher` y `sddia-qa` (`eda_e2e_lab`, `iota_ci_smoke`, `lab_teardown`). En los tests del módulo webhook, `fs::read_to_string(&paths[0])` pasa a `get_event` por puerto con `test_lab`/mock. Clasificar `list_witnesses` y actuar según la tabla.
+3. **Motor.** `materialize_pending_domain_event` → `EventUri`. Migrar las 17 llamadas productivas y las 5 de integración. Clave CLI `"event_path"` → `"event_uri"` en los 7 puntos (+ assert de `refine`). Retirar `pending_virtual_event_path` del código productivo.
+4. **Genoma.** Comprobar el frontmatter de los procesos afectados (tabla). Solo si declaran la salida: ensayo en copia `/tmp/o14c-lab` con `target` enlazado → `entity-manager` (DA-2) → SemVer MAJOR. Reformular `audit-telemetry-compliance-breach.md` (`event_path` → `event_uri`) por la misma vía. Antes de invocar `entity-manager`: binario `SddIA/target/debug/execute-process` más reciente que `forges/*.rs` y `entity_manager.rs` (lección O11).
+5. **Verde.** Oráculo 7/7 (5 de O14b + 2 nuevos); `cargo test -p sddia-daemon-runtime` (en paralelo **y** con `--test-threads=1`); `-p execute-process --lib`; `-p linear-tracker-adapter`; `--workspace`.
+
+**C. Matriz de evidencia** (lo que O14 § C ya fija). Se mide **después** de B, sobre el código final y con el árbol de G-3. Cada AC-1…AC-19 / F-01…F-12 lleva comando, resultado y log `docs/audits/man-43-o14c-<ac>.log`:
+
+| AC / F | Evidencia mínima |
+|--------|------------------|
+| AC-1, AC-19 | `cargo test -p sddia-core event_manager`; suite contractual mock / Redb / externo (`redb_event_adapter`, `fs_event_adapter`, `external_capsule_event_adapter/tests/e2e_dummy.rs`) |
+| AC-2, AC-16, AC-18 | tests de `EventUri`/familia/duplicado tipado en `sddia-core` (nombres exactos en el dossier) |
+| AC-3 | oráculo `eda_event_token_hygiene` 7/7 (O14b + G-2) |
+| AC-4, AC-5 | oráculo G-2 (iv+v) + tabla de los 57 ficheros con su clase (productivo / comentario / `cfg(test)` / higiene / E-2). Las exclusiones salen de `VIRTUAL_PATH_ALLOW`/`SCAN_EXCLUDE`, no a ojo |
+| AC-6 | watcher/sweeper sin `read_dir`/`is_file`/`event_file_path` (grep + tests de `eda_sweep`) |
+| AC-7, AC-15, AC-17 | tests de entregas/testigos/filtros/cursor por puerto |
+| AC-8, AC-9 | grep `runtime_db_path`/`path_is_resolved_redb` vacío en consumidores; Kalma2 / workspace-server / GitHub bridge sin fallback FS |
+| AC-10, AC-11 | `test ! -d SddIA/sddia-event-store`; allowlist del gate vacía (`gate-event-manager-port`) |
+| AC-12 | `cargo test --workspace` (sin `SDDIA*`, `SddIA/target`) 0 fallos; `RUSTFLAGS=-Dwarnings cargo check --workspace`; `cargo clippy --workspace --all-targets` 0 avisos (D-1 a) |
+| AC-13 | el propio dossier (veredicto **propuesto**) |
+| AC-14 | `gate-evolution --range` `EVOL_OK`; `verify-process-integrity`; README/Constitución sin topología runtime `.events/` |
+| F-01…F-12 | cada hallazgo de `man-32-lineage-…`/`man-43-o6-…` con estado (cerrado / parcial / abierto) y comando de comprobación |
+| Cobertura EDA | `audit-eda-coverage --scan` → `SddIA/core/eda-coverage.json` regenerado (G-3) |
+
+Deuda que no bloquea (no forma parte de los AC): `evolution_contract.md` §1, `id`/`type` del sustrato A, `dlt_threshold_ok`, esquemas `result` del contrato eda.
+
+**D. Dossier** `docs/audits/man-43-o14c-reaudit-ac13-20261116.md`: capa sobre `man-32-lineage-…`, `man-43-o6-…` y `man-43-o14*` (esas no se reescriben). Contenido:
+1. HEAD medido y base `origin/main`.
+2. Árbol no comprometido (lista G-3).
+3. Tabla AC/F con su log.
+4. Tabla AC-4/AC-5 de los 57 ficheros.
+5. Excepciones del oráculo con su motivo.
+6. Deuda no-AC.
+7. **Veredicto propuesto**: `APTO_TOTAL_PROPUESTO` solo si todo está en verde; si no, `NO_APTO_TOTAL` con la lista de bloqueos y la ola O14d.
+8. Handoff a Argos (O15).
+
+Tekton no escribe `APTO_TOTAL`.
+
+**E. Evolution + docs.** Registro nuevo en `SddIA/evolution/` (`MAN-43 O14c: rutas virtuales → event_uri + oráculo workspace`), con `relacionado` en lista exacta (código Rust tocado, genoma si lo hay, `eda-coverage.json`, dossier). Rehash con `sddia-qa evolution-rehash`, fila en `Evolution_log.md`, `gate-evolution --range` en `EVOL_OK`. Docs:
+- `implementation.md`: fila O14b → `done (rama)` con commit `f4f0fecd`; fila y backlog O14c.
+- Nota O14b: residual resuelto, con referencia a O14c.
+- `execution.md` si procede.
+
+### Secuencia
+
+| Paso | Alcance | Bloquea |
+|------|---------|---------|
+| 0 | Laudos G-1…G-3 | **resuelto** (2026-11-16) |
+| 1 | A: fetch, base sincronizada, lista de rutas G-3, línea base roja de daemon-runtime | 2 |
+| 2 | B1: oráculo ampliado en **rojo** (log) | 3 |
+| 3 | B2: daemon-runtime + consumidores (`linear-bridge-watcher`, `sddia-qa`) → `EventUri` | 5 |
+| 4 | B3: motor (`materialize_pending_domain_event`, 22 llamadas, clave `"event_path"`) → `EventUri` | 5 |
+| 5 | B4: genoma vía `entity-manager` solo si el I/O declarado cambia (ensayo en copia) | 6 |
+| 6 | B5: oráculo 7/7 + daemon-runtime (paralelo y serie) + `--workspace` 0 fallos + clippy 0 avisos | 7 |
+| 7 | **Commit 1** (código + genoma + evolution) tras `gate-evolution` `EVOL_OK` | 8 |
+| 8 | C: matriz completa + `audit-eda-coverage --scan` + clasificación AC-4/AC-5, con logs | 9 |
+| 9 | D + E docs: dossier, `implementation.md`, nota O14b → **Commit 2** | O15 |
+
+Tras cada acuse JSON del CLI, sin polling (DA-5). Si falla un proceso oficial: Kintsugi. Cualquier rojo en C bloquea el veredicto propuesto. Si C destapa un productivo que B no cubrió, se anota como bloqueo (`NO_APTO_TOTAL` + O14d); no se amplía el alcance de O14c sin laudo.
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `StrReplace`/`Write` sobre `SddIA/{library,skills,process,actions,norms,events}/` (genoma `.md`/`.json`) | Cero; solo `entity-manager`. El código Rust de `tools/`/`daemons/` sí se edita |
+| Ruta virtual `.events/…` devuelta como identidad de evento | Cero fuera de `VIRTUAL_PATH_ALLOW` (oráculo G-2) |
+| Clave de salida `"event_path"` | Cero en código productivo |
+| Alias `event_path` junto a `event_uri` | Prohibido |
+| Oráculo G-2 sin rojo previo registrado | Prohibido |
+| Test AC-13 del webhook | Verde **sin** debilitar asserts; pasa en paralelo y en serie |
+| `cargo test --workspace` / clippy | 0 fallos / 0 avisos, `SDDIA*` vacío |
+| `gate-evolution --range` | `EVOL_OK` sobre base sincronizada |
+| Ficheros ajenos (G-3) en commits MAN-43; `git add -A` | Prohibido |
+| `eda-coverage.json` regenerado antes de B | Prohibido (debe reflejar el código final) |
+| `APTO_TOTAL` escrito por Tekton | Prohibido; solo `…_PROPUESTO` + handoff |
+
+### Verificación
+
+```bash
+env | grep '^SDDIA' || echo limpio
+df -h SddIA/target /tmp
+git fetch origin main && SddIA/target/debug/sddia-qa gate-evolution --range --sync-base
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p sddia-daemon-runtime
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p sddia-daemon-runtime -- --test-threads=1
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p execute-process --lib eda_event_token_hygiene   # 7/7
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test --workspace
+cd SddIA && RUSTFLAGS=-Dwarnings CARGO_TARGET_DIR=$PWD/target cargo check --workspace
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo clippy --workspace --all-targets
+cd SddIA && cargo run -q -p sddia-qa -- gate-event-manager-port
+grep -rnI --include=*.rs '"event_path"\|pending_virtual_event_path' --exclude-dir={target,tests} SddIA   # vacío (salvo cfg(test))
+grep -rnI --include=*.rs '\.events/' --exclude-dir={target,tests} SddIA   # contrastar con la tabla AC-4
+git status --short   # solo rutas G-3 sin comprometer
+```
+
+**Commits** (staging explícito por ruta, `skill:git-manager`):
+1. `fix(eda): event_uri sustituye rutas virtuales .events/pending en daemon-runtime y motor + oráculo workspace (MAN-43 O14c)`
+2. `docs(audit): dossier re-auditoría AC-13 con veredicto propuesto + eda-coverage (MAN-43 O14c)`
+
+Fuera de la serie: `chore(build)` de `Cargo.toml`, ya comprometido en `15a56a5d`.
+
+**AC:** AC-3/AC-4 (rutas virtuales), AC-12 (workspace verde), evidencia para AC-1…AC-19. **O15:** `delivery-close-cycle` → PR → `pull-request-review` (Argos declara AC-13).
+**Fuera:** `target_path` de fichero (lista blanca E-2); deuda no-AC de O13; refactor de aridad clippy; productivos que aparezcan en C sin cubrir en B (→ O14d con laudo).
+
+### Resultado de ejecución (2026-11-16, rama)
+
+Dossier: `docs/audits/man-43-o14c-reaudit-ac13-20261116.md` (**NO_APTO_TOTAL** propuesto). Paso 0 cerrado (`sddia-daemon-runtime` 20/0 paralelo/serie; `execute-process --lib` 856/0/1 ignored; oráculo G-2 rojo 5/2 → verde 7/7; `clippy` 0 avisos; `check -Dwarnings` 0 errores; `audit-telemetry-compliance-breach` 2.0.0 vía `entity-manager`; `eda-coverage.json` regenerado). Bloqueos detectados en matriz C para **O14d**: `thought-graph-access` (`.events/pending` + test roto), 2 fallos preexistentes (`sddia-ecosystem-health` MAN-25 y `sddia-qa::gate_evolution` CA14) y topología legado de § 4.2 del dossier.
+
 ---
 
 ## H4 — Consumidores periféricos (índice)
@@ -1781,7 +1958,7 @@ El detalle ejecutable está en **O4 / H4**.
 14. **O11** remediación del genoma dañado por O10 (binario de forja obsoleto) + C-4 y O9 rehechos de verdad por `entity-manager`.
 15. **O12** línea base de verificación + C-4 por cauce oficial (reintento real) + C-5 (`route-domain-event.outputs`). C-3 pasa a O13, con decisión previa.
 16. **O13** repara la regresión de O10 (fixtures DI) y la baseline de O12; clase `capability-contract` en `entity-manager`; C-3 por esa vía.
-17. **O14** desbloqueo pre-auditoría: evolución O0–O12, `schema_uri`, clippy verde (D-1 a), `cargo test --workspace`. **O14b** retirada de `target_path`/`event_file_path` → `event_uri` (D-2 b; paso 0 cierra el residual AC-12). **O14c** matriz AC-1…AC-19 + dossier con veredicto **propuesto**.
+17. **O14** desbloqueo pre-auditoría: evolución O0–O12, `schema_uri`, clippy verde (D-1 a), `cargo test --workspace`. **O14b** retirada de `target_path`/`event_file_path` → `event_uri` (D-2 b; paso 0 cierra el residual AC-12). **O14c** primero cierra el residual de rutas virtuales `.events/pending` (daemon-runtime + motor, oráculo ampliado), luego matriz AC-1…AC-19 + dossier con veredicto **propuesto**.
 18. **O15** `delivery-close-cycle` → PR → `pull-request-review`: Argos declara AC-13.
 
 No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.

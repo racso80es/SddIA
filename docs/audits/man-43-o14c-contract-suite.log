@@ -1,0 +1,84 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+   Compiling sddia-core v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/sddia-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.40s
+     Running unittests src/lib.rs (target/debug/deps/sddia_core-44ce15796535343e)
+
+running 9 tests
+test ports::event_manager::contract::tests::builtin_v2_schema_uri_resolves_to_catalog_schema ... ok
+test ports::event_manager::contract::tests::event_uri_roundtrip ... ok
+test ports::event_manager::contract::tests::publish_token_maps_pending_to_domain ... ok
+test ports::event_manager::contract::tests::rejects_queue_state_as_family ... ok
+test ports::event_manager::event_manager_factory::tests::major_mismatch_on_role_is_rejected ... ok
+test ports::event_manager::event_manager_factory::tests::test_role_resolves_memory_mock ... ok
+test ports::event_manager::version_gate::tests::accepts_minor_and_patch_under_caret_2 ... ok
+test ports::event_manager::version_gate::tests::rejects_v1_consumers ... ok
+test ports::event_manager::contract_suite::tests::suite_passes_on_memory_mock ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running unittests src/lib.rs (target/debug/deps/sddia_infrastructure_redb_event-9ba3e7b2065e3219)
+
+running 1 test
+test tests::contract_suite_on_redb_tempdir ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+   Doc-tests sddia_infrastructure_redb_event
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/sddia_infrastructure_fs_event-9865f88331e1a226)
+
+running 1 test
+test tests::contract_suite_on_fs_tempdir ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests sddia_infrastructure_fs_event
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+   Compiling sddia-infrastructure-external-capsule-event v1.0.0 (/home/racso/Proyectos/SddIA/SddIA/infrastructure/adapters/external_capsule_event_adapter)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.68s
+     Running unittests src/lib.rs (target/debug/deps/sddia_infrastructure_external_capsule_event-c04846c046d9cde2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/capsule_dummy.rs (target/debug/deps/eda_event_manager_capsule_dummy-e76368c7561bac3d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/e2e_dummy.rs (target/debug/deps/e2e_dummy-d2a556af76d6b36c)
+
+running 1 test
+test e2e_suite_on_dummy_capsule ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sddia_infrastructure_external_capsule_event
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

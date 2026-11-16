@@ -131,7 +131,8 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O9** | `done (rama)` | Gate `rustc` verde; clippy residual acotado a `execute-process` (excluido por norma); C-2 latente |
 | **O10** | `done (rama)` | `contract_schema` en resolver/gate/validador; C-2 cerrado; C-4 taxonomía 1.0.12 / eda 2.0.0; O9 tools/skills/daemons sellados vía entity-manager |
 | **O14** | `done (rama)` | Evolution `d0bb10b2`, F-02 `schema_uri`, clippy workspace 0 errores, `execute-process --lib` 849/0; `cargo test --workspace` residual `linear-tracker-adapter` AUT-68 (preexistente). Auditoría `man-43-o14-preaudit-20261114.md`. Siguiente: O14b/O14c |
-| **O14b** | `done (rama)` | Motor + genoma `event_uri`; oráculo `eda_event_token_hygiene` 5/0; `linear-tracker-adapter` 14/0; `execute-process --lib` 854/0. Nota `docs/audits/man-43-o14b-event-token-20261114.md` (APTO_PARCIAL). Pendiente commit: evolution gate + `cargo test --workspace` en PR |
+| **O14b** | `done (rama)` | Commit `f4f0fecd`, evolution `bc17f9a8` (`EVOL_OK`); motor + genoma `event_uri`; oráculo 5/0; `linear-tracker-adapter` 14/0; `execute-process --lib` 854/0. Nota `docs/audits/man-43-o14b-event-token-20261114.md`. Residual webhook resuelto en O14c |
+| **O14c** | `done (rama)` | Rutas virtuales `.events/pending` → `EventUri` en `sddia-daemon-runtime` (20/0 paralelo/serie) y motor (856/0/1 ignored); oráculo G-2 7/7; clippy 0 avisos; `audit-telemetry-compliance-breach` 2.0.0 vía `entity-manager`; `eda-coverage.json` regenerado. Dossier `docs/audits/man-43-o14c-reaudit-ac13-20261116.md` (**NO_APTO_TOTAL**: 3 fallos en `thought-graph-access`, `sddia-ecosystem-health`, `sddia-qa::gate_evolution` + residual § 4 → **O14d**) |
 | **O13** | `done (rama)` | Regresión O10 (3 tests validador DI) + baseline O12 inválida; clase `capability-contract` en `entity-manager`; C-3 (schema `eda.event_manager` 2.0, paridad schema↔serde); identidad `x-sddia` de los 17 contratos |
 | **O12** | `done` | Línea base; C-4 por cauce oficial; C-5 `event_uri` + process 1.1.0; 4 fallos lib documentados |
 | **O11** | `done` | Remediación forja O10: binario canónico, guarda anti-sobrescritura, restauración 3 `.md`, delete stubs, sellos daemons/O9, `hash_refresh` taxonomía (contenido 2.0.0 heredado de O10) |
@@ -198,7 +199,11 @@ Cerrado en rama (`plan.md` § O14, v1.2.15). Entregado: registro evolution `d0bb
 
 ### Backlog técnico O14b
 
-Pendiente (`plan.md` § O14b, v1.2.16). Laudos: E-1 (a) retira también `event_file_path`; E-2 (a) conserva `target_path` de fichero con lista blanca explícita. Corrige la nota O14: el fallo de `linear-tracker-adapter` era un test obsoleto, no deuda preexistente sin causa. El puerto ya está limpio; el residual vive en motor y genoma.
+Cerrado en rama (`plan.md` § O14b, commit `f4f0fecd`, evolution `bc17f9a8`). El residual de `ac13_valid_signature_emits_webhook_source` quedó diagnosticado como determinista y resuelto en O14c.
+
+### Backlog técnico O14c
+
+Cerrado en rama (`plan.md` § O14c, v1.2.17). Dossier `docs/audits/man-43-o14c-reaudit-ac13-20261116.md` (**NO_APTO_TOTAL** propuesto). Cierra el residual de rutas virtuales en daemon y motor, amplía el oráculo G-2 (7/7), deja `clippy` a 0 avisos y `execute-process --lib` 856/0 + `sddia-daemon-runtime` 20/0. Bloqueos para **O14d**: `thought-graph-access` (`.events/pending`), 2 tests preexistentes (`sddia-ecosystem-health` y `sddia-qa::gate_evolution`) y poda/justificación de topología legado (§ 4.2 del dossier).
 
 ### Backlog técnico O13
 

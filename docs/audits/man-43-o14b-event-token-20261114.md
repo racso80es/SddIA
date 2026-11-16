@@ -24,8 +24,7 @@ Sustitución de `target_path` / `event_file_path` / `orchestration_event_path` p
 
 ## Residual
 
-- `cargo test --workspace` y `cargo clippy --workspace`: pendiente de ejecutar en cierre de commit.
-- `gate-evolution --range`: pendiente tras registro evolution O14b.
+- `cargo test --workspace`, `cargo clippy --workspace` y `gate-evolution --range`: cerrados en commit `f4f0fecd` (evolution `bc17f9a8`, `EVOL_OK`) y en la ola **O14c** (`docs/audits/man-43-o14c-reaudit-ac13-20261116.md`), donde también se diagnosticó y resolvió el fallo determinista de `ac13_valid_signature_emits_webhook_source`.
 - `memory-evolution-ingest.md`: delimitador `---` del frontmatter reparado (corrupción previa en HEAD); forja posterior OK.
 - Procesos forjados sin `process_context` heredado: corregidos (`tracker-stamp`, `tracker-sync-replay`, `fix-tool-process`).
 
