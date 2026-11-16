@@ -4,7 +4,7 @@ use crate::eda_bus::{ensure_event_bus_topology, write_json_atomic};
 use crate::{write_fractal_event, BusTopology};
 use chrono::Utc;
 use sddia_core::ports::event_manager::{
-    publish_ecst as publish_ecst_on_port, MoveToDlqRequest,
+    publish_ecst as publish_ecst_on_port, EventFamily, EventUri, MoveToDlqRequest,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -436,7 +436,7 @@ pub fn build_bus_event(pre_event: &Value, transaction_digest: &str, object_id: O
     })
 }
 
-pub fn materialize_to_bus(repo: &Path, bus_event: &Value) -> Result<Option<PathBuf>, String> {
+pub fn materialize_to_bus(repo: &Path, bus_event: &Value) -> Result<Option<EventUri>, String> {
     let event_id = bus_event
         .get("event_id")
         .and_then(|v| v.as_str())
@@ -444,7 +444,6 @@ pub fn materialize_to_bus(repo: &Path, bus_event: &Value) -> Result<Option<PathB
         .filter(|s| !s.is_empty())
         .ok_or_else(|| "event_id inválido para materialización".to_string())?;
     let _bus = ensure_event_bus_topology(repo)?;
-    let _target = _bus.pending.join(format!("{event_id}.json"));
     sddia_event_manager_host::with_productive_port(repo, "github_materialize", |port| {
         if port
             .get_event(sddia_core::ports::event_manager::GetEventRequest {
@@ -457,7 +456,7 @@ pub fn materialize_to_bus(repo: &Path, bus_event: &Value) -> Result<Option<PathB
         let mut stamped = bus_event.clone();
         sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
         publish_ecst_on_port(port, repo, "domain", &stamped)?;
-        Ok(Some(PathBuf::from(format!(".events/domain/{event_id}.json"))))
+        EventUri::new(EventFamily::Domain, event_id).map(Some)
     })
 }
 
@@ -510,10 +509,8 @@ pub fn process_pr(repo: &Path, pr: &Value, state: &mut BridgeState) -> Result<bo
 
     let bus_event = build_bus_event(&pre_event, &digest, None);
     match materialize_to_bus(repo, &bus_event)? {
-        Some(target) => {
-            if let Ok(rel) = target.strip_prefix(repo) {
-                eprintln!("[GITHUB-BRIDGE] Materializado: {}", rel.display());
-            }
+        Some(uri) => {
+            eprintln!("[GITHUB-BRIDGE] Materializado: {}", uri.as_canonical());
         }
         None => eprintln!("[GITHUB-BRIDGE] Idempotente: evento {digest} ya en pending"),
     }

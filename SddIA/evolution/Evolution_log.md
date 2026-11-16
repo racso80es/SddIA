@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 153
+universe_total: 154
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `7ed0df40-01f1-43fe-8ac5-b29a571f1cdb` | 2026-11-16 | MAN-43 O14c: rutas virtuales a EventUri en daemon-runtime/motor, oraculo G-2 y dossier AC-13 | CANONICO | `SddIA/evolution/7ed0df40-01f1-43fe-8ac5-b29a571f1cdb.md` |
 | `bc17f9a8-b329-434e-bc7b-1b85c4555585` | 2026-11-14 | MAN-43 O14b: event_uri en contratos EDA (motor, genoma, oraculo) | CANONICO | `SddIA/evolution/bc17f9a8-b329-434e-bc7b-1b85c4555585.md` |
 | `d0bb10b2-7c02-4955-8637-2451c2d5eeb3` | 2026-11-14 | MAN-43 O14: evolution consolidada O0–O12; clippy workspace; schema_uri F-02 | CANONICO | `SddIA/evolution/d0bb10b2-7c02-4955-8637-2451c2d5eeb3.md` |
 | `35ec5355-a3c8-48be-9358-336026684320` | 2026-11-14 | MAN-43 O13: Norma de Identidad Polimórfica (Cicatriz Digital, sustrato B x-sddia); 17 contratos con identidad; eda.event_manager 2.0.0 | CANONICO | `SddIA/evolution/35ec5355-a3c8-48be-9358-336026684320.md` |

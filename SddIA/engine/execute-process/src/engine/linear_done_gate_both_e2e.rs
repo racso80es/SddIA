@@ -85,7 +85,7 @@ fn merge_done_lab_setup(repo: &Path, tracker_ref: &str) {
     )
     .expect("lab update_issue_state done");
     let event_id = format!("ac21-{}", uuid::Uuid::new_v4());
-    let rel = format!(".events/pending/{event_id}.json");
+    let rel = format!("eda://domain/{event_id}");
     let mut event = json!({
         "event_id": event_id,
         "event_type": "PullRequest_Merged",

@@ -232,11 +232,9 @@ fn poll_once(repo: &Path) {
             &items,
             now,
         ) {
-            Ok((paths, _)) => {
-                for p in paths {
-                    if let Ok(rel) = p.strip_prefix(repo) {
-                        eprintln!("[LINEAR-BRIDGE] Tracker_Issue_Changed: {}", rel.display());
-                    }
+            Ok((uris, _)) => {
+                for uri in uris {
+                    eprintln!("[LINEAR-BRIDGE] Tracker_Issue_Changed: {}", uri.as_canonical());
                 }
             }
             Err(e) => eprintln!("[LINEAR-BRIDGE] assimilate {}: {e}", proj.slug),

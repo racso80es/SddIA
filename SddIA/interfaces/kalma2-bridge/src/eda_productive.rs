@@ -1,6 +1,8 @@
 //! Productivo: EventManagerPort (sin `sddia_event_store` directo).
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(test)]
+use std::path::PathBuf;
 
 use serde_json::Value;
 use sddia_core::ports::event_manager::{
@@ -35,7 +37,7 @@ pub fn db_path(repo: &Path) -> PathBuf {
 pub fn domain_event(
     repo: &Path,
     event_id: &str,
-) -> Option<(PathBuf, Value, bool)> {
+) -> Option<(Value, bool)> {
     with_productive_port(repo, "domain_event", |port| {
         let row = port
             .get_event(GetEventRequest {
@@ -46,11 +48,7 @@ pub fn domain_event(
             .list_dlq(ListDlqRequest { limit: Some(10_000) })
             .map(|r| r.events.iter().any(|e| e.event_id == event_id))
             .unwrap_or(false);
-        Ok((
-            PathBuf::from(format!(".events/domain/{event_id}.json")),
-            row.ecst,
-            in_dead,
-        ))
+        Ok((row.ecst, in_dead))
     })
     .ok()
 }

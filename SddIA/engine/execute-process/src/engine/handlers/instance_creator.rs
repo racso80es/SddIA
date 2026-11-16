@@ -484,13 +484,9 @@ fn probe_route_domain(instance_root: &Path) -> Value {
             "reason": "execute-process ELF ausente en instancia"
         });
     };
-    let domain = instance_root.join(".events/domain");
-    if let Err(e) = fs::create_dir_all(&domain) {
-        return json!({ "success": false, "error": e.to_string() });
-    }
     let eid = Uuid::new_v4().to_string();
-    let rel = format!(".events/domain/{eid}.json");
-    let event = json!({
+    let event_uri = format!("eda://domain/{eid}");
+    let mut event = json!({
         "event_id": eid,
         "event_type": "Instance_Creator_Smoke_Probe",
         "event_family": "domain",
@@ -498,11 +494,11 @@ fn probe_route_domain(instance_root: &Path) -> Value {
         "emitter_agent": "instance-creator",
         "payload": { "source": "instance-creator-smoke-route" }
     });
-    let path = instance_root.join(&rel);
-    if fs::write(&path, format!("{event}\n")).is_err() {
-        return json!({ "success": false, "reason": "write probe event" });
+    let _ = sddia_eda_catalog::stamp_published_event(instance_root, &mut event);
+    if let Err(e) = crate::engine::eda_port::record_ecst(instance_root, "domain", &event) {
+        return json!({ "success": false, "reason": "record probe event", "error": e });
     }
-    let inputs = json!({ "event_uri": rel, "blocking": true });
+    let inputs = json!({ "event_uri": event_uri, "blocking": true });
     match Command::new(&bin)
         .current_dir(instance_root)
         .args([
@@ -524,7 +520,7 @@ fn probe_route_domain(instance_root: &Path) -> Value {
             json!({
                 "success": success,
                 "exit_code": out.status.code(),
-                "event_path": rel
+                "event_uri": event_uri
             })
         }
         Err(e) => json!({ "success": false, "error": e.to_string() }),

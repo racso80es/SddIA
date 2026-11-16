@@ -222,7 +222,7 @@ pub fn run_pbi(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Stri
         data: Some(json!({
             "pbi_ref": rel,
             "status": "refinado",
-            "event_path": event_rel,
+            "event_uri": event_rel,
             "tracker_ref": tracker_ref,
         })),
         error: None,
@@ -403,7 +403,7 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
         data: Some(json!({
             "hu_ref": rel,
             "status": "refinada",
-            "event_path": event_rel,
+            "event_uri": event_rel,
             "tracker_ref": tracker_ref,
             "create_issue_invoked": create_issue_invoked,
         })),
@@ -512,7 +512,7 @@ mod tests {
         assert!(text.contains("tracker_column: todo"));
         assert!(text.contains("refinement: refined"));
         assert!(!text.contains("status: refinado"));
-        assert!(out.data.as_ref().and_then(|d| d.get("event_path")).is_some());
+        assert!(out.data.as_ref().and_then(|d| d.get("event_uri")).is_some());
         cleanup_project_index(&core, slug);
     }
 

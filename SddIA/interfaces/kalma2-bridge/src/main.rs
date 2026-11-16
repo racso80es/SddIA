@@ -821,7 +821,7 @@ fn find_domain_event_with_proofs(
     _dead_dir: &Path,
     proofs_dir: Option<&Path>,
     event_id: &str,
-) -> Option<(PathBuf, serde_json::Value, bool)> {
+) -> Option<(serde_json::Value, bool)> {
     if eda_productive::store_active(repo) {
         if let Some(hit) = eda_productive::domain_event(repo, event_id) {
             return Some(hit);
@@ -838,7 +838,7 @@ fn find_domain_event_with_proofs(
                     "timestamp": v.get("timestamp"),
                     "payload": v.get("payload"),
                 });
-                return Some((in_proof, projected, false));
+                return Some((projected, false));
             }
         }
     }
@@ -1124,8 +1124,8 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
         );
     }
 
-    let in_dead = domain_hit.as_ref().map(|h| h.2).unwrap_or(false);
-    let domain_val = domain_hit.as_ref().map(|h| &h.1);
+    let in_dead = domain_hit.as_ref().map(|h| h.1).unwrap_or(false);
+    let domain_val = domain_hit.as_ref().map(|h| &h.0);
     let phase_end = latest_phase_end(repo, event_id);
     let (status, message) = project_status(domain_val, in_dead, pec.as_ref(), phase_end.as_ref());
 

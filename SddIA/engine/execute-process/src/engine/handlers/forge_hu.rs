@@ -148,7 +148,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         status_code: 0,
         data: Some(json!({
             "tracker_ref": tracker_ref,
-            "event_path": event_path,
+            "event_uri": event_path,
             "create_issue_invoked": true,
         })),
         error: None,

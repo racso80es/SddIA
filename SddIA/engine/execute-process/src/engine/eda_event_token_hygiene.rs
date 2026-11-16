@@ -57,9 +57,7 @@ mod tests {
     }
 
     fn genome_allow_target_path(rel_path: &str) -> bool {
-        GENOME_TARGET_PATH_ALLOW
-            .iter()
-            .any(|allow| rel_path == *allow)
+        GENOME_TARGET_PATH_ALLOW.contains(&rel_path)
     }
 
     fn scan_genome_contract(repo: &Path) -> Result<(), String> {
@@ -152,7 +150,7 @@ mod tests {
                 continue;
             }
             for path in walkdir_light(&root)? {
-                if !path.extension().is_some_and(|e| e == "rs") {
+                if path.extension().is_none_or(|e| e != "rs") {
                     continue;
                 }
                 let rel_path = rel(repo, &path);
@@ -243,5 +241,169 @@ mod tests {
     fn eda_event_token_hygiene_engine_sources_clean() {
         let repo = find_repo_root().expect("repo");
         scan_engine_event_tokens(&repo).expect("motor limpio");
+    }
+
+    /// Exclusiones de ámbito de escaneo G-2 (con motivo explícito).
+    const SCAN_EXCLUDE: &[(&str, &str)] = &[
+        (
+            "eda_event_token_hygiene.rs",
+            "propio oráculo con literales de patrones prohibidos",
+        ),
+        (
+            "gate_eda_unit_no_real_backend.rs",
+            "gate QA que inspecciona referencias a .events/ en tests",
+        ),
+    ];
+
+    /// Excepciones explícitas para literales `.events/...` en código productivo (E-2 e higiene/retención).
+    const VIRTUAL_PATH_ALLOW: &[(&str, &str)] = &[
+        (
+            "SddIA/tools/event-bus-audit/src/main.rs",
+            "herramienta de auditoría/higiene del bus de eventos",
+        ),
+        (
+            "SddIA/tools/repo-retention-purger/src/slice_events.rs",
+            "purgador de retención de artefactos efímeros",
+        ),
+        (
+            "SddIA/tools/transit-event-payload/src/main.rs",
+            "herramienta de diagnóstico/tránsito de payloads",
+        ),
+        (
+            "SddIA/tools/sddia-qa/src/eda_e2e_lab.rs",
+            "laboratorio E2E de QA",
+        ),
+        (
+            "SddIA/sddia-daemon-runtime/src/lib.rs",
+            "definición de topología BusTopology legado en defaults (no devuelve rutas virtuales de evento)",
+        ),
+    ];
+
+    const VIRTUAL_EVENT_SUBDIRS: &[&str] = &[
+        ".events/pending/",
+        ".events/domain/",
+        ".events/processing/",
+        ".events/processed/",
+        ".events/telemetry/",
+        ".events/dead-letter/",
+    ];
+
+    fn collect_workspace_rs(dir: &Path, out: &mut Vec<PathBuf>) {
+        let Ok(read) = fs::read_dir(dir) else {
+            return;
+        };
+        for ent in read.flatten() {
+            let path = ent.path();
+            let name = ent.file_name().to_string_lossy().to_string();
+            if path.is_dir() {
+                if matches!(name.as_str(), "target" | "tests" | ".git" | "node_modules") {
+                    continue;
+                }
+                collect_workspace_rs(&path, out);
+            } else if path.extension().is_some_and(|e| e == "rs") {
+                out.push(path);
+            }
+        }
+    }
+
+    fn strip_cfg_test_and_comments(text: &str) -> Vec<(usize, String)> {
+        let mut out = Vec::new();
+        let mut in_cfg_test = false;
+        let mut pending_cfg_test = false;
+        let mut brace_depth: i32 = 0;
+
+        for (idx, line) in text.lines().enumerate() {
+            let trimmed = line.trim();
+            if !in_cfg_test {
+                if trimmed.starts_with("#[cfg(test)]") {
+                    pending_cfg_test = true;
+                    continue;
+                }
+                if pending_cfg_test {
+                    if trimmed.contains('{') {
+                        in_cfg_test = true;
+                        pending_cfg_test = false;
+                        brace_depth = trimmed.chars().filter(|&c| c == '{').count() as i32
+                            - trimmed.chars().filter(|&c| c == '}').count() as i32;
+                        if brace_depth <= 0 {
+                            in_cfg_test = false;
+                        }
+                    }
+                    continue;
+                }
+                if trimmed.starts_with("//") {
+                    continue;
+                }
+                out.push((idx + 1, line.to_string()));
+            } else {
+                brace_depth += trimmed.chars().filter(|&c| c == '{').count() as i32;
+                brace_depth -= trimmed.chars().filter(|&c| c == '}').count() as i32;
+                if brace_depth <= 0 {
+                    in_cfg_test = false;
+                }
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn eda_event_token_hygiene_no_virtual_event_paths_workspace() {
+        let repo = find_repo_root().expect("repo");
+        let sddia_dir = repo.join("SddIA");
+        let mut files = Vec::new();
+        collect_workspace_rs(&sddia_dir, &mut files);
+        files.sort();
+
+        let mut violations = Vec::new();
+        for path in files {
+            let rel_path = rel(&repo, &path);
+            if SCAN_EXCLUDE.iter().any(|(ex, _)| rel_path.ends_with(ex)) {
+                continue;
+            }
+            if VIRTUAL_PATH_ALLOW.iter().any(|(al, _)| rel_path == *al) {
+                continue;
+            }
+            let text = fs::read_to_string(&path).unwrap_or_default();
+            for (lineno, line) in strip_cfg_test_and_comments(&text) {
+                for pat in VIRTUAL_EVENT_SUBDIRS {
+                    if line.contains(pat) {
+                        violations.push(format!("{rel_path}:{lineno}: contiene `{pat}`"));
+                    }
+                }
+            }
+        }
+        assert!(
+            violations.is_empty(),
+            "rutas virtuales `.events/...` en código productivo:\n{}",
+            violations.join("\n")
+        );
+    }
+
+    #[test]
+    fn eda_event_token_hygiene_cli_outputs_no_event_path() {
+        let repo = find_repo_root().expect("repo");
+        let sddia_dir = repo.join("SddIA");
+        let mut files = Vec::new();
+        collect_workspace_rs(&sddia_dir, &mut files);
+        files.sort();
+
+        let mut violations = Vec::new();
+        for path in files {
+            let rel_path = rel(&repo, &path);
+            if SCAN_EXCLUDE.iter().any(|(ex, _)| rel_path.ends_with(ex)) {
+                continue;
+            }
+            let text = fs::read_to_string(&path).unwrap_or_default();
+            for (lineno, line) in strip_cfg_test_and_comments(&text) {
+                if line.contains("\"event_path\"") {
+                    violations.push(format!("{rel_path}:{lineno}: clave JSON `\"event_path\"`"));
+                }
+            }
+        }
+        assert!(
+            violations.is_empty(),
+            "salidas CLI con clave `\"event_path\"` en código productivo:\n{}",
+            violations.join("\n")
+        );
     }
 }

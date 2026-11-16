@@ -221,10 +221,6 @@ fn fracture_event_content_hash(event_type: &str, payload: &Value) -> String {
     format!("{:x}", hasher.finalize())[..12].to_string()
 }
 
-fn pending_virtual_event_path(pending_dir: &Path, event_id: &str) -> PathBuf {
-    pending_dir.join(format!("{event_id}.json"))
-}
-
 pub(crate) fn is_runtime_db_event_path(repo: &Path, path: &Path) -> bool {
     sddia_event_manager_host::path_matches_productive_redb(repo, path)
 }
@@ -261,11 +257,10 @@ fn find_fracture_stored_event_id(repo: &Path, event: &Value) -> Result<Option<St
 
 fn write_pending_domain_event_file(
     repo: &Path,
-    pending_dir: &Path,
     event_type: &str,
     emitter_agent: &str,
     payload: Value,
-) -> Result<PathBuf, String> {
+) -> Result<sddia_core::ports::event_manager::EventUri, String> {
     let content_hash = if event_type == "System_Fracture_Detected" {
         Some(fracture_event_content_hash(event_type, &payload))
     } else {
@@ -283,11 +278,14 @@ fn write_pending_domain_event_file(
     sddia_eda_catalog::stamp_published_event(repo, &mut event)?;
     if content_hash.is_some() {
         if let Some(existing_id) = find_fracture_stored_event_id(repo, &event)? {
-            return Ok(pending_virtual_event_path(pending_dir, &existing_id));
+            return sddia_core::ports::event_manager::EventUri::new(
+                sddia_core::ports::event_manager::EventFamily::Domain,
+                existing_id,
+            );
         }
     }
-    eda_port::publish_ecst(repo, "pending", &event).map_err(|e| e.to_string())?;
-    Ok(pending_virtual_event_path(pending_dir, &event_uuid))
+    let seal = eda_port::publish_ecst(repo, "pending", &event).map_err(|e| e.to_string())?;
+    Ok(seal.event_uri)
 }
 
 pub fn materialize_pending_domain_event(
@@ -296,18 +294,9 @@ pub fn materialize_pending_domain_event(
     emitter_agent: &str,
     payload: Value,
 ) -> Result<String, String> {
-    let bus = ensure_event_bus_topology(repo)?;
-    let pending_dir = repo.join(&bus.pending);
-    #[cfg(test)]
-    fs::create_dir_all(&pending_dir).map_err(|e| e.to_string())?;
-    let event_path = write_pending_domain_event_file(
-        repo,
-        &pending_dir,
-        event_type,
-        emitter_agent,
-        payload,
-    )?;
-    Ok(rel_event_path(repo, &event_path))
+    let _bus = ensure_event_bus_topology(repo)?;
+    let uri = write_pending_domain_event_file(repo, event_type, emitter_agent, payload)?;
+    Ok(uri.as_canonical())
 }
 
 fn validate_blocking_subscribers(
@@ -398,13 +387,10 @@ pub fn resolve_route_event_path(
         }
     }
 
-    let rel = materialize_pending_domain_event(repo, event_type, emitter, payload)?;
-    let stem = std::path::Path::new(&rel)
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .filter(|s| !s.is_empty())
-        .ok_or_else(|| format!("event_id ausente en materialización: {rel}"))?;
-    Ok(format!("eda://domain/{stem}"))
+    let uri = materialize_pending_domain_event(repo, event_type, emitter, payload)?;
+    let parsed = sddia_core::ports::event_manager::EventUri::parse(&uri)
+        .map_err(|e| format!("event_id ausente en materialización ({uri}): {e}"))?;
+    Ok(format!("eda://domain/{}", parsed.event_id))
 }
 
 pub fn is_local_qa_event(event: &Value) -> bool {
@@ -788,17 +774,6 @@ fn emit_dlt_batch_fracture(repo: &Path, causa: &str) {
     if dlt_transient_error_trace(causa) {
         return;
     }
-    let pending_rel = if let Ok(cfg) = super::workspace::load_paths_config(repo) {
-        cfg.get("eda_bus")
-            .and_then(|b| b.get("pending"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.trim().trim_start_matches("./").to_string())
-            .unwrap_or_else(|| ".events/pending".into())
-    } else {
-        ".events/pending".into()
-    };
-    let pending = repo.join(&pending_rel);
-    let _ = fs::create_dir_all(&pending);
     let (friction_id, error_trace) = classify_batch_anchor_friction(causa);
     let payload = json!({
         "process_name": "route-domain-event",
@@ -809,7 +784,6 @@ fn emit_dlt_batch_fracture(repo: &Path, causa: &str) {
     });
     let _ = write_pending_domain_event_file(
         repo,
-        &pending,
         "System_Fracture_Detected",
         "execute-process",
         payload,
@@ -2443,7 +2417,7 @@ pub fn route_domain_event(repo: &Path, event_uri: &str, batch_mode_iota: bool) -
     };
 
     let processing_header = if from_store {
-        repo.join(format!(".events/pending/{event_uuid}.json"))
+        PathBuf::new()
     } else {
         match ensure_processing_header(repo, &bus, &event_uuid, &event_path) {
             Ok(p) => p,

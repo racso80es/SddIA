@@ -99,7 +99,7 @@ fn lab_record_domain_event(repo: &Path, event_type: &str, payload: Value) -> Str
     });
     sddia_eda_catalog::stamp_published_event(repo, &mut event).expect("stamp");
     crate::engine::eda_port::record_ecst(repo, "domain", &event).expect("record");
-    format!(".events/pending/{event_id}.json")
+    format!("eda://domain/{event_id}")
 }
 
 fn stamp(repo: &Path, event_type: &str, payload: Value) -> bool {

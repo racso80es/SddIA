@@ -127,17 +127,26 @@ pub fn load_telemetry_compliance_config(repo: &Path) -> Result<HashMap<String, S
     Ok(defaults)
 }
 
+pub fn stamp_fractal_delivery_state_by_id(
+    repo: &Path,
+    event_id: &str,
+    subscriber_key: &str,
+    status: &str,
+) {
+    let label = status.trim().to_ascii_lowercase();
+    if matches!(label.as_str(), "success" | "processed" | "skipped") {
+        let _ = eda_port::record_delivery_ack(repo, event_id, subscriber_key);
+    } else if label == "failed" {
+        let _ = eda_port::record_delivery_nack(repo, event_id, subscriber_key);
+    }
+}
+
 pub fn stamp_fractal_delivery_state(event_path: &Path, subscriber_key: &str, status: &str) {
     if let (Some(repo), Some(event_id)) = (
         repo_root_from_event(event_path),
         event_path.file_stem().and_then(|stem| stem.to_str()),
     ) {
-        let label = status.trim().to_ascii_lowercase();
-        if matches!(label.as_str(), "success" | "processed" | "skipped") {
-            let _ = eda_port::record_delivery_ack(&repo, event_id, subscriber_key);
-        } else if label == "failed" {
-            let _ = eda_port::record_delivery_nack(&repo, event_id, subscriber_key);
-        }
+        stamp_fractal_delivery_state_by_id(&repo, event_id, subscriber_key, status);
     }
 }
 

@@ -601,7 +601,7 @@ fn envelope_status(
         "workspace_path": ws.to_string_lossy(),
         "status": status,
         "open_questions": open_questions,
-        "event_path": event_path,
+        "event_uri": event_path,
     });
     if refined_event_pending {
         data["refined_event_pending"] = json!(true);

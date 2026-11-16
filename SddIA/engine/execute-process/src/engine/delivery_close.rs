@@ -90,7 +90,7 @@ fn trunk_direct_close(
             "delivery_mode": "trunk_direct",
             "delivery_mode_source": bound.delivery_mode_source,
             "event_type": "Delivery_Committed",
-            "event_path": event_path,
+            "event_uri": event_path,
             "omitted_processes": ["pull-request-review", "accept-pr"],
             "project_root": bound.project_root.to_string_lossy().replace('\\', "/"),
         })),
