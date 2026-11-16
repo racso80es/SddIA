@@ -22,3 +22,9 @@ members = [
     "daemons/*",
     "interfaces/*",
 ]
+[profile.dev]
+debug = "line-tables-only"
+strip = "none"
+
+[profile.dev.package."*"]
+debug = false
