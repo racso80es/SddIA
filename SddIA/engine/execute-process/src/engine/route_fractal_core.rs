@@ -239,11 +239,7 @@ fn route_fractal_event(
     let event_path = if let Ok(uri) =
         sddia_core::ports::event_manager::EventUri::parse(event_uri)
     {
-        repo.join(format!(
-            ".events/{}/{}.json",
-            uri.family.as_str(),
-            uri.event_id
-        ))
+        std::path::PathBuf::from(format!("{}.json", uri.event_id))
     } else {
         let raw_path = Path::new(event_uri);
         if raw_path.is_absolute() {

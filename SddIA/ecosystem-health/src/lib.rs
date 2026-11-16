@@ -689,7 +689,7 @@ pub fn fuse_ecosystem_health(repo: &Path, opts: FuseOptions) -> Result<Value, St
     });
     let parity_ok = parity.get("ok").and_then(|v| v.as_bool()) == Some(true);
     response["runtime_binary_parity"] = parity.clone();
-    if !parity_ok && map_status != "error" {
+    if !parity_ok && !matches!(map_status.as_str(), "error" | "absent") {
         response["map_status"] = json!("DEGRADED");
     }
 

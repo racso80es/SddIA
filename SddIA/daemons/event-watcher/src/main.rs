@@ -261,7 +261,7 @@ fn tick_fractal_routes(
                 break;
             }
         }
-        let rel = format!(".events/{family}/{event_uuid}.json");
+        let rel = format!("eda://{family}/{event_uuid}");
         let key = format!(
             "{}/{}.json",
             watch_dir.file_name().unwrap_or_default().to_string_lossy(),

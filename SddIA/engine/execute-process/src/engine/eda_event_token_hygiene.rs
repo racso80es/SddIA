@@ -273,20 +273,9 @@ mod tests {
             "SddIA/tools/sddia-qa/src/eda_e2e_lab.rs",
             "laboratorio E2E de QA",
         ),
-        (
-            "SddIA/sddia-daemon-runtime/src/lib.rs",
-            "definición de topología BusTopology legado en defaults (no devuelve rutas virtuales de evento)",
-        ),
     ];
 
-    const VIRTUAL_EVENT_SUBDIRS: &[&str] = &[
-        ".events/pending/",
-        ".events/domain/",
-        ".events/processing/",
-        ".events/processed/",
-        ".events/telemetry/",
-        ".events/dead-letter/",
-    ];
+    const VIRTUAL_EVENT_SUBDIRS: &[&str] = &[".events/"];
 
     fn collect_workspace_rs(dir: &Path, out: &mut Vec<PathBuf>) {
         let Ok(read) = fs::read_dir(dir) else {

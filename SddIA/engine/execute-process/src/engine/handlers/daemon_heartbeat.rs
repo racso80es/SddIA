@@ -285,16 +285,16 @@ fn heartbeats_side_dir(repo: &Path) -> Result<std::path::PathBuf, String> {
     Ok(state_dir(repo)?.join("heartbeats"))
 }
 
-fn telemetry_dir(repo: &Path) -> std::path::PathBuf {
+fn telemetry_dir(repo: &Path) -> Option<std::path::PathBuf> {
     use super::super::eda_bus::load_eda_fractal;
     load_eda_fractal(repo)
         .ok()
         .and_then(|m| m.get("telemetry").cloned())
+        .filter(|rel| rel.contains('/') || rel.contains('\\'))
         .map(|rel| {
             let t = rel.trim().trim_start_matches("./");
             repo.join(t)
         })
-        .unwrap_or_else(|| repo.join(".events/telemetry"))
 }
 
 fn ingest_regime(repo: &Path, state: &mut Value) -> Result<u32, String> {
@@ -332,8 +332,7 @@ fn ingest_regime(repo: &Path, state: &mut Value) -> Result<u32, String> {
         }
     }
 
-    let tel = telemetry_dir(repo);
-    if tel.is_dir() {
+    if let Some(tel) = telemetry_dir(repo).filter(|p| p.is_dir()) {
         let mut latest: std::collections::HashMap<String, (std::time::SystemTime, Value, String)> =
             std::collections::HashMap::new();
         for entry in fs::read_dir(&tel).map_err(|e| e.to_string())? {

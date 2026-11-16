@@ -707,41 +707,6 @@ fn normalize_rel(path: &str) -> String {
     p.strip_prefix("./").unwrap_or(&p).to_string()
 }
 
-fn load_fractal_paths(repo: &Path) -> (PathBuf, PathBuf, PathBuf) {
-    let defaults = (
-        repo.join(".events/domain"),
-        repo.join(".events/orchestration"),
-        repo.join(".events/dead-letter"),
-    );
-    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
-    let Ok(text) = std::fs::read_to_string(&cfg_path) else {
-        return defaults;
-    };
-    let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) else {
-        return defaults;
-    };
-    let fractal = cfg.get("eda_fractal");
-    let domain = fractal
-        .and_then(|f| f.get("domain"))
-        .and_then(|v| v.as_str())
-        .map(normalize_rel)
-        .map(|r| repo.join(r))
-        .unwrap_or(defaults.0);
-    let orch = fractal
-        .and_then(|f| f.get("orchestration"))
-        .and_then(|v| v.as_str())
-        .map(normalize_rel)
-        .map(|r| repo.join(r))
-        .unwrap_or(defaults.1);
-    let dead = fractal
-        .and_then(|f| f.get("dead_letter"))
-        .and_then(|v| v.as_str())
-        .map(normalize_rel)
-        .map(|r| repo.join(r))
-        .unwrap_or(defaults.2);
-    (domain, orch, dead)
-}
-
 fn load_proofs_dir(repo: &Path) -> PathBuf {
     let default = repo.join(".SddIA/proofs");
     let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
@@ -953,7 +918,7 @@ fn latest_phase_end_in(dir: &Path) -> Option<PhaseEndNotice> {
 }
 
 fn latest_phase_end(repo: &Path, correlation_id: &str) -> Option<PhaseEndNotice> {
-    latest_phase_end_in(&load_progress_path(repo).join(correlation_id))
+    load_progress_path(repo).and_then(|p| latest_phase_end_in(&p.join(correlation_id)))
 }
 
 fn trace_end_detail(
@@ -1103,9 +1068,8 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
         );
     }
 
-    let (domain_dir, _orch_dir, dead_dir) = load_fractal_paths(repo);
     let proofs_dir = load_proofs_dir(repo);
-    let domain_hit = find_domain_event_with_proofs(repo, &domain_dir, &dead_dir, Some(&proofs_dir), event_id);
+    let domain_hit = find_domain_event_with_proofs(repo, Path::new(""), Path::new(""), Some(&proofs_dir), event_id);
     let pec = eda_productive::store_active(repo)
         .then(|| eda_productive::pec_for_correlation(repo, event_id))
         .flatten()
@@ -1178,21 +1142,15 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
     )
 }
 
-fn load_progress_path(repo: &Path) -> PathBuf {
+fn load_progress_path(repo: &Path) -> Option<PathBuf> {
     let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
-    let default = repo.join(".events/progress");
-    let Ok(text) = std::fs::read_to_string(&cfg_path) else {
-        return default;
-    };
-    let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) else {
-        return default;
-    };
+    let text = std::fs::read_to_string(&cfg_path).ok()?;
+    let cfg = serde_json::from_str::<serde_json::Value>(&text).ok()?;
     cfg.get("eda_fractal")
         .and_then(|f| f.get("progress"))
         .and_then(|v| v.as_str())
         .map(normalize_rel)
         .map(|r| repo.join(r))
-        .unwrap_or(default)
 }
 
 fn query_param(url: &str, key: &str) -> Option<String> {
@@ -1503,22 +1461,6 @@ fn new_event_id() -> String {
     )
 }
 
-fn load_eda_pending(repo: &Path) -> PathBuf {
-    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
-    if let Ok(text) = std::fs::read_to_string(&cfg_path) {
-        if let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) {
-            if let Some(rel) = cfg
-                .pointer("/eda_bus/pending")
-                .and_then(|v| v.as_str())
-                .map(normalize_rel)
-            {
-                return repo.join(rel);
-            }
-        }
-    }
-    repo.join(".events/pending")
-}
-
 fn emit_system_fracture(
     repo: &Path,
     fracture_kind: &str,
@@ -1526,8 +1468,6 @@ fn emit_system_fracture(
     attempted_action: &str,
 ) {
     let event_id = new_event_id();
-    let pending = load_eda_pending(repo);
-    let _ = std::fs::create_dir_all(&pending);
     let ts = chrono_like_now();
     let event = serde_json::json!({
         "event_id": event_id,
@@ -2319,15 +2259,6 @@ fn handle_email_quick_action(mut req: tiny_http::Request, repo: &Path) {
         return;
     }
     let event_id = new_event_id();
-    let (domain_dir, _, _) = load_fractal_paths(repo);
-    if std::fs::create_dir_all(&domain_dir).is_err() {
-        reply(
-            req,
-            500,
-            r#"{"success":false,"message":"mkdir domain","exit_code":1}"#.into(),
-        );
-        return;
-    }
     let mut payload = serde_json::json!({
         "message_uid": uid,
         "action": action,
@@ -2341,7 +2272,7 @@ fn handle_email_quick_action(mut req: tiny_http::Request, repo: &Path) {
     {
         payload["source_event_id"] = serde_json::json!(src);
     }
-    let event = serde_json::json!({
+    let mut event = serde_json::json!({
         "event_id": event_id,
         "event_type": "Email_Quick_Action_Requested",
         "event_family": "domain",
@@ -2349,12 +2280,13 @@ fn handle_email_quick_action(mut req: tiny_http::Request, repo: &Path) {
         "emitter_agent": "kalma2-bridge",
         "payload": payload,
     });
-    let target = domain_dir.join(format!("{event_id}.json"));
-    if std::fs::write(&target, format!("{event}\n")).is_err() {
+    if sddia_eda_catalog::stamp_published_event(repo, &mut event).is_err()
+        || eda_productive::publish_pending(repo, &event).is_err()
+    {
         reply(
             req,
             500,
-            r#"{"success":false,"message":"write domain event","exit_code":1}"#.into(),
+            r#"{"success":false,"message":"publish domain event","exit_code":1}"#.into(),
         );
         return;
     }
@@ -2457,15 +2389,6 @@ fn handle_user_preference_change(mut req: tiny_http::Request, repo: &Path) {
         }
     }
     let event_id = new_event_id();
-    let (domain_dir, _, _) = load_fractal_paths(repo);
-    if std::fs::create_dir_all(&domain_dir).is_err() {
-        reply(
-            req,
-            500,
-            r#"{"success":false,"message":"mkdir domain","exit_code":1}"#.into(),
-        );
-        return;
-    }
     let mut payload = serde_json::json!({
         "operation": operation,
         "channel": "kalma2",
@@ -2499,7 +2422,7 @@ fn handle_user_preference_change(mut req: tiny_http::Request, repo: &Path) {
     {
         payload["priority_level"] = serde_json::json!(v);
     }
-    let event = serde_json::json!({
+    let mut event = serde_json::json!({
         "event_id": event_id,
         "event_type": "User_Preference_Change_Requested",
         "event_family": "domain",
@@ -2507,12 +2430,13 @@ fn handle_user_preference_change(mut req: tiny_http::Request, repo: &Path) {
         "emitter_agent": "kalma2-bridge",
         "payload": payload,
     });
-    let target = domain_dir.join(format!("{event_id}.json"));
-    if std::fs::write(&target, format!("{event}\n")).is_err() {
+    if sddia_eda_catalog::stamp_published_event(repo, &mut event).is_err()
+        || eda_productive::publish_pending(repo, &event).is_err()
+    {
         reply(
             req,
             500,
-            r#"{"success":false,"message":"write domain event","exit_code":1}"#.into(),
+            r#"{"success":false,"message":"publish domain event","exit_code":1}"#.into(),
         );
         return;
     }

@@ -120,13 +120,13 @@ pub fn side_channel_path(repo: &Path, daemon_name: &str) -> PathBuf {
 
 pub fn load_bus_topology(repo: &Path) -> BusTopology {
     let defaults = |repo: &Path| BusTopology {
-        pending: repo.join(".events/pending"),
-        dead_letter: repo.join(".events/dead-letter"),
-        dead_letter_subscribers: repo.join(".events/dead-letter/subscribers"),
-        telemetry: repo.join(".events/telemetry"),
-        progress: repo.join(".events/progress"),
-        orchestration: repo.join(".events/orchestration"),
-        domain: repo.join(".events/domain"),
+        pending: repo.join("pending"),
+        dead_letter: repo.join("dead-letter"),
+        dead_letter_subscribers: repo.join("dead-letter/subscribers"),
+        telemetry: repo.join("telemetry"),
+        progress: repo.join("progress"),
+        orchestration: repo.join("orchestration"),
+        domain: repo.join("domain"),
     };
     let Ok(cfg) = load_cumulo(repo) else {
         return defaults(repo);

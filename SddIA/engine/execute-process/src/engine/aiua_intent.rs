@@ -272,20 +272,8 @@ fn emit_habit(repo: &Path, args: &Value) -> Result<Value, String> {
     });
     let out = user_preference_change_requested::run(repo, &emit_inputs)?;
     if let Some(eid) = out.get("event_id").and_then(|v| v.as_str()) {
-        let synthetic = repo
-            .join(".events/pending")
-            .join(format!("{eid}.json"));
-        let domain_path = repo.join(".events/domain").join(format!("{eid}.json"));
-        let body = super::eda_port::load_dispatched(repo, eid, &synthetic)?
-            .or_else(|| {
-                if domain_path.is_file() {
-                    std::fs::read_to_string(&domain_path)
-                        .ok()
-                        .and_then(|t| serde_json::from_str(&t).ok())
-                } else {
-                    None
-                }
-            })
+        let logical = std::path::PathBuf::from(format!("{eid}.json"));
+        let body = super::eda_port::load_dispatched(repo, eid, &logical)?
             .ok_or_else(|| format!("ECST hábito ausente: {eid}"))?;
         if body
             .get("payload")

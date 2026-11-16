@@ -137,19 +137,16 @@ fn tracker_done_event(linear_updated_at: &str) -> Value {
 
 fn collect_sync_failed_diverged(repo: &Path) -> Vec<String> {
     let mut hits = Vec::new();
-    for sub in [".events/pending", ".events/processing", ".events/processed"] {
-        let dir = repo.join(sub);
-        if !dir.is_dir() {
-            continue;
-        }
-        for ent in fs::read_dir(&dir).into_iter().flatten().flatten() {
-            if ent.path().extension().and_then(|e| e.to_str()) != Some("json") {
-                continue;
-            }
-            let raw = fs::read_to_string(ent.path()).unwrap_or_default();
-            if raw.contains("Tracker_Sync_Failed") && raw.contains("TRACKER_STATE_DIVERGED") {
-                hits.push(ent.path().to_string_lossy().to_string());
-            }
+    let events = crate::engine::eda_port::load_domain_ecsts(repo, 500).unwrap_or_default();
+    for ev in events {
+        let raw = ev.to_string();
+        if raw.contains("Tracker_Sync_Failed") && raw.contains("TRACKER_STATE_DIVERGED") {
+            let eid = ev
+                .get("event_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            hits.push(eid);
         }
     }
     hits

@@ -2338,11 +2338,7 @@ pub fn route_domain_event(repo: &Path, event_uri: &str, batch_mode_iota: bool) -
     };
 
     let event_path = match sddia_core::ports::event_manager::EventUri::parse(event_uri) {
-        Ok(uri) => repo.join(format!(
-            ".events/{}/{}.json",
-            uri.family.as_str(),
-            uri.event_id
-        )),
+        Ok(uri) => PathBuf::from(format!("{}.json", uri.event_id)),
         Err(e) => {
             return json!({
                 "success": false,
@@ -4267,11 +4263,7 @@ pub fn route_domain_batch(repo: &std::path::Path, event_uris: Vec<String>) -> Va
     for path_str in &event_uris {
         let event_path = match sddia_core::ports::event_manager::EventUri::parse(path_str)
         {
-            Ok(uri) => repo.join(format!(
-                ".events/{}/{}.json",
-                uri.family.as_str(),
-                uri.event_id
-            )),
+            Ok(uri) => PathBuf::from(format!("{}.json", uri.event_id)),
             Err(e) => {
                 batch_errors.push(e);
                 continue;

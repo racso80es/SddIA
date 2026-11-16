@@ -7,10 +7,10 @@ use std::path::Path;
 
 pub fn load_fractal_dirs(repo: &Path) -> (String, String, String, String) {
     let defaults = (
-        "./.events/telemetry".to_string(),
-        "./.events/orchestration".to_string(),
-        "./.events/domain".to_string(),
-        "./.events/progress".to_string(),
+        "telemetry".to_string(),
+        "orchestration".to_string(),
+        "domain".to_string(),
+        "progress".to_string(),
     );
     let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
     let Ok(text) = fs::read_to_string(&cfg_path) else {

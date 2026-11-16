@@ -143,24 +143,15 @@ fn yaml_field(text: &str, key: &str) -> Option<String> {
 
 fn assert_no_secrets(repo: &Path) {
     let forbidden = ["LINEAR_API_TOKEN", "super-secret-token", "\"data\":{\"issue\""];
-    let dirs = [".events/pending", ".events/processed"];
-    for dir in dirs {
-        let p = repo.join(dir);
-        if !p.is_dir() {
-            continue;
-        }
-        for entry in fs::read_dir(p).into_iter().flatten().flatten() {
-            if entry.path().extension().and_then(|e| e.to_str()) != Some("json") {
-                continue;
-            }
-            let raw = fs::read_to_string(entry.path()).unwrap_or_default();
-            for needle in forbidden {
-                assert!(
-                    !raw.contains(needle),
-                    "secreto o cuerpo Linear en {}",
-                    entry.path().display()
-                );
-            }
+    let events = crate::engine::eda_port::load_domain_ecsts(repo, 500).unwrap_or_default();
+    for ev in events {
+        let raw = ev.to_string();
+        let eid = ev.get("event_id").and_then(|v| v.as_str()).unwrap_or("?");
+        for needle in forbidden {
+            assert!(
+                !raw.contains(needle),
+                "secreto o cuerpo Linear en evento {eid}"
+            );
         }
     }
 }

@@ -44,12 +44,8 @@ fn load_from_event_uri(
     explicit_event_id: Option<&str>,
 ) -> Result<Value, String> {
     if let Ok(uri) = sddia_core::ports::event_manager::EventUri::parse(rel) {
-        let path = repo.join(format!(
-            ".events/{}/{}.json",
-            uri.family.as_str(),
-            uri.event_id
-        ));
-        return load_from_store(repo, &uri.event_id, &path);
+        let logical = PathBuf::from(format!("{}.json", uri.event_id));
+        return load_from_store(repo, &uri.event_id, &logical);
     }
     let path = resolve_logical_path(repo, rel);
     #[cfg(not(test))]
@@ -83,10 +79,8 @@ pub fn load_ecst_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, Strin
             }
     }
     if let Some(event_id) = str_field(inputs, "event_id") {
-        let synthetic = repo
-            .join(".events/pending")
-            .join(format!("{event_id}.json"));
-        return load_from_store(repo, &event_id, &synthetic);
+        let logical = PathBuf::from(format!("{event_id}.json"));
+        return load_from_store(repo, &event_id, &logical);
     }
     if let Some(rel) = str_field(inputs, "event_uri") {
         return load_from_event_uri(repo, &rel, None);
@@ -104,8 +98,8 @@ pub fn load_ecst_for_handler(repo: &Path, inputs: &Value) -> Result<Value, Strin
         return Ok(event);
     }
     let eid = str_field(&event, "event_id").ok_or("event_id ausente")?;
-    let synthetic = repo.join(".events/pending").join(format!("{eid}.json"));
-    let stored = load_from_store(repo, &eid, &synthetic)?;
+    let logical = PathBuf::from(format!("{eid}.json"));
+    let stored = load_from_store(repo, &eid, &logical)?;
     verify_ecst_matches_bus(repo, &stored)?;
     Ok(stored)
 }

@@ -911,8 +911,11 @@ mod tests {
         );
     }
 
+    static TEST_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[test]
     fn resolve_base_fresh_origin_main_skips_fetch_ca6() {
+        let _guard = TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         let real_git = std::env::var("PATH")
@@ -996,6 +999,7 @@ mod tests {
 
     #[test]
     fn resolve_base_sync_fetch_timeout_declares_outcome_ca14() {
+        let _guard = TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         let real_git = std::env::var("PATH")
@@ -1054,6 +1058,13 @@ mod tests {
             .env("PATH", &path)
             .status()
             .expect("origin/main ref");
+        let stale = std::time::SystemTime::now()
+            - std::time::Duration::from_secs(STALE_REF_AGE_SECS + 120);
+        std::fs::File::options()
+            .write(true)
+            .open(repo.join(".git/refs/remotes/origin/main"))
+            .and_then(|f| f.set_modified(stale))
+            .expect("stale mtime");
         std::process::Command::new(&real_git)
             .args(["remote", "add", "origin", "git@127.0.0.1:1/fake"])
             .current_dir(repo)

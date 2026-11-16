@@ -397,9 +397,6 @@ fn run_smoke(repo: &Path, instance_root: &Path, skip_ignition: bool) -> Value {
     require_dir(".SddIA", &mut checks, &mut ok);
     require_dir(".SddIA/.dev", &mut checks, &mut ok);
     require_dir(".SddIA/daemons/state", &mut checks, &mut ok);
-    require_dir(".events/pending", &mut checks, &mut ok);
-    require_dir(".events/domain", &mut checks, &mut ok);
-    require_dir(".events/orchestration", &mut checks, &mut ok);
 
     let env_path = instance_root.join(".SddIA/.dev/.env");
     let env_ok = env_path.is_file();

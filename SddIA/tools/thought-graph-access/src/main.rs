@@ -52,24 +52,19 @@ fn load_cumulo(repo: &Path) -> Result<Value, String> {
     serde_json::from_str(&text).map_err(|e| format!("cumulo JSON: {e}"))
 }
 
-fn resolve_lancedb_and_pending(repo: &Path) -> Result<(PathBuf, PathBuf), String> {
+fn resolve_lancedb_path(repo: &Path) -> Result<PathBuf, String> {
     let cfg = load_cumulo(repo)?;
     let vs = cfg
         .pointer("/paths/vectorStore")
         .and_then(|v| v.as_str())
         .unwrap_or(".SddIA/vector_store/");
-    let pending = cfg
-        .pointer("/eda_bus/pending")
-        .and_then(|v| v.as_str())
-        .unwrap_or("./.events/pending");
     let vs_rel = vs.trim().trim_start_matches("./");
-    let pending_rel = pending.trim().trim_start_matches("./");
-    Ok((repo.join(vs_rel).join("lancedb"), repo.join(pending_rel)))
+    Ok(repo.join(vs_rel).join("lancedb"))
 }
 
 fn open_repo(repo: &Path) -> Result<LanceDbThoughtRepo, String> {
-    let (lance, pending) = resolve_lancedb_and_pending(repo)?;
-    LanceDbThoughtRepo::open_with_bus(lance, Some(pending)).map_err(|e| e.to_string())
+    let lance = resolve_lancedb_path(repo)?;
+    LanceDbThoughtRepo::open_with_bus(lance, Some(repo.to_path_buf())).map_err(|e| e.to_string())
 }
 
 fn search(repo: &Path, req: &Value) -> Result<Value, String> {
@@ -143,12 +138,10 @@ mod tests {
         let dir = tempdir().unwrap();
         let repo = dir.path();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{
-  "paths": {"vectorStore": ".SddIA/vector_store/"},
-  "eda_bus": {"pending": "./.events/pending"}
-}"#,
+            r#"{"paths": {"vectorStore": ".SddIA/vector_store/"}}"#,
         )
         .unwrap();
         dir
@@ -182,15 +175,19 @@ mod tests {
         let node_id = out["node_id"].as_str().unwrap_or("");
         assert!(!node_id.is_empty());
         assert_eq!(node_id.len(), 64);
-        let pending = dir.path().join(".events/pending");
-        let files: Vec<_> = fs::read_dir(&pending)
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("json"))
-            .collect();
-        assert_eq!(files.len(), 1);
-        let body: Value =
-            serde_json::from_str(&fs::read_to_string(files[0].path()).unwrap()).unwrap();
+        let listed = sddia_event_manager_host::with_productive_port(
+            dir.path(),
+            "test_thought_graph_pending",
+            |port| {
+                port.list_pending(sddia_core::ports::event_manager::ListPendingRequest {
+                    limit: Some(10),
+                })
+                .map_err(|e| e.to_string())
+            },
+        )
+        .expect("list_pending");
+        assert_eq!(listed.events.len(), 1);
+        let body = &listed.events[0].ecst;
         assert_eq!(body["event_type"], "Thought_Persisted");
         assert_eq!(body["emitter_agent"], "lancedb-thought-repo");
         assert_eq!(body["payload"]["node_id"], node_id);

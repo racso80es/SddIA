@@ -11,3 +11,5 @@ serde_json = "1.0"
 
 [dev-dependencies]
 tempfile = "3.10"
+sddia-core = { path = "../../sddia-core" }
+sddia-event-manager-host = { path = "../../sddia-event-manager-host" }

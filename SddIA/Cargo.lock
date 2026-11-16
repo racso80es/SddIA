@@ -5987,7 +5987,9 @@ dependencies = [
 name = "thought-graph-access"
 version = "0.1.0"
 dependencies = [
+ "sddia-core",
  "sddia-core-memory",
+ "sddia-event-manager-host",
  "sddia-infrastructure-lancedb-thought",
  "sddia-io",
  "serde_json",
