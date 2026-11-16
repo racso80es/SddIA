@@ -132,7 +132,8 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O10** | `done (rama)` | `contract_schema` en resolver/gate/validador; C-2 cerrado; C-4 taxonomía 1.0.12 / eda 2.0.0; O9 tools/skills/daemons sellados vía entity-manager |
 | **O14** | `done (rama)` | Evolution `d0bb10b2`, F-02 `schema_uri`, clippy workspace 0 errores, `execute-process --lib` 849/0; `cargo test --workspace` residual `linear-tracker-adapter` AUT-68 (preexistente). Auditoría `man-43-o14-preaudit-20261114.md`. Siguiente: O14b/O14c |
 | **O14b** | `done (rama)` | Commit `f4f0fecd`, evolution `bc17f9a8` (`EVOL_OK`); motor + genoma `event_uri`; oráculo 5/0; `linear-tracker-adapter` 14/0; `execute-process --lib` 854/0. Nota `docs/audits/man-43-o14b-event-token-20261114.md`. Residual webhook resuelto en O14c |
-| **O14c** | `done (rama)` | Rutas virtuales `.events/pending` → `EventUri` en `sddia-daemon-runtime` (20/0 paralelo/serie) y motor (856/0/1 ignored); oráculo G-2 7/7; clippy 0 avisos; `audit-telemetry-compliance-breach` 2.0.0 vía `entity-manager`; `eda-coverage.json` regenerado. Dossier `docs/audits/man-43-o14c-reaudit-ac13-20261116.md` (**NO_APTO_TOTAL**: 3 fallos en `thought-graph-access`, `sddia-ecosystem-health`, `sddia-qa::gate_evolution` + residual § 4 → **O14d**) |
+| **O14c** | `done (rama)` | Commit 1 `0a2162c9`, Commit 2 `c7ca5efc`, evolution `7ed0df40` (`EVOL_OK`); rutas virtuales `.events/pending` → `EventUri`; oráculo G-2 7/7; clippy 0 avisos; dossier `man-43-o14c-reaudit-ac13-20261116.md` (`NO_APTO_TOTAL` propuesto) |
+| **O14d** | `done (rama)` | Cierre de bloqueos O14c: `thought-graph-access` + `lancedb_thought_repo` por `EventManagerPort`, fix `gate_evolution` CA14 + `ecosystem-health` MAN-25, poda total de rutas interpoladas `.events/{…}` y 8 cargadores de topología (0 `.events/` productivos fuera de higiene/QA); `cargo test --workspace` **43 suites: 1226 passed, 0 failed, 1 ignored**; `clippy` 0 avisos; dossier `man-43-o14d-reaudit-ac13-20261116.md` (**`APTO_TOTAL_PROPUESTO`**). Siguiente: **O15** (Argos) |
 | **O13** | `done (rama)` | Regresión O10 (3 tests validador DI) + baseline O12 inválida; clase `capability-contract` en `entity-manager`; C-3 (schema `eda.event_manager` 2.0, paridad schema↔serde); identidad `x-sddia` de los 17 contratos |
 | **O12** | `done` | Línea base; C-4 por cauce oficial; C-5 `event_uri` + process 1.1.0; 4 fallos lib documentados |
 | **O11** | `done` | Remediación forja O10: binario canónico, guarda anti-sobrescritura, restauración 3 `.md`, delete stubs, sellos daemons/O9, `hash_refresh` taxonomía (contenido 2.0.0 heredado de O10) |
@@ -203,7 +204,11 @@ Cerrado en rama (`plan.md` § O14b, commit `f4f0fecd`, evolution `bc17f9a8`). El
 
 ### Backlog técnico O14c
 
-Cerrado en rama (`plan.md` § O14c, v1.2.17). Dossier `docs/audits/man-43-o14c-reaudit-ac13-20261116.md` (**NO_APTO_TOTAL** propuesto). Cierra el residual de rutas virtuales en daemon y motor, amplía el oráculo G-2 (7/7), deja `clippy` a 0 avisos y `execute-process --lib` 856/0 + `sddia-daemon-runtime` 20/0. Bloqueos para **O14d**: `thought-graph-access` (`.events/pending`), 2 tests preexistentes (`sddia-ecosystem-health` y `sddia-qa::gate_evolution`) y poda/justificación de topología legado (§ 4.2 del dossier).
+Cerrado en rama (`plan.md` § O14c, v1.2.17, commits `0a2162c9` y `c7ca5efc`, evolution `7ed0df40`). Dossier `docs/audits/man-43-o14c-reaudit-ac13-20261116.md` (**NO_APTO_TOTAL** propuesto).
+
+### Backlog técnico O14d
+
+Cerrado en rama (`plan.md` § O14d, v1.2.18). Dossier `docs/audits/man-43-o14d-reaudit-ac13-20261116.md` (**`APTO_TOTAL_PROPUESTO`**). Cierra H-1 (`thought-graph-access` por puerto), H-2 (`gate_evolution` CA14 y `ecosystem-health` MAN-25) y H-3 b (poda total de 15 ficheros con `.events/` y 2 escrituras FS en `kalma2-bridge`; oráculo estricto `".events/"` 7/7; `cargo test --workspace` 1226/0; `clippy` 0 avisos). Listo para **O15** (`delivery-close-cycle` → PR → `pull-request-review` por Argos).
 
 ### Backlog técnico O13
 

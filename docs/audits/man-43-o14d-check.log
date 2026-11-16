@@ -1,0 +1,19 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+    Checking sddia-daemon-runtime v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/sddia-daemon-runtime)
+    Checking sddia-infrastructure-lancedb-thought v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/infrastructure/adapters/lancedb_thought_repo)
+    Checking sddia-ecosystem-health v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/ecosystem-health)
+    Checking email-watcher v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/daemons/email-watcher)
+    Checking linear-bridge-watcher v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/daemons/linear-bridge-watcher)
+    Checking telegram-watcher v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/daemons/telegram-watcher)
+    Checking iota-publish-relay v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/daemons/iota-publish-relay)
+    Checking github-bridge-watcher v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/daemons/github-bridge-watcher)
+    Checking event-watcher v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/daemons/event-watcher)
+    Checking thought-graph-access v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/tools/thought-graph-access)
+    Checking execute-process v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/engine/execute-process)
+    Checking kalma2-bridge v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/interfaces/kalma2-bridge)
+    Checking sddia-qa v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/tools/sddia-qa)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.75s
+warning: the following packages contain code that will be rejected by a future version of Rust: imap-proto v0.10.2
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 2`

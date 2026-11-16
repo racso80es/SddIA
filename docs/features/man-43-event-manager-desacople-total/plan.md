@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.17"
+version_plan: "1.2.18"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -1890,7 +1890,133 @@ Fuera de la serie: `chore(build)` de `Cargo.toml`, ya comprometido en `15a56a5d`
 
 ### Resultado de ejecución (2026-11-16, rama)
 
-Dossier: `docs/audits/man-43-o14c-reaudit-ac13-20261116.md` (**NO_APTO_TOTAL** propuesto). Paso 0 cerrado (`sddia-daemon-runtime` 20/0 paralelo/serie; `execute-process --lib` 856/0/1 ignored; oráculo G-2 rojo 5/2 → verde 7/7; `clippy` 0 avisos; `check -Dwarnings` 0 errores; `audit-telemetry-compliance-breach` 2.0.0 vía `entity-manager`; `eda-coverage.json` regenerado). Bloqueos detectados en matriz C para **O14d**: `thought-graph-access` (`.events/pending` + test roto), 2 fallos preexistentes (`sddia-ecosystem-health` MAN-25 y `sddia-qa::gate_evolution` CA14) y topología legado de § 4.2 del dossier.
+Dossier: `docs/audits/man-43-o14c-reaudit-ac13-20261116.md` (**NO_APTO_TOTAL** propuesto). Paso 0 cerrado (`sddia-daemon-runtime` 20/0 paralelo/serie; `execute-process --lib` 856/0/1 ignored; oráculo G-2 rojo 5/2 → verde 7/7; `clippy` 0 avisos; `check -Dwarnings` 0 errores; `audit-telemetry-compliance-breach` 2.0.0 vía `entity-manager`; `eda-coverage.json` regenerado). Bloqueos detectados en matriz C para **O14d**: `thought-graph-access` (`.events/pending` + test roto), 2 fallos preexistentes (`sddia-ecosystem-health` MAN-25 y `sddia-qa::gate_evolution` CA14) y topología legado de § 4.2 del dossier. Commit 1 `0a2162c9`, Commit 2 `c7ca5efc`, evolution `7ed0df40` (`EVOL_OK`).
+
+---
+
+## O14d — Cierre de bloqueos del dossier O14c (`thought-graph-access` + 2 tests workspace + rutas interpoladas `.events/{…}`) + dossier `APTO_TOTAL_PROPUESTO` (siguiente hilo)
+
+Entrada: HEAD `c7ca5efc` (rama `docs/man-43-post-merge-handoff`). O14d resuelve los bloqueos del § 7 de `docs/audits/man-43-o14c-reaudit-ac13-20261116.md` para dejar `cargo test --workspace` con **0 fallos** y entregar el dossier con veredicto propuesto **`APTO_TOTAL_PROPUESTO`** antes de O15 (Argos).
+
+### Hallazgos medidos (2026-11-16, HEAD `c7ca5efc`)
+
+| Hallazgo | Evidencia | Afecta |
+|----------|-----------|--------|
+| **1. `thought-graph-access` acoplado a `pending_dir` (`.events/pending`).** `lancedb_thought_repo/src/lib.rs:245-250` **ya** publica `Thought_Persisted` por `EventManagerPort` (`sddia_event_manager_host::with_productive_port` → `publish_ecst`), pero `open_with_bus` recibe `pending_dir: Option<PathBuf>` solo para deducir `repo` haciendo `pending_dir.parent()` (`:229-240`). A su vez, `tools/thought-graph-access/src/main.rs:61-72` resuelve `./.events/pending` y su test `store_returns_node_id_and_emits_thought_persisted` (`:185-197`) hace `fs::read_dir(".events/pending")` → falla con `NotFound`. | `lancedb_thought_repo/src/lib.rs:229-250`; `tools/thought-graph-access/src/main.rs:61-72, 185-197` | AC-4, AC-5, AC-12, F-09/F-10 |
+| **2. Test `gate_evolution::resolve_base_sync_fetch_timeout_declares_outcome_ca14`.** En `tools/sddia-qa/src/gate_evolution.rs:1052` el test crea `refs/remotes/origin/main` justo antes de llamar `resolve_base(repo, true, false)`. Como su mtime tiene 0s (`<= STALE_REF_AGE_SECS`), `resolve_base` (`:149-155`) toma la rama `skip_fetch = true` y devuelve `Some("skipped")` sin invocar nunca el wrapper de `git fetch` con timeout. | `tools/sddia-qa/src/gate_evolution.rs:149-155, 1051-1071` | AC-12 |
+| **3. Test `sddia-ecosystem-health::ecosystem_health_map_absent_still_ok`.** En `ecosystem-health/src/lib.rs:692-694` (introducido en `647f400a`, MAN-25), `if !parity_ok && map_status != "error" { response["map_status"] = json!("DEGRADED"); }` pisa `map_status = "absent"` cuando `map-snapshot` no existe y el `tempdir` del test no tiene binarios release en `SddIA/target/release`, contradiciendo la línea 672 (`if map_status == "absent"`) y el propio test (`:940`). | `ecosystem-health/src/lib.rs:672-694, 928-942` | AC-12 |
+| **4. Hueco en el oráculo G-2: rutas interpoladas `.events/{family}/{id}.json`.** `VIRTUAL_EVENT_SUBDIRS` en `eda_event_token_hygiene.rs` busca literales con nombre de subdirectorio fijo (`.events/pending/`, `.events/domain/`, …), por lo que no detectó `format!(".events/{family}/{event_uuid}.json")` ni `format!(".events/{}/{}.json", ...)` en 4 ficheros: `daemons/event-watcher/src/main.rs:264`, `ecst_input_loader.rs:48,87,107`, `route_domain_core.rs:2342,4271` y `route_fractal_core.rs:243`. Además, `aiua_intent.rs:276,278` y los helpers E2E `linear_direct_cycle_e2e.rs:146` / `linear_done_gate_both_e2e.rs:140` conservan referencias a `.events/pending` / `.events/domain`. | `grep '\.events/'` en los 14 ficheros de § 4.2 | AC-4, AC-5 |
+| **5. Topología por defecto / fallback config en 8 ficheros (§ 4.2 subgrupo B).** `eda_bus.rs`, `fractal.rs`, `fractal_bus.rs`, `daemons.rs`, `daemon_heartbeat.rs`, `instance_creator.rs:400-402`, `kalma2-bridge/src/main.rs:712-714,1183,1519` y `sddia-daemon-runtime/src/lib.rs:123-129` contienen strings por defecto de configuración (`./.events/...`) en cargadores de `cumulo.paths.json` o creación de layout de instancia. | lectura de los 8 ficheros | AC-4 |
+
+### Laudos del Vértice Biológico (2026-11-16)
+
+- **H-1 = (a).** `LanceDbThoughtRepo::open_with_bus` recibe `repo_root: Option<PathBuf>` directamente (sin pasar por `.events/pending`); `thought-graph-access` pasa `Some(repo.to_path_buf())` y elimina `resolve_lancedb_and_pending` → `resolve_lancedb_path`; el test `store_returns_node_id_and_emits_thought_persisted` prepara el catálogo mínimo en `fixture_repo` y verifica el evento `Thought_Persisted` leyendo por `EventManagerPort` (`sddia_event_manager_host::with_productive_port` → `list_pending` / `get_event`), conservando todos sus asserts.
+- **H-2 = (a).** Se corrigen los 2 fallos preexistentes del workspace dentro de O14d sin debilitar ningún assert:
+  1. `gate_evolution::tests::resolve_base_sync_fetch_timeout_declares_outcome_ca14`: envejecer el mtime de `.git/refs/remotes/origin/main` por encima de `STALE_REF_AGE_SECS` (simétrico al test vecino `resolve_base_fresh_origin_main_skips_fetch_ca6` de la línea 980) para que `resolve_base` ejecute realmente el `git fetch` y valide `Some("timeout")`.
+  2. `ecosystem-health/src/lib.rs:692`: preservar `map_status == "absent"` cuando el snapshot no existe (`if !parity_ok && !matches!(map_status, "error" | "absent")`), exponiendo igualmente `runtime_binary_parity` en el JSON de salida.
+- **H-3 = (b).** Poda total del residual § 4.2 + § 4.3 en la misma ola: se eliminan tanto las rutas interpoladas `.events/{…}` en los 6 ficheros operativos como los *defaults* `.events/` en los 8 cargadores de topología/configuración. El oráculo G-2 pasa a vetar **cualquier** aparición de `.events/` en código productivo fuera de las 4 herramientas de higiene/auditoría/QA (`event-bus-audit`, `repo-retention-purger`, `transit-event-payload`, `eda_e2e_lab`, y se retira `sddia-daemon-runtime/src/lib.rs` de `VIRTUAL_PATH_ALLOW`).
+
+### Inventario quirúrgico H-3 (b) — 15 ficheros (medido, HEAD `c7ca5efc`)
+
+**Subgrupo 1 — Rutas interpoladas y operativas (7 ficheros, incluido H-1):**
+
+| Fichero | Líneas con `.events/` | Acción H-3 (b) |
+|---------|-----------------------|----------------|
+| `tools/thought-graph-access/src/main.rs` + `lancedb_thought_repo/src/lib.rs` | `main.rs:64`, `:150`, `:185` | **H-1 (a):** pasar `repo_root` directo a `open_with_bus`; leer del puerto en el test |
+| `daemons/event-watcher/src/main.rs` | `:264` (`format!(".events/{family}/{event_uuid}.json")`) | Pasar `EventUri` canónico (`format!("eda://{family}/{event_uuid}")`) al despachador / route book |
+| `engine/execute-process/src/engine/ecst_input_loader.rs` | `:48`, `:87`, `:107` | Cargar del puerto directamente por `event_id` (`eda_port::get_event` / `load_dispatched` sin fabricar `repo.join(".events/...")`) |
+| `engine/execute-process/src/engine/route_domain_core.rs` | `:2342`, `:4271` | Resolver `EventUri` por `event_id` en el puerto sin construir `repo.join(format!(".events/{}/{}.json", ...))` |
+| `engine/execute-process/src/engine/route_fractal_core.rs` | `:243` | Resolver `EventUri` por `event_id` sin construir `repo.join(format!(".events/{}/{}.json", ...))` |
+| `engine/execute-process/src/engine/aiua_intent.rs` | `:276`, `:278` | Cargar el ECST por `eda_port` usando `eid` sin rutas `.events/pending` ni `.events/domain` |
+| `engine/execute-process/src/engine/linear_direct_cycle_e2e.rs` y `linear_done_gate_both_e2e.rs` | `:146` y `:140` | Inspeccionar eventos por `eda_port` (`list_events` / `list_dlq`) en vez de recorrer `.events/{pending,processing,processed}` en disco |
+
+**Subgrupo 2 — Poda de los 8 cargadores de topología por defecto (H-3 b):**
+
+| Fichero | Líneas con `.events/` | Acción H-3 (b) |
+|---------|-----------------------|----------------|
+| `engine/execute-process/src/engine/fractal.rs` | `:10-13` (`load_fractal_dirs`) | `defaults` pasa a nombres de familia canónicos `("telemetry", "orchestration", "domain", "progress")` (`write_fractal_event` ya extrae la familia con `split('/').next_back()`) |
+| `engine/execute-process/src/engine/eda_bus.rs` | `:39,44,49` (`load_eda_bus`) y `:153,156,158` (`load_eda_fractal`) | `load_eda_fractal` usa `("telemetry", "orchestration", "domain")`; `load_eda_bus` usa tokens de familia `"pending"`, `"processing"`, `"processed"` (o se acota a `#[cfg(test)]` donde aplique) |
+| `engine/execute-process/src/engine/fractal_bus.rs` | `:187` (`load_fractal_dead_letter_dir`) | Solo tiene un caller en `:233` dentro de `#[cfg(test)]` → marcar `#[cfg(test)]` en `load_fractal_dead_letter_dir` |
+| `engine/execute-process/src/engine/daemons.rs` | `:288` (`load_eda_pending`) | Eliminar si no tiene callers productivos o marcar `#[cfg(test)]` / devolver `"pending"` |
+| `engine/execute-process/src/engine/handlers/daemon_heartbeat.rs` | `:297` (`telemetry_dir`) | En EventManager v2 los latidos viven en `.SddIA/daemons/state/heartbeats/` (side-channel Vía C) y en el puerto; retirar el barrido FS de `.events/telemetry` (o consultar por puerto) |
+| `engine/execute-process/src/engine/handlers/instance_creator.rs` | `:400-402` (`require_dir`) | Retirar `require_dir(".events/{pending,domain,orchestration}")` de la verificación de instancia v2 (la instancia usa `.SddIA` + bóveda + Redb) |
+| `interfaces/kalma2-bridge/src/main.rs` | `:712-714` (`load_fractal_paths`), `:1183` (`load_progress_path`), `:1519` (`load_pending_path`) | Podar `load_fractal_paths` y los `create_dir_all(&domain_dir)` en `:2322`/`:2460` (publican por `eda_productive`); consultar progreso por `eda_productive` |
+| `sddia-daemon-runtime/src/lib.rs` | `:123-129` (`load_bus_topology`) | `defaults` usa nombres lógicos (`"pending"`, `"dead-letter"`, `"telemetry"`, `"progress"`, `"orchestration"`, `"domain"`) sin `.events/`; retirar `sddia-daemon-runtime/src/lib.rs` de `VIRTUAL_PATH_ALLOW` en el oráculo |
+
+### Diseño
+
+**A. Oráculo en rojo (H-3 b).**
+- En `eda_event_token_hygiene.rs`: cambiar `VIRTUAL_EVENT_SUBDIRS` por la detección directa de `".events/"` en cualquier línea productiva (fuera de `#[cfg(test)]`, `tests/` y comentarios) y retirar `SddIA/sddia-daemon-runtime/src/lib.rs` de `VIRTUAL_PATH_ALLOW` (quedan únicamente las 4 herramientas de higiene/QA: `event-bus-audit`, `repo-retention-purger`, `transit-event-payload`, `eda_e2e_lab`).
+- Ejecutar `cargo test -p execute-process --lib eda_event_token_hygiene` → verificar que falla en **rojo** sobre los 15 ficheros del inventario (`docs/audits/man-43-o14d-oracle-red.log`).
+
+**B. Remediación completa (H-1 a, H-2 a, H-3 b).**
+1. **B1 (`thought-graph-access`):** `lancedb_thought_repo` + `tools/thought-graph-access` sin `.events/pending`; test `store_returns_node_id_and_emits_thought_persisted` leyendo de `EventManagerPort`.
+2. **B2 (`gate_evolution` + `ecosystem-health`):** aplicar H-2 (a) y verificar ambos tests en verde.
+3. **B3 (Subgrupo 1 — rutas interpoladas y operativas):** migrar `event-watcher/src/main.rs`, `ecst_input_loader.rs`, `route_domain_core.rs`, `route_fractal_core.rs`, `aiua_intent.rs`, `linear_direct_cycle_e2e.rs` y `linear_done_gate_both_e2e.rs`.
+4. **B4 (Subgrupo 2 — poda de los 8 cargadores de topología):** aplicar la tabla del Subgrupo 2 en `fractal.rs`, `eda_bus.rs`, `fractal_bus.rs`, `daemons.rs`, `daemon_heartbeat.rs`, `instance_creator.rs`, `kalma2-bridge/src/main.rs` y `sddia-daemon-runtime/src/lib.rs`.
+5. **B5 (binarios vivos y oráculo verde):** recompilar `execute-process`, `kalma2-bridge`, `sddia-qa` y `thought-graph-access`; verificar oráculo `eda_event_token_hygiene` 7/7 en verde (`docs/audits/man-43-o14d-oracle-green.log`).
+
+**C. Re-ejecución de la matriz completa.**
+- `cargo test --workspace --no-fail-fast -- --test-threads=1` → **0 fallos** en todo el workspace (`docs/audits/man-43-o14d-workspace-tests.log`).
+- `cargo clippy --workspace --all-targets` → **0 avisos** (`docs/audits/man-43-o14d-clippy.log`).
+- `RUSTFLAGS=-Dwarnings cargo check --workspace` → **0 errores** (`docs/audits/man-43-o14d-check.log`).
+- `gate-event-manager-port`, `verify-process-integrity`, `audit-eda-coverage --scan` → exit 0.
+
+**D. Dossier y Evolution.**
+- Dossier `docs/audits/man-43-o14d-reaudit-ac13-20261116.md` con tabla AC-1…AC-19 y F-01…F-12 al 100% en verde, 0 ficheros productivos con `.events/` fuera de las 4 herramientas de higiene/QA, veredicto propuesto **`APTO_TOTAL_PROPUESTO`** y handoff a Argos (O15).
+- Registro en `SddIA/evolution/` + `sddia-qa evolution-rehash` + `gate-evolution --range --sync-base` → `EVOL_OK`.
+
+### Secuencia
+
+| Paso | Alcance | Bloquea |
+|------|---------|---------|
+| 0 | Laudos H-1…H-3 | **resuelto** (2026-11-16: H-1 a, H-2 a, H-3 b) |
+| 1 | A: oráculo `".events/"` estricto en **rojo** sobre los 15 ficheros (log) | 2 |
+| 2 | B1: `lancedb_thought_repo` + `thought-graph-access` → `EventManagerPort` | 6 |
+| 3 | B2: `gate_evolution` CA14 + `ecosystem-health` MAN-25 en verde | 6 |
+| 4 | B3: Subgrupo 1 (rutas interpoladas `.events/{…}` y helpers E2E) | 6 |
+| 5 | B4: Subgrupo 2 (poda de los 8 cargadores de topología por defecto) | 6 |
+| 6 | B5 + C: compilar binarios vivos + oráculo 7/7 + `cargo test --workspace` **0 fallos** + clippy **0 avisos** + `audit-eda-coverage --scan` | 7 |
+| 7 | D: evolution + `gate-evolution` `EVOL_OK` + dossier `APTO_TOTAL_PROPUESTO` + docs + 2 commits (`skill:git-manager`) | O15 |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `StrReplace`/`Write` sobre genoma `.md`/`.json` en `SddIA/{library,skills,process,actions,norms,events}/` | Cero (solo `entity-manager` si cambiara genoma) |
+| Aparición de `.events/` en código productivo fuera de las 4 herramientas de `VIRTUAL_PATH_ALLOW` | **Cero** (oráculo H-3 b) |
+| `cargo test --workspace --no-fail-fast -- --test-threads=1` | **0 fallos** en todo el workspace, `SDDIA*` vacío |
+| `cargo clippy --workspace --all-targets` / `check -Dwarnings` | **0 avisos** / **0 errores** |
+| Debilitar asserts en `thought-graph-access`, `gate_evolution` o `ecosystem-health` | Prohibido |
+| `gate-evolution --range --sync-base` | `EVOL_OK` |
+| Ficheros ajenos (G-3) en commits MAN-43; `git add -A` | Prohibido |
+| `APTO_TOTAL` escrito por Tekton | Prohibido; solo `APTO_TOTAL_PROPUESTO` + handoff a Argos (O15) |
+
+### Verificación
+
+```bash
+env | grep '^SDDIA' || echo limpio
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p thought-graph-access
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p sddia-ecosystem-health
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p sddia-qa resolve_base_sync_fetch_timeout_declares_outcome_ca14
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p execute-process --lib eda_event_token_hygiene
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test --workspace --no-fail-fast -- --test-threads=1
+cd SddIA && RUSTFLAGS=-Dwarnings CARGO_TARGET_DIR=$PWD/target cargo check --workspace
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo clippy --workspace --all-targets
+cd SddIA && ./target/debug/sddia-qa gate-event-manager-port
+cd SddIA && ./target/debug/sddia-qa verify-process-integrity
+cd SddIA && ./target/debug/sddia-qa gate-evolution --range --sync-base
+```
+
+**Commits** (staging explícito por ruta, `skill:git-manager`):
+1. `fix(eda): poda total de rutas y defaults .events/ en runtime + thought-graph-access por puerto + fix tests workspace (MAN-43 O14d)`
+2. `docs(audit): dossier re-auditoría AC-13 con APTO_TOTAL_PROPUESTO (MAN-43 O14d)`
+
+**AC:** AC-4 (0 `.events/` productivos fuera de las 4 tools de higiene/QA), AC-5, AC-12 (0 fallos workspace), AC-13 (`APTO_TOTAL_PROPUESTO` listo para O15). **O15:** `delivery-close-cycle` → PR → `pull-request-review` (Argos declara AC-13).
+
+### Resultado de ejecución (2026-11-16, rama)
+
+Dossier: `docs/audits/man-43-o14d-reaudit-ac13-20261116.md` (**`APTO_TOTAL_PROPUESTO`**). Cerrados H-1 (`thought-graph-access` + `lancedb_thought_repo` 3/0 y 6/0), H-2 (`gate_evolution` CA14 7/7 y `sddia-ecosystem-health` 7/7) y H-3 b (poda total de los 15 ficheros + 2 escrituras FS en `kalma2-bridge`; oráculo estricto `7/7`; `cargo test --workspace` **43 suites: 1226 passed, 0 failed, 1 ignored**; `clippy` 0 avisos; `check -Dwarnings` 0 errores; `eda-coverage.json` regenerado; 0 ficheros productivos con `.events/` fuera de las 4 herramientas de higiene/QA). Listo para **O15** (Argos).
 
 ---
 
@@ -1958,7 +2084,7 @@ El detalle ejecutable está en **O4 / H4**.
 14. **O11** remediación del genoma dañado por O10 (binario de forja obsoleto) + C-4 y O9 rehechos de verdad por `entity-manager`.
 15. **O12** línea base de verificación + C-4 por cauce oficial (reintento real) + C-5 (`route-domain-event.outputs`). C-3 pasa a O13, con decisión previa.
 16. **O13** repara la regresión de O10 (fixtures DI) y la baseline de O12; clase `capability-contract` en `entity-manager`; C-3 por esa vía.
-17. **O14** desbloqueo pre-auditoría: evolución O0–O12, `schema_uri`, clippy verde (D-1 a), `cargo test --workspace`. **O14b** retirada de `target_path`/`event_file_path` → `event_uri` (D-2 b; paso 0 cierra el residual AC-12). **O14c** primero cierra el residual de rutas virtuales `.events/pending` (daemon-runtime + motor, oráculo ampliado), luego matriz AC-1…AC-19 + dossier con veredicto **propuesto**.
+17. **O14** desbloqueo pre-auditoría: evolución O0–O12, `schema_uri`, clippy verde (D-1 a), `cargo test --workspace`. **O14b** retirada de `target_path`/`event_file_path` → `event_uri` (D-2 b; paso 0 cierra el residual AC-12). **O14c** primero cierra el residual de rutas virtuales `.events/pending` (daemon-runtime + motor, oráculo ampliado), luego matriz AC-1…AC-19 + dossier (`NO_APTO_TOTAL`). **O14d** cierra los 3 fallos del workspace (`thought-graph-access`, `ecosystem-health`, `gate_evolution`) y las rutas interpoladas `.events/{…}`, y entrega el dossier con `APTO_TOTAL_PROPUESTO`.
 18. **O15** `delivery-close-cycle` → PR → `pull-request-review`: Argos declara AC-13.
 
 No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.
