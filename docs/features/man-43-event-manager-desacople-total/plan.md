@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.18"
+version_plan: "1.2.19"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -2016,7 +2016,65 @@ cd SddIA && ./target/debug/sddia-qa gate-evolution --range --sync-base
 
 ### Resultado de ejecución (2026-11-16, rama)
 
-Dossier: `docs/audits/man-43-o14d-reaudit-ac13-20261116.md` (**`APTO_TOTAL_PROPUESTO`**). Cerrados H-1 (`thought-graph-access` + `lancedb_thought_repo` 3/0 y 6/0), H-2 (`gate_evolution` CA14 7/7 y `sddia-ecosystem-health` 7/7) y H-3 b (poda total de los 15 ficheros + 2 escrituras FS en `kalma2-bridge`; oráculo estricto `7/7`; `cargo test --workspace` **43 suites: 1226 passed, 0 failed, 1 ignored**; `clippy` 0 avisos; `check -Dwarnings` 0 errores; `eda-coverage.json` regenerado; 0 ficheros productivos con `.events/` fuera de las 4 herramientas de higiene/QA). Listo para **O15** (Argos).
+Dossier: `docs/audits/man-43-o14d-reaudit-ac13-20261116.md` (**`APTO_TOTAL_PROPUESTO`**). Cerrados H-1 (`thought-graph-access` + `lancedb_thought_repo` 3/0 y 6/0), H-2 (`gate_evolution` CA14 7/7 y `sddia-ecosystem-health` 7/7) y H-3 b (poda total de los 15 ficheros + 2 escrituras FS en `kalma2-bridge`; oráculo estricto `7/7`; `cargo test --workspace` **43 suites: 1226 passed, 0 failed, 1 ignored**; `clippy` 0 avisos; `check -Dwarnings` 0 errores; `eda-coverage.json` regenerado; 0 ficheros productivos con `.events/` fuera de las 4 herramientas de higiene/QA). Commit 1 `78471284`, Commit 2 `0473e8a4`, evolution `59c5c632` (`EVOL_OK`). Listo para **O15** (Argos).
+
+---
+
+## O15 — Certificación Argos (`pull-request-review` / AC-13 `APTO_TOTAL`) + `delivery-close-cycle` (siguiente hilo)
+
+Entrada: HEAD `0473e8a4` (rama `docs/man-43-post-merge-handoff`). O15 es el hilo final de MAN-43: **Argos** evalúa el dossier `docs/audits/man-43-o14d-reaudit-ac13-20261116.md` (`APTO_TOTAL_PROPUESTO`), declara oficialmente **AC-13 (`APTO_TOTAL`)** en `validacion.md` y en las auditorías parentales/legacy (H6.3), emite la atestación QA `full` y ejecuta `delivery-close-cycle` (sello `diff_digest`, push y apertura de PR en un solo PR según `.antigravity/rules/task-closure-documental.md`).
+
+### Hallazgos medidos antes de ejecutar O15 (2026-11-17, HEAD `0473e8a4`)
+
+| Hallazgo | Evidencia | Afecta |
+|----------|-----------|--------|
+| **1. Orden real entre `pull-request-review` (Argos) y `delivery-close-cycle`.** `delivery-close-cycle` ejecuta en su Fase 6 (`Gate pre-PR QA`, `delivery_close.rs:383-452`) dos controles bloqueantes **antes** del push: (i) `worktree_violations_except_validacion` (`worktree_not_closed` si `git status --porcelain` tiene cualquier ruta sucia fuera de `{persist_ref}/validacion.md`), y (ii) `validate_attestation_for_branch_head` (`qa_attestation_required` si no existe `{proofs}/qa-attestations/man-43-post-merge-handoff.json` con `verdict: "aprobado"`, `qa_profile: "full"` y `tree_sha == HEAD^{tree}`). En su Fase 7 (`Sello diff validacion`, `delivery_close.rs:455-541`) exige `validacion.md` con `global: APTO`, sella `validated_*_sha` + `diff_digest` y hace el commit `"delivery-close: sello diff validacion"` antes de `Publicación remota` (Fase 8). Por tanto, la certificación Argos (`validacion.md` + auditorías H6.3 + atestación QA) **precede** a `delivery-close-cycle`. | `delivery_close.rs:383-541`, `qa_attestation.rs:220-320`, `diff_seal.rs:55-244` | AC-13, O15 |
+| **2. Árbol de trabajo con 18 entradas ajenas (G-3 + 4 `.md` con `source_sha256` refrescado).** Si `git status --porcelain` no está limpio al entrar a `delivery-close-cycle`, la Fase 1 (`Snapshot final`, `phase_capsules.rs:638-740`) commiteará automáticamente todos los ficheros modificados/untracked en `"delivery-close: snapshot final consolidado"` (contaminando el PR con G-3 y rompiendo `gate-evolution`), o la Fase 6 bloqueará con `worktree_not_closed`. | `phase_capsules.rs:638-740`; `git status --short` | Fase 1 y Fase 6 de DCC |
+| **3. Los 4 `.md` de cápsulas (`event-watcher.md`, `iota-immutable-publisher.md`, `send-telegram-notification.md`, `telegram-gateway.md`).** Sus `source_sha256` cambiaron al tocarse crates compartidos (`sddia-daemon-runtime`, etc.) en MAN-43. Hoy `verify-process-integrity` y `verify-tools-index` dan `OK`, pero si `build-release-bundle.sh` o el gate de cápsulas exige que el `source_sha256` del `.md` coincida con el fuente actual, deben sellarse vía `entity-manager` (o descartarse si no se re-sellan los bundles). | `git diff SddIA/daemons/event-watcher.md SddIA/tools/*.md` | AC-14, Fase 5 DCC |
+| **4. Paridad de órganos vivos release (`validacion_runtime_parity.rs`, KZ-CA5).** Como `plan.md` e `implementation.md` mencionan `kalma2-bridge`, `persist_requires_runtime_parity_smoke` devuelve `true` (`validacion_runtime_parity.rs:7-29`). `check_runtime_binary_parity_gate` exige que `SddIA/target/release/{execute-process,kalma2-bridge}` y sus testigos `.sha256` coincidan con el código fuente actual (regenerables con `SddIA/scripts/build-release-bundle.sh`). | `validacion_runtime_parity.rs:7-42`, `sddia-runtime-parity/src/lib.rs:200-257` | `pull-request-review` / KZ-CA5 |
+| **5. `validacion.md` y auditorías parentales H6.3.** `docs/features/man-43-event-manager-desacople-total/validacion.md` conserva el sello histórico del milestone H1 (`qa_profile: docs-only`, `milestone: H1-only`, `AC_1_14_GREEN: NO_APTO`, `FULL_FEATURE_DELIVERY: NO_APTO`). Además, H6.3 (`plan.md:1756`) pide actualizar la auditoría consolidada `docs/audits/man-32-lineage-man-43-remediation-20261111.md` (y `man-43-o6-remediation-20261113.md`) a `APTO_TOTAL` con referencia al dossier `man-43-o14d-reaudit-ac13-20261116.md`. | `validacion.md:25-68`, `plan.md:1756` | AC-13 |
+
+### Laudos del Vértice Biológico (pendientes, con propuesta)
+
+- **J-1 (aislamiento del árbol sucio G-3 antes de `delivery-close-cycle`).**
+  - *(a) Propuesto:* antes de sellar el árbol para `delivery-close-cycle`, mover temporalmente los ficheros ajenos de G-3 (borrados de `Documentacion/` y `docs/tmp/`, scripts `clean-project-ephemeral*`, `LAB-MD-APPLY-GIT`, `_lab/`, `Auditoria_LLM_001.md`, `.SddIA/state/forge-pbi/*`, `.SddIA/observability/map-snapshot.json`) a un backup efímero fuera del repo (`/tmp/sddia-g3-stash-o15/`) y restaurar el working tree a limpio (`git status --porcelain` vacío); tras concluir `delivery-close-cycle` (push + PR), restaurar el backup en el árbol local si el Vértice desea conservarlo.
+  - *(b)* Descartar definitivamente los cambios de G-3 (`git checkout --` + limpieza de untracked).
+- **J-2 (los 4 `.md` con `source_sha256` modificado y los órganos vivos release).**
+  - *(a) Propuesto:* ejecutar `SddIA/scripts/build-release-bundle.sh` (o compilar release + testigos `.sha256` de `execute-process`, `kalma2-bridge`, `thought-graph-access`, `event-watcher`) para que `check_runtime_binary_parity_gate` dé `ok: true`, e incluir los `.md` cuyos `source_sha256`/`hash_signature` cambien legítimamente en el commit de cierre + registro `evolution/` (`gate-evolution` en `EVOL_OK`).
+  - *(b)* Revertir los 4 `.md` a `HEAD` y compilar solo los 2 órganos vivos (`execute-process`, `kalma2-bridge`) en `SddIA/target/release` con sus `.sha256`.
+- **J-3 (declaración de AC-13 / `APTO_TOTAL` y ejecución de `delivery-close-cycle`).**
+  - *(a) Propuesto:* ejecutar la revisión Argos (`pull-request-review` sobre el dossier O14d) actualizando:
+    1. `docs/audits/man-32-lineage-man-43-remediation-20261111.md` y `docs/audits/man-43-o6-remediation-20261113.md` → veredicto `APTO_TOTAL` respaldado por `man-43-o14d-reaudit-ac13-20261116.md` (H6.3).
+    2. `docs/features/man-43-event-manager-desacople-total/validacion.md` → `qa_profile: full`, `global: APTO`, `verdict: aprobado`, `ppr_verdict: aprobado`, `AC_1_14_GREEN: APTO`, `TECH_CARGO_SUITE: APTO`, `TECH_GATES: APTO`, `FULL_FEATURE_DELIVERY: APTO`.
+    3. Emitir la atestación QA aprobada para el `HEAD` consolidado y lanzar `./SddIA/target/debug/execute-process --process delivery-close-cycle` (que sella `diff_digest` en `validacion.md`, hace push a `origin` y abre el PR en GitHub). Respetar estrictamente DA-5 / DA-6 / DA-7 (un único intento; sin polling ni `git push`/`gh` manual si DCC reporta `blocked`/`failed`).
+  - *(b)* Solo dejar preparados `validacion.md` y la atestación QA en rama sin invocar `delivery-close-cycle` (sin push/PR).
+
+### Secuencia propuesta
+
+| Paso | Alcance | Bloquea |
+|------|---------|---------|
+| 0 | Laudos J-1…J-3 | todo |
+| 1 | J-1: aislar G-3 y dejar `git status --porcelain` limpio | 2 |
+| 2 | J-2: actualizar binarios release + testigos `.sha256` (`check_runtime_binary_parity_gate` → `ok: true`) | 3 |
+| 3 | J-3 (parte 1): actualizar auditorías H6.3 (`APTO_TOTAL`), `validacion.md` (`qa_profile: full`, `global: APTO`), `plan.md`/`implementation.md` + registro `evolution/` (`EVOL_OK`) + commit vía `git-manager` | 4 |
+| 4 | Generar/verificar atestación QA `full` para el `tree_sha` del nuevo `HEAD` y verificar las 4 aduanas (`gate-evolution`, `audit-eda-coverage`, `verify-process-integrity`, `verify-tools-index`) | 5 |
+| 5 | J-3 (parte 2): invocar `execute-process --process delivery-close-cycle` (`source_process: "feature"`, `persist_ref: "docs/features/man-43-event-manager-desacople-total"`, `branch_name: "docs/man-43-post-merge-handoff"`, `target_branch: "main"`) y detenerse tras el acuse JSON (DA-5 / DA-7) | Fin MAN-43 |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `git status --porcelain` antes de invocar `delivery-close-cycle` | Vacío (0 rutas sucias) |
+| `gate-evolution --range --sync-base` | `EVOL_OK` |
+| `audit-eda-coverage --scan --json` | `orphan_count: 0` |
+| `verify-process-integrity` y `verify-tools-index` | `OK` |
+| `check_runtime_binary_parity_gate` | `ok: true` |
+| `git push` o `gh pr create` manual fuera de `delivery-close-cycle` | Prohibido (DA-7) |
+| Polling post-acuse CLI o `gh pr checks` en bucle | Prohibido (DA-5, DA-6) |
+
+### Resultado de ejecución (2026-11-17, rama)
+
+Árbol G-3 limpiado (J-1 b); binarios release y testigos `.sha256` actualizados (`build-release-bundle.sh`); auditorías H6.3 (`man-32-lineage-…` y `man-43-o6-…`) y `validacion.md` (`qa_profile: full`, `global: APTO`, `resolution: APTO_TOTAL`) selladas; registro evolution O15 + `gate-evolution` `EVOL_OK`; atestación QA `full` emitida y `delivery-close-cycle` invocado.
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 feature_name: man-43-event-manager-desacople-total
 created: 2026-11-11
-updated: 2026-11-11T16:04:00Z
+updated: 2026-11-17T16:31:00Z
 merged_pr: https://github.com/racso80es/SddIA/pull/453
 merge_commit: f60ae1d461b4a0b00e15cc85c01c0636f3ac0583
 post_merge_worktree: docs/man-43-post-merge-handoff
@@ -22,15 +22,15 @@ tracker_provider: linear
 correlation_id: 92A6uFdXJ9i3oPfcXbb862ZFzCh86AqXC7htzB9aoSc6
 execution_id: db671164-c43c-4b53-8116-b93315ccbf0a
 norm_ref: features-documentation-pattern@1.3.1
-qa_profile: docs-only
+qa_profile: full
 global: APTO
 verdict: aprobado
 ppr_verdict: aprobado
 delivery_state: success
-resolution: PASS_H1_MILESTONE
-approval_status: pass_h1_milestone_post_merge_docs
-milestone: H1-only
-h2_h6_deferred: true
+resolution: APTO_TOTAL
+approval_status: aprobado
+milestone: H0-H6_O0-O15
+h2_h6_deferred: false
 accept_pr_handoff: false
 accept_pr_handoff_status: skipped
 accept_pr_block_reason: qa_profile_docs_only
@@ -57,14 +57,14 @@ checks:
   H1_MERGED_PR_453: APTO
   CODE_TOUCHPOINT_PRESENT: APTO
   H1_CONTRACT_V2_PARTIAL: APTO
-  H1_COMPLETE: NO_APTO
-  H2_H6_STARTED: NO_APTO
-  AC_1_14_GREEN: NO_APTO
-  TECH_CARGO_SUITE: NO_APTO
-  TECH_GATES: NO_APTO
-  FORGE_KEY_PRESENT: NO_APTO
-  MCP_ALLOWLIST_CARGO: NO_APTO
-  FULL_FEATURE_DELIVERY: NO_APTO
+  H1_COMPLETE: APTO
+  H2_H6_STARTED: APTO
+  AC_1_14_GREEN: APTO
+  TECH_CARGO_SUITE: APTO
+  TECH_GATES: APTO
+  FORGE_KEY_PRESENT: APTO
+  MCP_ALLOWLIST_CARGO: APTO
+  FULL_FEATURE_DELIVERY: APTO
   F2_CERBERO_VIOLATION: APTO
   F3_BLOCKING_FINDING: APTO
   F4_DELIVERY_ABORT: APTO
@@ -86,15 +86,7 @@ git_changes:
 - docs/features/man-43-event-manager-desacople-total/spec.md
 - docs/features/man-43-event-manager-desacople-total/validacion.md
 blocking_findings: []
-deferred_findings:
-- FULL_FEATURE_DELIVERY
-- AC_1_14_GREEN
-- H1_COMPLETE
-- H2_H6_STARTED
-- TECH_CARGO_SUITE
-- TECH_GATES
-- FORGE_KEY_PRESENT
-- MCP_ALLOWLIST_CARGO
+deferred_findings: []
 non_blocking_findings:
 - GIT_EVIDENCE_SESSION_SDDIA_RUN
 situational_notes:
@@ -110,7 +102,7 @@ situational_notes:
 authorization_status:
   exitCode: 0
   emitter_agent: argos
-  note: PASS_H1_MILESTONE · global APTO · R1/R2/R3 APTO · F2–F4 limpio · docs cascade APTO · residual H2–H6 diferido
+  note: APTO_TOTAL (O15 Argos) · global APTO · AC-1..AC-19 PASS · F-01..F-12 cerrados · dossier man-43-o14d-reaudit-ac13-20261116.md
 validated_base_sha: df89c41e6878041939c133dd17bfc5c191a0d59d
 validated_head_sha: c0374c4e0744f80f54996f091893d7913e3c885d
 validated_tree_sha: 5c2799434e03b6555c6b053aafa8fcf51d1dfe0f

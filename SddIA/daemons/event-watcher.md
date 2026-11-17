@@ -8,10 +8,10 @@ execution:
   entrypoint: SddIA/daemons/event-watcher.sh
   heartbeat_interval_seconds: 30
   runtime: native-rust
-hash_signature: "sha256:5d74ff81693cabe8ec81719348c4caa733e658bb197bc64487dbf72c418f8301"
+hash_signature: sha256:5d74ff81693cabe8ec81719348c4caa733e658bb197bc64487dbf72c418f8301
 jurisdiction: Aislada — Ceguera Lógica. Reclama pending (claim_store_pending) y fractal (claim_store_fractal) del store o ficheros .events/pending. En redb no enruta JSON residual (F-EDA-RESIDUAL-FILESYSTEM / F-EDA-RESIDUAL-FRACTAL). Side-channel latidos en .SddIA/daemons/state/heartbeats/ sin fila ECST. No abre el ECST en el claim.
 name: event-watcher
-source_sha256: sha256:b82b7486df46bfd56c55a24f1eea22499364fa5b29a5c4a1ac4dbf0ce3610c2f
+source_sha256: sha256:352dfe21c082b938edaecccc66adb587ac262aaa09ff0a285ad7ffe3847c55fd
 telemetry_provided: true
 telemetry_schema:
 - uptime_seconds

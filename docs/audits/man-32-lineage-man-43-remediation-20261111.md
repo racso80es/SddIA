@@ -4,12 +4,13 @@ uuid: "02f88f2d-4891-44af-8d7e-735f0c6c2b3d"
 type: audit
 version: 1.0.0
 created: "2026-11-11"
-updated: "2026-11-11"
+updated: "2026-11-17"
 tracker_ref: MAN-43
 parent_ref: MAN-32
-scope: "Implementación MAN-32 y linaje MAN-35..MAN-43; énfasis en hito H1 de MAN-43"
-verdict: NO_APTO_TOTAL
+scope: "Implementación MAN-32 y linaje MAN-35..MAN-43; cierre total O15"
+verdict: APTO_TOTAL
 milestone_h1: APTO_CONDICIONAL
+dossier_cierre: docs/audits/man-43-o14d-reaudit-ac13-20261116.md
 audited_merge: f60ae1d461b4a0b00e15cc85c01c0636f3ac0583
 audited_pr: https://github.com/racso80es/SddIA/pull/453
 ---
@@ -137,6 +138,12 @@ H1 no puede declararse completo hasta que la mutación gobernada alinee el Genom
 ```yaml
 man_32_lineage: APTO_CON_DEUDA_EVOLUTIVA
 man_43_h1_milestone: APTO_CONDICIONAL
-man_43_full_feature: NO_APTO_TOTAL
-next_wave: O0_CONTENCION_INTEGRIDAD
+man_43_full_feature: APTO_TOTAL
+next_wave: O15_DELIVERY_CLOSE_CYCLE
 ```
+
+## Cierre Argos O15 (2026-11-17)
+
+Tras completar las olas **O0–O14d** en la rama `docs/man-43-post-merge-handoff`, **Argos** declara **`APTO_TOTAL`** (AC-13) sobre la evidencia materializada en [man-43-o14d-reaudit-ac13-20261116.md](file:///home/racso/Proyectos/SddIA/docs/audits/man-43-o14d-reaudit-ac13-20261116.md):
+- **F-01…F-12:** Todos cerrados.
+- **AC-1…AC-19:** Todos en **PASS** (`cargo test --workspace` 43 suites: 1226 passed, 0 failed, 1 ignored; `clippy` 0 avisos; `check -Dwarnings` 0 errores; oráculo `eda_event_token_hygiene` estricto 7/7; 0 ficheros productivos con `.events/` fuera de las 4 herramientas de higiene/QA).
