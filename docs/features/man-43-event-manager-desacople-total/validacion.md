@@ -38,7 +38,7 @@ evolution_ref: faa41d58-a120-413e-b088-35681ffb79e3
 git_manager_invoked: true
 git_evidence_source: evidence-bridge-session-native_state+ppr-native-prep-sibling
 formal_execute_process: true
-formal_evidence_detail: session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff latest native_state @ 2026-11-11T09:07:21Z TECH/GIT APTO notes=handoff-git-apto; handoff-formal-scan; idempotent-hit
+formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff latest native_state @ 2026-11-11T09:07:21Z TECH/GIT APTO notes=handoff-git-apto; handoff-formal-scan; idempotent-hit'
 handoff_machine_file: present
 evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state + machine native_state); sin inventar stdout Shell; Shell ./sddia-run.sh --tool git-manager Rejected esta pasada Argos; git_changes = status vacío handler PPR sibling f1b12b4a + lista persist_ref materializada
 scope: pull-request-review Veredicto y bloqueo — post-merge handoff MAN-43 H1 (exec db671164…)
@@ -95,7 +95,7 @@ situational_notes:
 - Workspace PPR db671164… solo transcript.md al auditar; evidencia git nativa sibling f1b12b4a (misma branch) gitStdout vacío · git_manager_invoked true · qa_profile docs-only
 - Shell ./sddia-run.sh --tool git-manager Rejected → GIT_EVIDENCE_SESSION_SDDIA_RUN NO_APTO (no bloquea R2)
 - branch: .git/HEAD → refs/heads/docs/man-43-post-merge-handoff (= inject) · HEAD OID b8f44631…
-- Merge H1: PR
+- Merge H1: PR #453 → merge_commit f60ae1d4… · residual H2–H6 / AC / forge_key diferidos (no bloquean sello milestone H1 docs-only)
 - F2–F4: sin violación Cerbero (fase skipped-by-profile docs-only) · blocking_findings vacío · delivery_state success
 - docs/todos/pending/ vacío · sin KM MAN-43 · Argos 0 writes KM → RBAC_AUTHORING_KM_POLICY APTO
 - qa_profile docs-only · accept-pr handoff skipped-by-profile
@@ -103,10 +103,10 @@ authorization_status:
   exitCode: 0
   emitter_agent: argos
   note: APTO_TOTAL (O15 Argos) · global APTO · AC-1..AC-19 PASS · F-01..F-12 cerrados · dossier man-43-o14d-reaudit-ac13-20261116.md
-validated_base_sha: f60ae1d461b4a0b00e15cc85c01c0636f3ac0583
-validated_head_sha: 32bf1ed4ef12bff433a1e18031529747687dc925
-validated_tree_sha: b901437765f80fc5cbb6044f3c7ff090364975e8
-diff_digest: sha256:41e3187dd0eec1d1e0c3d818b01527d80cda0c83c49ca95a2beb7c029c5998cb
+validated_base_sha: df89c41e6878041939c133dd17bfc5c191a0d59d
+validated_head_sha: c0374c4e0744f80f54996f091893d7913e3c885d
+validated_tree_sha: 5c2799434e03b6555c6b053aafa8fcf51d1dfe0f
+diff_digest: sha256:76654709e52217a0880298c36c074d1dd6114ab93cb06a489edd4dedcbea55f3
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
