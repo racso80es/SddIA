@@ -23,6 +23,7 @@ EXCLUDE=(
   thought-graph-access
   event-bus-audit
   repo-retention-purger
+  sddia-workspace-server
 )
 
 packages=()

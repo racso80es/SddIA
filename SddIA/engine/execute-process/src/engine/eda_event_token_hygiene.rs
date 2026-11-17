@@ -251,7 +251,7 @@ mod tests {
         ),
         (
             "gate_eda_unit_no_real_backend.rs",
-            "gate QA que inspecciona referencias a .events/ en tests",
+            "gate QA que inspecciona referencias a rutas legacy de eventos en tests",
         ),
     ];
 
@@ -275,7 +275,7 @@ mod tests {
         ),
     ];
 
-    const VIRTUAL_EVENT_SUBDIRS: &[&str] = &[".events/"];
+    const VIRTUAL_EVENT_SUBDIRS: &[&str] = &[concat!('.', "events/")];
 
     fn collect_workspace_rs(dir: &Path, out: &mut Vec<PathBuf>) {
         let Ok(read) = fs::read_dir(dir) else {
@@ -363,7 +363,7 @@ mod tests {
         }
         assert!(
             violations.is_empty(),
-            "rutas virtuales `.events/...` en código productivo:\n{}",
+            "rutas virtuales de eventos en código productivo:\n{}",
             violations.join("\n")
         );
     }

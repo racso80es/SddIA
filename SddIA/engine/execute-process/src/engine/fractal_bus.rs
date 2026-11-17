@@ -185,7 +185,7 @@ pub fn fractal_delivery_terminal_with_failure(body: &Value) -> bool {
 
 #[cfg(test)]
 pub fn load_fractal_dead_letter_dir(repo: &Path) -> PathBuf {
-    let default = repo.join(".events/dead-letter");
+    let default = repo.join("dead-letter");
     let Ok(cfg) = load_paths_config(repo) else {
         return default;
     };

@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 156
+universe_total: 157
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `33bf81d5-4d59-4eb6-b40d-f2664494463f` | 2026-11-17 | MAN-43 CI fix: excluir sddia-workspace-server de WASI y limpiar .events/ en unitarios | CANONICO | `SddIA/evolution/33bf81d5-4d59-4eb6-b40d-f2664494463f.md` |
 | `7fe2affc-26f7-4033-b0e9-a276feb726d8` | 2026-11-17 | MAN-43 O15: certificacion Argos APTO_TOTAL (validacion.md, H6.3) y refresco source_sha256 de capsulas | CANONICO | `SddIA/evolution/7fe2affc-26f7-4033-b0e9-a276feb726d8.md` |
 | `59c5c632-9720-4c5a-be9b-7bba27892003` | 2026-11-16 | MAN-43 O14d: poda total .events/ en runtime, thought-graph-access por puerto, fix tests workspace y dossier APTO_TOTAL_PROPUESTO | CANONICO | `SddIA/evolution/59c5c632-9720-4c5a-be9b-7bba27892003.md` |
 | `7ed0df40-01f1-43fe-8ac5-b29a571f1cdb` | 2026-11-16 | MAN-43 O14c: rutas virtuales a EventUri en daemon-runtime/motor, oraculo G-2 y dossier AC-13 | CANONICO | `SddIA/evolution/7ed0df40-01f1-43fe-8ac5-b29a571f1cdb.md` |
