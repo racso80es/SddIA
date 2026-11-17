@@ -14,10 +14,10 @@ branch_name: docs/man-43-post-merge-handoff
 branch_name_injected: docs/man-43-post-merge-handoff
 branch_worktree_observed: docs/man-43-post-merge-handoff
 persist_ref: docs/features/man-43-event-manager-desacople-total
-persist_ref_injected: ""
+persist_ref_injected: ''
 persist_ref_resolution: inject vacío → dossier man-43 (handoff + cascada + branch post-merge)
 pbi_ref: MAN-43
-pbi_ref_injected: ""
+pbi_ref_injected: ''
 document_id: PBI-0f4f0f5f
 tracker_ref: MAN-43
 parent_ref: MAN-40
@@ -37,7 +37,7 @@ prior_seal: APTO_TOTAL
 pbi_archived: false
 accept_pr_handoff: false
 accept_pr_handoff_status: pending
-accept_pr_block_reason: L-HANDOFF-F5 — MERGE observado en dossier (PR #453) pero handoff accept-pr no consumido en este CID; Argos no declara consumed
+accept_pr_block_reason: L-HANDOFF-F5 — MERGE observado en dossier (PR
 git_manager_invoked: true
 git_manager_session_shell: Rejected
 git_evidence_source: evidence-bridge-session-native_state+ppr-native-prep-sibling
@@ -124,13 +124,16 @@ situational_notes:
 - git_changes: PPR nativo sibling a27f769c/f1b12b4a status vacío + inventario persist_ref
 - docs/todos/pending/ vacío · sin KM MAN-43 · Argos 0 writes KM → RBAC_AUTHORING_KM_POLICY APTO
 - Sello prior_seal APTO_TOTAL (O15 / Veredicto sibling a27f769c) preservado · APTO_TOTAL_SEAL APTO
-- MERGE_ALREADY_OBSERVED APTO — merged_pr PR #453 / merge_commit f60ae1d4… en dossier; accept_pr_handoff pending (L-HANDOFF-F5)
+- MERGE_ALREADY_OBSERVED APTO — merged_pr PR
 authorization_status:
   exitCode: 0
   emitter_agent: argos
   note: PASS_F5_VERDICT · global APTO · F2+F4 APTO · F3 NO_APTO no bloqueante · R1/R2/R3 APTO · prior_seal APTO_TOTAL · accept_pr_handoff pending
-validated_head_sha: 1f11bc3b2ec2d5a5887b1b853bd30c24f5d331a6
+validated_head_sha: efcaaa25e6159eb085b88bdae3dfe93fc6936eaa
 head_commit_sha_fs: 1f11bc3b2ec2d5a5887b1b853bd30c24f5d331a6
+validated_base_sha: f60ae1d461b4a0b00e15cc85c01c0636f3ac0583
+validated_tree_sha: e4c16226ff45803dbcecad8f7230788d63bd77da
+diff_digest: sha256:06a146ce34893e995d8931b054b8271ee10b6dbec90f4ae434bfd816aeb67ba8
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
