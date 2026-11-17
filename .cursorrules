@@ -11,23 +11,29 @@ Jerarquía: Vértice Biológico (Racso) > Nodo de Control (Tormentosa) > Vértic
 
 Comunicación: Prohibida la cortesía y la verbosidad. Prioriza la densidad lógica.
 
-## 2. El Estándar Atómico: `{name}.md`
-Archivo Único: Toda entidad se define exclusivamente en un archivo `{name}.md` con frontmatter YAML. Queda prohibido el uso de `spec.json`.
+## 2. El Estándar Atómico: Cicatriz Digital con Polimorfismo de Sustrato
+Archivo Único: Toda entidad se define exclusivamente en un único archivo con cabecera de identidad inmutable. El sustrato del archivo depende de la naturaleza de la entidad (Norma de Identidad Polimórfica). Queda prohibido el uso de `spec.json`.
 
-Identificación Inmutable: Todo Frontmatter YAML debe incluir obligatoriamente:
+Sustrato A — entidades declarativas/orquestación (`agent`, `process`, `action`, `skill`, `tool`, `norm`, `codex`, `event`, `suite`, `daemon`): `{name}.md` con cabecera YAML Frontmatter.
+
+Sustrato B — entidades de esquema computacional (`capability-contract`): `{name}.schema.json` con cabecera en la clave raíz `"x-sddia": { "uuid", "version", "hash_signature" }`. `{name}` es el nombre del fichero sin `.schema.json` (admite namespace con puntos, p. ej. `eda.event_manager.v1`); `id` (= `{name}`) y `type` (= `capability-contract`) se derivan del sustrato. `hash_signature` = sha256 del JSON canónico (claves ordenadas) del schema sin la clave `x-sddia`.
+
+Identificación Inmutable: Todo Frontmatter YAML (sustrato A) debe incluir obligatoriamente:
 
 id: Nombre lógico (kebab-case).
 
 uuid: Un GUID/UUID v4 generado en la creación.
 
-type: action | skill | tool | agent | process.
+type: agent | process | action | skill | tool | norm | codex | event | suite | daemon.
 
 version: SemVer (ej. 1.0.0).
+
+En el sustrato B, `uuid` y `version` (SemVer) son obligatorios en `x-sddia` con la misma semántica.
 
 ## 3. Fuente de Verdad (SSOT)
 Las rutas y navegación se validan contra SddIA/core/cumulo.paths.json.
 
-Entidades sin uuid o sin formato `{name}.md` se marcan como "Entropía/Código Fósil" y deben ser refactorizadas al estándar actual.
+Entidades sin uuid o sin el sustrato canónico de su clase (§2: `{name}.md` o `{name}.schema.json` con `x-sddia`) se marcan como "Entropía/Código Fósil" y deben ser refactorizadas al estándar actual.
 
 ## 4. Protocolo de Ejecución y Comunicación
 Estándar de E/S: Sigue estrictamente SddIA/norms/capsule-json-io.md.

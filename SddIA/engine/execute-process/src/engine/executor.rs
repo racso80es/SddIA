@@ -464,8 +464,8 @@ fn execute_phase_body(
         }
     }
 
-    if process_name == "feature" || process_name == "bug-fix" || process_name == "refactorization" {
-        if matches!(
+    if (process_name == "feature" || process_name == "bug-fix" || process_name == "refactorization")
+        && matches!(
             phase_name,
             "Cierre documental en rama" | "Cierre de entrega"
         ) {
@@ -506,7 +506,6 @@ fn execute_phase_body(
                 return entry;
             }
         }
-    }
 
     if delegates_are_only_agents(&delegates) {
         if let Some(skipped) =
@@ -553,7 +552,7 @@ fn execute_phase_body(
                 state,
                 resolved_bindings
                     .first()
-                    .map(|b| super::capability_di_resolver::di_binding_object(b)),
+                    .map(super::capability_di_resolver::di_binding_object),
             );
             if process_name == "pull-request-review"
                 && agent_entry.get("status").and_then(|v| v.as_str()) == Some("blocked")
@@ -776,7 +775,7 @@ pub fn run_generic(
         "execution_id",
         "pr_url",
         "event_id",
-        "target_path",
+        "event_uri",
         "pbi_archived_path",
         "delivery_close",
     ] {

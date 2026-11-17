@@ -247,14 +247,9 @@ fn route(doc: &Value) -> Result<Value, (String, Value)> {
         )
     })?;
     let reg = load_registry(&path).map_err(|e| {
-        let code = if e == "llm-registry-missing" {
-            "unknown"
-        } else {
-            "unknown"
-        };
         (
             e,
-            json!({"error_code": code, "routing": {"attempts": [], "hops": 0}}),
+            json!({"error_code": "unknown", "routing": {"attempts": [], "hops": 0}}),
         )
     })?;
     let oracles = oracles_map(&reg).map_err(|e| {
@@ -415,8 +410,8 @@ mod tests {
         fs::set_permissions(&p, perms).unwrap();
     }
 
-    fn sample_reg(primary_fail: bool) -> Value {
-        let primary_status = if primary_fail { "active" } else { "active" };
+    fn sample_reg(_primary_fail: bool) -> Value {
+        let primary_status = "active";
         json!({
             "registry_version": "1.0.0",
             "oracles": {

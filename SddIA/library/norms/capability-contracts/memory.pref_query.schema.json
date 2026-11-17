@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "2e8b8c75-e093-45ea-9708-3cdfd85d5775",
+    "version": "1.0.0",
+    "hash_signature": "sha256:2f4fb7ba3797571336085849237f72f518c0dd2cacc8f464df894ade9c9c9e7c"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/memory.pref_query.schema.json",
   "title": "memory.pref_query",

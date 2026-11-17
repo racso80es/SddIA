@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "55b20c14-90d5-41d6-8c19-e8325f9eade0",
+    "version": "1.0.0",
+    "hash_signature": "sha256:4869ce78fc16949b53c8425aa9f45c055bbfe4a14f47fed7edfaf4dccf61034c"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/agenda.persist.schema.json",
   "title": "agenda.persist",

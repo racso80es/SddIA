@@ -6,8 +6,10 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use sddia_core::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, EventManagerPort, GetDltSealRequest,
-    GetEventRequest, HandshakeVersionRequest, InMemoryEventManagerMock, MoveToDlqRequest,
-    PublishEcstRequest, RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
+    GetEventRequest, HandshakeVersionRequest, InMemoryEventManagerMock, ListDeliveriesRequest,
+    ListEventsRequest, ListTerminalEventsRequest, ListTracesRequest, MoveToDlqRequest,
+    PublishEcstRequest, PurgeEventRequest,
+    RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
 };
 
 #[derive(Debug, Deserialize)]
@@ -124,6 +126,43 @@ fn main() {
                 },
                 Err(e) => err_line(&e.to_string()),
             },
+            "purge_event" => match serde_json::from_value::<PurgeEventRequest>(req.payload) {
+                Ok(p) => match mock.purge_event(p) {
+                    Ok(()) => ok_line(None),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "list_traces" => match serde_json::from_value::<ListTracesRequest>(req.payload) {
+                Ok(p) => match mock.list_traces(p) {
+                    Ok(r) => ok_line(Some(serde_json::to_value(r).unwrap())),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "list_deliveries" => match serde_json::from_value::<ListDeliveriesRequest>(req.payload) {
+                Ok(p) => match mock.list_deliveries(p) {
+                    Ok(r) => ok_line(Some(serde_json::to_value(r).unwrap())),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "list_events" => match serde_json::from_value::<ListEventsRequest>(req.payload) {
+                Ok(p) => match mock.list_events(p) {
+                    Ok(r) => ok_line(Some(serde_json::to_value(r).unwrap())),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "list_terminal_events" => {
+                match serde_json::from_value::<ListTerminalEventsRequest>(req.payload) {
+                    Ok(p) => match mock.list_terminal_events(p) {
+                        Ok(r) => ok_line(Some(serde_json::to_value(r).unwrap())),
+                        Err(e) => err_line(&e.to_string()),
+                    },
+                    Err(e) => err_line(&e.to_string()),
+                }
+            }
             _ => err_line("unknown operation"),
         };
 

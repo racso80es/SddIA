@@ -1,13 +1,12 @@
-//! Integración de ingesta `Domain_Entity_Telemetry_Captured` → LanceDB (vía store redb).
+//! Integración de ingesta `Domain_Entity_Telemetry_Captured` → LanceDB (vía puerto Redb).
 
 mod common;
 
-use common::{lab_repo, with_mode, ModeGuard};
+use common::{install_backend, lab_repo, LabBackend};
 use execute_process::engine::memory_evolution_ingest_core::{
     ingest_domain_event_file, lancedb_uri, vector_store_root,
 };
 use execute_process::engine::route_domain_core::materialize_pending_domain_event;
-use sddia_event_store::StoreMode;
 use serde_json::json;
 use std::fs;
 use std::path::Path;
@@ -45,12 +44,10 @@ fn seed_store_pending_rel(repo: &Path) -> String {
 }
 
 fn with_redb_lab<F: FnOnce(&Path, &str)>(f: F) {
-    let _guard = ModeGuard;
     let repo = lab_repo();
-    with_mode(StoreMode::Redb, || {
-        let rel = seed_store_pending_rel(&repo);
-        f(&repo, &rel);
-    });
+    let _g = install_backend(&repo, LabBackend::Redb);
+    let rel = seed_store_pending_rel(&repo);
+    f(&repo, &rel);
     let _ = fs::remove_dir_all(&repo);
 }
 

@@ -47,7 +47,7 @@ fn event_id_from_handoff(data: &Value) -> Option<String> {
 
 fn pending_rel_from_handoff(data: &Value, event_id: &str) -> String {
     data.get("handoff")
-        .and_then(|h| h.get("target_path"))
+        .and_then(|h| h.get("event_uri"))
         .and_then(|v| v.as_str())
         .filter(|s| !s.is_empty())
         .map(str::to_string)
@@ -104,7 +104,7 @@ fn route_event(repo: &Path, rel_path: &str) -> Result<Value, String> {
 pub fn run(repo: &Path, args: &[String]) -> i32 {
     let entity_class = flag_value(args, "--entity-class").unwrap_or("tool");
     let entity_name_arg = flag_value(args, "--entity-name");
-    let event_file_path = flag_value(args, "--event-file-path");
+    let event_uri = flag_value(args, "--event-file-path");
     let json_out = has_flag(args, "--json");
 
     let mut report = json!({"steps": []});
@@ -119,7 +119,7 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
         std::env::remove_var("EVENT_BUS_PATH");
         let bus = ensure_event_bus_topology(repo)?;
 
-        if let Some(path) = event_file_path {
+        if let Some(path) = event_uri {
             rel = Some(path.replace('\\', "/"));
             event_id = Some(Path::new(path).file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string());
         } else if has_flag(args, "--skip-create") {
@@ -137,7 +137,7 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
             if rel.as_deref().unwrap_or("").is_empty() || event_id.is_none() {
                 report["success"] = false.into();
                 report["error"] = "entity-manager sin event_id".into();
-                report["data"] = create_data.into();
+                report["data"] = create_data;
                 return Ok(());
             }
             created_entity = true;

@@ -1,3 +1,6 @@
+// MAN-43 O14: arity/DI de orquestación; refactor estructural → backlog post-MAN-43 (ver man-43-o14-preaudit).
+#![allow(clippy::too_many_arguments, clippy::type_complexity)]
+
 pub mod actions;
 pub mod agent_runtime;
 pub mod capsule_invoke_smoke;
@@ -33,11 +36,11 @@ pub mod tracker_item_document;
 pub mod invoke_orchestrator;
 pub mod crypto_broker;
 pub mod domain_mutation;
+#[cfg(test)]
+mod eda_event_token_hygiene;
 pub mod eda_bus;
 pub mod ecst_input_loader;
 pub mod eda_bus_topology;
-#[cfg(test)]
-mod eda_port_legacy;
 pub mod eda_port;
 pub mod event_store_query;
 pub mod eda_coverage;
@@ -85,6 +88,8 @@ pub mod tracker_outbound;
 pub mod cli_detach;
 pub mod verify_process_integrity;
 
+#[cfg(test)]
+mod eda_contract_parity;
 #[cfg(test)]
 mod linear_direct_cycle_e2e;
 #[cfg(test)]

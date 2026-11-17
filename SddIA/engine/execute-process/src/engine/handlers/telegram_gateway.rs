@@ -124,7 +124,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
 
     match (text, callback_data) {
         (Some(_), Some(_)) | (None, None) => {
-            return xor_error();
+            xor_error()
         }
         (None, Some(cb)) => run_callback(repo, process_inputs, cb),
         (Some(text), None) => run_text(repo, text),

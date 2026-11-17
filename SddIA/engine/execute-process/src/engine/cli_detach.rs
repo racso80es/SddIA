@@ -248,13 +248,8 @@ mod tests {
         .unwrap();
         let seal = emit_detach_pec(repo, "pull-request-review", "exec-1", "corr-1").expect("pec");
         let orch_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
-        let path = repo
-            .join(".events/orchestration")
-            .join(format!("{orch_id}.json"));
-        assert!(path.is_file(), "orchestration PEC missing: {}", path.display());
-        assert!(!path.to_string_lossy().contains(".SddIA/events"));
-        let raw = std::fs::read_to_string(&path).unwrap();
-        let ev: Value = serde_json::from_str(&raw).unwrap();
+        let ev = crate::engine::eda_port::test_lab::ecst_for_event_id(repo, orch_id);
+        assert!(!orch_id.contains(".SddIA/events"));
         assert_eq!(ev["event_type"], "Process_Execution_Completed");
         assert_eq!(ev["payload"]["cycle_phase"], "awaiting_agents");
         assert_eq!(ev["payload"]["detach"], true);

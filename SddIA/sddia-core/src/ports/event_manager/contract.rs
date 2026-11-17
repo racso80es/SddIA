@@ -6,6 +6,8 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use super::error::EventManagerError;
+
 /// Versión de contrato que implementan los adapters built-in / mock.
 pub const CONTRACT_VERSION: &str = "2.0.0";
 
@@ -44,7 +46,7 @@ impl EventFamily {
                     "'{raw}' es estado de cola, no familia URI (L-1)"
                 ))
             }
-            other if other.is_empty() => Err("event_family vacío".into()),
+            "" => Err("event_family vacío".into()),
             other => Err(format!("event_family inválida: {other}")),
         }
     }
@@ -58,7 +60,7 @@ impl EventFamily {
             }
             "telemetry" => Ok(Self::Telemetry),
             "orchestration" | "progress" => Ok(Self::Orchestration),
-            other if other.is_empty() => Err("publish family token vacío".into()),
+            "" => Err("publish family token vacío".into()),
             other => Err(format!("publish family token desconocido: {other}")),
         }
     }
@@ -78,9 +80,10 @@ impl FromStr for EventFamily {
 }
 
 /// Estados internos de cola (nunca familias URI).
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum EventQueueState {
+    #[default]
     Pending,
     Claimed,
     Processed,
@@ -157,10 +160,66 @@ impl FromStr for EventUri {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PublishEcstRequest {
+    pub event_uri: EventUri,
     pub event_id: String,
     pub ecst: Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trace_id: Option<String>,
+}
+
+impl PublishEcstRequest {
+    pub fn new(event_uri: EventUri, ecst: Value, trace_id: Option<String>) -> Self {
+        let event_id = event_uri.event_id.clone();
+        Self {
+            event_uri,
+            event_id,
+            ecst,
+            trace_id,
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), EventManagerError> {
+        if self.event_id != self.event_uri.event_id {
+            return Err(EventManagerError::InvalidRequest(
+                "event_id must match event_uri.event_id".into(),
+            ));
+        }
+        Ok(())
+    }
+}
+
+/// Publicación de dominio para tests y call sites sin token de familia explícito.
+pub fn publish_request_domain(
+    event_id: impl Into<String>,
+    ecst: Value,
+    trace_id: Option<String>,
+) -> PublishEcstRequest {
+    let event_id = event_id.into();
+    PublishEcstRequest::new(
+        EventUri::new(EventFamily::Domain, event_id).expect("event_id"),
+        ecst,
+        trace_id,
+    )
+}
+
+pub fn publish_request_family(
+    family: EventFamily,
+    event_id: impl Into<String>,
+    ecst: Value,
+    trace_id: Option<String>,
+) -> PublishEcstRequest {
+    let event_id = event_id.into();
+    PublishEcstRequest::new(EventUri::new(family, event_id).expect("event_id"), ecst, trace_id)
+}
+
+/// Fila consultable para listados (familia/estado/cursor).
+#[derive(Debug, Clone)]
+pub struct IndexedEvent {
+    pub event_uri: Option<EventUri>,
+    pub event_id: String,
+    pub ecst: Value,
+    pub trace_id: Option<String>,
+    pub state: EventQueueState,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -195,6 +254,7 @@ pub struct ClaimPendingResult {
 pub enum DeliveryStatus {
     Ack,
     Nack,
+    Processing,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -203,7 +263,33 @@ pub struct RecordDeliveryRequest {
     pub delivery_id: String,
     pub status: DeliveryStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subscriber_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attempt: Option<u32>,
+}
+
+/// Registro durable de entrega (MAN-43 O0): FKs explícitas; no inferir desde la clave.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DeliveryRecord {
+    pub event_id: String,
+    pub delivery_id: String,
+    pub status: DeliveryStatus,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subscriber_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attempt: Option<u32>,
+}
+
+impl DeliveryRecord {
+    pub fn from_request(req: &RecordDeliveryRequest) -> Self {
+        Self {
+            event_id: req.event_id.clone(),
+            delivery_id: req.delivery_id.clone(),
+            status: req.status,
+            subscriber_id: req.subscriber_id.clone(),
+            attempt: req.attempt,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -311,6 +397,8 @@ pub struct ListEventsRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<EventQueueState>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
@@ -350,6 +438,8 @@ pub struct ListedDelivery {
     pub delivery_id: String,
     pub event_id: String,
     pub status: DeliveryStatus,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subscriber_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -435,7 +525,7 @@ impl DualVersionManifest {
                 contract: CONTRACT_ID.to_string(),
                 contract_version: CONTRACT_VERSION.to_string(),
                 schema_uri: Some(
-                    "https://sddia.local/capability-contracts/eda.event_manager.v2.schema.json"
+                    "https://sddia.local/capability-contracts/eda.event_manager.v1.schema.json"
                         .to_string(),
                 ),
             },
@@ -470,6 +560,21 @@ mod tests {
         assert_eq!(
             EventFamily::from_publish_token("pending").unwrap(),
             EventFamily::Domain
+        );
+    }
+
+    #[test]
+    fn builtin_v2_schema_uri_resolves_to_catalog_schema() {
+        let m = DualVersionManifest::builtin_v2("0.1.0-lab");
+        let uri = m
+            .implements_contract
+            .schema_uri
+            .as_deref()
+            .expect("schema_uri");
+        assert!(uri.ends_with("eda.event_manager.v1.schema.json"));
+        assert_eq!(
+            m.implements_contract.contract_version,
+            CONTRACT_VERSION
         );
     }
 }

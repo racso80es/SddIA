@@ -54,9 +54,7 @@ pub fn load_iota_wallet_secret(repo: Option<&Path>) -> Option<String> {
     if from_env.is_some() {
         return from_env;
     }
-    let Some(repo) = repo else {
-        return None;
-    };
+    let repo = repo?;
     let wallet_path = repo.join(".SddIA/.dev/wallet.key");
     if !wallet_path.is_file() {
         return None;

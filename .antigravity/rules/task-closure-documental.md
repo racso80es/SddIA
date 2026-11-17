@@ -1,0 +1,58 @@
+---
+description: Cierre documental en un solo PR — PBI en done/ o Linear state_map.done y validacion.md pre-merge
+alwaysApply: true
+---
+
+# Ciclo documental de backlog (un PR)
+
+## Alta y refinamiento de backlog (pre-ejecución)
+
+Antes de crear o refinar un PBI, bug, HU o kaizen en el repositorio Core-self:
+
+1. Leer `tracker.provider` en `.SddIA/project.md` (SSOT de instancia).
+2. Con **`provider: linear`**:
+   - **Prohibido** usar `write_file` / `edit_file` (Antigravity) o `Write` / `StrReplace` (Cursor) u otra mutación directa bajo `docs/todos/pending/` o `docs/todos/done/` (rutas efectivas según `docs_layout` del manifiesto).
+   - El alta y el refinamiento viven en **Linear**: `./sddia-run.sh --process forge-pbi` y `./sddia-run.sh --process refine-item` (o `linear-tracker-adapter` nativo con `--prefer-native` en lab).
+   - El frontmatter YAML (`tracker_column`, `refinement`, `tracker_ref`, …) se sella en el **`description`** del issue, no en un fichero local de cola.
+3. Con **`provider: file`** (o sin objeto `tracker`): la cola local `docs/todos/pending/` sigue siendo la vía canónica de forja/refino según procesos `forge-pbi` / `refine-item`.
+
+La aduana Git (`pre_commit_gate.sh`) y los hooks de cliente (`.antigravity/hooks.json` y `.cursor/hooks.json`) refuerzan esta regla en caliente.
+
+---
+
+# Cierre documental en rama (un PR)
+
+Al cerrar un `bug-fix`, `feature` o `refactorization`:
+
+## Definición de Done
+
+```text
+Done = un único PR mergeado en main
+     + validacion.md APTO en el diff de ese PR
+     + cierre según tracker.provider:
+       · file: pbi_archived: true + PBI en docs/todos/done/ en la rama del PR
+       · linear: issue en state_map.done + validacion APTO, sin fichero nuevo en pending/ ni done/
+```
+
+## Pasos obligatorios (pre-merge, en la rama del PR)
+
+1. Con provider `file`, mover el PBI de `docs/todos/pending/` → `docs/todos/done/` (mismo `document_id`).
+2. Completar `{persist_ref}/validacion.md` — `global: APTO`, `branch` coherente. Con `file`, `pbi_archived: true`.
+3. Con provider `linear`, el issue queda en `state_map.done`. No se pide el fichero en `done/`.
+4. Incluir esos cambios en el **mismo PR** que el código (antes de merge).
+
+## Prohibido
+
+- Exigir `merged_pr` / `merge_commit` obligatorios en `validacion.md` para declarar Done.
+- `done_gate: both` como camino de cierre.
+- Abrir un segundo PR `docs/cerrar-pbi-*` solo para documentación post-merge.
+- Push directo a `main` con cierre documental (bloqueado por pre-push; usar un PR único).
+
+## Opcional (auditoría)
+
+- `pr_url`, `merged_pr`, `merge_commit`, `closed` en frontmatter solo si aportan valor; no son gate.
+
+## Referencia
+
+- `features-documentation-pattern` v1.2.0
+- Procesos `bug-fix` v1.4.0 / `feature` v1.3.0 § Cierre documental en rama

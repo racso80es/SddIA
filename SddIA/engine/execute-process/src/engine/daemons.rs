@@ -285,7 +285,7 @@ pub fn load_eda_pending(repo: &Path) -> Result<String, String> {
             return Ok(pending.trim().trim_start_matches("./").replace('\\', "/"));
         }
     }
-    Ok(".events/pending".to_string())
+    Ok("pending".to_string())
 }
 
 pub fn build_process_execution_completed_event(

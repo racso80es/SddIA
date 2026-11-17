@@ -2,7 +2,6 @@
 
 use super::capability_di_resolver::ResolvedBinding;
 use super::eda_bus_topology::{load_event_bus_topology, write_json_atomic};
-use super::workspace::load_paths_config;
 use chrono::Utc;
 use jsonschema::Validator;
 use serde_json::{json, Value};
@@ -39,24 +38,9 @@ fn env_skip() -> bool {
         .unwrap_or(false)
 }
 
-fn contracts_dir(repo: &Path) -> Result<PathBuf, String> {
-    let cfg = load_paths_config(repo)?;
-    if let Some(rel) = cfg
-        .get("directories")
-        .and_then(|d| d.get("capability_contracts"))
-        .and_then(|v| v.as_str())
-    {
-        return Ok(repo.join(rel.trim().trim_end_matches('/')));
-    }
-    Ok(repo.join("SddIA/library/norms/capability-contracts"))
-}
-
-fn schema_path(repo: &Path, contract: &str) -> Result<PathBuf, OutputValidatorError> {
-    let dir = contracts_dir(repo).map_err(|e| OutputValidatorError {
-        code: OutputValidatorCode::ConfigError,
-        message: e,
-    })?;
-    let path = dir.join(format!("{contract}.schema.json"));
+fn schema_path(repo: &Path, binding: &ResolvedBinding) -> Result<PathBuf, OutputValidatorError> {
+    let rel = binding.contract_schema_rel.trim().trim_start_matches("./");
+    let path = repo.join(rel);
     if !path.is_file() {
         return Err(OutputValidatorError {
             code: OutputValidatorCode::ConfigError,
@@ -119,7 +103,7 @@ pub fn validate_output_payload(
     if env_skip() {
         return Ok(());
     }
-    let path = schema_path(repo, &binding.contract)?;
+    let path = schema_path(repo, binding)?;
     let compiled = compile_schema(&path)?;
     if let Err(e) = compiled.validate(payload) {
         return Err(OutputValidatorError {
@@ -184,9 +168,27 @@ mod tests {
             contract: "doc.closure".into(),
             provider: "skill:filesystem-manager".into(),
             provider_md_rel: "x".into(),
-            contract_schema_rel: "x".into(),
+            contract_schema_rel: "SddIA/library/norms/capability-contracts/doc.closure.schema.json"
+                .into(),
             version: "1.0.0".into(),
         }
+    }
+
+    #[test]
+    fn contract_schema_with_non_standard_name_is_resolved_by_binding() {
+        let td = fixture_repo();
+        write_file(
+            td.path(),
+            "SddIA/library/norms/capability-contracts/doc.closure.v9.schema.json",
+            r#"{ "type": "object", "required": ["only"] }"#,
+        );
+        let mut b = binding();
+        b.contract_schema_rel =
+            "./SddIA/library/norms/capability-contracts/doc.closure.v9.schema.json".into();
+        validate_output_payload(td.path(), &b, &json!({"only": 1})).expect("usa el schema declarado");
+        let err = validate_output_payload(td.path(), &b, &json!({"exitCode": 0, "data": {}}))
+            .unwrap_err();
+        assert_eq!(err.code, OutputValidatorCode::SchemaMismatch);
     }
 
     #[test]
@@ -217,7 +219,8 @@ mod tests {
             contract: "tracker.lifecycle".into(),
             provider: "tool:linear-tracker-adapter".into(),
             provider_md_rel: "x".into(),
-            contract_schema_rel: "x".into(),
+            contract_schema_rel:
+                "SddIA/library/norms/capability-contracts/tracker.lifecycle.schema.json".into(),
             version: "1.0.0".into(),
         };
         let ok = json!({

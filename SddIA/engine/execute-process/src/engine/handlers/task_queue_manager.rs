@@ -148,7 +148,7 @@ fn process_matches_lock(pid: u32, starttime: Option<&str>) -> Result<bool, Strin
         if let Some(expected) = starttime.filter(|s| !s.is_empty()) {
             return Ok(proc_starttime(pid).as_deref() == Some(expected));
         }
-        return Ok(true);
+        Ok(true)
     }
     #[cfg(all(unix, not(target_os = "linux")))]
     {
@@ -1027,7 +1027,7 @@ mod tests {
     #[test]
     fn pr_anchor_in_inputs_rejected_as_slug_incident_98be62a3() {
         let err = build_child_inputs(
-            &Path::new("."),
+            Path::new("."),
             "bug-fix",
             "Continúa bug-fix tras merge PR #2 en BarcelonaXplorer (project_slug barcelonaxplorer)",
             Some("PR #2"),
@@ -1043,7 +1043,7 @@ mod tests {
     #[test]
     fn fix_name_wins_when_prompt_also_mentions_pr_number() {
         let v = build_child_inputs(
-            &Path::new("."),
+            Path::new("."),
             "bug-fix",
             "fix_name e2e-workspace-1xn-ac9 — seguimiento tras PR #2",
             Some("PR #2"),
@@ -1063,7 +1063,7 @@ mod tests {
     #[test]
     fn explicit_fix_name_in_kalma2_prompt() {
         let v = build_child_inputs(
-            &Path::new("."),
+            Path::new("."),
             "bug-fix",
             "Inicia bug-fix fix_name e2e-workspace-1xn-ac9. Crear docs/fixes/e2e-workspace-1xn-ac9/marker.md",
             None,

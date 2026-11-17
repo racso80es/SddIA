@@ -169,3 +169,114 @@ notes: "handoff-git-apto"
 - Entrega Tekton parcial (H1 núcleo; H2–H6/AC/suite/`forge_key`/evolution ausentes) → cierre bloqueado.
 - Sin writes bajo `docs/todos/`; no se reescribió `_agent_handoff.md`.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-11T08:54:35Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+notes: "handoff-git-apto; handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-11T08:56:40Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `b902f538-2e46-43d4-b51d-b695a7a5657b`
+- correlation_id: `61194689-9ebb-4635-907e-6c7f83e827c5`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - `Shell ./sddia-run.sh --tool git-manager` rechazado → `GIT_EVIDENCE_SESSION_SDDIA_RUN` NO_APTO (no bloquea R2 bridge).
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+- Tocados: solo `docs/features/man-43-event-manager-desacople-total/validacion.md` (sin KM/`docs/todos/`).
+- `global`/`branch`: **NO_APTO** — HEAD=`main`, ref inject `feat/man-43-…` ausente; entrega Tekton `blocked` (H1 parcial).
+- `git_changes`: **APTO** (lista previa + bridge; sin stdout fresco).
+- R1/R2/R3: **APTO** (copia `native_state` @ 08:54:35Z; KM limpio).
+- `Shell ./sddia-run.sh --tool git-manager` rechazado → `GIT_EVIDENCE_SESSION_SDDIA_RUN` NO_APTO (no bloquea R2 bridge).
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-11T08:59:23Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+notes: "handoff-git-apto; handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-11T09:00:54Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `57f643e8-c49b-4a44-91e1-757b0908fa10`
+- correlation_id: `a3cc1dc2-94ea-4ed8-94b4-619ed0662431`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - Shell `./sddia-run.sh --tool git-manager` rechazado → `GIT_EVIDENCE_SESSION_SDDIA_RUN` NO_APTO (no bloquea R2).
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+- Tocados: solo `docs/features/man-43-event-manager-desacople-total/validacion.md` (sin KM/`docs/todos/`).
+- `global`/`branch`: **NO_APTO** — HEAD=`main`, ref inject `feat/man-43-…` ausente; Tekton `blocked` (H1 parcial).
+- `git_changes`: **APTO** (lista previa + bridge; sin stdout fresco).
+- R1/R2/R3: **APTO** (copia `native_state` @ 08:59:23Z; KM limpio).
+- Shell `./sddia-run.sh --tool git-manager` rechazado → `GIT_EVIDENCE_SESSION_SDDIA_RUN` NO_APTO (no bloquea R2).
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-11T09:07:21Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+notes: "handoff-git-apto; handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-11T09:08:41Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `3654517b-c915-4e35-a965-3c7550a7b706`
+- correlation_id: `f7cf53b6-a862-48c4-b8bc-a6b4cfc1b246`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - Shell `./sddia-run.sh --tool git-manager` rechazado → `GIT_EVIDENCE_SESSION_SDDIA_RUN` NO_APTO (no bloquea R2).
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+- Tocados: solo `docs/features/man-43-event-manager-desacople-total/validacion.md` (sin KM/`docs/todos/`).
+- `global`/`branch`: **NO_APTO** — HEAD=`main`, ref inject `feat/man-43-…` ausente; Tekton `blocked` (H1 parcial).
+- `git_changes`: **APTO** (lista previa + bridge; sin stdout fresco).
+- R1/R2/R3: **APTO** (copia `native_state` @ 09:07:21Z; KM limpio).
+- Shell `./sddia-run.sh --tool git-manager` rechazado → `GIT_EVIDENCE_SESSION_SDDIA_RUN` NO_APTO (no bloquea R2).
+```

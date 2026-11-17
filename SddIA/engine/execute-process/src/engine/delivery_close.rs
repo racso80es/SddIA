@@ -90,7 +90,7 @@ fn trunk_direct_close(
             "delivery_mode": "trunk_direct",
             "delivery_mode_source": bound.delivery_mode_source,
             "event_type": "Delivery_Committed",
-            "event_path": event_path,
+            "event_uri": event_path,
             "omitted_processes": ["pull-request-review", "accept-pr"],
             "project_root": bound.project_root.to_string_lossy().replace('\\', "/"),
         })),
@@ -133,12 +133,12 @@ pub(crate) fn mark_fail_soft_if_secondary(entry: &mut Value, phase_name: &str, s
         .filter(|s| !s.is_empty())
         .is_some();
     let pushed = state.get("delivery_push").is_some();
-    if (has_pr || pushed) && is_dcc_secondary_phase(phase_name) {
-        if entry.get("status").and_then(|v| v.as_str()) == Some("failed")
-            || entry.get("status").and_then(|v| v.as_str()) == Some("blocked")
-        {
-            entry["fail_soft"] = json!(true);
-        }
+    if (has_pr || pushed)
+        && is_dcc_secondary_phase(phase_name)
+        && (entry.get("status").and_then(|v| v.as_str()) == Some("failed")
+            || entry.get("status").and_then(|v| v.as_str()) == Some("blocked"))
+    {
+        entry["fail_soft"] = json!(true);
     }
 }
 
@@ -958,7 +958,7 @@ pub fn run(
         "execution_id",
         "pr_url",
         "event_id",
-        "target_path",
+        "event_uri",
         "closed_branch",
         "snapshot_commit_hash",
         "delivery_close",
@@ -1003,19 +1003,9 @@ pub fn run(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
 
-    struct LabFilesystemMode;
-    impl Drop for LabFilesystemMode {
-        fn drop(&mut self) {
-            sddia_event_store::override_store_mode(None);
-            crate::engine::eda_port::clear_port();
-        }
-    }
-
-    fn lab_filesystem_eda() -> LabFilesystemMode {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        LabFilesystemMode
+    fn lab_filesystem_eda() -> crate::engine::eda_port::test_lab::FilesystemEdaGuard {
+        crate::engine::eda_port::test_lab::filesystem_eda()
     }
 
     #[test]
@@ -1077,56 +1067,44 @@ mod tests {
 
     #[test]
     fn dcc_fracture_suppressed_on_pre_pr_qa_gate_block() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let reports = vec![json!({
             "phase_name": "Gate pre-PR QA",
             "status": "blocked",
             "friction_id": "qa_attestation_required",
         })];
         emit_dcc_phase_fractures(repo, &reports);
-        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        assert!(pending.is_empty());
+        assert_eq!(pending_fracture_count(repo), 0);
     }
 
     #[test]
     fn dcc_fracture_suppressed_on_diff_seal_block() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let reports = vec![json!({
             "phase_name": "Sello diff validacion",
             "status": "blocked",
             "friction_id": "validacion_not_apto",
         })];
         emit_dcc_phase_fractures(repo, &reports);
-        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        assert!(pending.is_empty());
+        assert_eq!(pending_fracture_count(repo), 0);
     }
 
     #[test]
     fn dcc_fracture_suppressed_on_evolution_gate_block() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let reports = vec![json!({
             "phase_name": "Aduana evolution",
             "status": "blocked",
             "message": "EVOL_MATERIAL_UNREGISTERED",
         })];
         emit_dcc_phase_fractures(repo, &reports);
-        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        assert!(pending.is_empty());
+        assert_eq!(pending_fracture_count(repo), 0);
     }
 
     #[test]
@@ -1134,18 +1112,13 @@ mod tests {
         let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let reports = vec![json!({
             "phase_name": "Apertura en forja",
             "status": "failed",
             "error": "no se pudo resolver pr_url desde gh",
         })];
         emit_dcc_phase_fractures(repo, &reports);
-        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        assert!(!pending.is_empty());
+        assert!(pending_fracture_count(repo) >= 1);
     }
 
     #[test]
@@ -1196,20 +1169,16 @@ mod tests {
 
     #[test]
     fn dcc_fracture_suppressed_on_forge_gh_api_connect() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let reports = vec![json!({
             "phase_name": "Apertura en forja",
             "status": "failed",
             "error": GH_API_CONNECT_TRACE,
         })];
         emit_dcc_phase_fractures(repo, &reports);
-        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        assert!(pending.is_empty());
+        assert_eq!(pending_fracture_count(repo), 0);
     }
 
     #[test]
@@ -1230,38 +1199,30 @@ mod tests {
 
     #[test]
     fn dcc_fracture_suppressed_on_remote_push_dns() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let reports = vec![json!({
             "phase_name": "Publicación remota",
             "status": "failed",
             "error": "fatal: no es posible acceder a 'https://github.com/racso80es/SddIA.git/': Could not resolve host: github.com",
         })];
         emit_dcc_phase_fractures(repo, &reports);
-        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        assert!(pending.is_empty());
+        assert_eq!(pending_fracture_count(repo), 0);
     }
 
     #[test]
     fn dcc_fracture_suppressed_on_forge_dns() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let reports = vec![json!({
             "phase_name": "Apertura en forja",
             "status": "failed",
             "error": "Could not resolve host: github.com",
         })];
         emit_dcc_phase_fractures(repo, &reports);
-        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        assert!(pending.is_empty());
+        assert_eq!(pending_fracture_count(repo), 0);
     }
 
     #[test]
@@ -1307,20 +1268,16 @@ mod tests {
 
     #[test]
     fn dcc_fracture_suppressed_on_remote_push_hook_evol_gate() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let reports = vec![json!({
             "phase_name": "Publicación remota",
             "status": "failed",
             "error": "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed\nerror: falló el empuje de algunas referencias a 'https://github.com/racso80es/SddIA.git'",
         })];
         emit_dcc_phase_fractures(repo, &reports);
-        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        assert!(pending.is_empty());
+        assert_eq!(pending_fracture_count(repo), 0);
     }
 
     #[test]
@@ -1370,9 +1327,9 @@ mod tests {
 
     #[test]
     fn dcc_fracture_suppressed_on_workflow_scope() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let reports = vec![json!({
             "phase_name": "Publicación remota",
             "status": "blocked",
@@ -1380,11 +1337,7 @@ mod tests {
             "error": "without `workflow` scope",
         })];
         emit_dcc_phase_fractures(repo, &reports);
-        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        assert!(pending.is_empty());
+        assert_eq!(pending_fracture_count(repo), 0);
     }
 
     const TRACE_PUSH_NON_FF: &str = "SddIA pre-push: SKIPPED (delivery-close-cycle guard)\n ! [rejected]        branch -> branch (non-fast-forward)\nerror: falló el empuje";
@@ -1393,7 +1346,6 @@ mod tests {
     fn dcc_fracture_suppressed_on_push_non_fast_forward() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let mut entry = json!({
             "phase_name": "Publicación remota",
             "status": "failed",
@@ -1421,7 +1373,6 @@ mod tests {
         ));
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         emit_dcc_phase_fractures(
             repo,
             &[json!({
@@ -1438,7 +1389,6 @@ mod tests {
         let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         emit_dcc_phase_fractures(
             repo,
             &[json!({
@@ -1459,7 +1409,6 @@ mod tests {
     fn dcc_push_blocked_skips_post_push_phases_prior_push_not_ok() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let mut entry = json!({
             "phase_name": "Publicación remota",
             "status": "failed",
@@ -1520,17 +1469,13 @@ mod tests {
     }
 
     fn pending_fracture_count(repo: &std::path::Path) -> usize {
-        fs::read_dir(repo.join(".events/pending"))
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .count()
+        crate::engine::eda_port::test_lab::pending_count(repo)
     }
 
     #[test]
     fn dcc_fracture_suppressed_on_sddia_qa_missing() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let err = "sddia-qa no encontrado (compilar: cd SddIA && cargo build -p sddia-qa)";
         let reports = vec![
             json!({
@@ -1552,7 +1497,6 @@ mod tests {
     fn dcc_fracture_suppressed_on_shell_executor_wasm_fallback_marker() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         emit_dcc_phase_fractures(
             repo,
             &[json!({
@@ -1568,7 +1512,6 @@ mod tests {
     fn dcc_fracture_suppressed_on_git_manager_capsule_missing() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let err = "cápsula skill 'git-manager' no encontrada bajo SddIA/target";
         let reports = vec![
             json!({
@@ -1591,7 +1534,6 @@ mod tests {
         let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         emit_dcc_phase_fractures(
             repo,
             &[json!({
@@ -1603,7 +1545,6 @@ mod tests {
         assert!(pending_fracture_count(repo) >= 1);
         let tmp2 = tempfile::tempdir().expect("tempdir");
         let repo2 = tmp2.path();
-        fs::create_dir_all(repo2.join(".events/pending")).unwrap();
         emit_dcc_phase_fractures(
             repo2,
             &[json!({
@@ -1617,9 +1558,9 @@ mod tests {
 
     #[test]
     fn dcc_fracture_suppressed_on_forge_title_metachar() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let reports = vec![json!({
             "phase_name": "Apertura en forja",
             "status": "blocked",
@@ -1628,18 +1569,14 @@ mod tests {
             "error": "[PR_TITLE_METACHAR] arguments[3] contains forbidden shell metacharacters",
         })];
         emit_dcc_phase_fractures(repo, &reports);
-        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        assert!(pending.is_empty());
+        assert_eq!(pending_fracture_count(repo), 0);
     }
 
     #[test]
     fn dcc_fracture_suppressed_on_sello_pr_url_missing() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let reports = vec![json!({
             "phase_name": "Sello Presentación ECST",
             "status": "blocked",
@@ -1648,11 +1585,7 @@ mod tests {
             "error": "[PR_URL_MISSING] pr_url obligatorio para Sello Presentación ECST; traza 186c785103d8",
         })];
         emit_dcc_phase_fractures(repo, &reports);
-        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        assert!(pending.is_empty());
+        assert_eq!(pending_fracture_count(repo), 0);
     }
 
     #[test]

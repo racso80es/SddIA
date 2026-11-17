@@ -8,8 +8,10 @@ use super::eda_bus_topology;
 use super::qa_attestation;
 use super::tracker_pbi_meta;
 use serde_json::{json, Value};
-use std::fs;
 use std::path::Path;
+
+#[cfg(test)]
+use std::fs;
 
 fn str_field(v: &Value, key: &str) -> Option<String> {
     v.get(key)
@@ -67,44 +69,9 @@ pub(crate) fn enrich_inputs_for_lifecycle_stamp(repo: &Path, inputs: &Value, sou
     out
 }
 
-/// ADU-CA7: Presented histórico en pending + processed + dead-letter;
-/// en modo store también consulta `events.redb` (Family::Domain).
+/// ADU-CA7: `PullRequest_Presented` para `branch` vía puerto (`load_domain_ecsts`).
 pub(crate) fn scan_presented_for_branch(repo: &Path, branch: &str) -> bool {
-    if tracker_pbi_meta::presented_in_store(repo, branch) {
-        return true;
-    }
-    for rel in [".events/pending", ".events/processed", ".events/dead-letter"] {
-        let dir = repo.join(rel);
-        if !dir.is_dir() {
-            continue;
-        }
-        let Ok(entries) = fs::read_dir(&dir) else {
-            continue;
-        };
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.extension().and_then(|e| e.to_str()) != Some("json") {
-                continue;
-            }
-            let Ok(text) = fs::read_to_string(&path) else {
-                continue;
-            };
-            let Ok(event) = serde_json::from_str::<Value>(&text) else {
-                continue;
-            };
-            if event.get("event_type").and_then(|v| v.as_str()) != Some("PullRequest_Presented") {
-                continue;
-            }
-            let payload_branch = event
-                .get("payload")
-                .and_then(|p| p.get("branch"))
-                .and_then(|v| v.as_str());
-            if payload_branch == Some(branch) {
-                return true;
-            }
-        }
-    }
-    false
+    tracker_pbi_meta::presented_in_store(repo, branch)
 }
 
 /// ADU-CA8: ausencia del ref remoto = éxito idempotente del delete.
@@ -398,15 +365,15 @@ pub fn execute_accept_pr_phase(
                 if let Some(eid) = seal.get("event_id") {
                     obj.insert("event_id".into(), eid.clone());
                 }
-                if let Some(tp) = seal.get("target_path") {
-                    obj.insert("target_path".into(), tp.clone());
+                if let Some(tp) = seal.get("event_uri") {
+                    obj.insert("event_uri".into(), tp.clone());
                 }
             }
             Some(Ok(json!({
                 "status": "executed",
                 "handler": "accept-emit-merged",
                 "event_id": seal.get("event_id"),
-                "target_path": seal.get("target_path"),
+                "event_uri": seal.get("event_uri"),
                 "event_type": seal.get("event_type"),
                 "lifecycle_review_ci": lifecycle_done,
             })))
@@ -705,8 +672,7 @@ mod tests {
     }
 
     #[test]
-    fn t_adu_ca7_scan_presented_processed_and_dead_letter() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+    fn t_adu_ca7_scan_presented_ignores_disk_only_json() {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         let branch = "docs/merge-thermo-hu-f2-close";
@@ -723,11 +689,9 @@ mod tests {
             .unwrap(),
         )
         .unwrap();
-        assert!(scan_presented_for_branch(repo, branch));
+        assert!(!scan_presented_for_branch(repo, branch));
 
-        let tmp2 = tempfile::tempdir().unwrap();
-        let repo2 = tmp2.path();
-        let dl = repo2.join(".events/dead-letter");
+        let dl = repo.join(".events/dead-letter");
         fs::create_dir_all(&dl).unwrap();
         fs::write(
             dl.join("presented.json"),
@@ -738,49 +702,64 @@ mod tests {
             .unwrap(),
         )
         .unwrap();
-        assert!(scan_presented_for_branch(repo2, branch));
-        assert!(!scan_presented_for_branch(repo2, "other-branch"));
-        sddia_event_store::override_store_mode(None);
+        assert!(!scan_presented_for_branch(repo, branch));
+        assert!(!scan_presented_for_branch(repo, "other-branch"));
     }
 
-    /// REDB-CA3: Presented solo en store + modo redb → true.
+    #[test]
+    fn t_adu_ca7_scan_presented_via_port() {
+        let _h = crate::engine::eda_port::EventManagerTestHarness::new();
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let branch = "feat/presented-port-only";
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join(".SddIA/runtime")).ok();
+        let mut ev = json!({
+            "event_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+            "event_type": "PullRequest_Presented",
+            "timestamp": "2026-11-11T12:00:00Z",
+            "emitter_agent": "test",
+            "payload": { "branch": branch },
+            "delivery_state": {},
+        });
+        sddia_eda_catalog::stamp_published_event(repo, &mut ev).unwrap();
+        crate::engine::eda_port::record_ecst(repo, "domain", &ev).unwrap();
+        assert!(scan_presented_for_branch(repo, branch));
+        assert!(!scan_presented_for_branch(repo, "other"));
+    }
+
+    /// REDB-CA3: Presented solo en store (puerto) sin JSON bajo `.events/`.
     #[test]
     fn t_redb_ca3_scan_presented_from_store_only() {
+        let _h = crate::engine::eda_port::EventManagerTestHarness::new();
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         let branch = "fix/eda-redb-lock";
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let db = crate::engine::eda_port::runtime_db_path(repo);
-        if let Some(parent) = db.parent() {
-            fs::create_dir_all(parent).unwrap();
-        }
-        let store = sddia_event_store::EventStore::open(&db).expect("open");
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+        )
+        .unwrap();
         let event_id = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-        let ecst = json!({
+        let mut ecst = json!({
             "event_id": event_id,
             "event_type": "PullRequest_Presented",
             "payload": {"branch": branch, "tracker_ref": "AUT-16"},
         });
-        store
-            .insert_event(
-                &sddia_event_store::StoredEvent {
-                    event_id: event_id.into(),
-                    family: sddia_event_store::Family::Domain,
-                    event_type: "PullRequest_Presented".into(),
-                    created_at: 1,
-                    ecst,
-                },
-                &[],
-            )
-            .expect("insert");
-        drop(store);
+        sddia_eda_catalog::stamp_published_event(repo, &mut ecst).unwrap();
+        crate::engine::eda_port::record_ecst(repo, "domain", &ecst).unwrap();
         assert!(
             scan_presented_for_branch(repo, branch),
             "debe ver Presented solo en store"
         );
         assert!(!scan_presented_for_branch(repo, "other-branch"));
         assert!(!repo.join(".events").exists());
-        sddia_event_store::override_store_mode(None);
     }
 
     #[test]
@@ -869,27 +848,27 @@ mod tests {
 
     #[test]
     fn enrich_inputs_prefers_presented_tracker_ref() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let _h = crate::engine::eda_port::EventManagerTestHarness::new();
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"directories":{"documentation":"docs"}}"#,
+            r#"{"eda_bus":{"pending":".events/pending"},"directories":{"documentation":"docs"}}"#,
         )
         .unwrap();
+        fs::create_dir_all(repo.join(".SddIA/runtime")).ok();
         let branch = "feat/lifecycle-presented-ref";
-        let processed = repo.join(".events/processed");
-        fs::create_dir_all(&processed).unwrap();
-        fs::write(
-            processed.join("p.json"),
-            serde_json::to_string(&json!({
-                "event_type": "PullRequest_Presented",
-                "payload": {"branch": branch, "tracker_ref": "MAN-PRESENTED"}
-            }))
-            .unwrap(),
-        )
-        .unwrap();
+        let mut ev = json!({
+            "event_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+            "event_type": "PullRequest_Presented",
+            "timestamp": "2026-11-11T12:00:00Z",
+            "emitter_agent": "test",
+            "payload": {"branch": branch, "tracker_ref": "MAN-PRESENTED"},
+            "delivery_state": {},
+        });
+        sddia_eda_catalog::stamp_published_event(repo, &mut ev).unwrap();
+        crate::engine::eda_port::record_ecst(repo, "domain", &ev).unwrap();
         let slug = "lifecycle-presented-ref";
         let persist = format!("docs/features/{slug}");
         fs::create_dir_all(repo.join(&persist)).unwrap();
@@ -904,7 +883,6 @@ mod tests {
             out.get("tracker_ref").and_then(|v| v.as_str()),
             Some("MAN-PRESENTED")
         );
-        sddia_event_store::override_store_mode(None);
     }
 
     #[test]

@@ -68,12 +68,14 @@ fn newest_hash_by_mtime(hashes: &HashMap<String, Vec<(PathBuf, SystemTime, u64)>
     best_hash
 }
 
+/// Agrupación `logical → perfil → candidatos (ruta, mtime, tamaño)`.
+type LogicalBuckets = HashMap<String, HashMap<String, Vec<(PathBuf, SystemTime, u64)>>>;
+
 fn scan_deps_dir(repo: &Path, deps: &Path, profile: &str) -> Result<Vec<PlanCandidate>, String> {
     if !deps.is_dir() {
         return Ok(Vec::new());
     }
-    let mut by_logical: HashMap<String, HashMap<String, Vec<(PathBuf, SystemTime, u64)>>> =
-        HashMap::new();
+    let mut by_logical: LogicalBuckets = HashMap::new();
     for entry in fs::read_dir(deps).map_err(|e| e.to_string())? {
         let entry = entry.map_err(|e| e.to_string())?;
         let path = entry.path();
@@ -272,7 +274,7 @@ mod tests {
         thread::sleep(Duration::from_millis(20));
         fs::write(deps.join("libbar-dddddddddddddddd.rmeta"), b"newm").unwrap();
         let c = enumerate(&repo).expect("enum");
-        assert!(c.iter().filter(|x| !x.kept).next().is_none());
+        assert!(c.iter().find(|x| !x.kept).is_none());
         let _ = fs::remove_dir_all(&repo);
     }
 

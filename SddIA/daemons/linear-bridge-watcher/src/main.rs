@@ -110,7 +110,7 @@ fn invoke_list_issues(repo: &Path, team_key: &str, project_id: Option<&str>) -> 
     let stdout = String::from_utf8_lossy(&out.stdout);
     let line = stdout.lines().last().unwrap_or("").trim();
     let body: Value = serde_json::from_str(line).ok()?;
-    let inner = body.get("result").or(Some(&body)).unwrap();
+    let inner = body.get("result").unwrap_or(&body);
     if inner.get("success") == Some(&json!(false)) {
         return None;
     }
@@ -232,11 +232,9 @@ fn poll_once(repo: &Path) {
             &items,
             now,
         ) {
-            Ok((paths, _)) => {
-                for p in paths {
-                    if let Ok(rel) = p.strip_prefix(repo) {
-                        eprintln!("[LINEAR-BRIDGE] Tracker_Issue_Changed: {}", rel.display());
-                    }
+            Ok((uris, _)) => {
+                for uri in uris {
+                    eprintln!("[LINEAR-BRIDGE] Tracker_Issue_Changed: {}", uri.as_canonical());
                 }
             }
             Err(e) => eprintln!("[LINEAR-BRIDGE] assimilate {}: {e}", proj.slug),

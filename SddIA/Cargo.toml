@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "sddia-io",
-    "sddia-event-store",
     "sddia-runtime-parity",
     "sddia-eda-catalog",
     "sddia-core",
@@ -23,3 +22,9 @@ members = [
     "daemons/*",
     "interfaces/*",
 ]
+[profile.dev]
+debug = "line-tables-only"
+strip = "none"
+
+[profile.dev.package."*"]
+debug = false

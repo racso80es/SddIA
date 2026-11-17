@@ -12,6 +12,7 @@ capabilities:
   - "capsule-adapters"
 implementation_path_ref: "SddIA/tools/sddia-workspace-server"
 telemetry_provided: false
+hash_signature: "sha256:e4b1b65d7a877ef5b4d3ca33a7c610a935667e4f91f362a97d2a63f5ceece2b6"
 ---
 
 # sddia-workspace-server

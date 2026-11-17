@@ -61,6 +61,6 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         "success": true,
         "exitCode": 0,
         "event_id": event_id,
-        "target_path": seal.get("target_path"),
+        "event_uri": seal.get("event_uri"),
     }))
 }

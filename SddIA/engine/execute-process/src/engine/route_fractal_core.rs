@@ -47,7 +47,7 @@ fn dispatch_fractal_subscriber(
                 if result.get("ok").and_then(|v| v.as_bool()) == Some(true) {
                     return (sid, "success".into(), None, 0);
                 }
-                return (
+                (
                     sid,
                     "failed".into(),
                     result
@@ -56,14 +56,14 @@ fn dispatch_fractal_subscriber(
                         .map(str::to_string)
                         .or_else(|| Some("radamanto-batch failed".into())),
                     1,
-                );
+                )
             }
             "telemetry-compliance-audit" => {
                 let result = audit_telemetry_compliance(repo, rel_path);
                 if result.get("ok").and_then(|v| v.as_bool()) == Some(true) {
                     return (sid, "success".into(), None, 0);
                 }
-                return (
+                (
                     sid,
                     "failed".into(),
                     result
@@ -72,7 +72,7 @@ fn dispatch_fractal_subscriber(
                         .map(str::to_string)
                         .or_else(|| Some("telemetry-compliance-audit failed".into())),
                     1,
-                );
+                )
             }
             "daemon-heartbeat-audit" => match super::handlers::daemon_heartbeat::audit_telemetry_file(repo, rel_path) {
                 Ok(result) if result.get("ok").and_then(|v| v.as_bool()) == Some(true) => {
@@ -92,7 +92,7 @@ fn dispatch_fractal_subscriber(
             },
             "telemetry-batch-stub" => {
                 let process_inputs = json!({
-                    "event_file_path": rel_path,
+                    "event_uri": rel_path,
                     "correlation_id": event.get("event_id").and_then(|v| v.as_str()).unwrap_or(""),
                 });
                 match invoke_process_full(repo, "telemetry-batch-stub", &process_inputs) {
@@ -231,16 +231,22 @@ fn dispatch_fractal_subscriber(
 
 fn route_fractal_event(
     repo: &Path,
-    event_file_path: &str,
+    event_uri: &str,
     subscriptions_rel: &str,
     purge_after: bool,
     skip_ecst_gate: bool,
 ) -> Value {
-    let raw_path = Path::new(event_file_path);
-    let event_path = if raw_path.is_absolute() {
-        raw_path.to_path_buf()
+    let event_path = if let Ok(uri) =
+        sddia_core::ports::event_manager::EventUri::parse(event_uri)
+    {
+        std::path::PathBuf::from(format!("{}.json", uri.event_id))
     } else {
-        repo.join(raw_path)
+        let raw_path = Path::new(event_uri);
+        if raw_path.is_absolute() {
+            raw_path.to_path_buf()
+        } else {
+            repo.join(raw_path)
+        }
     };
     let event_path = event_path.canonicalize().unwrap_or(event_path);
 
@@ -451,23 +457,23 @@ fn route_fractal_event(
     })
 }
 
-pub fn route_telemetry_event(repo: &Path, event_file_path: &str) -> Value {
+pub fn route_telemetry_event(repo: &Path, event_uri: &str) -> Value {
     let subs = load_fractal_subscription_rel(repo, "telemetry_subscriptions")
         .unwrap_or_else(|_| "SddIA/core/event-telemetry-subscriptions.json".into());
-    route_fractal_event(repo, event_file_path, &subs, false, true)
+    route_fractal_event(repo, event_uri, &subs, false, true)
 }
 
-pub fn route_orchestration_event(repo: &Path, event_file_path: &str) -> Value {
+pub fn route_orchestration_event(repo: &Path, event_uri: &str) -> Value {
     let subs = load_fractal_subscription_rel(repo, "orchestration_subscriptions")
         .unwrap_or_else(|_| "SddIA/core/event-orchestration-subscriptions.json".into());
-    route_fractal_event(repo, event_file_path, &subs, true, false)
+    route_fractal_event(repo, event_uri, &subs, true, false)
 }
 
-pub fn route_domain_fractal_event(repo: &Path, event_file_path: &str) -> Value {
+pub fn route_domain_fractal_event(repo: &Path, event_uri: &str) -> Value {
     let subs = load_fractal_subscription_rel(repo, "domain_subscriptions")
         .unwrap_or_else(|_| "SddIA/core/event-domain-subscriptions.json".into());
     // Opción B: purga física del JSON domain tras consenso de suscriptores (purge_after=true).
-    route_fractal_event(repo, event_file_path, &subs, true, false)
+    route_fractal_event(repo, event_uri, &subs, true, false)
 }
 
 pub fn invoke_route_fractal(repo: &Path, fn_name: &str, event_rel: &str) -> Result<Value, String> {

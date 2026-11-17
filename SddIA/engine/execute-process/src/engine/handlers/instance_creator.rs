@@ -21,7 +21,7 @@ fn str_opt(inputs: &Value, key: &str) -> Option<String> {
 }
 
 fn truthy(inputs: &Value, key: &str) -> bool {
-    inputs.get(key).map_or(false, |v| {
+    inputs.get(key).is_some_and(|v| {
         v.as_bool().unwrap_or_else(|| {
             v.as_str()
                 .map(|s| matches!(s.trim().to_lowercase().as_str(), "1" | "true" | "yes"))
@@ -397,9 +397,6 @@ fn run_smoke(repo: &Path, instance_root: &Path, skip_ignition: bool) -> Value {
     require_dir(".SddIA", &mut checks, &mut ok);
     require_dir(".SddIA/.dev", &mut checks, &mut ok);
     require_dir(".SddIA/daemons/state", &mut checks, &mut ok);
-    require_dir(".events/pending", &mut checks, &mut ok);
-    require_dir(".events/domain", &mut checks, &mut ok);
-    require_dir(".events/orchestration", &mut checks, &mut ok);
 
     let env_path = instance_root.join(".SddIA/.dev/.env");
     let env_ok = env_path.is_file();
@@ -484,13 +481,9 @@ fn probe_route_domain(instance_root: &Path) -> Value {
             "reason": "execute-process ELF ausente en instancia"
         });
     };
-    let domain = instance_root.join(".events/domain");
-    if let Err(e) = fs::create_dir_all(&domain) {
-        return json!({ "success": false, "error": e.to_string() });
-    }
     let eid = Uuid::new_v4().to_string();
-    let rel = format!(".events/domain/{eid}.json");
-    let event = json!({
+    let event_uri = format!("eda://domain/{eid}");
+    let mut event = json!({
         "event_id": eid,
         "event_type": "Instance_Creator_Smoke_Probe",
         "event_family": "domain",
@@ -498,11 +491,11 @@ fn probe_route_domain(instance_root: &Path) -> Value {
         "emitter_agent": "instance-creator",
         "payload": { "source": "instance-creator-smoke-route" }
     });
-    let path = instance_root.join(&rel);
-    if fs::write(&path, format!("{event}\n")).is_err() {
-        return json!({ "success": false, "reason": "write probe event" });
+    let _ = sddia_eda_catalog::stamp_published_event(instance_root, &mut event);
+    if let Err(e) = crate::engine::eda_port::record_ecst(instance_root, "domain", &event) {
+        return json!({ "success": false, "reason": "record probe event", "error": e });
     }
-    let inputs = json!({ "event_file_path": rel, "blocking": true });
+    let inputs = json!({ "event_uri": event_uri, "blocking": true });
     match Command::new(&bin)
         .current_dir(instance_root)
         .args([
@@ -524,7 +517,7 @@ fn probe_route_domain(instance_root: &Path) -> Value {
             json!({
                 "success": success,
                 "exit_code": out.status.code(),
-                "event_path": rel
+                "event_uri": event_uri
             })
         }
         Err(e) => json!({ "success": false, "error": e.to_string() }),

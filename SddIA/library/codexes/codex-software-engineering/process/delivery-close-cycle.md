@@ -12,11 +12,11 @@ inputs:
 minteo_maximo: null
 name: delivery-close-cycle
 outputs:
-- pr_url: URL del pull request abierto o actualizado
-- event_id: UUID v4 del evento PullRequest_Presented
-- target_path: Ruta relativa del JSON en eda_bus.pending
-- closed_branch: Rama cerrada o higienizada según política local
-- evolution_entry: Referencia opcional a entrada en evolution/
+- 'pr_url: URL del pull request abierto o actualizado'
+- 'event_id: UUID v4 del evento PullRequest_Presented'
+- 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
+- 'closed_branch: Rama cerrada o higienizada según política local'
+- 'evolution_entry: Referencia opcional a entrada en evolution/'
 phases:
 - delegates_to:
   - skill:git-manager
@@ -64,7 +64,7 @@ phases:
   name: Higiene local
 porcentaje_de_exito: null
 uuid: 5417c92c-da7f-4d46-b245-55cf1b17961a
-version: 1.6.1
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
@@ -100,7 +100,7 @@ Invocar **`action:emit-pr-presented-event`** con:
 
 Sin URL resoluble: envelope `status: blocked`, `friction_id: F-DCC-PR-URL-MISSING`; no se emite `PullRequest_Presented`.
 
-Salidas propagadas al envelope del proceso: `event_id`, `target_path`, `pr_url`.
+Salidas propagadas al envelope del proceso: `event_id`, `event_uri`, `pr_url`.
 
 ## Notas operativas
 

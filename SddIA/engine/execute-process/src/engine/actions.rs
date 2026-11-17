@@ -227,9 +227,6 @@ fn emit_pr_presented(repo: &Path, inputs: &Value) -> Result<Value, String> {
     }
     sddia_eda_catalog::stamp_published_event(repo, &mut event)?;
     let seal = crate::engine::eda_port::publish_ecst(repo, "pending", &event)?;
-    // Ancla lógica post-purge: reseal/accept-pr resuelven Presented vía `.events/domain/{event_id}.json`.
-    let anchor = repo.join(format!(".events/domain/{event_id}.json"));
-    let _ = super::eda_bus_topology::write_json_atomic(&anchor, &event);
     Ok(json!({
         "success": true,
         "event_id": json!(event_id),
@@ -445,7 +442,7 @@ mod tests {
 
     #[test]
     fn emit_work_initiated_writes_pending_without_provider_fields() {
-        let _guard = filesystem_guard();
+        let _guard = port_harness();
         let repo = find_repo_root().unwrap();
         let pending = repo.join(".events/pending");
         fs::create_dir_all(&pending).ok();
@@ -471,7 +468,7 @@ mod tests {
 
     #[test]
     fn emit_validation_started_writes_pending() {
-        let _guard = filesystem_guard();
+        let _guard = port_harness();
         let repo = find_repo_root().unwrap();
         let pending = repo.join(".events/pending");
         fs::create_dir_all(&pending).ok();
@@ -504,7 +501,7 @@ mod tests {
 
     #[test]
     fn pr_emits_carry_tracker_ref_when_provided() {
-        let _guard = filesystem_guard();
+        let _guard = port_harness();
         let repo = find_repo_root().unwrap();
         let pending = repo.join(".events/pending");
         fs::create_dir_all(&pending).ok();
@@ -538,7 +535,7 @@ mod tests {
 
     #[test]
     fn emit_resealed_links_presented_event_id() {
-        let _guard = filesystem_guard();
+        let _guard = port_harness();
         let repo = find_repo_root().unwrap();
         let pending = repo.join(".events/pending");
         fs::create_dir_all(&pending).ok();
@@ -586,7 +583,7 @@ mod tests {
 
     #[test]
     fn emit_tracker_sync_failed_no_secrets_in_pending() {
-        let _guard = filesystem_guard();
+        let _guard = port_harness();
         let repo = find_repo_root().unwrap();
         let out = emit_tracker_sync_failed(
             &repo,
@@ -607,35 +604,19 @@ mod tests {
     }
 
     fn emitted_body(repo: &Path, event_id: &str) -> String {
-        let file = repo.join(".events/pending").join(format!("{event_id}.json"));
-        if file.is_file() {
-            return fs::read_to_string(file).unwrap();
-        }
-        if let Ok(row) = crate::engine::eda_port::with_event_port(repo, "test_emitted_body", |port| {
+        let row = crate::engine::eda_port::with_event_port(repo, "test_emitted_body", |port| {
             use sddia_core::ports::event_manager::GetEventRequest;
             port.get_event(GetEventRequest {
                 event_id: event_id.to_string(),
             })
             .map_err(|e| e.to_string())
-        }) {
-            return serde_json::to_string(&row.ecst).unwrap();
-        }
-        let store = sddia_event_store::EventStore::open(crate::engine::eda_port::runtime_db_path(repo))
-            .expect("store");
-        let row = store.get_event(event_id).expect("read").expect("fila");
+        })
+        .expect("get_event");
         serde_json::to_string(&row.ecst).unwrap()
     }
 
-    struct ModeGuard;
-    impl Drop for ModeGuard {
-        fn drop(&mut self) {
-            sddia_event_store::override_store_mode(None);
-        }
-    }
-
-    fn filesystem_guard() -> ModeGuard {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        ModeGuard
+    fn port_harness() -> crate::engine::eda_port::EventManagerTestHarness {
+        crate::engine::eda_port::EventManagerTestHarness::new()
     }
 
     fn temp_repo() -> std::path::PathBuf {
@@ -647,7 +628,7 @@ mod tests {
         fs::create_dir_all(path.join("SddIA/core")).unwrap();
         fs::write(
             path.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
         )
         .unwrap();
         path
@@ -655,9 +636,9 @@ mod tests {
 
     #[test]
     fn merged_alta_inserts_store_row_before_route() {
-        let _guard = ModeGuard;
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
         let repo = temp_repo();
+        std::fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let _redb = crate::engine::eda_port::test_lab::redb_eda_for(&repo);
         let merged = emit_pr_merged(
             &repo,
             &json!({

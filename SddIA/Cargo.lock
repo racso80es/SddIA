@@ -1852,7 +1852,6 @@ dependencies = [
  "sddia-core",
  "sddia-eda-catalog",
  "sddia-event-manager-host",
- "sddia-event-store",
  "sddia-io",
  "serde",
  "serde_json",
@@ -1908,7 +1907,6 @@ dependencies = [
  "sddia-ecosystem-health",
  "sddia-eda-catalog",
  "sddia-event-manager-host",
- "sddia-event-store",
  "sddia-infrastructure-lancedb-evolution",
  "sddia-infrastructure-lancedb-preferences",
  "sddia-io",
@@ -5296,15 +5294,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sddia-event-store"
-version = "0.1.0"
-dependencies = [
- "redb",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "sddia-evolution-register"
 version = "0.1.0"
 dependencies = [
@@ -5433,6 +5422,9 @@ dependencies = [
 name = "sddia-workspace-server"
 version = "0.1.0"
 dependencies = [
+ "sddia-core",
+ "sddia-eda-catalog",
+ "sddia-event-manager-host",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -5995,7 +5987,9 @@ dependencies = [
 name = "thought-graph-access"
 version = "0.1.0"
 dependencies = [
+ "sddia-core",
  "sddia-core-memory",
+ "sddia-event-manager-host",
  "sddia-infrastructure-lancedb-thought",
  "sddia-io",
  "serde_json",

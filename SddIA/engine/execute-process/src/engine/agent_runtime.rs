@@ -315,7 +315,7 @@ fn agent_names(delegates: &[Value]) -> Vec<String> {
 }
 
 fn is_deterministic_agent(name: &str) -> bool {
-    DETERMINISTIC_AGENTS.iter().any(|d| *d == name)
+    DETERMINISTIC_AGENTS.contains(&name)
 }
 
 fn is_none_tier(tier: &str) -> bool {
@@ -704,15 +704,11 @@ pub fn invoke_agent_phase(
         .filter(|s| !s.is_empty())
         .map(|s| s.to_string())
         .or_else(|| {
-            if inputs
+            inputs
                 .get("project_slug")
                 .and_then(|v| v.as_str())
                 .map(str::trim)
-                .filter(|s| !s.is_empty())
-                .is_none()
-            {
-                return None;
-            }
+                .filter(|s| !s.is_empty())?;
             project_binding::bind(repo, inputs)
                 .ok()
                 .flatten()
@@ -888,8 +884,7 @@ pub fn invoke_agent_phase(
     let line = stdout
         .lines()
         .map(str::trim)
-        .filter(|l| !l.is_empty())
-        .last()
+        .rfind(|l| !l.is_empty())
         .unwrap_or("");
 
     if line.is_empty() {

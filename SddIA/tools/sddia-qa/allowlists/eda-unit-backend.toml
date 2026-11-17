@@ -11,16 +11,12 @@ path_contains = [
   "/tests/",
   "/tests.rs",
   "contract_suite.rs",
-  "eda_store_io_matrix",
-  "eda_subscriber_",
-  "event_store_writers",
   "memory_evolution_ingest",
   "dlt_telemetry",
 ]
 
 # Legacy bridge + locus lab + gates
 path_suffixes = [
-  "eda_port_legacy.rs",
   "eda_port.rs",
   "gate_eda_unit_no_real_backend.rs",
   "gate_event_manager_port.rs",
@@ -28,7 +24,6 @@ path_suffixes = [
 
 # Crates adapters / host / store (contract + infrastructure)
 path_prefixes = [
-  "SddIA/sddia-event-store/",
   "SddIA/infrastructure/",
   "SddIA/sddia-event-manager-host/",
 ]

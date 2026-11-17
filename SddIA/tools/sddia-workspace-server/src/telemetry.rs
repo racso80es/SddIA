@@ -1,4 +1,5 @@
 use serde_json::{json, Value};
+use sddia_core::ports::event_manager::publish_ecst;
 use std::fs;
 use std::path::Path;
 use uuid::Uuid;
@@ -37,8 +38,6 @@ pub fn emit_raw_execution_finished(
     duration_ms: u128,
     workspace_path: Option<&Path>,
 ) -> Result<(), String> {
-    let tele_dir = sddia_repo.join(".events/telemetry");
-    fs::create_dir_all(&tele_dir).map_err(|e| e.to_string())?;
     let event_id = Uuid::new_v4().to_string();
     let mut payload = json!({
         "asset_id": "sddia-workspace-server",
@@ -50,7 +49,7 @@ pub fn emit_raw_execution_finished(
     if let Some(ws) = workspace_path {
         payload["workspace_path"] = json!(ws.to_string_lossy());
     }
-    let event = json!({
+    let mut event = json!({
         "event_id": event_id,
         "event_type": "Raw_Execution_Finished",
         "event_family": "telemetry",
@@ -59,10 +58,10 @@ pub fn emit_raw_execution_finished(
         "payload": payload,
         "delivery_state": {},
     });
-    let path = tele_dir.join(format!("{event_id}.json"));
-    fs::write(path, serde_json::to_string_pretty(&event).unwrap())
-        .map_err(|e| e.to_string())?;
-    Ok(())
+    sddia_event_manager_host::with_productive_port(sddia_repo, "workspace_raw_finished", |port| {
+        sddia_eda_catalog::stamp_published_event(sddia_repo, &mut event)?;
+        publish_ecst(port, sddia_repo, "telemetry", &event).map(|_| ())
+    })
 }
 
 fn chrono_lite_now() -> String {

@@ -8,7 +8,7 @@ capabilities:
   - "sha256-generation"
   - "hash-validation"
   - "uuid-generation"
-hash_signature: "sha256:7ec7062404536588b243b99108cfdc7519aecb4c850c304186ba0dfc04991eb6"
+hash_signature: "sha256:4d514fe72a5d3ac15ad193a162cd84def3b8db1bccf9ca1190dd97a6e920180c"
 inputs:
   - "operation": "Enum: [GENERATE_SHA256, VALIDATE_HASH, GENERATE_UUID]"
   - "target_type": "Enum: [STRING, FILE_PATH]; omitido o ignorado cuando operation es GENERATE_UUID"

@@ -1,4 +1,4 @@
-//! FS-legacy helpers retained for `#[cfg(test)]`; store path is default in release.
+//! Censo productivo vía `EventManagerPort`; escaneo FS solo si Cúmulo declara rutas `.events/` explícitas.
 #![cfg_attr(not(test), allow(dead_code, unused_variables))]
 
 use chrono::{DateTime, Utc};
@@ -93,54 +93,66 @@ fn get_repo_root() -> Result<PathBuf, String> {
     }
 }
 
+/// Id de tabla Redb (`events`, `subscriber_delivery`, …) vs ruta legacy de cola bajo `.events/`.
+fn cumulo_string_is_legacy_fs_dir(raw: &str) -> bool {
+    let s = raw.trim();
+    if s.is_empty() || s.ends_with(".json") {
+        return false;
+    }
+    if !s.contains('/') && !s.contains('\\') {
+        return false;
+    }
+    s.starts_with(".events/")
+        || s.starts_with("./.events/")
+        || s.starts_with(".SddIA/")
+        || s.starts_with("./.SddIA/")
+}
+
+fn optional_queue_dir(repo: &Path, cfg: &Value, section: &str, key: &str) -> PathBuf {
+    match cfg
+        .get(section)
+        .and_then(|s| s.get(key))
+        .and_then(|v| v.as_str())
+    {
+        Some(raw) if cumulo_string_is_legacy_fs_dir(raw) => {
+            repo.join(raw.trim().trim_start_matches("./"))
+        }
+        _ => PathBuf::new(),
+    }
+}
+
 fn resolve_bus_paths(repo: &Path) -> Result<BusPaths, String> {
     let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
     let text = fs::read_to_string(&cfg_path).map_err(|e| e.to_string())?;
     let cfg: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
 
-    let rel = |section: &str, key: &str, default: &str| -> PathBuf {
-        cfg.get(section)
-            .and_then(|s| s.get(key))
-            .and_then(|v| v.as_str())
-            .unwrap_or(default)
-            .trim()
-            .trim_start_matches("./")
-            .into()
-    };
-
-    let pending = repo.join(rel("eda_bus", "pending", ".events/pending"));
-    let processing = repo.join(rel("eda_bus", "processing", ".events/processing"));
-    let processed = repo.join(rel("eda_bus", "processed", ".events/processed"));
-    let dead_letter = repo.join(rel("eda_bus", "dead_letter", ".events/dead-letter"));
+    let pending = optional_queue_dir(repo, &cfg, "eda_bus", "pending");
+    let processing = optional_queue_dir(repo, &cfg, "eda_bus", "processing");
+    let processed = optional_queue_dir(repo, &cfg, "eda_bus", "processed");
+    let dead_letter = optional_queue_dir(repo, &cfg, "eda_bus", "dead_letter");
+    let telemetry = optional_queue_dir(repo, &cfg, "eda_fractal", "telemetry");
+    let orchestration = optional_queue_dir(repo, &cfg, "eda_fractal", "orchestration");
+    let domain = optional_queue_dir(repo, &cfg, "eda_fractal", "domain");
 
     Ok(BusPaths {
-        processing_subscribers: processing.join("subscribers"),
-        processed_subscribers: processed.join("subscribers"),
-        dead_letter_subscribers: dead_letter.join("subscribers"),
-        telemetry: repo.join(
-            cfg.get("eda_fractal")
-                .and_then(|f| f.get("telemetry"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("./.events/telemetry")
-                .trim()
-                .trim_start_matches("./"),
-        ),
-        orchestration: repo.join(
-            cfg.get("eda_fractal")
-                .and_then(|f| f.get("orchestration"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("./.events/orchestration")
-                .trim()
-                .trim_start_matches("./"),
-        ),
-        domain: repo.join(
-            cfg.get("eda_fractal")
-                .and_then(|f| f.get("domain"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("./.events/domain")
-                .trim()
-                .trim_start_matches("./"),
-        ),
+        processing_subscribers: if processing.as_os_str().is_empty() {
+            PathBuf::new()
+        } else {
+            processing.join("subscribers")
+        },
+        processed_subscribers: if processed.as_os_str().is_empty() {
+            PathBuf::new()
+        } else {
+            processed.join("subscribers")
+        },
+        dead_letter_subscribers: if dead_letter.as_os_str().is_empty() {
+            PathBuf::new()
+        } else {
+            dead_letter.join("subscribers")
+        },
+        telemetry,
+        orchestration,
+        domain,
         pending,
         processing,
         processed,
@@ -411,6 +423,7 @@ fn validate_ecst_event(
     }
 }
 
+#[allow(clippy::too_many_arguments)] // barrido por estado: repo, dir, bucket y acumuladores del censo
 fn scan_event_dir(
     repo: &Path,
     dir: &Path,
@@ -905,6 +918,7 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
             let mapped = match d.status {
                 PortDeliveryStatus::Ack => AuditDeliveryStatus::Success,
                 PortDeliveryStatus::Nack => AuditDeliveryStatus::Failed,
+                PortDeliveryStatus::Processing => continue,
             };
             match mapped {
                 AuditDeliveryStatus::Failed => failed += 1,
@@ -940,7 +954,7 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
 
         audit_domain_delivery_signals(repo, &domain_rows, &all_deliveries, &mut state);
         #[cfg(test)]
-        {
+        if bus_paths.pending.is_dir() {
             let fractures = collect_residual_fractures(&domain_rows);
             audit_residual_pending_files(repo, &bus_paths.pending, &fractures, &mut state);
         }
@@ -973,10 +987,20 @@ fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusP
             path: "(event-manager-port)".into(),
             detail: "Event Manager productivo no disponible; escaneo FS deshabilitado (MAN-40)".into(),
         });
-        return Ok((state, paths));
+        Ok((state, paths))
     }
     #[cfg(test)]
     {
+        run_audit_fs_scan(repo, paths, stale_threshold_hours)
+    }
+}
+
+#[cfg(test)]
+fn run_audit_fs_scan(
+    repo: &Path,
+    paths: BusPaths,
+    stale_threshold_hours: i64,
+) -> Result<(ScanState, BusPaths), String> {
     let known_types = load_known_event_types(repo);
     let mut state = ScanState::default();
     let mut stale_pending = Vec::new();
@@ -1075,7 +1099,6 @@ fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusP
 
     state.stale_pending = stale_pending;
     Ok((state, paths))
-    }
 }
 
 fn write_pending_kaizen(
@@ -1400,32 +1423,14 @@ fn main() {
 mod tests {
     use super::*;
     use sddia_core::ports::event_manager::{
-        DeliveryStatus as PortDeliveryStatus, GetEventRequest, MoveToDlqRequest,
-        PublishEcstRequest, RecordDeliveryRequest,
+        GetEventRequest, MoveToDlqRequest, publish_request_domain,
     };
     fn port_publish(repo: &Path, event_id: &str, ecst: Value) {
         sddia_event_manager_host::with_productive_port(repo, "test_publish", |port| {
-            port.publish_ecst(PublishEcstRequest {
-                event_id: event_id.into(),
-                ecst,
-                trace_id: None,
-            })
+            port.publish_ecst(publish_request_domain(event_id, ecst, None))
             .map_err(|e| e.to_string())
         })
         .expect("publish");
-    }
-
-    fn port_record_ack(repo: &Path, event_id: &str, subscriber_id: &str) {
-        sddia_event_manager_host::with_productive_port(repo, "test_record_delivery", |port| {
-            port.record_delivery(RecordDeliveryRequest {
-                event_id: event_id.into(),
-                delivery_id: format!("{event_id}:{subscriber_id}"),
-                status: PortDeliveryStatus::Ack,
-                attempt: None,
-            })
-            .map_err(|e| e.to_string())
-        })
-        .expect("record_delivery");
     }
 
     fn port_move_to_dlq(repo: &Path, event_id: &str, reason: &str) {
@@ -1670,6 +1675,58 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
     }
 
+    #[test]
+    fn cumulo_table_ids_do_not_resolve_events_queue_paths() {
+        assert!(!cumulo_string_is_legacy_fs_dir("events"));
+        assert!(!cumulo_string_is_legacy_fs_dir("subscriber_delivery"));
+        assert!(cumulo_string_is_legacy_fs_dir(".events/pending"));
+        assert!(cumulo_string_is_legacy_fs_dir("./.events/pending"));
+    }
+
+    #[test]
+    fn run_audit_with_core_cumulo_does_not_join_events_dir() {
+        let dir = std::env::temp_dir().join(format!(
+            "eba-cumulo-core-{}-{}",
+            std::process::id(),
+            uuid::Uuid::new_v4()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join("SddIA/core")).unwrap();
+        fs::write(
+            dir.join("SddIA/core/cumulo.paths.json"),
+            include_str!("../../../core/cumulo.paths.json"),
+        )
+        .unwrap();
+        fs::write(
+            dir.join("SddIA/core/event-domain-subscriptions.json"),
+            include_str!("../../../core/event-domain-subscriptions.json"),
+        )
+        .unwrap();
+        port_publish(
+            &dir,
+            "evt-core-cumulo",
+            json!({"event_id": "evt-core-cumulo", "event_type": "Domain_Probe"}),
+        );
+        let (state, paths) = run_audit(&dir, 24).expect("audit");
+        assert!(
+            paths.pending.as_os_str().is_empty(),
+            "pending debe estar vacío con Cúmulo de tablas: {:?}",
+            paths.pending
+        );
+        assert!(!dir.join(".events").exists());
+        assert!(
+            state.counts.contains_key("pending")
+                || state.anomalies.is_empty()
+                || state
+                    .anomalies
+                    .iter()
+                    .all(|a| a.kind != "residual_filesystem"),
+            "{:?}",
+            state
+        );
+        let _ = fs::remove_dir_all(&dir);
+    }
+
     fn seed_aut27_minimal_repo(repo: &Path) {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::create_dir_all(repo.join("SddIA/agents")).unwrap();
@@ -1704,7 +1761,7 @@ mod tests {
         ));
         let _ = fs::remove_dir_all(&dir);
         seed_aut27_minimal_repo(&dir);
-        let db = sddia_event_store::runtime_db_path(&dir);
+        let db = sddia_event_manager_host::productive_redb_file(&dir).expect("redb path");
         fs::create_dir_all(db.parent().unwrap()).unwrap();
         fs::write(&db, b"not-a-redb-database").unwrap();
         let paths = test_repo_bus_paths(&dir);
@@ -1771,7 +1828,7 @@ mod tests {
             ),
         ];
         let mut state = ScanState::default();
-        audit_domain_delivery_signals(&dir, &[row.clone()], &deliveries, &mut state);
+        audit_domain_delivery_signals(&dir, std::slice::from_ref(&row), &deliveries, &mut state);
         let efecto: Vec<_> = state
             .anomalies
             .iter()
@@ -1813,8 +1870,6 @@ mod tests {
                 "payload": {}
             }),
         );
-        port_record_ack(&dir, event_id, "argos");
-        port_record_ack(&dir, event_id, "cumulo");
 
         let row = AuditEventRow {
             event_id: event_id.into(),

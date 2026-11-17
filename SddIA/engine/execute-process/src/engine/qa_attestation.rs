@@ -25,8 +25,8 @@ pub struct AttestationHit {
 pub fn branch_slug(branch: &str) -> String {
     let name = branch.trim();
     for p in BRANCH_PREFIXES {
-        if name.starts_with(p) {
-            return name[p.len()..].to_string();
+        if let Some(rest) = name.strip_prefix(p) {
+            return rest.to_string();
         }
     }
     if let Some((_, rest)) = name.split_once('/') {

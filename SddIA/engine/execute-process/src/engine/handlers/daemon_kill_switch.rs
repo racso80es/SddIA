@@ -108,7 +108,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
             "purge_report": purge_report,
             "stale_locks_removed": stale_locks,
             "orchestration_event_id": orch.get("event_id"),
-            "orchestration_event_path": orch.get("target_path"),
+            "orchestration_event_uri": orch.get("event_uri"),
         })),
         error: if all_ok {
             None

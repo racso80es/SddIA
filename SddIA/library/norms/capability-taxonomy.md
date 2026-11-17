@@ -1,12 +1,12 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.11"
+version: "1.0.12"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
 category: "architecture"
-hash_signature: "sha256:8cb196585a6ac806f6b1476fd65d1d3640e5d4b3effd977e4fa066eb71320c49"
+hash_signature: "sha256:f1af3c84125a87207e62ed65006b29d1db5525413bbb5686f9b51f24e77df601"
 catalog:
   - id: "doc:closure"
     contract: "doc.closure"
@@ -66,8 +66,8 @@ catalog:
     description: "Ciclo de vida de un ítem de gestión. La salida auditada es el stdout de emit_v2 (success, exitCode, message, result)."
   - id: "eda:event-manager"
     contract: "eda.event_manager"
-    version: "1.2.0"
-    description: "EventManagerPort 1.2 — ciclo de vida, consultas, DLT/admin y verify ECST; cutover productivo vía host Redb (MAN-35)."
+    version: "2.0.0"
+    description: "EventManagerPort 2.0 — ciclo de vida, consultas, DLT/admin y verify ECST; store vía host Redb (MAN-43)."
 ---
 
 ## Directriz Core
@@ -76,7 +76,7 @@ catalog:
 
 Ninguna Entidad de Dominio puede declarar `provides` o `requires_capability` con un `id` que no figure en el catálogo machine-readable de esta norma (`catalog` en frontmatter). La invención libre de términos (`doc:close` vs `document:closure`, etc.) es **Entropía Semántica** y falla el Filtro A.
 
-Alta de términos: únicamente vía mutación gobernada bajo topología feature/fix + registro en `SddIA/evolution/` + sello `Domain_Entity_Updated` (R11). El forge lab `norm-creator` en `update` **no** preserva `catalog`; la materialización canónica del Códice es Write atómico del `{name}.md` + sello EDA.
+Alta y mutación del `catalog` (incluido bump de versión por capacidad): únicamente vía `./sddia-run.sh --process entity-manager` con `entity_class: norm`, `lifecycle_operation: update` y `semantic_seed` (`artifact_yaml_replacements` / `artifact_body_replacements` según el corte). Prohibida mutación manual del `.md` (DA-2 / `external-ai-constraints`). Cierre: sello EDA `Domain_Entity_Updated` + registro en `SddIA/evolution/` cuando el corte lo exija (R11).
 
 ## Catálogo vigente (legible)
 
@@ -96,7 +96,7 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 | `memory:pref-write` | `memory.pref_write` | 1.0.0 | Escritura preferencias usuario (store local) |
 | `memory:pref-query` | `memory.pref_query` | 1.0.0 | Consulta opt-in preferencias activas |
 | `tracker:lifecycle` | `tracker.lifecycle` | 1.0.0 | Ciclo de vida de un ítem de gestión; stdout `emit_v2` |
-| `eda:event-manager` | `eda.event_manager` | 1.2.0 | EventManagerPort 1.2 cutover Redb (MAN-35) |
+| `eda:event-manager` | `eda.event_manager` | 2.0.0 | EventManagerPort 2.0 / host Redb (MAN-43) |
 
 ## Restricciones Duras
 
@@ -108,5 +108,5 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 - **Rigor L-TERM:** `llm:infer` (adaptador / inferencia cruda) ≠ `llm:interact` (Mayeuta / síntesis e intención). Prohibido `provides llm:interact` en adaptadores de proveedor.
 - **Rigor tracker:** el id es `tracker:lifecycle` (`dominio:verbo`). El contrato es `tracker.lifecycle`. Prohibido el id `tracker.lifecycle`.
 - **Rigor eda:** el id es `eda:event-manager` (`dominio:verbo`). El contrato es `eda.event_manager`. Prohibido el id `eda.event_manager` en `catalog`.
-- **Rigor eda 1.2:** la versión de catálogo de `eda:event-manager` es **1.2.0** y debe alinearse con `contract_version` en `capability-bindings` y `EventManagerPort` en core (MAN-35).
-- Referencia: PBI-042/043/045 features DI; H11 `inyeccion-dependencias-h11-gobernanza-lotes-notif`; PBI-MULTI-LLM-ROUTER `llm:infer`; PBI-EDA-001 / MAN-32 `eda:event-manager`; MAN-35 cutover puerto 1.2.
+- **Rigor eda 2.0:** la versión de catálogo de `eda:event-manager` es **2.0.0** y debe alinearse con `contract_version` en `capability-bindings` y `EventManagerPort` en core (MAN-43); el corte documental se sella por `entity-manager`, no por edit IDE.
+- Referencia: PBI-042/043/045 features DI; H11 `inyeccion-dependencias-h11-gobernanza-lotes-notif`; PBI-MULTI-LLM-ROUTER `llm:infer`; PBI-EDA-001 / MAN-32 `eda:event-manager`; MAN-35 cutover 1.2 (histórico); MAN-43 contrato 2.0.0.

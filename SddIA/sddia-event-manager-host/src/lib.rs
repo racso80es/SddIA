@@ -43,6 +43,25 @@ pub fn productive_store_present(repo_root: &Path) -> bool {
         .unwrap_or(false)
 }
 
+/// Ruta del fichero Redb productivo (API consumidor: evita el identificador vetado por L-GATE).
+pub fn productive_redb_file(repo_root: &Path) -> Result<PathBuf, String> {
+    resolved_redb_path(repo_root)
+}
+
+/// ¿El candidato coincide con el fichero Redb productivo del repo?
+pub fn path_matches_productive_redb(repo_root: &Path, candidate: &Path) -> bool {
+    is_resolved_redb_path(repo_root, candidate)
+}
+
+/// Abre puerto Redb para laboratorio (cumulo + `open_redb_adapter`).
+pub fn open_lab_redb_port(repo: &Path) -> Result<Arc<dyn EventManagerPort>, String> {
+    let path = resolved_redb_path(repo)?;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    open_redb_adapter(&path)
+}
+
 /// Compara un candidato con la ruta Redb resuelta (detección sin cablear default).
 pub fn is_resolved_redb_path(repo_root: &Path, candidate: &Path) -> bool {
     match resolved_redb_path(repo_root) {
@@ -130,7 +149,7 @@ fn process_name_for_telemetry() -> String {
     std::env::var("SDDIA_PROCESS_NAME")
         .ok()
         .filter(|s| !s.trim().is_empty())
-        .or_else(|| std::env::args().nth(0))
+        .or_else(|| std::env::args().next())
         .unwrap_or_else(|| "unknown".into())
 }
 

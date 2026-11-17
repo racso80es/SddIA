@@ -1,7 +1,7 @@
 ---
 uuid: "7e4a9c2b-1d3f-4a8e-9b6c-0f1e2d3a4b5c"
 name: "emit-domain-mutation"
-version: "1.1.0"
+version: "2.0.0"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -11,7 +11,7 @@ capabilities:
   - "delegate-crypto-broker"
   - "domain-event-type-translation"
 inputs:
-  - "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex | event"
+  - "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex | event | suite | daemon | capability-contract"
   - "lifecycle_operation": "string; enum: create | update | delete (no usar operation_type: colisión con git-manager)"
   - "entity_uuid": "string; UUID v4 inmutable de la entidad afectada"
   - "entity_name": "string; nombre canónico (en delete: nombre al momento del borrado)"
@@ -25,7 +25,8 @@ inputs:
 outputs:
   - "success": "boolean"
   - "event_id": "string; UUID v4 del evento minteado"
-  - "target_path": "string; ruta relativa al workspace del JSON en pending/"
+  - "event_uri": "Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})"
+hash_signature: "sha256:97142fe10804648185f950d19113811724dca1048805730044babc9555e0e0e0"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -123,7 +124,7 @@ Construir JSON UTF-8. En raíz incluir `correlation_id` **solo** si el input no 
 | Campo | Valor |
 | :--- | :--- |
 | `operation` | `WRITE_FILE` |
-| `target_path` | `{eda_bus.pending}/<event_id>.json` (UUID; sin prefijo semántico legado) |
+| `event_uri` | `{eda_bus.pending}/<event_id>.json` (UUID; sin prefijo semántico legado) |
 | `content` | JSON UTF-8 del Paso 4 |
 
 - Abortar si `exitCode != 0`.
@@ -137,7 +138,7 @@ Construir JSON UTF-8. En raíz incluir `correlation_id` **solo** si el input no 
   "data": {
     "success": true,
     "event_id": "<event_id>",
-    "target_path": "{eda_bus.pending}/<event_id>.json"
+    "event_uri": "{eda_bus.pending}/<event_id>.json"
   }
 }
 ```

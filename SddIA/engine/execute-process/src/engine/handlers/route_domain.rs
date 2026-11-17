@@ -11,7 +11,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
     let blocking =
         input_truthy(process_inputs, "blocking") || input_truthy(process_inputs, "sync");
     let mut paths = vec![];
-    if let Some(arr) = process_inputs.get("event_file_paths").and_then(|v| v.as_array()) {
+    if let Some(arr) = process_inputs.get("event_uris").and_then(|v| v.as_array()) {
         paths = arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect();
     } else {
         let event_rel = resolve_route_event_path(repo, process_inputs, blocking)?;

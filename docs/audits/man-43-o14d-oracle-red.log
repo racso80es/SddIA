@@ -1,0 +1,71 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+   Compiling execute-process v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/engine/execute-process)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.11s
+     Running unittests src/lib.rs (target/debug/deps/execute_process-c00d27f73e38d46d)
+
+running 7 tests
+test engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_genome_domain_codex_processes ... ok
+test engine::eda_event_token_hygiene::tests::write_fractal_event_seal_exposes_event_uri_only ... ok
+test engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_genome_frontmatter ... ok
+test engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_port_sources_clean ... ok
+test engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_engine_sources_clean ... ok
+test engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_cli_outputs_no_event_path ... ok
+test engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_no_virtual_event_paths_workspace ... FAILED
+
+failures:
+
+---- engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_no_virtual_event_paths_workspace stdout ----
+
+thread 'engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_no_virtual_event_paths_workspace' (174932) panicked at engine/execute-process/src/engine/eda_event_token_hygiene.rs:364:9:
+rutas virtuales `.events/...` en código productivo:
+SddIA/daemons/event-watcher/src/main.rs:264: contiene `.events/`
+SddIA/engine/execute-process/src/engine/aiua_intent.rs:276: contiene `.events/`
+SddIA/engine/execute-process/src/engine/aiua_intent.rs:278: contiene `.events/`
+SddIA/engine/execute-process/src/engine/daemons.rs:288: contiene `.events/`
+SddIA/engine/execute-process/src/engine/ecst_input_loader.rs:48: contiene `.events/`
+SddIA/engine/execute-process/src/engine/ecst_input_loader.rs:87: contiene `.events/`
+SddIA/engine/execute-process/src/engine/ecst_input_loader.rs:107: contiene `.events/`
+SddIA/engine/execute-process/src/engine/eda_bus.rs:39: contiene `.events/`
+SddIA/engine/execute-process/src/engine/eda_bus.rs:44: contiene `.events/`
+SddIA/engine/execute-process/src/engine/eda_bus.rs:49: contiene `.events/`
+SddIA/engine/execute-process/src/engine/eda_bus.rs:153: contiene `.events/`
+SddIA/engine/execute-process/src/engine/eda_bus.rs:156: contiene `.events/`
+SddIA/engine/execute-process/src/engine/eda_bus.rs:158: contiene `.events/`
+SddIA/engine/execute-process/src/engine/fractal.rs:10: contiene `.events/`
+SddIA/engine/execute-process/src/engine/fractal.rs:11: contiene `.events/`
+SddIA/engine/execute-process/src/engine/fractal.rs:12: contiene `.events/`
+SddIA/engine/execute-process/src/engine/fractal.rs:13: contiene `.events/`
+SddIA/engine/execute-process/src/engine/fractal_bus.rs:187: contiene `.events/`
+SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs:297: contiene `.events/`
+SddIA/engine/execute-process/src/engine/handlers/instance_creator.rs:400: contiene `.events/`
+SddIA/engine/execute-process/src/engine/handlers/instance_creator.rs:401: contiene `.events/`
+SddIA/engine/execute-process/src/engine/handlers/instance_creator.rs:402: contiene `.events/`
+SddIA/engine/execute-process/src/engine/linear_direct_cycle_e2e.rs:146: contiene `.events/`
+SddIA/engine/execute-process/src/engine/linear_done_gate_both_e2e.rs:140: contiene `.events/`
+SddIA/engine/execute-process/src/engine/route_domain_core.rs:2342: contiene `.events/`
+SddIA/engine/execute-process/src/engine/route_domain_core.rs:4271: contiene `.events/`
+SddIA/engine/execute-process/src/engine/route_fractal_core.rs:243: contiene `.events/`
+SddIA/interfaces/kalma2-bridge/src/main.rs:712: contiene `.events/`
+SddIA/interfaces/kalma2-bridge/src/main.rs:713: contiene `.events/`
+SddIA/interfaces/kalma2-bridge/src/main.rs:714: contiene `.events/`
+SddIA/interfaces/kalma2-bridge/src/main.rs:1183: contiene `.events/`
+SddIA/interfaces/kalma2-bridge/src/main.rs:1519: contiene `.events/`
+SddIA/sddia-daemon-runtime/src/lib.rs:123: contiene `.events/`
+SddIA/sddia-daemon-runtime/src/lib.rs:124: contiene `.events/`
+SddIA/sddia-daemon-runtime/src/lib.rs:125: contiene `.events/`
+SddIA/sddia-daemon-runtime/src/lib.rs:126: contiene `.events/`
+SddIA/sddia-daemon-runtime/src/lib.rs:127: contiene `.events/`
+SddIA/sddia-daemon-runtime/src/lib.rs:128: contiene `.events/`
+SddIA/sddia-daemon-runtime/src/lib.rs:129: contiene `.events/`
+SddIA/tools/thought-graph-access/src/main.rs:64: contiene `.events/`
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::eda_event_token_hygiene::tests::eda_event_token_hygiene_no_virtual_event_paths_workspace
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 850 filtered out; finished in 0.13s
+
+error: test failed, to rerun pass `-p execute-process --lib`

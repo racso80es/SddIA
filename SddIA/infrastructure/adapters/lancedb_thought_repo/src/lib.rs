@@ -197,12 +197,12 @@ fn batches_to_thoughts(batches: &[RecordBatch]) -> Result<Vec<ThoughtNode>, Memo
 
 pub struct LanceDbThoughtRepo {
     db: lancedb::Connection,
-    pending_dir: Option<std::path::PathBuf>,
+    repo_root: Option<std::path::PathBuf>,
     store_path: String,
 }
 
 fn emit_thought_persisted(
-    pending_dir: &Path,
+    repo: &Path,
     thought: &ThoughtNode,
     store_path: &str,
 ) -> Result<(), MemoryStoreError> {
@@ -226,18 +226,6 @@ fn emit_thought_persisted(
         },
         "delivery_state": {},
     });
-    let parent = pending_dir.parent();
-    let repo = if parent.and_then(|dir| dir.file_name()).and_then(|n| n.to_str()) == Some(".events")
-    {
-        parent.and_then(|dir| dir.parent())
-    } else {
-        parent
-    };
-    let Some(repo) = repo else {
-        return Err(MemoryStoreError::Io {
-            reason: "pending_dir no cuelga de {repo}/.events".into(),
-        });
-    };
     let mut stamped = event;
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped).map_err(|e| MemoryStoreError::Io {
         reason: e,
@@ -258,7 +246,7 @@ impl LanceDbThoughtRepo {
 
     pub fn open_with_bus(
         path: impl AsRef<Path>,
-        pending_dir: Option<std::path::PathBuf>,
+        repo_root: Option<std::path::PathBuf>,
     ) -> Result<Self, MemoryStoreError> {
         let path = path.as_ref();
         std::fs::create_dir_all(path).map_err(|e| MemoryStoreError::Io {
@@ -272,7 +260,7 @@ impl LanceDbThoughtRepo {
             .map_err(map_lance)?;
         let repo = Self {
             db,
-            pending_dir,
+            repo_root,
             store_path: path.to_string_lossy().into_owned(),
         };
         rt().block_on(repo.ensure_table())?;
@@ -376,8 +364,8 @@ impl ThoughtGraphRepository for LanceDbThoughtRepo {
 
     fn store_thought(&self, thought: ThoughtNode) -> Result<(), Self::Error> {
         rt().block_on(self.upsert(thought.clone()))?;
-        if let Some(dir) = &self.pending_dir {
-            emit_thought_persisted(dir, &thought, &self.store_path)?;
+        if let Some(repo) = &self.repo_root {
+            emit_thought_persisted(repo, &thought, &self.store_path)?;
         }
         Ok(())
     }
@@ -529,12 +517,10 @@ mod tests {
     #[test]
     fn store_thought_emits_thought_persisted_when_bus_configured() {
         let dir = tempdir().unwrap();
-        let pending = dir.path().join(".events/pending");
-        std::fs::create_dir_all(pending.parent().unwrap()).unwrap();
         std::fs::create_dir_all(dir.path().join(".SddIA/runtime")).unwrap();
         let repo = LanceDbThoughtRepo::open_with_bus(
             dir.path().join("lancedb"),
-            Some(pending.clone()),
+            Some(dir.path().to_path_buf()),
         )
         .unwrap();
         let n = node("emit-me", None, fixture_vec(0.3, 0.1));

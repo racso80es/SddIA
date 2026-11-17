@@ -1,7 +1,7 @@
 ---
 uuid: "c0d71f2b-c1c1-4c56-8f74-2f4f41b24c4f"
 name: "emit-pr-merged-event"
-version: "1.1.2"
+version: "2.0.0"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -18,8 +18,8 @@ inputs:
 outputs:
   - "success": "boolean"
   - "event_id": "string; UUID v4 del evento minteado"
-  - "target_path": "string; ruta relativa al workspace del JSON persistido en pending/"
-hash_signature: "sha256:10e18e8344238c62eb9eceb0195af8690592c48411c64251a683aadf86d0c5e2"
+  - "event_uri": "Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})"
+hash_signature: "sha256:96f855a0aec30009f9b09c21a3f6c8fe426234689db85e8d8c2e67d40ade9ef8"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -88,7 +88,7 @@ Gate **Cerbero** previo por `context` de cada cápsula. Rutas vía `cumulo.paths
 
 ### Paso 4 — Persistencia
 
-Según `SDDIA_EVENT_STORE` (`SddIA/events/events-contract.md` §4): en `redb`/`dual` el runtime persiste vía `write_pending_event` en `.SddIA/runtime/events.redb` (sin fichero bajo `.events/pending/` en `redb` puro). En `filesystem`, invocar `skill:filesystem-manager` con `WRITE_FILE` a `{eda_bus.pending}/<event_id>.json` (crear directorio vía `CREATE_DIR` si falta). El `target_path` devuelto puede ser la ruta lógica `.events/pending/<event_id>.json` aunque el fichero no exista en `redb`.
+Según `SDDIA_EVENT_STORE` (`SddIA/events/events-contract.md` §4): en `redb`/`dual` el runtime persiste vía `write_pending_event` en `.SddIA/runtime/events.redb` (sin fichero bajo `.events/pending/` en `redb` puro). En `filesystem`, invocar `skill:filesystem-manager` con `WRITE_FILE` a `{eda_bus.pending}/<event_id>.json` (crear directorio vía `CREATE_DIR` si falta). El `event_uri` devuelto puede ser la ruta lógica `.events/pending/<event_id>.json` aunque el fichero no exista en `redb`.
 
 ### Paso 5 — Cierre (stdout)
 
@@ -99,7 +99,7 @@ Según `SDDIA_EVENT_STORE` (`SddIA/events/events-contract.md` §4): en `redb`/`d
   "data": {
     "success": true,
     "event_id": "<event_id>",
-    "target_path": ".events/pending/<event_id>.json"
+    "event_uri": ".events/pending/<event_id>.json"
   }
 }
 ```

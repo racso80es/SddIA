@@ -1,6 +1,7 @@
 //! Aduana Temprana — validación DI por capacidades pre-ignición (PBI-042 MVP).
 
 use crate::core::parser::parse_frontmatter;
+use super::capability_di_resolver::{contract_schema_file, load_binding_rows};
 use super::eda_bus_topology::load_event_bus_topology;
 use super::workspace::load_paths_config;
 use chrono::Utc;
@@ -370,7 +371,22 @@ pub fn validate_phase_capability_di(
         } else {
             req.contract.clone()
         };
-        let schema_path = contracts.join(format!("{contract_name}.schema.json"));
+        let declared_schema = load_binding_rows(repo)
+            .ok()
+            .and_then(|rows| rows.get(&req.id).cloned())
+            .and_then(|row| {
+                if !row.contract.is_empty() && row.contract != contract_name {
+                    None
+                } else {
+                    row.contract_schema
+                }
+            });
+        let schema_name = contract_schema_file(&contract_name, declared_schema.as_deref())
+            .map_err(|e| DiGateError {
+                code: DiGateCode::ContractSchemaMismatch,
+                message: e.message,
+            })?;
+        let schema_path = contracts.join(&schema_name);
         if !schema_path.is_file() {
             return Err(DiGateError {
                 code: DiGateCode::ContractSchemaMismatch,

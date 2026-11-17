@@ -1,0 +1,1 @@
+{"entity_class":"tool","entity_name":"telegram-gateway","lifecycle_operation":"update","semantic_seed":{"implementation_source_git_apply":{"commit":"c60ae233","paths":["SddIA/tools/telegram-gateway/src/main.rs"]}}}

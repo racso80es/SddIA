@@ -1,0 +1,196 @@
+{
+  "entity_class": "capability-contract",
+  "entity_name": "eda.event_manager.v1",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "schema_version": "2.0.0",
+    "schema_json_patch": [
+      {
+        "op": "replace",
+        "path": "/description",
+        "value": "Contrato EventManager v2.0.0 (MAN-43) — I/O capsule-json-io. Las 19 operaciones de EventManagerPort; identidad canónica EventUri (family + event_id) en publish_ecst. El enum y las ramas if/then se contrastan con el trait y los tipos de sddia-core en el test de paridad eda_contract_parity (execute-process)."
+      },
+      {
+        "op": "add",
+        "path": "/$defs/request/properties/operation/enum/14",
+        "value": "list_terminal_events"
+      },
+      {
+        "op": "replace",
+        "path": "/$defs/request/allOf/0/then/properties/payload/required",
+        "value": ["event_uri", "event_id", "ecst"]
+      },
+      {
+        "op": "add",
+        "path": "/$defs/request/allOf/0/then/properties/payload/properties/event_uri",
+        "value": {
+          "type": "object",
+          "description": "EventUri tal como lo serializa sddia-core (family + event_id). event_id debe coincidir con payload.event_id (PublishEcstRequest::validate); JSON Schema no expresa la igualdad entre campos.",
+          "required": ["family", "event_id"],
+          "properties": {
+            "family": { "type": "string", "enum": ["domain", "telemetry", "orchestration"] },
+            "event_id": { "type": "string", "minLength": 1, "pattern": "^[^/\\\\]+$" }
+          },
+          "additionalProperties": false
+        }
+      },
+      {
+        "op": "replace",
+        "path": "/$defs/request/allOf/2/then/properties/payload/properties/status/enum",
+        "value": ["ack", "nack", "processing"]
+      },
+      {
+        "op": "add",
+        "path": "/$defs/request/allOf/2/then/properties/payload/properties/subscriber_id",
+        "value": { "type": "string" }
+      },
+      {
+        "op": "add",
+        "path": "/$defs/request/allOf/-",
+        "value": {
+          "if": { "properties": { "operation": { "const": "verify_inline_ecst" } } },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": ["event_id", "ecst"],
+                "properties": {
+                  "event_id": { "type": "string", "minLength": 1 },
+                  "ecst": { "type": "object" }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/$defs/request/allOf/-",
+        "value": {
+          "if": { "properties": { "operation": { "const": "list_events" } } },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "family": { "type": "string", "enum": ["domain", "telemetry", "orchestration", ""] },
+                  "event_type": { "type": "string" },
+                  "state": { "type": "string", "enum": ["pending", "claimed", "processed", "dead_letter"] },
+                  "limit": { "type": "integer", "minimum": 1 },
+                  "cursor": { "type": "string" }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/$defs/request/allOf/-",
+        "value": {
+          "if": { "properties": { "operation": { "const": "list_deliveries" } } },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "event_id": { "type": "string" },
+                  "subscriber_id": { "type": "string" },
+                  "status": { "type": "string", "enum": ["ack", "nack", "processing"] },
+                  "limit": { "type": "integer", "minimum": 1 },
+                  "cursor": { "type": "string" }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/$defs/request/allOf/-",
+        "value": {
+          "if": { "properties": { "operation": { "const": "list_terminal_events" } } },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "description": "Barrido de terminales (DLQ + processed) sin FS (L-6).",
+                "properties": {
+                  "family": { "type": "string", "enum": ["domain", "telemetry", "orchestration", ""] },
+                  "limit": { "type": "integer", "minimum": 1 },
+                  "cursor": { "type": "string" }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/$defs/request/allOf/-",
+        "value": {
+          "if": { "properties": { "operation": { "const": "list_progress" } } },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "anyOf": [
+                  { "required": ["trace_id"] },
+                  { "required": ["correlation_id"] }
+                ],
+                "properties": {
+                  "trace_id": { "type": "string", "minLength": 1 },
+                  "correlation_id": { "type": "string", "minLength": 1 }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/$defs/request/allOf/-",
+        "value": {
+          "if": { "properties": { "operation": { "const": "seal_dlt" } } },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": ["event_id", "tx_hash", "digest", "scope"],
+                "properties": {
+                  "event_id": { "type": "string", "minLength": 1 },
+                  "tx_hash": { "type": "string", "minLength": 1 },
+                  "digest": { "type": "string", "minLength": 1 },
+                  "scope": { "type": "string", "minLength": 1 }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/$defs/request/allOf/-",
+        "value": {
+          "if": { "properties": { "operation": { "const": "get_dlt_seal" } } },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": ["event_id"],
+                "properties": { "event_id": { "type": "string", "minLength": 1 } },
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

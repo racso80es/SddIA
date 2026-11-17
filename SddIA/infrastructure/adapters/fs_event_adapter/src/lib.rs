@@ -6,12 +6,15 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sddia_core::ports::event_manager::{
-    AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, DeliveryStatus,
-    DualVersionManifest, EventManagerError, EventManagerPort, GetDltSealRequest, GetDltSealResult,
-    GetEventRequest, GetEventResult,
-    HandshakeVersionRequest, HandshakeVersionResult, ListedDlqEvent, ListDlqRequest, ListDlqResult,
-    ListPendingRequest, ListPendingResult, ListedPendingEvent, ListTracesRequest, ListTracesResult,
-    MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest,
+    filter_and_page_events, filter_terminal_events, indexed_from_parts, page_deliveries,
+    AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, DeliveryRecord,
+    DeliveryStatus, DualVersionManifest, EventManagerError, EventManagerPort, EventQueueState,
+    EventUri, GetDltSealRequest, GetDltSealResult, GetEventRequest, GetEventResult,
+    HandshakeVersionRequest, HandshakeVersionResult, IndexedEvent, ListedDelivery, ListedDlqEvent,
+    ListDeliveriesRequest, ListDeliveriesResult, ListDlqRequest, ListDlqResult, ListEventsRequest,
+    ListEventsResult, ListPendingRequest, ListPendingResult, ListedPendingEvent,
+    ListTerminalEventsRequest, ListTracesRequest, ListTracesResult, MoveToDlqRequest,
+    PublishEcstRequest, PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest,
     ReplayDlqRequest, SealDltRequest, CONTRACT_ID, CONTRACT_VERSION,
 };
 
@@ -20,6 +23,8 @@ struct StoredEvent {
     event_id: String,
     ecst: Value,
     trace_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    event_uri: Option<EventUri>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,6 +40,29 @@ struct DlqRec {
     reason: String,
 }
 
+#[derive(Debug, Clone)]
+enum ParsedDelivery {
+    Record(DeliveryRecord),
+    Legacy(DeliveryStatus),
+}
+
+fn parse_delivery_path(path: &Path) -> Result<ParsedDelivery, EventManagerError> {
+    let raw = fs::read(path).map_err(storage)?;
+    parse_delivery_bytes(&raw)
+}
+
+fn parse_delivery_bytes(bytes: &[u8]) -> Result<ParsedDelivery, EventManagerError> {
+    if let Ok(rec) = serde_json::from_slice::<DeliveryRecord>(bytes) {
+        if !rec.event_id.is_empty() && !rec.delivery_id.is_empty() {
+            return Ok(ParsedDelivery::Record(rec));
+        }
+    }
+    if let Ok(status) = serde_json::from_slice::<DeliveryStatus>(bytes) {
+        return Ok(ParsedDelivery::Legacy(status));
+    }
+    Err(json_err("unrecognized delivery payload"))
+}
+
 pub struct FsEventAdapter {
     root: PathBuf,
 }
@@ -48,6 +76,7 @@ impl FsEventAdapter {
             "leases",
             "deliveries",
             "dlq",
+            "processed",
             "traces",
             "meta",
             "meta/dlt_seals",
@@ -73,6 +102,68 @@ impl FsEventAdapter {
 
     fn dlq_path(&self, id: &str) -> PathBuf {
         self.dir("dlq").join(format!("{id}.json"))
+    }
+
+    fn processed_path(&self, id: &str) -> PathBuf {
+        self.dir("processed").join(format!("{id}.json"))
+    }
+
+    fn collect_indexed(&self) -> Result<Vec<IndexedEvent>, EventManagerError> {
+        self.expire_leases()?;
+        let mut rows = Vec::new();
+        for ent in fs::read_dir(self.dir("events")).map_err(storage)?.flatten() {
+            let path = ent.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let id = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_string();
+            let stored: StoredEvent = FsEventAdapter::read_json(&path)?;
+            let state = if self.lease_path(&id).is_file() {
+                EventQueueState::Claimed
+            } else {
+                EventQueueState::Pending
+            };
+            rows.push(indexed_from_parts(
+                stored.event_uri.clone(),
+                stored.event_id,
+                stored.ecst,
+                stored.trace_id,
+                state,
+            ));
+        }
+        for ent in fs::read_dir(self.dir("processed")).map_err(storage)?.flatten() {
+            let path = ent.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let stored: StoredEvent = FsEventAdapter::read_json(&path)?;
+            rows.push(indexed_from_parts(
+                stored.event_uri.clone(),
+                stored.event_id,
+                stored.ecst,
+                stored.trace_id,
+                EventQueueState::Processed,
+            ));
+        }
+        for ent in fs::read_dir(self.dir("dlq")).map_err(storage)?.flatten() {
+            let path = ent.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let rec: DlqRec = FsEventAdapter::read_json(&path)?;
+            rows.push(indexed_from_parts(
+                rec.event.event_uri.clone(),
+                rec.event.event_id,
+                rec.event.ecst,
+                rec.event.trace_id,
+                EventQueueState::DeadLetter,
+            ));
+        }
+        Ok(rows)
     }
 
     fn dlt_seal_path(&self, id: &str) -> PathBuf {
@@ -152,24 +243,24 @@ impl EventManagerPort for FsEventAdapter {
         &self,
         req: PublishEcstRequest,
     ) -> Result<PublishEcstResult, EventManagerError> {
+        req.validate()?;
         let stored = StoredEvent {
             event_id: req.event_id.clone(),
             ecst: req.ecst,
             trace_id: req.trace_id,
+            event_uri: Some(req.event_uri.clone()),
         };
         let ep = self.event_path(&req.event_id);
         if ep.is_file() {
-            return Err(EventManagerError::InvalidRequest(format!(
-                "duplicate {}",
-                req.event_id
-            )));
+            return Err(EventManagerError::already_exists("event", req.event_id.clone()));
         }
         let dp = self.dlq_path(&req.event_id);
         if dp.is_file() {
-            return Err(EventManagerError::InvalidRequest(format!(
-                "duplicate in dlq {}",
-                req.event_id
-            )));
+            return Err(EventManagerError::already_exists("event", req.event_id.clone()));
+        }
+        let pp = self.processed_path(&req.event_id);
+        if pp.is_file() {
+            return Err(EventManagerError::already_exists("event", req.event_id.clone()));
         }
         FsEventAdapter::write_atomic_json(&ep, &stored)?;
         Ok(PublishEcstResult {
@@ -225,17 +316,30 @@ impl EventManagerPort for FsEventAdapter {
     fn record_delivery(&self, req: RecordDeliveryRequest) -> Result<(), EventManagerError> {
         let del = self.dir("deliveries").join(format!("{}.json", req.delivery_id));
         if del.is_file() {
-            let prev: DeliveryStatus = FsEventAdapter::read_json(&del)?;
-            if prev == DeliveryStatus::Ack && req.status == DeliveryStatus::Ack {
+            let ack_dup = match parse_delivery_path(&del)? {
+                ParsedDelivery::Record(r) => {
+                    r.status == DeliveryStatus::Ack && req.status == DeliveryStatus::Ack
+                }
+                ParsedDelivery::Legacy(s) => {
+                    s == DeliveryStatus::Ack && req.status == DeliveryStatus::Ack
+                }
+            };
+            if ack_dup {
                 return Ok(());
             }
         }
-        FsEventAdapter::write_atomic_json(&del, &req.status)?;
+        let record = DeliveryRecord::from_request(&req);
+        FsEventAdapter::write_atomic_json(&del, &record)?;
 
         match req.status {
+            DeliveryStatus::Processing => {}
             DeliveryStatus::Ack => {
                 let _ = fs::remove_file(self.lease_path(&req.event_id));
-                let _ = fs::remove_file(self.event_path(&req.event_id));
+                let ep = self.event_path(&req.event_id);
+                let stored: StoredEvent = FsEventAdapter::read_json(&ep)
+                    .map_err(|_| EventManagerError::NotFound(req.event_id.clone()))?;
+                fs::remove_file(&ep).map_err(storage)?;
+                FsEventAdapter::write_atomic_json(&self.processed_path(&req.event_id), &stored)?;
             }
             DeliveryStatus::Nack => {
                 let _ = fs::remove_file(self.lease_path(&req.event_id));
@@ -304,6 +408,15 @@ impl EventManagerPort for FsEventAdapter {
         let ep = self.event_path(&req.event_id);
         if ep.is_file() {
             let stored: StoredEvent = FsEventAdapter::read_json(&ep)?;
+            return Ok(GetEventResult {
+                event_id: stored.event_id,
+                ecst: stored.ecst,
+                trace_id: stored.trace_id,
+            });
+        }
+        let pp = self.processed_path(&req.event_id);
+        if pp.is_file() {
+            let stored: StoredEvent = FsEventAdapter::read_json(&pp)?;
             return Ok(GetEventResult {
                 event_id: stored.event_id,
                 ecst: stored.ecst,
@@ -391,20 +504,109 @@ impl EventManagerPort for FsEventAdapter {
     }
 
     fn purge_event(&self, req: PurgeEventRequest) -> Result<(), EventManagerError> {
+        let trace_id = match self.get_event(GetEventRequest {
+            event_id: req.event_id.clone(),
+        }) {
+            Ok(ev) => ev.trace_id,
+            Err(EventManagerError::NotFound(_)) => None,
+            Err(e) => return Err(e),
+        };
+
         let ep = self.event_path(&req.event_id);
         let dp = self.dlq_path(&req.event_id);
-        let removed = ep.is_file() || dp.is_file();
+        let pp = self.processed_path(&req.event_id);
+        let removed = ep.is_file() || dp.is_file() || pp.is_file();
         if ep.is_file() {
             fs::remove_file(&ep).map_err(storage)?;
         }
         if dp.is_file() {
             fs::remove_file(&dp).map_err(storage)?;
         }
+        if pp.is_file() {
+            fs::remove_file(&pp).map_err(storage)?;
+        }
         let _ = fs::remove_file(self.lease_path(&req.event_id));
         if !removed {
             return Err(EventManagerError::NotFound(req.event_id));
         }
+
+        let deliveries_dir = self.dir("deliveries");
+        for ent in fs::read_dir(&deliveries_dir).map_err(storage)?.flatten() {
+            let path = ent.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let raw = fs::read(&path).map_err(storage)?;
+            if let Ok(ParsedDelivery::Record(record)) = parse_delivery_bytes(&raw) {
+                if record.event_id == req.event_id {
+                    let _ = fs::remove_file(&path);
+                }
+            }
+        }
+
+        if let Some(tid) = trace_id.filter(|t| !t.trim().is_empty()) {
+            let tp = self.dir("traces").join(format!("{tid}.json"));
+            let _ = fs::remove_file(tp);
+        }
         Ok(())
+    }
+
+    fn list_deliveries(
+        &self,
+        req: ListDeliveriesRequest,
+    ) -> Result<ListDeliveriesResult, EventManagerError> {
+        let mut deliveries = Vec::new();
+        for ent in fs::read_dir(self.dir("deliveries")).map_err(storage)?.flatten() {
+            let path = ent.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let delivery_id = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_string();
+            let raw = fs::read(&path).map_err(storage)?;
+            let ParsedDelivery::Record(record) = parse_delivery_bytes(&raw)? else {
+                continue;
+            };
+            if let Some(ref eid) = req.event_id {
+                if record.event_id != *eid {
+                    continue;
+                }
+            }
+            if let Some(ref sub) = req.subscriber_id {
+                if record.subscriber_id.as_deref() != Some(sub.as_str()) {
+                    continue;
+                }
+            }
+            if let Some(expected) = req.status {
+                if record.status != expected {
+                    continue;
+                }
+            }
+            deliveries.push(ListedDelivery {
+                delivery_id,
+                event_id: record.event_id,
+                status: record.status,
+                subscriber_id: record.subscriber_id.clone(),
+            });
+        }
+        page_deliveries(deliveries, &req)
+    }
+
+    fn list_events(
+        &self,
+        req: ListEventsRequest,
+    ) -> Result<ListEventsResult, EventManagerError> {
+        filter_and_page_events(self.collect_indexed()?, &req)
+    }
+
+    fn list_terminal_events(
+        &self,
+        req: ListTerminalEventsRequest,
+    ) -> Result<ListEventsResult, EventManagerError> {
+        filter_terminal_events(self.collect_indexed()?, &req)
     }
 
     fn handshake_version(

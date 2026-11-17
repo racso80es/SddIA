@@ -164,7 +164,7 @@ fn emit_sdlc(
         "success": true,
         "event_id": event_id,
         "correlation_id": event_id,
-        "target_path": seal.get("target_path"),
+        "event_uri": seal.get("event_uri"),
         "event_type": "Aiua_Process_Requested",
         "intent_dispatched": intent_name,
     }))
@@ -272,20 +272,8 @@ fn emit_habit(repo: &Path, args: &Value) -> Result<Value, String> {
     });
     let out = user_preference_change_requested::run(repo, &emit_inputs)?;
     if let Some(eid) = out.get("event_id").and_then(|v| v.as_str()) {
-        let synthetic = repo
-            .join(".events/pending")
-            .join(format!("{eid}.json"));
-        let domain_path = repo.join(".events/domain").join(format!("{eid}.json"));
-        let body = super::eda_port::load_dispatched(repo, eid, &synthetic)?
-            .or_else(|| {
-                if domain_path.is_file() {
-                    std::fs::read_to_string(&domain_path)
-                        .ok()
-                        .and_then(|t| serde_json::from_str(&t).ok())
-                } else {
-                    None
-                }
-            })
+        let logical = std::path::PathBuf::from(format!("{eid}.json"));
+        let body = super::eda_port::load_dispatched(repo, eid, &logical)?
             .ok_or_else(|| format!("ECST hábito ausente: {eid}"))?;
         if body
             .get("payload")
@@ -299,7 +287,7 @@ fn emit_habit(repo: &Path, args: &Value) -> Result<Value, String> {
     Ok(json!({
         "success": true,
         "event_id": out.get("event_id"),
-        "target_path": out.get("target_path"),
+        "event_uri": out.get("event_uri"),
         "event_type": "User_Preference_Change_Requested",
         "intent_dispatched": HABIT_TENDON,
     }))
@@ -324,7 +312,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         return Ok(json!({
             "success": true,
             "event_id": out.get("event_id"),
-            "target_path": out.get("target_path"),
+            "event_uri": out.get("event_uri"),
             "event_type": "Suite_Execution_Requested",
             "intent_dispatched": name,
         }));
@@ -396,15 +384,14 @@ mod tests {
         assert_eq!(out.get("success"), Some(&json!(true)));
         assert_eq!(out["event_id"], cid);
         assert_eq!(out["event_type"], "Aiua_Process_Requested");
-        let path = repo.join(".events/domain").join(format!("{cid}.json"));
-        assert!(path.is_file(), "domain event missing: {}", path.display());
-        let body: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        let body = crate::engine::eda_port::test_lab::ecst_for_event_id(&repo, &cid);
         assert_eq!(body["emitter_agent"], "aiua-stimulus-processing");
         assert_eq!(body["payload"]["process"], "refactorization");
         assert_eq!(body["correlation_id"], cid);
-        let _ = fs::remove_file(path);
-        let pending = repo.join(".events/pending").join(format!("{cid}.json"));
-        assert!(!pending.is_file());
+        assert_eq!(
+            body.get("event_type").and_then(|v| v.as_str()),
+            Some("Aiua_Process_Requested")
+        );
     }
 
     #[test]
@@ -464,7 +451,6 @@ mod tests {
     #[test]
     fn dispatch_habit_borra_emits_mute_without_utterance() {
         let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
-        crate::engine::eda_port::clear_port();
         let repo = find_repo_root().unwrap();
         let out = run(
             &repo,
@@ -483,9 +469,7 @@ mod tests {
         assert_eq!(out["event_type"], "User_Preference_Change_Requested");
         assert_eq!(out["intent_dispatched"], "delegar_habito");
         let eid = out["event_id"].as_str().expect("event_id");
-        let path = repo.join(".events/domain").join(format!("{eid}.json"));
-        assert!(path.is_file(), "domain event missing: {}", path.display());
-        let body: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        let body = crate::engine::eda_port::test_lab::ecst_for_event_id(&repo, eid);
         assert_eq!(body["event_type"], "User_Preference_Change_Requested");
         assert_eq!(
             body["emitter_agent"],
@@ -498,7 +482,6 @@ mod tests {
         assert!(body["payload"].get("raw_utterance").is_none());
         assert!(body["payload"].get("body").is_none());
         validate_ecst_event(&repo, &body).expect("ecst");
-        let _ = fs::remove_file(path);
     }
 
     #[test]

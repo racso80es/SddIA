@@ -15,10 +15,8 @@ impl<S: EvolutionStore> EvolutionProxyService<S> {
         // The default assumption is structural fracture unless success flag is present
         let mut polarity = SpatialPolarity::StructuralFracture;
 
-        if let Some(success) = metadata.get("success").and_then(|v| v.as_bool()) {
-            if success {
-                polarity = SpatialPolarity::EfficientSymmetry;
-            }
+        if let Some(true) = metadata.get("success").and_then(|v| v.as_bool()) {
+            polarity = SpatialPolarity::EfficientSymmetry;
         }
 
         let event = EvolutionEvent::new(polarity, payload, metadata);

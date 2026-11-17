@@ -74,11 +74,11 @@ fn emit_breach_if_needed(
     let seal = write_fractal_event(repo, &event, "domain")?;
     mark_breach_emitted(repo, asset_id)?;
     let route_out = if lab_route_sync() {
-        if let Some(target) = seal.get("target_path").and_then(|v| v.as_str()) {
+        if let Some(target) = seal.get("event_uri").and_then(|v| v.as_str()) {
             invoke_process_full(
                 repo,
                 "route-domain",
-                &json!({"event_file_path": target}),
+                &json!({"event_uri": target}),
             )
             .ok()
         } else {
@@ -175,8 +175,8 @@ fn audit_telemetry_compliance_inner(repo: &Path, rel_path: &str) -> Result<Value
             "missing_receipt",
             schema_list.clone(),
         )?
-    } else if let Some(ref schema) = schema_list {
-        if !receipt_satisfies_schema(receipt.unwrap(), schema) {
+    } else if let (Some(r), Some(ref schema)) = (receipt, &schema_list) {
+        if !receipt_satisfies_schema(r, schema) {
             emit_breach_if_needed(
                 repo,
                 asset_id,

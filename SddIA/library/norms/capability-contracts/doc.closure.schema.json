@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "9d099f2e-8067-4094-b0c7-111c658c7016",
+    "version": "1.0.0",
+    "hash_signature": "sha256:ea864e1018a9774ad112294882a7dc1913432af33c366d92e97ad07ae1ab3f93"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/doc.closure.schema.json",
   "title": "doc.closure",

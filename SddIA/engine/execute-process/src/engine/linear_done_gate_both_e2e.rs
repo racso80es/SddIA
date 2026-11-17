@@ -85,7 +85,7 @@ fn merge_done_lab_setup(repo: &Path, tracker_ref: &str) {
     )
     .expect("lab update_issue_state done");
     let event_id = format!("ac21-{}", uuid::Uuid::new_v4());
-    let rel = format!(".events/pending/{event_id}.json");
+    let rel = format!("eda://domain/{event_id}");
     let mut event = json!({
         "event_id": event_id,
         "event_type": "PullRequest_Merged",
@@ -100,7 +100,7 @@ fn merge_done_lab_setup(repo: &Path, tracker_ref: &str) {
     });
     sddia_eda_catalog::stamp_published_event(repo, &mut event).expect("stamp");
     crate::engine::eda_port::record_ecst(repo, "domain", &event).expect("record");
-    let out = tracker_stamp::run(repo, &json!({ "event_file_path": rel }))
+    let out = tracker_stamp::run(repo, &json!({ "event_uri": rel }))
         .expect("tracker-stamp PullRequest_Merged");
     let stamped = out
         .data
@@ -137,19 +137,16 @@ fn tracker_done_event(linear_updated_at: &str) -> Value {
 
 fn collect_sync_failed_diverged(repo: &Path) -> Vec<String> {
     let mut hits = Vec::new();
-    for sub in [".events/pending", ".events/processing", ".events/processed"] {
-        let dir = repo.join(sub);
-        if !dir.is_dir() {
-            continue;
-        }
-        for ent in fs::read_dir(&dir).into_iter().flatten().flatten() {
-            if ent.path().extension().and_then(|e| e.to_str()) != Some("json") {
-                continue;
-            }
-            let raw = fs::read_to_string(ent.path()).unwrap_or_default();
-            if raw.contains("Tracker_Sync_Failed") && raw.contains("TRACKER_STATE_DIVERGED") {
-                hits.push(ent.path().to_string_lossy().to_string());
-            }
+    let events = crate::engine::eda_port::load_domain_ecsts(repo, 500).unwrap_or_default();
+    for ev in events {
+        let raw = ev.to_string();
+        if raw.contains("Tracker_Sync_Failed") && raw.contains("TRACKER_STATE_DIVERGED") {
+            let eid = ev
+                .get("event_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            hits.push(eid);
         }
     }
     hits

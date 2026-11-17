@@ -295,17 +295,8 @@ pub fn drain_di_reactor_once(repo: &Path, process_def: &ProcessDef) -> Result<Va
         let outcome = run_sync_chain(repo, &phase, process_name, process_def, &inputs);
         emit_di_resolved(repo, &event_id, &outcome)?;
         let _ = crate::engine::eda_port::record_delivery_ack(repo, &event_id, "capability-di-reactor");
-        match path {
-            Some(p) => {
-                fs::remove_file(&p).ok();
-            }
-            None => {
-                #[cfg(test)]
-                if sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
-                    let pf = pending_dir(repo)?.join(format!("{event_id}.json"));
-                    fs::remove_file(pf).ok();
-                }
-            }
+        if let Some(p) = path {
+            fs::remove_file(&p).ok();
         }
         processed += 1;
         last = json!({
@@ -425,7 +416,7 @@ outputs:
 
     #[test]
     fn ac_r6_emit_pending_non_blocking() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let td = fixture_repo();
         std::env::set_var(EDA_PILOT_ENV, "1");
         let phase = json!({
@@ -439,52 +430,37 @@ outputs:
         });
         let inputs = json!({"execution_id": "exec-1", "persist_ref": "docs/features/x"});
         let event_id = emit_di_requested(td.path(), &phase, "feature", &inputs).expect("emit");
-        let pending_file = td.path().join(format!(".events/pending/{event_id}.json"));
-        assert!(pending_file.is_file(), "evento en pending");
-        let processed_json = fs::read_dir(td.path().join(".events/processed"))
-            .map(|d| {
-                d.flatten()
-                    .filter(|e| {
-                        e.path()
-                            .extension()
-                            .and_then(|x| x.to_str())
-                            == Some("json")
-                    })
-                    .count()
-            })
-            .unwrap_or(0);
-        assert_eq!(processed_json, 0, "orquestador no espera reactor");
+        let pending = crate::engine::eda_port::test_lab::ecst_for_event_id(td.path(), &event_id);
+        assert_eq!(
+            pending.get("event_type").and_then(|v| v.as_str()),
+            Some("CapabilityDi_Requested")
+        );
+        let processed = crate::engine::eda_port::load_domain_ecsts(td.path(), 100)
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|e| e.get("event_type").and_then(|v| v.as_str()) == Some("CapabilityDi_Resolved"))
+            .count();
+        assert_eq!(processed, 0, "orquestador no espera reactor");
         std::env::remove_var(EDA_PILOT_ENV);
-        sddia_event_store::override_store_mode(None);
     }
 
     #[test]
     fn ac_r6_drain_resolved_ecst_ack() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let td = fixture_repo();
         let phase = json!({
             "name": "lab",
             "requires_capability": [{"id": "doc:closure", "contract": "doc.closure"}]
         });
-        let event_id = emit_di_requested(td.path(), &phase, "feature", &json!({})).expect("emit");
+        let _event_id = emit_di_requested(td.path(), &phase, "feature", &json!({})).expect("emit");
         let def = process_def();
         let out = drain_di_reactor_once(td.path(), &def).expect("drain");
         assert_eq!(out["processed"], 1);
-        assert!(
-            !td.path()
-                .join(format!(".events/pending/{event_id}.json"))
-                .is_file()
-        );
-        let processed: Vec<_> = fs::read_dir(td.path().join(".events/processed"))
-            .unwrap()
-            .flatten()
-            .map(|e| e.path())
-            .filter(|p| p.is_file())
-            .collect();
-        assert!(!processed.is_empty());
-        let text = fs::read_to_string(&processed[0]).unwrap();
-        let ev: Value = serde_json::from_str(&text).unwrap();
-        assert_eq!(ev["event_type"], "CapabilityDi_Resolved");
-        assert_eq!(ev["delivery_state"]["ecst_ack"], true);
+        let resolved = crate::engine::eda_port::load_domain_ecsts(td.path(), 100)
+            .unwrap_or_default()
+            .into_iter()
+            .find(|e| e.get("event_type").and_then(|v| v.as_str()) == Some("CapabilityDi_Resolved"))
+            .expect("CapabilityDi_Resolved");
+        assert_eq!(resolved["delivery_state"]["ecst_ack"], true);
     }
 }

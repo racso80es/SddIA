@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "2d8c692c-8507-4bfb-af34-5a701a7025ec",
+    "version": "1.0.0",
+    "hash_signature": "sha256:6c0d624d37bdce7cf9027d8ee29fff3191a89acdb90a58129a69a12948835bc1"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/di.binding.schema.json",
   "title": "di.binding",

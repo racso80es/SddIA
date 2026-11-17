@@ -1,6 +1,6 @@
 //! Ingesta `Domain_Entity_Telemetry_Captured` → LanceDB (puerto `EvolutionStore`).
 
-use super::fractal_bus::stamp_fractal_delivery_state;
+use super::fractal_bus::stamp_fractal_delivery_state_by_id;
 use super::workspace::load_paths_config;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -68,7 +68,7 @@ pub fn ingest_domain_event_file(repo: &Path, rel_path: &str) -> Value {
     }
 }
 
-/// Entrada de proceso (`event` / `event_id` / `event_file_path`); AUT-57.
+/// Entrada de proceso (`event` / `event_id` / `event_uri`); AUT-57.
 pub fn ingest_from_process_inputs(repo: &Path, inputs: &Value) -> Value {
     match ingest_from_inputs(repo, inputs) {
         Ok(v) => v,
@@ -78,8 +78,8 @@ pub fn ingest_from_process_inputs(repo: &Path, inputs: &Value) -> Value {
 
 fn ingest_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let body = super::ecst_input_loader::load_ecst_from_inputs(repo, inputs)?;
-    let rel = inputs
-        .get("event_file_path")
+    let event_ref = inputs
+        .get("event_uri")
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
@@ -87,10 +87,10 @@ fn ingest_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, String> {
         .unwrap_or_else(|| {
             body.get("event_id")
                 .and_then(|v| v.as_str())
-                .map(|id| format!(".events/pending/{id}.json"))
-                .unwrap_or_else(|| ".events/pending/unknown.json".into())
+                .map(|id| format!("eda://domain/{id}"))
+                .unwrap_or_else(|| "unknown".into())
         });
-    ingest_ecst_body(repo, &body, &rel)
+    ingest_ecst_body(repo, &body, &event_ref)
 }
 
 fn ingest_inner(repo: &Path, rel_path: &str) -> Result<Value, String> {
@@ -98,16 +98,31 @@ fn ingest_inner(repo: &Path, rel_path: &str) -> Result<Value, String> {
     ingest_ecst_body(repo, &body, rel_path)
 }
 
-fn ingest_ecst_body(repo: &Path, body: &Value, rel_path: &str) -> Result<Value, String> {
-    let event_path = repo.join(rel_path.trim());
+fn resolve_event_id(body: &Value, event_ref: &str) -> String {
+    if let Some(id) = body.get("event_id").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()) {
+        return id.to_string();
+    }
+    if let Ok(uri) = sddia_core::ports::event_manager::EventUri::parse(event_ref) {
+        return uri.event_id;
+    }
+    Path::new(event_ref.trim())
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("unknown")
+        .to_string()
+}
+
+fn ingest_ecst_body(repo: &Path, body: &Value, event_ref: &str) -> Result<Value, String> {
+    let event_id = resolve_event_id(body, event_ref);
 
     let event_type = body
         .get("event_type")
         .and_then(|v| v.as_str())
         .unwrap_or("");
     if event_type != "Domain_Entity_Telemetry_Captured" {
-        stamp_fractal_delivery_state(
-            &event_path,
+        stamp_fractal_delivery_state_by_id(
+            repo,
+            &event_id,
             MEMORY_EVOLUTION_INGEST_SUBSCRIBER_KEY,
             "skipped",
         );
@@ -165,8 +180,9 @@ fn ingest_ecst_body(repo: &Path, body: &Value, rel_path: &str) -> Result<Value, 
         .map_err(|e| e.to_string())?
         .is_some()
     {
-        stamp_fractal_delivery_state(
-            &event_path,
+        stamp_fractal_delivery_state_by_id(
+            repo,
+            &event_id,
             MEMORY_EVOLUTION_INGEST_SUBSCRIBER_KEY,
             "skipped",
         );
@@ -199,8 +215,9 @@ fn ingest_ecst_body(repo: &Path, body: &Value, rel_path: &str) -> Result<Value, 
         .map_err(|e| e.to_string())?;
     adapter.store_event(event).map_err(|e| e.to_string())?;
 
-    stamp_fractal_delivery_state(
-        &event_path,
+    stamp_fractal_delivery_state_by_id(
+        repo,
+        &event_id,
         MEMORY_EVOLUTION_INGEST_SUBSCRIBER_KEY,
         "success",
     );

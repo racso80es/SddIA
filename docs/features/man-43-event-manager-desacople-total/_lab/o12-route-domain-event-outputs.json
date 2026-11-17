@@ -1,0 +1,17 @@
+{
+  "entity_class": "process",
+  "entity_name": "route-domain-event",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "process_name": "route-domain-event",
+    "process_version": "1.1.0",
+    "process_outputs": [
+      { "success": "boolean" },
+      { "delivery_status": "mapa subscriber_id → status" },
+      { "event_uri": "token lógico eda://{family}/{event_id}" },
+      { "dispatch_mode": "string; sync | async" },
+      { "sweep": "objeto resumen de barrido del puerto" },
+      { "transaction_digest": "string opcional; digest DLT cuando aplica" }
+    ]
+  }
+}

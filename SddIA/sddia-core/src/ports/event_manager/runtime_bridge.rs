@@ -4,7 +4,7 @@ use std::path::Path;
 
 use serde_json::Value;
 
-use crate::ports::event_manager::contract::{
+use crate::ports::event_manager::{
     AppendTraceRequest, DeliveryStatus, EventFamily, EventUri, GetEventRequest, ListEventsRequest,
     ListPendingRequest, PublishEcstRequest, RecordDeliveryRequest,
 };
@@ -59,14 +59,15 @@ pub fn publish_ecst(
 ) -> Result<PublishSeal, String> {
     let event_id = event_token(event, "event_id")?;
     let uri_family = EventFamily::from_publish_token(family)?;
-    let req = PublishEcstRequest {
-        event_id: event_id.clone(),
-        ecst: event.clone(),
-        trace_id: trace_id_from_event(event),
-    };
+    let event_uri = EventUri::new(uri_family, event_id.clone()).map_err(|e| e.to_string())?;
+    let req = PublishEcstRequest::new(
+        event_uri,
+        event.clone(),
+        trace_id_from_event(event),
+    );
     match port.publish_ecst(req) {
         Ok(_) => {}
-        Err(EventManagerError::InvalidRequest(msg)) if msg.contains("duplicate") => {}
+        Err(EventManagerError::AlreadyExists { .. }) => {}
         Err(err) => return Err(err.to_string()),
     }
     PublishSeal::from_parts(uri_family, event_id)
@@ -104,7 +105,7 @@ pub fn append_progress_monotonic(
     frame: &Value,
 ) -> Result<u64, String> {
     let frames = port
-        .list_traces(crate::ports::event_manager::contract::ListTracesRequest {
+        .list_traces(crate::ports::event_manager::ListTracesRequest {
             trace_id: correlation_id.to_string(),
         })
         .map(|r| r.frames.len() as u64)
@@ -117,15 +118,21 @@ pub fn append_progress_monotonic(
     Ok(frames + 1)
 }
 
+/// Identificador durable de entrega por suscriptor (MAN-43 O2).
+pub fn subscriber_delivery_id(event_id: &str, subscriber_id: &str) -> String {
+    format!("{event_id}:{subscriber_id}")
+}
+
 pub fn record_delivery_ack(
     port: &dyn EventManagerPort,
     event_id: &str,
-    delivery_id: &str,
+    subscriber_id: &str,
 ) -> Result<(), String> {
     port.record_delivery(RecordDeliveryRequest {
         event_id: event_id.to_string(),
-        delivery_id: delivery_id.to_string(),
+        delivery_id: subscriber_delivery_id(event_id, subscriber_id),
         status: DeliveryStatus::Ack,
+        subscriber_id: Some(subscriber_id.to_string()),
         attempt: None,
     })
     .map_err(|e| e.to_string())
@@ -134,12 +141,28 @@ pub fn record_delivery_ack(
 pub fn record_delivery_nack(
     port: &dyn EventManagerPort,
     event_id: &str,
-    delivery_id: &str,
+    subscriber_id: &str,
 ) -> Result<(), String> {
     port.record_delivery(RecordDeliveryRequest {
         event_id: event_id.to_string(),
-        delivery_id: delivery_id.to_string(),
+        delivery_id: subscriber_delivery_id(event_id, subscriber_id),
         status: DeliveryStatus::Nack,
+        subscriber_id: Some(subscriber_id.to_string()),
+        attempt: None,
+    })
+    .map_err(|e| e.to_string())
+}
+
+pub fn record_delivery_processing(
+    port: &dyn EventManagerPort,
+    event_id: &str,
+    subscriber_id: &str,
+) -> Result<(), String> {
+    port.record_delivery(RecordDeliveryRequest {
+        event_id: event_id.to_string(),
+        delivery_id: subscriber_delivery_id(event_id, subscriber_id),
+        status: DeliveryStatus::Processing,
+        subscriber_id: Some(subscriber_id.to_string()),
         attempt: None,
     })
     .map_err(|e| e.to_string())
@@ -151,6 +174,7 @@ pub fn load_domain_ecsts(port: &dyn EventManagerPort, limit: u32) -> Result<Vec<
         .list_events(ListEventsRequest {
             family: Some(EventFamily::Domain.as_str().to_string()),
             event_type: None,
+            state: None,
             limit: Some(limit),
             cursor: None,
         })

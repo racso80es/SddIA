@@ -1,33 +1,20 @@
-use std::fs;
-use std::path::{Path, PathBuf};
+mod common;
 
+use std::fs;
+use std::path::PathBuf;
+
+use common::{cleanup, install_backend, lab_repo, LabBackend};
 use execute_process::engine::eda_bus_topology::{
     load_event_bus_topology, write_processing_witness,
 };
+use execute_process::engine::eda_port;
 use execute_process::engine::progress_trace::emit_progress_trace;
 use execute_process::engine::route_domain_core::materialize_pending_domain_event;
-use sddia_event_store::{override_store_mode, runtime_db_path, EventStore, StoreMode};
+use sddia_core::ports::event_manager::{DeliveryStatus, ListDeliveriesRequest, ListEventsRequest};
+use sddia_event_manager_host::productive_redb_file;
 use serde_json::json;
 
-struct ModeGuard;
-
-impl Drop for ModeGuard {
-    fn drop(&mut self) {
-        override_store_mode(None);
-    }
-}
-
-fn temp_repo() -> PathBuf {
-    let path = std::env::temp_dir().join(format!(
-        "sddia-writers-{}-{}",
-        std::process::id(),
-        uuid::Uuid::new_v4()
-    ));
-    fs::create_dir_all(&path).unwrap();
-    path
-}
-
-fn json_files(dir: &Path) -> Vec<PathBuf> {
+fn json_files(dir: &std::path::Path) -> Vec<PathBuf> {
     let mut out = Vec::new();
     if !dir.exists() {
         return out;
@@ -49,11 +36,18 @@ fn json_files(dir: &Path) -> Vec<PathBuf> {
     out
 }
 
+fn event_id_from_pending_rel(rel: &str) -> String {
+    std::path::Path::new(rel)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .expect("pending rel con event_id")
+        .to_string()
+}
+
 #[test]
 fn redb_domain_event_has_no_new_json() {
-    let _guard = ModeGuard;
-    override_store_mode(Some(StoreMode::Redb));
-    let repo = temp_repo();
+    let repo = lab_repo();
+    let _g = install_backend(&repo, LabBackend::Redb);
     materialize_pending_domain_event(
         &repo,
         "Domain_Entity_Created",
@@ -62,38 +56,40 @@ fn redb_domain_event_has_no_new_json() {
     )
     .expect("materialize");
     assert!(json_files(&repo.join(".events")).is_empty());
-    let store = EventStore::open(runtime_db_path(&repo)).expect("open");
-    let rows = store
-        .list_family(sddia_event_store::Family::Domain)
-        .expect("list");
-    assert_eq!(rows.len(), 1);
-    assert_eq!(rows[0].event_type, "Domain_Entity_Created");
-    let _ = fs::remove_dir_all(&repo);
+    eda_port::with_event_port(&repo, "list_events", |port| {
+        let listed = port
+            .list_events(ListEventsRequest {
+                family: Some("domain".into()),
+                event_type: Some("Domain_Entity_Created".into()),
+                state: None,
+                limit: Some(10),
+                cursor: None,
+            })
+            .map_err(|e| e.to_string())?;
+        assert_eq!(listed.events.len(), 1);
+        Ok(())
+    })
+    .expect("port list");
+    cleanup(&repo);
 }
 
 #[test]
-fn filesystem_still_writes_the_pending_json() {
-    let _guard = ModeGuard;
-    override_store_mode(Some(StoreMode::Filesystem));
-    let repo = temp_repo();
-    let rel = materialize_pending_domain_event(
+fn mock_publish_does_not_materialize_redb_file() {
+    let repo = lab_repo();
+  common::roundtrip_publish_load(
         &repo,
+        "pending",
+        LabBackend::Mock,
         "Domain_Entity_Created",
-        "tekton",
-        json!({"name": "b"}),
-    )
-    .expect("materialize");
-    let path = repo.join(&rel);
-    assert!(path.is_file(), "{rel}");
-    assert!(!runtime_db_path(&repo).is_file());
-    let _ = fs::remove_dir_all(&repo);
+    );
+    assert!(!productive_redb_file(&repo).unwrap().is_file());
+    cleanup(&repo);
 }
 
 #[test]
-fn dual_file_and_two_subscriber_rows() {
-    let _guard = ModeGuard;
-    override_store_mode(Some(StoreMode::Dual));
-    let repo = temp_repo();
+fn redb_two_subscriber_processing_rows() {
+    let repo = lab_repo();
+    let _g = install_backend(&repo, LabBackend::Redb);
     let rel = materialize_pending_domain_event(
         &repo,
         "Domain_Entity_Created",
@@ -101,15 +97,12 @@ fn dual_file_and_two_subscriber_rows() {
         json!({"name": "c"}),
     )
     .expect("materialize");
-    let path = repo.join(&rel);
-    let body: serde_json::Value =
-        serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
-    let event_id = body["event_id"].as_str().unwrap();
+    let event_id = event_id_from_pending_rel(&rel);
     let bus = load_event_bus_topology(&repo).unwrap();
     write_processing_witness(
         &repo,
         &bus,
-        event_id,
+        &event_id,
         "argos",
         "Domain_Entity_Created",
         "async",
@@ -118,25 +111,40 @@ fn dual_file_and_two_subscriber_rows() {
     write_processing_witness(
         &repo,
         &bus,
-        event_id,
+        &event_id,
         "cumulo",
         "Domain_Entity_Created",
         "async",
     )
     .unwrap();
-    let store = EventStore::open(runtime_db_path(&repo)).unwrap();
-    let stored = store.get_event(event_id).unwrap().unwrap();
-    assert_eq!(stored.event_id, event_id);
-    assert!(store.get_delivery(event_id, "argos").unwrap().is_some());
-    assert!(store.get_delivery(event_id, "cumulo").unwrap().is_some());
-    let _ = fs::remove_dir_all(&repo);
+    eda_port::with_event_port(&repo, "list_processing", |port| {
+        let rows = port
+            .list_deliveries(ListDeliveriesRequest {
+                event_id: Some(event_id.to_string()),
+                subscriber_id: None,
+                status: None,
+                limit: Some(100),
+                cursor: None,
+            })
+            .map_err(|e| e.to_string())?;
+        let subs: Vec<_> = rows
+            .deliveries
+            .iter()
+            .filter(|d| d.status == DeliveryStatus::Processing)
+            .filter_map(|d| d.subscriber_id.as_deref())
+            .collect();
+        assert!(subs.contains(&"argos"));
+        assert!(subs.contains(&"cumulo"));
+        Ok(())
+    })
+    .expect("port deliveries");
+    cleanup(&repo);
 }
 
 #[test]
 fn progress_frames_land_in_the_store() {
-    let _guard = ModeGuard;
-    override_store_mode(Some(StoreMode::Redb));
-    let repo = temp_repo();
+    let repo = lab_repo();
+    let _g = install_backend(&repo, LabBackend::Redb);
     let cid = "corr-writers";
     emit_progress_trace(
         &repo,
@@ -159,37 +167,35 @@ fn progress_frames_land_in_the_store() {
         None,
     );
     assert!(json_files(&repo.join(".events")).is_empty());
-    let store = EventStore::open(runtime_db_path(&repo)).unwrap();
-    let frames = store.list_progress(cid).unwrap();
-    assert_eq!(frames.len(), 2);
-    assert_eq!(frames[0].0, 0);
-    assert_eq!(frames[1].0, 1);
-    let _ = fs::remove_dir_all(&repo);
+    eda_port::with_event_port(&repo, "list_progress", |port| {
+        use sddia_core::ports::event_manager::ListProgressRequest;
+        let frames = port
+            .list_progress(ListProgressRequest {
+                trace_id: None,
+                correlation_id: Some(cid.to_string()),
+            })
+            .map_err(|e| e.to_string())?;
+        assert_eq!(frames.frames.len(), 2);
+        Ok(())
+    })
+    .expect("port progress");
+    cleanup(&repo);
 }
 
 #[test]
 fn terminal_witness_exists_redb_skipped_without_fs_witness() {
-    use execute_process::engine::eda_bus_topology::{
-        load_event_bus_topology, promote_witness, terminal_witness_exists,
-    };
+    use execute_process::engine::eda_bus_topology::{promote_witness, terminal_witness_exists};
 
-    let _guard = ModeGuard;
-    override_store_mode(Some(StoreMode::Redb));
-    let repo = temp_repo();
-    materialize_pending_domain_event(
+    let repo = lab_repo();
+    let _g = install_backend(&repo, LabBackend::Redb);
+    let rel = materialize_pending_domain_event(
         &repo,
         "Work_Initiated",
         "feature",
         json!({"branch": "feat/x"}),
     )
     .expect("materialize");
-    let store = EventStore::open(runtime_db_path(&repo)).unwrap();
-    let event_id = store
-        .list_family(sddia_event_store::Family::Domain)
-        .unwrap()[0]
-        .event_id
-        .clone();
-    drop(store);
+    let event_id = event_id_from_pending_rel(&rel);
     let bus = load_event_bus_topology(&repo).unwrap();
     write_processing_witness(
         &repo,
@@ -217,48 +223,48 @@ fn terminal_witness_exists_redb_skipped_without_fs_witness() {
         terminal_witness_exists(&repo, &bus, &event_id, "tracker-stamp"),
         "Skipped en store debe ser terminal"
     );
-    let store = EventStore::open(runtime_db_path(&repo)).unwrap();
-    let row = store.get_delivery(&event_id, "tracker-stamp").unwrap().unwrap();
-    assert_eq!(row.status, sddia_event_store::DeliveryStatus::Skipped);
-    let _ = fs::remove_dir_all(&repo);
+    eda_port::with_event_port(&repo, "delivery_ack", |port| {
+        let rows = port
+            .list_deliveries(ListDeliveriesRequest {
+                event_id: Some(event_id.clone()),
+                subscriber_id: Some("tracker-stamp".into()),
+                status: None,
+                limit: Some(10),
+                cursor: None,
+            })
+            .map_err(|e| e.to_string())?;
+        assert!(
+            rows.deliveries
+                .iter()
+                .any(|d| d.status == DeliveryStatus::Ack),
+            "promote processed debe materializar ACK en puerto"
+        );
+        Ok(())
+    })
+    .expect("port ack");
+    cleanup(&repo);
 }
 
 #[test]
 fn terminal_witness_exists_redb_without_fs_witness() {
-    use execute_process::engine::eda_bus_topology::{
-        load_event_bus_topology, terminal_witness_exists,
-    };
+    use execute_process::engine::eda_bus_topology::{load_event_bus_topology, terminal_witness_exists};
 
-    let _guard = ModeGuard;
-    override_store_mode(Some(StoreMode::Redb));
-    let repo = temp_repo();
-    materialize_pending_domain_event(
+    let repo = lab_repo();
+    let _g = install_backend(&repo, LabBackend::Redb);
+    let rel = materialize_pending_domain_event(
         &repo,
         "PBI_Refined",
         "refine-item",
         json!({"pbi_ref": "AUT-45"}),
     )
     .expect("materialize");
-    let store = EventStore::open(runtime_db_path(&repo)).unwrap();
-    let rows = store
-        .list_family(sddia_event_store::Family::Domain)
-        .unwrap();
-    assert_eq!(rows.len(), 1);
-    let event_id = rows[0].event_id.clone();
-    store
-        .upsert_delivery(
-            &event_id,
-            "tracker-stamp",
-            sddia_event_store::DeliveryStatus::Success,
-            json!({"ok": true}),
-        )
-        .expect("upsert");
-    drop(store);
+    let event_id = event_id_from_pending_rel(&rel);
+    eda_port::record_delivery_ack(&repo, &event_id, "tracker-stamp").expect("ack");
     let bus = load_event_bus_topology(&repo).unwrap();
     assert!(
         terminal_witness_exists(&repo, &bus, &event_id, "tracker-stamp"),
         "store Success debe contar como terminal sin testigo FS"
     );
     assert!(json_files(&repo.join(".events")).is_empty());
-    let _ = fs::remove_dir_all(&repo);
+    cleanup(&repo);
 }

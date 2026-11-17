@@ -3,7 +3,7 @@ context:
 - system-operations
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:5c1e999195271bc637127214c91d65f91e7c283ddab6a82ca67175da91190d54
+hash_signature: "sha256:5c1e999195271bc637127214c91d65f91e7c283ddab6a82ca67175da91190d54"
 inputs:
 - operation: 'Enum estricto: `start` | `status` | `kill` — directriz física OS a ejecutar'
 - daemon_id: Identificador kebab-case del Centinela (`name` en `{daemon_id}.md`; debe existir en `SddIA/daemons/index.md`)
@@ -13,11 +13,11 @@ inputs:
 minteo_maximo: null
 name: governance-daemon-manager
 outputs:
-- os_result: Objeto con resultado físico de la operación (pid, alive, signal, exit_code, lock_path, entrypoint_resolved, runtime)
-- daemon_uuid: UUID v4 extraído del frontmatter de `{daemon_id}.md`
-- operation_status: 'Enum: `succeeded` | `failed` | `noop` (ej. kill sobre PID inexistente)'
-- orchestration_event_id: UUID v4 del `Process_Execution_Completed` emitido en `eda_fractal.orchestration`
-- orchestration_event_path: Ruta relativa del JSON en `./.events/orchestration/`
+- 'os_result: Objeto con resultado físico de la operación (pid, alive, signal, exit_code, lock_path, entrypoint_resolved, runtime)'
+- 'daemon_uuid: UUID v4 extraído del frontmatter de `{daemon_id}.md`'
+- 'operation_status: Enum: `succeeded` | `failed` | `noop` (ej. kill sobre PID inexistente)'
+- 'orchestration_event_id: UUID v4 del `Process_Execution_Completed` emitido en `eda_fractal.orchestration`'
+- 'orchestration_event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 phase_invocations:
 - invocations:
   - bind:
@@ -56,7 +56,7 @@ phases:
   name: Sello orchestration
 porcentaje_de_exito: null
 uuid: 5a89793a-ba98-4b4f-9287-43c087e312df
-version: 1.0.1
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
@@ -162,7 +162,7 @@ Campos `process_name`, `asset_id`, `workspace_path`, `status` son **REQUIRED** s
 
 Emisión **incondicional** al cierre de Fase 3 (éxito o fallo controlado). En abort temprano (Fase 1–2), emitir con `status: failed` y `os_result.error`.
 
-Propagar `orchestration_event_id` y `orchestration_event_path` a outputs del proceso.
+Propagar `orchestration_event_id` y `orchestration_event_uri` a outputs del proceso.
 
 ## Handler laboratorio
 

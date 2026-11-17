@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "1071a2ba-9ae8-4258-952e-4f967221fee1",
+    "version": "1.0.0",
+    "hash_signature": "sha256:91ad8499ddac12522398d6ca5ce8c0f4e5928287ca04ca03d636bfa4cfb98f8f"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/proc.git_sync.schema.json",
   "title": "proc.git_sync",

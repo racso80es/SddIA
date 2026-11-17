@@ -4,9 +4,9 @@ context:
 - filesystem-ops
 - source-control
 contract: process-contract v1.4.0
-hash_signature: "sha256:10bbcbf48e4b5c3a7bd30883f28f0b84e20bf0be7f747d4863f1ac3cb68ff25c"
+hash_signature: sha256:10bbcbf48e4b5c3a7bd30883f28f0b84e20bf0be7f747d4863f1ac3cb68ff25c
 inputs:
-- event_file_path: Ruta relativa al JSON ECST Tracker_Issue_Changed en pending
+- event_uri: Ruta relativa al JSON ECST Tracker_Issue_Changed en pending
 minteo_maximo: null
 name: tracker-markdown-apply
 outputs:
@@ -19,7 +19,7 @@ phases:
   name: Persistencia tracker-sync
 porcentaje_de_exito: null
 uuid: b7c8d9e0-f123-4567-89ab-cdef01234567
-version: 1.0.1
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

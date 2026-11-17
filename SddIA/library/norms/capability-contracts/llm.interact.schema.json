@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "c432036f-8e70-4eb1-b9aa-acf3d620e76d",
+    "version": "1.0.0",
+    "hash_signature": "sha256:36a6153a275359e1fc23cd738d0c3b2f1c90032a59b9dd8fc357182b732e21d7"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/llm.interact.schema.json",
   "title": "llm.interact",

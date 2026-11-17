@@ -7,7 +7,7 @@ context: ecosystem-evolution
 contract: tools-contract v1.3.0
 contract_ref: SddIA/tools/tools-contract.md
 domain_origin: SddIA
-hash_signature: sha256:b396955f07a35637a65f4a1a40438f6520259c8325a5430c570bb497fc42ec5c
+hash_signature: sha256:3a6e746d459f7ee428388e810a78fcaccb07cc27bada571d4b4020eb6b89490a
 implementation_path_ref: SddIA/tools/telegram-gateway
 name: telegram-gateway
 outputs:
@@ -20,7 +20,7 @@ provides:
 - contract: channel.ingest
   id: channel:ingest
   version: 1.0.0
-source_sha256: sha256:d954d1eb4657ebd7a4569bc2483b4894cacd786855dbd3d71a936f4bbf7d2abd
+source_sha256: sha256:05d076da461e95ca2ba1e52084a4a66464ddc17e2b49832dd3f5e316d0bc92c5
 uuid: a23dda8f-b5d5-4091-a21c-f408159d3a3e
 version: 1.0.0
 ---

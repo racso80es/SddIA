@@ -196,7 +196,7 @@ fn apply_file(
     tc: Option<&TrackerConfig>,
 ) -> Result<Value, String> {
     if let Some(tc) = tc {
-        if tc.state_map.get(state_key).is_none() {
+        if !tc.state_map.contains_key(state_key) {
             return Ok(json!({
                 "success": false,
                 "error": format!("state_map sin {state_key}"),
@@ -277,7 +277,7 @@ fn apply_remote(
     comment: &str,
     process_name: &str,
 ) -> Result<Value, String> {
-    if tc.state_map.get(state_key).is_none() {
+    if !tc.state_map.contains_key(state_key) {
         return Ok(json!({
             "success": false,
             "error": format!("state_map sin {state_key}"),

@@ -27,10 +27,10 @@ fn load_revoked(repo: &Path) -> Value {
         .ok()
         .and_then(|t| serde_json::from_str::<Value>(&t).ok())
         .map(|mut data| {
-            if !data.get("revoked").and_then(|v| v.as_object()).is_some() {
+            if data.get("revoked").and_then(|v| v.as_object()).is_none() {
                 data["revoked"] = json!({});
             }
-            if !data.get("permanent").and_then(|v| v.as_object()).is_some() {
+            if data.get("permanent").and_then(|v| v.as_object()).is_none() {
                 data["permanent"] = json!({});
             }
             data

@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 153
+universe_total: 157
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,14 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `33bf81d5-4d59-4eb6-b40d-f2664494463f` | 2026-11-17 | MAN-43 CI fix: excluir sddia-workspace-server de WASI y limpiar .events/ en unitarios | CANONICO | `SddIA/evolution/33bf81d5-4d59-4eb6-b40d-f2664494463f.md` |
+| `7fe2affc-26f7-4033-b0e9-a276feb726d8` | 2026-11-17 | MAN-43 O15: certificacion Argos APTO_TOTAL (validacion.md, H6.3) y refresco source_sha256 de capsulas | CANONICO | `SddIA/evolution/7fe2affc-26f7-4033-b0e9-a276feb726d8.md` |
+| `59c5c632-9720-4c5a-be9b-7bba27892003` | 2026-11-16 | MAN-43 O14d: poda total .events/ en runtime, thought-graph-access por puerto, fix tests workspace y dossier APTO_TOTAL_PROPUESTO | CANONICO | `SddIA/evolution/59c5c632-9720-4c5a-be9b-7bba27892003.md` |
+| `7ed0df40-01f1-43fe-8ac5-b29a571f1cdb` | 2026-11-16 | MAN-43 O14c: rutas virtuales a EventUri en daemon-runtime/motor, oraculo G-2 y dossier AC-13 | CANONICO | `SddIA/evolution/7ed0df40-01f1-43fe-8ac5-b29a571f1cdb.md` |
+| `bc17f9a8-b329-434e-bc7b-1b85c4555585` | 2026-11-14 | MAN-43 O14b: event_uri en contratos EDA (motor, genoma, oraculo) | CANONICO | `SddIA/evolution/bc17f9a8-b329-434e-bc7b-1b85c4555585.md` |
+| `d0bb10b2-7c02-4955-8637-2451c2d5eeb3` | 2026-11-14 | MAN-43 O14: evolution consolidada O0–O12; clippy workspace; schema_uri F-02 | CANONICO | `SddIA/evolution/d0bb10b2-7c02-4955-8637-2451c2d5eeb3.md` |
+| `35ec5355-a3c8-48be-9358-336026684320` | 2026-11-14 | MAN-43 O13: Norma de Identidad Polimórfica (Cicatriz Digital, sustrato B x-sddia); 17 contratos con identidad; eda.event_manager 2.0.0 | CANONICO | `SddIA/evolution/35ec5355-a3c8-48be-9358-336026684320.md` |
+| `c4e8f2a1-9b3d-4e7c-a5f6-2d3e8b9c0a1f` | 2026-11-13 | MAN-43 O6: narrativa EventManager v2; store legacy retirado del relato (877c1791) | CANONICO | `SddIA/evolution/c4e8f2a1-9b3d-4e7c-a5f6-2d3e8b9c0a1f.md` |
 | `faa41d58-a120-413e-b088-35681ffb79e3` | 2026-11-11 | MAN-43 H1: EventManagerPort 2.0.0 EventUri + PublishSeal v2 (milestone) | CANONICO | `SddIA/evolution/faa41d58-a120-413e-b088-35681ffb79e3.md` |
 | `cb548aa0-57ee-4881-99c2-9d46339fc699` | 2026-11-10 | MAN-42: F-EDA-STORE-LOCK-CONTENTION suppress, refine-item sin fractura lock, promote_witness sin DLQ | CANONICO | `SddIA/evolution/cb548aa0-57ee-4881-99c2-9d46339fc699.md` |
 | `bcf50739-6e46-4a8d-9716-92883b1ebc7a` | 2026-11-10 | MAN-39: reentrada lifecycle sin tren forja; timeout floor; dirty peaje audits; label Kaizen lab MAN | CANONICO | `SddIA/evolution/bcf50739-6e46-4a8d-9716-92883b1ebc7a.md` |

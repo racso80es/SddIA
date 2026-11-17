@@ -1200,6 +1200,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[allow(unused_imports)] // usado solo en algunos targets de test (Read en stubs HTTP)
     use std::io::Read;
     use std::sync::{Arc, Mutex};
     use std::thread;
@@ -1280,7 +1281,7 @@ mod tests {
         };
         let port = listen.port();
         thread::spawn(move || {
-            if let Some(mut req) = server.recv().ok() {
+            if let Ok(mut req) = server.recv() {
                 let mut body = String::new();
                 let _ = req.as_reader().read_to_string(&mut body);
                 *cap2.lock().unwrap() = body;
@@ -1475,15 +1476,15 @@ mod tests {
                 "request": {
                     "operation": "create_issue",
                     "team_key": "AUT",
-                    "title": "kaizen en MAN",
-                    "labels": ["kaizen"],
+                    "title": "etiqueta ausente en MAN",
+                    "labels": ["other"],
                     "parent_ref": "MAN-HU-1"
                 }
             }))
             .unwrap_err();
             assert_eq!(e.code, "LINEAR_LABEL_UNKNOWN");
-            assert!(e.message.contains("MAN"));
-            assert!(e.message.contains("kaizen"));
+            assert!(e.message.contains("MAN"), "{e:?}");
+            assert!(e.message.contains("other"), "{e:?}");
             lab_state::lab_reset_store();
             env::remove_var("SDDIA_LAB_RESET_STORE");
         });

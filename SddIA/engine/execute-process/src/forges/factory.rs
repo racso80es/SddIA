@@ -1,12 +1,14 @@
 //! Forjas por `entity_class` (paridad `execute_process_forges.py` + skill/event en capsules).
 
 use super::common::{
-    append_row, apply_markdown_body_replacements, capability_name, dependencies_from_inputs,
+    append_row, apply_implementation_source_git_apply, apply_markdown_body_replacements,
+    capability_name, dependencies_from_inputs,
     format_dependencies_yaml, handoff_create, idempotent_forge_handoff, optional_str,
     parse_frontmatter, patch_action_content_update, merge_daemon_capabilities,
     patch_daemon_declaration,
     patch_artifact_body_replacements, patch_hash_signature_refresh, patch_norm_content_update,
-    patch_process_phases_update, refresh_process_hash, repo_tool_base, required_str, sha256_canon,
+    patch_process_outputs_update, patch_process_phases_update, refresh_process_hash, repo_tool_base,
+    required_str, sha256_canon,
     str_field, sync_action_index_row, sync_daemons_index_census, sync_event_family_class_count,
     sync_events_root_family_count, update_library_norm_index_version, update_process_index_version,
     norm_integrity_hash, generate_uuid,
@@ -97,6 +99,7 @@ pub fn run_tool_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
 
     if lifecycle == "update" && tool_path.is_file() {
+        apply_implementation_source_git_apply(repo, inputs)?;
         if inputs
             .get("hash_refresh_only")
             .and_then(|v| v.as_bool())
@@ -120,6 +123,19 @@ pub fn run_tool_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "handoff_version": version,
             }));
         }
+        if inputs.get("implementation_source_git_apply").is_some() {
+            let patch = patch_hash_signature_refresh(&tool_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
+        return Err(format!(
+            "tool update sin parche reconocido; no se regenera {}",
+            tool_path.display()
+        ));
     }
 
     if let Some(skip) = idempotent_forge_handoff(&tool_path, &lifecycle)? {
@@ -411,19 +427,19 @@ fn find_process_identity_collision(
             if stem == "index" || stem == "process-contract" {
                 continue;
             }
-            if needles.iter().any(|n| *n == stem) {
+            if needles.contains(&stem) {
                 return Ok(Some(path));
             }
             let fm = parse_frontmatter(&path)?;
             if let Some(n) = fm.get("name").and_then(|v| v.as_str()) {
-                if needles.iter().any(|x| *x == n) {
+                if needles.contains(&n) {
                     return Ok(Some(path));
                 }
             }
             if let Some(aliases) = fm.get("aliases").and_then(|v| v.as_array()) {
                 for a in aliases {
                     if let Some(as_) = a.as_str() {
-                        if needles.iter().any(|x| *x == as_) {
+                        if needles.contains(&as_) {
                             return Ok(Some(path));
                         }
                     }
@@ -523,6 +539,43 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                     inputs_patch,
                     workspace_template.as_deref(),
                     inputs.get("process_context"),
+                )?;
+                if patch.old_version != patch.new_version {
+                    update_process_index_version(
+                        &dest_root.join("index.md"),
+                        &name,
+                        &patch.new_version,
+                    )?;
+                }
+                let mut out = json!({
+                    "handoff_entity_uuid": patch.entity_uuid,
+                    "handoff_hash_signature_new": patch.new_hash,
+                    "handoff_hash_signature_old": patch.old_hash,
+                    "handoff_version": patch.new_version,
+                });
+                if let (Value::Object(base), Value::Object(ext)) =
+                    (&mut out, forge_outputs_extra(&dest, &name))
+                {
+                    for (k, v) in ext {
+                        base.insert(k, v);
+                    }
+                }
+                return Ok(out);
+            }
+            let outputs_only = inputs
+                .get("process_outputs")
+                .or_else(|| inputs.get("outputs"))
+                .filter(|o| {
+                    o.as_array()
+                        .map(|a| !a.is_empty())
+                        .unwrap_or(false)
+                });
+            if let Some(outs) = outputs_only {
+                let explicit_ver = optional_str(inputs, "process_version");
+                let patch = patch_process_outputs_update(
+                    &process_path,
+                    outs,
+                    explicit_ver.as_deref(),
                 )?;
                 if patch.old_version != patch.new_version {
                     update_process_index_version(
@@ -905,6 +958,33 @@ pub fn run_norm_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
 
     if lifecycle == "update" && norm_path.is_file() {
+        apply_implementation_source_git_apply(repo, inputs)?;
+        if inputs
+            .get("hash_refresh_only")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
+            let patch = patch_hash_signature_refresh(&norm_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
+        if inputs.get("implementation_source_git_apply").is_some()
+            && inputs.get("artifact_yaml_replacements").is_none()
+            && inputs.get("artifact_body_replacements").is_none()
+            && inputs.get("artifact_full_replacements").is_none()
+        {
+            let patch = patch_hash_signature_refresh(&norm_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
         let patch = patch_norm_content_update(&norm_path, inputs)?;
         if patch.old_version != patch.new_version {
             update_library_norm_index_version(
@@ -1182,6 +1262,58 @@ pub fn run_skill_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "skill_name")?;
     let skill_path = repo.join("SddIA/skills").join(format!("{name}.md"));
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
+    if lifecycle == "update" && skill_path.is_file() {
+        apply_implementation_source_git_apply(repo, inputs)?;
+        if inputs
+            .get("hash_refresh_only")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
+            let patch = patch_hash_signature_refresh(&skill_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
+        if let Some(replacements) = inputs.get("artifact_yaml_replacements") {
+            let text = fs::read_to_string(&skill_path).map_err(|e| e.to_string())?;
+            let (yaml, body) = split_md_frontmatter(&text).ok_or("frontmatter ausente")?;
+            let new_yaml = apply_markdown_body_replacements(&yaml, replacements)?;
+            fs::write(&skill_path, format!("---\n{new_yaml}---\n{body}")).map_err(|e| e.to_string())?;
+            let patch = patch_hash_signature_refresh(&skill_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
+        if let Some(replacements) = inputs.get("markdown_body_replacements") {
+            let (entity_uuid, old_hash, new_hash, version) =
+                patch_artifact_body_replacements(&skill_path, replacements)?;
+            return Ok(json!({
+                "handoff_entity_uuid": entity_uuid,
+                "handoff_hash_signature_new": new_hash,
+                "handoff_hash_signature_old": old_hash,
+                "handoff_version": version,
+            }));
+        }
+        if inputs.get("implementation_source_git_apply").is_some() {
+            let patch = patch_hash_signature_refresh(&skill_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
+        return Err(format!(
+            "skill update sin parche reconocido; no se regenera {}",
+            skill_path.display()
+        ));
+    }
     if lifecycle == "create" && skill_path.is_file() {
         return Err(format!("Ya existe {}", skill_path.display()));
     }
@@ -1532,6 +1664,21 @@ pub fn run_daemon_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
         return Ok(skip);
     }
     if lifecycle == "update" && daemon_path.is_file() {
+        apply_implementation_source_git_apply(repo, inputs)?;
+        if inputs
+            .get("hash_refresh_only")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
+            let patch = patch_hash_signature_refresh(&daemon_path)?;
+            return Ok(json!({
+                "artifact_daemon_md": daemon_path.strip_prefix(repo).unwrap_or(&daemon_path).to_string_lossy().replace('\\', "/"),
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
         let mut patched = false;
         let mut entity_uuid = String::new();
         let mut old_hash = String::new();
@@ -1603,6 +1750,16 @@ pub fn run_daemon_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
             new_hash = r.2;
             version = r.3;
             patched = true;
+        }
+        if !patched && inputs.get("implementation_source_git_apply").is_some() {
+            let patch = patch_hash_signature_refresh(&daemon_path)?;
+            return Ok(json!({
+                "artifact_daemon_md": daemon_path.strip_prefix(repo).unwrap_or(&daemon_path).to_string_lossy().replace('\\', "/"),
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
         }
         if !patched {
             return Err(
@@ -1776,6 +1933,7 @@ pub fn materialize_by_inputs(repo: &Path, inputs: &Value) -> Result<Value, Strin
             "skill" => run_skill_forge(repo, inputs),
             "event" => run_event_forge(repo, inputs),
             "daemon" => run_daemon_forge(repo, inputs),
+            "capability-contract" => super::capability_contract::run_capability_contract_forge(repo, inputs),
             other => Err(format!("entity_class no soportada en forja nativa: {other}")),
         };
     }
@@ -1894,6 +2052,68 @@ mod tests {
         assert!(body.contains("sha256:abc123deadbeef"));
         std::env::remove_var("SDDIA_FORGE_LAB_SHA256");
         std::env::remove_var("SDDIA_FORGE_LAB_UUID");
+    }
+
+    #[test]
+    fn update_existing_tool_without_patch_is_error() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/tools")).unwrap();
+        let md = repo.join("SddIA/tools/keep-me.md");
+        fs::write(
+            &md,
+            r#"---
+uuid: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+name: "keep-me"
+version: "1.0.0"
+hash_signature: "sha256:abc"
+---
+body
+"#,
+        )
+        .unwrap();
+        let err = run_tool_forge(
+            repo,
+            &json!({
+                "tool_name": "keep-me",
+                "lifecycle_operation": "update",
+            }),
+        )
+        .expect_err("update sin parche");
+        assert!(err.contains("sin parche reconocido"));
+        let body = fs::read_to_string(&md).unwrap();
+        assert!(body.contains("eeeeeeeeeeee"));
+    }
+
+    #[test]
+    fn update_existing_skill_without_patch_is_error() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/skills")).unwrap();
+        let md = repo.join("SddIA/skills/keep-skill.md");
+        fs::write(
+            &md,
+            r#"---
+uuid: "bbbbbbbb-cccc-4ddd-8eee-ffffffffffff"
+name: "keep-skill"
+version: "1.0.0"
+hash_signature: "sha256:def"
+---
+body
+"#,
+        )
+        .unwrap();
+        let err = run_skill_forge(
+            repo,
+            &json!({
+                "skill_name": "keep-skill",
+                "lifecycle_operation": "update",
+            }),
+        )
+        .expect_err("update sin parche");
+        assert!(err.contains("sin parche reconocido"));
+        let body = fs::read_to_string(&md).unwrap();
+        assert!(body.contains("ffffffffffff"));
     }
 
     #[test]
@@ -2395,9 +2615,19 @@ NOTA_BACKFILL
             "artefacto huérfano"
         );
 
-        let mut restore = fs::metadata(&idx).unwrap().permissions();
-        restore.set_readonly(false);
-        let _ = fs::set_permissions(&idx, restore);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut restore = fs::metadata(&idx).unwrap().permissions();
+            restore.set_mode(0o644);
+            let _ = fs::set_permissions(&idx, restore);
+        }
+        #[cfg(not(unix))]
+        {
+            let mut restore = fs::metadata(&idx).unwrap().permissions();
+            restore.set_readonly(false);
+            let _ = fs::set_permissions(&idx, restore);
+        }
         std::env::remove_var("SDDIA_FORGE_LAB_UUID");
     }
 

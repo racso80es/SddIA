@@ -71,10 +71,8 @@ fn main() {
         let _ = fs::create_dir_all(parent);
     }
 
-    if !target.exists() {
-        if let Err(_) = fs::write(&target, "io-choke-seed\n") {
-            // Ignore error here, we might not have permission anyway
-        }
+    if !target.exists() && fs::write(&target, "io-choke-seed\n").is_err() {
+        // Ignore error here, we might not have permission anyway
     }
 
     let mut perms = match fs::metadata(&target) {
@@ -91,7 +89,6 @@ fn main() {
     }
 
     let write_result = fs::OpenOptions::new()
-        .write(true)
         .append(true)
         .open(&target)
         .and_then(|mut f| {

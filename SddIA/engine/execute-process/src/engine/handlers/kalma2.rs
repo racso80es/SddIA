@@ -531,7 +531,6 @@ mod tests {
         let repo = find_repo_root().expect("repo");
         // Force execute path via mock would need CLI; skip if skill unavailable
         if invoke_capsule_json(&repo, "mayeuta-llm", &json!({"operation":"SYNTHESIZE","prompt":"x"}), false).is_err() {
-            return;
         }
     }
 }

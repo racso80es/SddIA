@@ -22,12 +22,12 @@ pub fn load_project_config(project_root: &Path) -> ProjectConfig {
     let text = fs::read_to_string(&path).unwrap_or_default();
     let yaml = extract_frontmatter(&text);
     if let Some(Yaml::Mapping(map)) = yaml {
-        if let Some(Yaml::String(s)) = map.get(&Yaml::String("env_ref".into())) {
+        if let Some(Yaml::String(s)) = map.get(Yaml::String("env_ref".into())) {
             cfg.env_ref = Some(s.clone());
         }
-        if let Some(Yaml::Mapping(mcp)) = map.get(&Yaml::String("mcp".into())) {
+        if let Some(Yaml::Mapping(mcp)) = map.get(Yaml::String("mcp".into())) {
             if let Some(Yaml::Sequence(seq)) =
-                mcp.get(&Yaml::String("allowed_executables".into()))
+                mcp.get(Yaml::String("allowed_executables".into()))
             {
                 for item in seq {
                     if let Yaml::String(ex) = item {
@@ -36,7 +36,7 @@ pub fn load_project_config(project_root: &Path) -> ProjectConfig {
                 }
             }
         }
-        if let Some(Yaml::Mapping(docs)) = map.get(&Yaml::String("docs".into())) {
+        if let Some(Yaml::Mapping(docs)) = map.get(Yaml::String("docs".into())) {
             for (k, v) in docs {
                 if let (Yaml::String(key), Yaml::String(val)) = (k, v) {
                     cfg.docs_paths.insert(key.clone(), val.clone());

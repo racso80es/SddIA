@@ -248,13 +248,13 @@ mod tests {
 
     fn write_domain_event(tmp: &Path, event_id: &str, payload: Value) -> PathBuf {
         let path = tmp.join(".events/domain").join(format!("{event_id}.json"));
-        let event = json!({
-            "event_id": event_id,
-            "event_type": "User_Preference_Change_Requested",
-            "timestamp": "2026-08-27T12:00:00Z",
-            "payload": payload,
-        });
-        fs::write(&path, serde_json::to_string(&event).unwrap()).unwrap();
+        crate::engine::eda_port::test_lab::seed_domain_ecst(
+            tmp,
+            event_id,
+            "User_Preference_Change_Requested",
+            payload,
+        )
+        .expect("seed User_Preference_Change_Requested");
         path
     }
 
@@ -280,7 +280,7 @@ mod tests {
         );
         let activate = run_ingest(
             tmp.path(),
-            &json!({"event_file_path": ".events/domain/evt-activate-1.json"}),
+            &json!({"event_uri": ".events/domain/evt-activate-1.json"}),
         )
         .unwrap();
         assert!(activate.success);
@@ -311,7 +311,7 @@ mod tests {
         );
         let revoke = run_ingest(
             tmp.path(),
-            &json!({"event_file_path": ".events/domain/evt-revoke-1.json"}),
+            &json!({"event_uri": ".events/domain/evt-revoke-1.json"}),
         )
         .unwrap();
         assert!(revoke.success);
@@ -346,7 +346,7 @@ mod tests {
         );
         let ingest = run_ingest(
             tmp.path(),
-            &json!({"event_file_path": ".events/domain/evt-hint-1.json"}),
+            &json!({"event_uri": ".events/domain/evt-hint-1.json"}),
         )
         .unwrap();
         assert!(ingest.success);

@@ -13,6 +13,7 @@ capabilities:
   - "markdown-table-persist"
   - "capsule-json-io"
 implementation_path_ref: "SddIA/tools/markdown-table-editor"
+hash_signature: "sha256:3c4f515161437c57d7f9adc5dfc1643b0cb5c60d8ccf13b2ddb6e2288181973d"
 ---
 
 # markdown-table-editor

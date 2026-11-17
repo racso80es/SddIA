@@ -81,7 +81,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     Ok(json!({
         "success": true,
         "event_id": seal.get("event_id"),
-        "target_path": seal.get("target_path"),
+        "event_uri": seal.get("event_uri"),
         "event_type": "Suite_Execution_Requested",
     }))
 }
@@ -90,7 +90,6 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
 mod tests {
     use super::*;
     use crate::core::repo::find_repo_root;
-    use std::fs;
 
     #[test]
     fn emit_suite_execution_requested_writes_domain_event() {
@@ -100,14 +99,11 @@ mod tests {
         let result = run(&repo, &inputs).expect("emit suite");
         assert_eq!(result.get("success"), Some(&json!(true)));
         let eid = result.get("event_id").and_then(|v| v.as_str()).unwrap();
-        let path = repo.join(".events/domain").join(format!("{eid}.json"));
-        assert!(path.is_file(), "domain event missing: {}", path.display());
-        let body: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        let body = crate::engine::eda_port::test_lab::ecst_for_event_id(&repo, eid);
         assert_eq!(
             body.get("event_type").and_then(|v| v.as_str()),
             Some("Suite_Execution_Requested")
         );
-        let _ = fs::remove_file(path);
     }
 
     #[test]

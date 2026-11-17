@@ -1,7 +1,7 @@
 ---
 uuid: "e84218a8-7e40-4436-8ae7-a3fcc3396ad7"
 name: "emit-validation-started-event"
-version: "1.0.1"
+version: "2.0.0"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -20,10 +20,10 @@ inputs:
 outputs:
   - "success": "boolean"
   - "event_id": "string"
-  - "target_path": "string"
+  - "event_uri": "string"
+hash_signature: "sha256:4e5f90a0aeff2750adbfd016ccf712eedc7445b5309360640ae7d12876343664"
 minteo_maximo: null
 porcentaje_de_exito: null
-hash_signature: "sha256:751af3e75d62e5c684c01c1d2ca59666bfc5de9afdede748a957b84131029cbd"
 ---
 
 # Acción: emit-validation-started-event

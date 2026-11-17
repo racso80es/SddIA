@@ -1,6 +1,8 @@
 //! Productivo: EventManagerPort (sin `sddia_event_store` directo).
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(test)]
+use std::path::PathBuf;
 
 use serde_json::Value;
 use sddia_core::ports::event_manager::{
@@ -19,10 +21,23 @@ pub fn publish_pending(repo: &Path, event: &Value) -> Result<(), String> {
     })
 }
 
+#[cfg(test)]
+pub fn publish_domain(repo: &Path, event: &Value) -> Result<(), String> {
+    with_productive_port(repo, "publish_domain", |port| {
+        publish_ecst(port, repo, "domain", event).map(|_| ())
+    })
+}
+
+#[cfg(test)]
+pub fn db_path(repo: &Path) -> PathBuf {
+    sddia_event_manager_host::productive_redb_file(repo)
+        .unwrap_or_else(|_| repo.join(".SddIA/runtime/events.redb"))
+}
+
 pub fn domain_event(
     repo: &Path,
     event_id: &str,
-) -> Option<(PathBuf, Value, bool)> {
+) -> Option<(Value, bool)> {
     with_productive_port(repo, "domain_event", |port| {
         let row = port
             .get_event(GetEventRequest {
@@ -33,11 +48,7 @@ pub fn domain_event(
             .list_dlq(ListDlqRequest { limit: Some(10_000) })
             .map(|r| r.events.iter().any(|e| e.event_id == event_id))
             .unwrap_or(false);
-        Ok((
-            PathBuf::from(format!(".events/domain/{event_id}.json")),
-            row.ecst,
-            in_dead,
-        ))
+        Ok((row.ecst, in_dead))
     })
     .ok()
 }
@@ -48,6 +59,7 @@ pub fn pec_for_correlation(repo: &Path, correlation_id: &str) -> Option<Value> {
             .list_events(ListEventsRequest {
                 family: None,
                 event_type: Some("Process_Execution_Completed".into()),
+                state: None,
                 limit: Some(500),
                 cursor: None,
             })
@@ -120,6 +132,7 @@ pub fn list_telemetry_ecsts(repo: &Path, limit: u32) -> Vec<Value> {
         port.list_events(ListEventsRequest {
             family: None,
             event_type: None,
+            state: None,
             limit: Some(limit),
             cursor: None,
         })

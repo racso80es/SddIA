@@ -7,9 +7,10 @@ context: system-operations
 contract: tools-contract v1.2.0
 contract_ref: SddIA/tools/tools-contract.md
 domain_origin: SddIA
+hash_signature: sha256:70aead12f27397609daecc0243f011121f079120626ea515e4199da5bcb1da02
 implementation_path_ref: SddIA/tools/iota-immutable-publisher
 name: iota-immutable-publisher
-source_sha256: sha256:67dd9fa0ede8419b2e7ca5efa3edd0eca16bad1fa95f41229bd5440898abf71f
+source_sha256: sha256:63f1f380d5d989323506e7d18dfb792f1f64638e27c9f6a0600fd1d0cf29b33f
 uuid: 7c8be7da-d080-4ad0-b0b0-df43be376e46
 version: 1.0.0
 ---

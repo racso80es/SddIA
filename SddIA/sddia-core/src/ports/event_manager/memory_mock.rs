@@ -6,14 +6,19 @@ use std::time::{Duration, Instant};
 
 use serde_json::Value;
 
-use crate::ports::event_manager::contract::{
+use crate::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, CONTRACT_ID,
-    CONTRACT_VERSION, DeliveryStatus, GetDltSealRequest, GetDltSealResult, GetEventRequest,
-    GetEventResult, HandshakeVersionRequest, HandshakeVersionResult, ListDeliveriesRequest,
-    ListDeliveriesResult, ListedDelivery, ListedDlqEvent, ListDlqRequest, ListDlqResult,
-    ListPendingRequest, ListPendingResult, ListedPendingEvent, ListTracesRequest, ListTracesResult,
-    MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
-    RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
+    CONTRACT_VERSION, DeliveryRecord, DeliveryStatus, EventQueueState, GetDltSealRequest,
+    GetDltSealResult, GetEventRequest, GetEventResult, HandshakeVersionRequest,
+    HandshakeVersionResult, IndexedEvent, ListDeliveriesRequest, ListDeliveriesResult,
+    ListedDelivery, ListedDlqEvent, ListDlqRequest, ListDlqResult, ListEventsRequest,
+    ListEventsResult, ListPendingRequest, ListPendingResult, ListedPendingEvent,
+    ListTerminalEventsRequest, ListTracesRequest, ListTracesResult, MoveToDlqRequest,
+    PublishEcstRequest, PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest, ReplayDlqRequest,
+    SealDltRequest,
+};
+use crate::ports::event_manager::event_query::{
+    filter_and_page_events, filter_terminal_events, indexed_from_parts, page_deliveries,
 };
 use crate::ports::event_manager::error::EventManagerError;
 use crate::ports::event_manager::port::EventManagerPort;
@@ -28,6 +33,7 @@ pub struct FaultInjection {
 
 #[derive(Debug, Clone)]
 struct StoredEvent {
+    event_uri: Option<crate::ports::event_manager::EventUri>,
     event_id: String,
     ecst: Value,
     trace_id: Option<String>,
@@ -36,11 +42,33 @@ struct StoredEvent {
     dlq_reason: Option<String>,
 }
 
-#[derive(Debug, Clone)]
-struct StoredDelivery {
-    delivery_id: String,
-    event_id: String,
-    status: DeliveryStatus,
+impl StoredEvent {
+    fn indexed(&self, state: EventQueueState) -> IndexedEvent {
+        indexed_from_parts(
+            self.event_uri.clone(),
+            self.event_id.clone(),
+            self.ecst.clone(),
+            self.trace_id.clone(),
+            state,
+        )
+    }
+}
+
+fn collect_indexed(g: &Inner) -> Vec<IndexedEvent> {
+    let mut rows = Vec::new();
+    for ev in g.pending.values() {
+        rows.push(ev.indexed(EventQueueState::Pending));
+    }
+    for ev in g.claimed.values() {
+        rows.push(ev.indexed(EventQueueState::Claimed));
+    }
+    for ev in g.processed.values() {
+        rows.push(ev.indexed(EventQueueState::Processed));
+    }
+    for ev in g.dlq.values() {
+        rows.push(ev.indexed(EventQueueState::DeadLetter));
+    }
+    rows
 }
 
 #[derive(Debug, Default)]
@@ -49,7 +77,7 @@ struct Inner {
     claimed: BTreeMap<String, StoredEvent>,
     processed: BTreeMap<String, StoredEvent>,
     dlq: BTreeMap<String, StoredEvent>,
-    deliveries: HashMap<String, StoredDelivery>,
+    deliveries: HashMap<String, DeliveryRecord>,
     traces: HashMap<String, Vec<Value>>,
     dlt_seals: HashMap<String, GetDltSealResult>,
     faults: FaultInjection,
@@ -94,19 +122,18 @@ impl EventManagerPort for InMemoryEventManagerMock {
         if g.faults.fail_write {
             return Err(EventManagerError::InjectedFault("fail_write".into()));
         }
+        req.validate()?;
         if g.pending.contains_key(&req.event_id)
             || g.claimed.contains_key(&req.event_id)
             || g.processed.contains_key(&req.event_id)
             || g.dlq.contains_key(&req.event_id)
         {
-            return Err(EventManagerError::InvalidRequest(format!(
-                "duplicate event_id {}",
-                req.event_id
-            )));
+            return Err(EventManagerError::already_exists("event", req.event_id.clone()));
         }
         g.pending.insert(
             req.event_id.clone(),
             StoredEvent {
+                event_uri: Some(req.event_uri.clone()),
                 event_id: req.event_id.clone(),
                 ecst: req.ecst,
                 trace_id: req.trace_id,
@@ -183,11 +210,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
         }
         g.deliveries.insert(
             req.delivery_id.clone(),
-            StoredDelivery {
-                delivery_id: req.delivery_id.clone(),
-                event_id: req.event_id.clone(),
-                status: req.status,
-            },
+            DeliveryRecord::from_request(&req),
         );
 
         match req.status {
@@ -204,6 +227,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
                     g.pending.insert(req.event_id, ev);
                 }
             }
+            DeliveryStatus::Processing => {}
         }
         Ok(())
     }
@@ -330,7 +354,8 @@ impl EventManagerPort for InMemoryEventManagerMock {
         if !removed {
             return Err(EventManagerError::NotFound(req.event_id));
         }
-        g.deliveries.retain(|_, d| d.event_id != req.event_id);
+        g.deliveries
+            .retain(|_, d| d.event_id != req.event_id);
         if let Some(tid) = trace_id {
             g.traces.remove(&tid);
         }
@@ -342,8 +367,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
         req: ListDeliveriesRequest,
     ) -> Result<ListDeliveriesResult, EventManagerError> {
         let g = self.inner.lock().expect("mock lock");
-        let limit = req.limit.unwrap_or(u32::MAX) as usize;
-        let mut deliveries: Vec<ListedDelivery> = g
+        let deliveries: Vec<ListedDelivery> = g
             .deliveries
             .values()
             .filter(|d| {
@@ -353,7 +377,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
                     }
                 }
                 if let Some(sid) = req.subscriber_id.as_deref() {
-                    if !d.delivery_id.contains(sid) {
+                    if d.subscriber_id.as_deref() != Some(sid) {
                         return false;
                     }
                 }
@@ -368,14 +392,26 @@ impl EventManagerPort for InMemoryEventManagerMock {
                 delivery_id: d.delivery_id.clone(),
                 event_id: d.event_id.clone(),
                 status: d.status,
+                subscriber_id: d.subscriber_id.clone(),
             })
             .collect();
-        deliveries.sort_by(|a, b| a.delivery_id.cmp(&b.delivery_id));
-        deliveries.truncate(limit);
-        Ok(ListDeliveriesResult {
-            deliveries,
-            next_cursor: None,
-        })
+        page_deliveries(deliveries, &req)
+    }
+
+    fn list_events(
+        &self,
+        req: ListEventsRequest,
+    ) -> Result<ListEventsResult, EventManagerError> {
+        let g = self.inner.lock().expect("mock lock");
+        filter_and_page_events(collect_indexed(&g), &req)
+    }
+
+    fn list_terminal_events(
+        &self,
+        req: ListTerminalEventsRequest,
+    ) -> Result<ListEventsResult, EventManagerError> {
+        let g = self.inner.lock().expect("mock lock");
+        filter_terminal_events(collect_indexed(&g), &req)
     }
 
     fn seal_dlt(&self, req: SealDltRequest) -> Result<(), EventManagerError> {
@@ -400,7 +436,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
         g.dlt_seals
             .get(&req.event_id)
             .cloned()
-            .ok_or_else(|| EventManagerError::NotFound(req.event_id))
+            .ok_or(EventManagerError::NotFound(req.event_id))
     }
 }
 

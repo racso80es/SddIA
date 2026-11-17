@@ -1,11 +1,9 @@
 ---
-context:
-- event-routing
-- ecosystem-evolution
+context: ecosystem-evolution
 contract: process-contract v1.4.0
 hash_signature: sha256:e0801b944925b2c3a2adfa4f148981d11f07e705f5996412b184f26ab4bddf3b
 inputs:
-- event_file_path: Ruta relativa al JSON en ./.events/orchestration/
+- 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
 name: route-orchestration
 outputs:
@@ -22,7 +20,7 @@ phases:
     version: '>=1.0.0'
 porcentaje_de_exito: null
 uuid: c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9
-version: 1.0.1
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

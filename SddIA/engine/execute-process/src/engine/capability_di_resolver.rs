@@ -42,6 +42,14 @@ pub struct DiResolveError {
 }
 
 #[derive(Debug, Clone)]
+pub struct BindingRow {
+    pub contract: String,
+    pub provider: String,
+    pub provider_version: Option<String>,
+    pub contract_schema: Option<String>,
+}
+
+#[derive(Debug, Clone)]
 pub struct ResolvedBinding {
     pub capability_id: String,
     pub contract: String,
@@ -124,7 +132,28 @@ fn provider_fs_rel(provider: &str) -> Option<String> {
     }
 }
 
-fn load_binding_rows(repo: &Path) -> Result<HashMap<String, (String, String, Option<String>)>, DiResolveError> {
+/// Nombre de fichero JSON Schema: columna `contract_schema` del binding o `{contract}.schema.json`.
+pub fn contract_schema_file(
+    contract: &str,
+    declared: Option<&str>,
+) -> Result<String, DiResolveError> {
+    if let Some(d) = declared {
+        let t = d.trim();
+        if t.is_empty() {
+            return Ok(format!("{contract}.schema.json"));
+        }
+        if t.contains('/') || t.contains('\\') || t.contains("..") {
+            return Err(DiResolveError {
+                code: DiResolveCode::ConfigError,
+                message: format!("contract_schema inválido (ruta prohibida): {t}"),
+            });
+        }
+        return Ok(t.to_string());
+    }
+    Ok(format!("{contract}.schema.json"))
+}
+
+pub fn load_binding_rows(repo: &Path) -> Result<HashMap<String, BindingRow>, DiResolveError> {
     let path = bindings_path(repo)?;
     if !path.is_file() {
         return Err(DiResolveError {
@@ -145,6 +174,7 @@ fn load_binding_rows(repo: &Path) -> Result<HashMap<String, (String, String, Opt
         let contract = yaml_str_map(item, "contract").unwrap_or_default();
         let provider = yaml_str_map(item, "provider").unwrap_or_default();
         let provider_version = yaml_str_map(item, "provider_version");
+        let contract_schema = yaml_str_map(item, "contract_schema");
         if cap.is_empty() || provider.is_empty() {
             continue;
         }
@@ -154,7 +184,15 @@ fn load_binding_rows(repo: &Path) -> Result<HashMap<String, (String, String, Opt
                 message: format!("fila duplicada en binding table para capability_id='{cap}'"),
             });
         }
-        map.insert(cap, (contract, provider, provider_version));
+        map.insert(
+            cap,
+            BindingRow {
+                contract,
+                provider,
+                provider_version,
+                contract_schema,
+            },
+        );
     }
     Ok(map)
 }
@@ -292,7 +330,7 @@ pub fn resolve_phase_bindings(
 
     let mut out = Vec::new();
     for (cap_id, req_contract, _req_version) in reqs {
-        let Some((row_contract, provider, _pv)) = rows.get(&cap_id) else {
+        let Some(row) = rows.get(&cap_id) else {
             return Err(DiResolveError {
                 code: DiResolveCode::BindingMissing,
                 message: format!("sin fila en binding table para capability_id='{cap_id}'"),
@@ -301,18 +339,19 @@ pub fn resolve_phase_bindings(
 
         let catalog = scan_catalog_providers(repo, &cap_id);
         // Q2: fila canónica es SSOT; ambigüedad solo si el catálogo diverge de la fila.
-        if catalog.len() > 1 && !catalog.contains(provider) {
+        if catalog.len() > 1 && !catalog.contains(&row.provider) {
             return Err(DiResolveError {
                 code: DiResolveCode::ProviderAmbiguous,
                 message: format!(
-                    "proveedores provides('{cap_id}')={catalog:?} divergen de fila canónica '{provider}'"
+                    "proveedores provides('{cap_id}')={catalog:?} divergen de fila canónica '{}'",
+                    row.provider
                 ),
             });
         }
 
         // H9: preferir skill|action|tool en delegates_to que ya declare provides(cap);
         // si no hay, usar fila binding (path ciego → inyección posterior).
-        let mut resolved_provider = provider.clone();
+        let mut resolved_provider = row.provider.clone();
         for d in &delegates {
             if !is_capsule_provider(d) {
                 continue;
@@ -341,8 +380,8 @@ pub fn resolve_phase_bindings(
 
         let contract = if !req_contract.is_empty() {
             req_contract.clone()
-        } else if !row_contract.is_empty() {
-            row_contract.clone()
+        } else if !row.contract.is_empty() {
+            row.contract.clone()
         } else if !prov_contract.is_empty() {
             prov_contract
         } else {
@@ -351,7 +390,8 @@ pub fn resolve_phase_bindings(
 
         let logical_ref =
             provider_md_rel(&resolved_provider).unwrap_or_else(|| fs_rel.clone());
-        let schema_rel = format!("{contracts_rel}/{contract}.schema.json");
+        let schema_name = contract_schema_file(&contract, row.contract_schema.as_deref())?;
+        let schema_rel = format!("{contracts_rel}/{schema_name}");
 
         out.push(ResolvedBinding {
             capability_id: cap_id,
@@ -644,5 +684,66 @@ provides:
         });
         let bindings = resolve_phase_bindings(&root, &phase).expect("real resolve");
         assert_eq!(bindings[0].provider, "skill:filesystem-manager");
+    }
+
+    #[test]
+    fn resolver_honours_declared_contract_schema() {
+        let td = tempfile::tempdir().unwrap();
+        write_md(
+            td.path(),
+            "SddIA/core/cumulo.paths.json",
+            r#"{
+  "capability_di": { "bindings": "SddIA/core/capability-bindings.md" },
+  "directories": {
+    "capability_contracts": "SddIA/library/norms/capability-contracts/"
+  }
+}"#,
+        );
+        write_md(
+            td.path(),
+            "SddIA/core/capability-bindings.md",
+            r#"---
+name: capability-bindings
+bindings:
+  - capability_id: "eda:event-manager"
+    contract: "eda.event_manager"
+    contract_schema: "eda.event_manager.v1.schema.json"
+    provider: "capsule:event-manager"
+---
+"#,
+        );
+        write_md(td.path(), "SddIA/library/norms/capability-taxonomy.md", "---\n---\n");
+        let rows = load_binding_rows(td.path()).expect("rows");
+        let row = rows.get("eda:event-manager").expect("row");
+        let name =
+            contract_schema_file("eda.event_manager", row.contract_schema.as_deref()).expect("name");
+        assert_eq!(name, "eda.event_manager.v1.schema.json");
+    }
+
+    #[test]
+    fn resolver_falls_back_to_contract_name_schema() {
+        let name = contract_schema_file("eda.event_manager", None).expect("name");
+        assert_eq!(name, "eda.event_manager.schema.json");
+    }
+
+    #[test]
+    fn resolver_rejects_contract_schema_with_path() {
+        let err = contract_schema_file("eda.event_manager", Some("../evil.json")).unwrap_err();
+        assert_eq!(err.code, DiResolveCode::ConfigError);
+    }
+
+    #[test]
+    fn core_bindings_eda_event_manager_resolves_v1_schema() {
+        let root = crate::core::repo::find_repo_root().expect("repo root");
+        let rows = load_binding_rows(&root).expect("rows");
+        let row = rows
+            .get("eda:event-manager")
+            .expect("eda:event-manager binding");
+        let file = contract_schema_file("eda.event_manager", row.contract_schema.as_deref())
+            .expect("file");
+        assert_eq!(file, "eda.event_manager.v1.schema.json");
+        let contracts_rel = contracts_dir_rel(&root).expect("contracts");
+        let path = root.join(format!("{contracts_rel}/{file}"));
+        assert!(path.is_file(), "schema debe existir: {}", path.display());
     }
 }

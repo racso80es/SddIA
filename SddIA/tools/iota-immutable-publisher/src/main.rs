@@ -77,7 +77,8 @@ fn run(req: &Value) -> Result<Value, String> {
         let root_hex = hex::encode(root);
 
         let mut proofs = vec![];
-        for i in 0..leaves.len() {
+        for (i, leaf) in leaves.iter().enumerate() {
+            let _ = leaf;
             let proof = tree.proof(&[i]);
             let proof_bytes = proof.to_bytes();
             proofs.push(json!({

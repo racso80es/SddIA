@@ -1,6 +1,9 @@
 use crate::eda_bus::{ensure_event_bus_topology, header_path, load_registry, EdBusPaths};
 use crate::{ensure_fractal_dirs, load_bus_topology, BusTopology};
-use sddia_core::ports::event_manager::load_dispatched_event;
+use sddia_core::ports::event_manager::{
+    load_dispatched_event, DeliveryStatus, ListDeliveriesRequest, ListEventsRequest,
+    ListPendingRequest, MoveToDlqRequest, PurgeEventRequest,
+};
 use sddia_event_manager_host::with_productive_port;
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -20,19 +23,23 @@ pub struct SweepReport {
     pub skipped: Vec<Value>,
 }
 
+#[cfg(test)]
 fn delivery_stamp_terminal_ok(status: &str) -> bool {
     status == "success" || status == "skipped" || status.starts_with("skipped")
 }
 
+#[cfg(test)]
 fn delivery_stamp_terminal(status: &str) -> bool {
     delivery_stamp_terminal_ok(status) || status == "failed"
 }
 
-fn fractal_delivery_state<'a>(body: &'a Value) -> Option<&'a serde_json::Map<String, Value>> {
+#[cfg(test)]
+fn fractal_delivery_state(body: &Value) -> Option<&serde_json::Map<String, Value>> {
     body.get("delivery_state").and_then(|v| v.as_object())
 }
 
 /// Todos los stamps terminales OK (success|skipped*) — sin `failed`.
+#[cfg(test)]
 fn fractal_event_all_ok(body: &Value) -> bool {
     let Some(ds) = fractal_delivery_state(body) else {
         return false;
@@ -51,6 +58,7 @@ fn fractal_event_all_ok(body: &Value) -> bool {
 }
 
 /// Todos los stamps terminales y al menos un `failed` → DLQ (laudo C2).
+#[cfg(test)]
 fn fractal_event_terminal_with_failure(body: &Value) -> bool {
     let Some(ds) = fractal_delivery_state(body) else {
         return false;
@@ -66,6 +74,7 @@ fn fractal_event_terminal_with_failure(body: &Value) -> bool {
     all_terminal && ds.values().any(|v| v.as_str() == Some("failed"))
 }
 
+#[cfg(test)]
 fn move_fractal_to_dead_letter(path: &Path, dead_letter_dir: &Path) -> Result<PathBuf, String> {
     fs::create_dir_all(dead_letter_dir)
         .map_err(|e| format!("mkdir dead_letter {}: {e}", dead_letter_dir.display()))?;
@@ -86,173 +95,77 @@ fn move_fractal_to_dead_letter(path: &Path, dead_letter_dir: &Path) -> Result<Pa
     Ok(dest)
 }
 
-fn sweep_fractal_dir(
-    dir: &Path,
-    family: &str,
-    dead_letter_dir: &Path,
-    report: &mut SweepReport,
-) -> Result<(), String> {
-    if !dir.is_dir() {
-        return Ok(());
-    }
-    let mut entries: Vec<PathBuf> = fs::read_dir(dir)
-        .map_err(|e| format!("read fractal {family}: {e}"))?
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
-        .collect();
-    entries.sort();
-    for path in entries {
-        let Ok(raw) = fs::read_to_string(&path) else {
-            continue;
-        };
-        let Ok(body) = serde_json::from_str::<Value>(&raw) else {
-            continue;
-        };
-        if fractal_event_all_ok(&body) {
-            if safe_remove_path(&path) {
+fn sweep_fractal_family(repo: &Path, family: &str, report: &mut SweepReport) -> Result<(), String> {
+    with_productive_port(repo, "sweep_fractal_family", |port| {
+        let listed = port
+            .list_events(ListEventsRequest {
+                family: Some(family.to_string()),
+                event_type: None,
+                state: None,
+                limit: Some(5_000),
+                cursor: None,
+            })
+            .map_err(|e| e.to_string())?;
+        for row in listed.events {
+            let event_id = row.event_id;
+            let deliveries = port
+                .list_deliveries(ListDeliveriesRequest {
+                    event_id: Some(event_id.clone()),
+                    subscriber_id: None,
+                    status: None,
+                    limit: Some(1_000),
+                    cursor: None,
+                })
+                .map_err(|e| e.to_string())?;
+            if deliveries.deliveries.is_empty() {
+                continue;
+            }
+            let all_ack = deliveries
+                .deliveries
+                .iter()
+                .all(|d| d.status == DeliveryStatus::Ack);
+            let all_terminal = deliveries.deliveries.iter().all(|d| {
+                matches!(d.status, DeliveryStatus::Ack | DeliveryStatus::Nack)
+            });
+            let any_nack = deliveries
+                .deliveries
+                .iter()
+                .any(|d| d.status == DeliveryStatus::Nack);
+            if all_ack {
+                let _ = port.purge_event(PurgeEventRequest {
+                    event_id: event_id.clone(),
+                });
                 report.purged.push(json!({
                     "family": family,
-                    "path": path.file_name().map(|n| n.to_string_lossy().into_owned()),
-                    "event_id": body.get("event_id").cloned().unwrap_or(Value::Null),
+                    "event_id": event_id,
+                }));
+            } else if any_nack && all_terminal {
+                let _ = port.move_to_dlq(MoveToDlqRequest {
+                    event_id: event_id.clone(),
+                    reason: "fractal-subscriber-failure".into(),
+                });
+                report.dead_lettered.push(json!({
+                    "family": family,
+                    "event_id": event_id,
                 }));
             }
-            continue;
         }
-        if fractal_event_terminal_with_failure(&body) {
-            match move_fractal_to_dead_letter(&path, dead_letter_dir) {
-                Ok(dest) => {
-                    report.dead_lettered.push(json!({
-                        "family": family,
-                        "path": dest.file_name().map(|n| n.to_string_lossy().into_owned()),
-                        "from": path.file_name().map(|n| n.to_string_lossy().into_owned()),
-                        "event_id": body.get("event_id").cloned().unwrap_or(Value::Null),
-                    }));
-                }
-                Err(e) => {
-                    report.skipped.push(json!({
-                        "family": family,
-                        "reason": e,
-                        "path": path.file_name().map(|n| n.to_string_lossy().into_owned()),
-                    }));
-                }
-            }
-        }
-    }
-    Ok(())
+        Ok(())
+    })
 }
 
 fn sweep_fractal_bus(repo: &Path, report: &mut SweepReport) -> Result<(), String> {
     let top: BusTopology = load_bus_topology(repo);
     let _ = ensure_fractal_dirs(&top);
-    sweep_fractal_dir(&top.domain, "domain", &top.dead_letter, report)?;
-    sweep_fractal_dir(&top.orchestration, "orchestration", &top.dead_letter, report)?;
-    sweep_fractal_dir(&top.telemetry, "telemetry", &top.dead_letter, report)?;
+    sweep_fractal_family(repo, "domain", report)?;
+    sweep_fractal_family(repo, "orchestration", report)?;
+    sweep_fractal_family(repo, "telemetry", report)?;
     sweep_progress_leaf(repo, &top, report)?;
     Ok(())
 }
 
-fn progress_ttl_hours() -> u64 {
-    std::env::var("SDDIA_PROGRESS_TTL_HOURS")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(24)
-}
-
-fn pec_terminal_for_correlation(orch_dir: &Path, correlation_id: &str) -> bool {
-    let Ok(entries) = fs::read_dir(orch_dir) else {
-        return false;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("json") {
-            continue;
-        }
-        let Ok(raw) = fs::read_to_string(&path) else {
-            continue;
-        };
-        let Ok(body) = serde_json::from_str::<Value>(&raw) else {
-            continue;
-        };
-        if body.get("event_type").and_then(|v| v.as_str()) != Some("Process_Execution_Completed") {
-            continue;
-        }
-        let cid = body
-            .pointer("/payload/correlation_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        if cid != correlation_id {
-            continue;
-        }
-        let st = body
-            .pointer("/payload/status")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        if st == "failed" {
-            return true;
-        }
-        if st == "success" {
-            let cycle = body
-                .pointer("/payload/cycle_phase")
-                .and_then(|v| v.as_str())
-                .unwrap_or("completed");
-            return !matches!(cycle, "initialized" | "awaiting_agents");
-        }
-    }
-    false
-}
-
-fn dir_older_than_ttl(dir: &Path, ttl_hours: u64) -> bool {
-    let Ok(meta) = fs::metadata(dir) else {
-        return false;
-    };
-    let Ok(modified) = meta.modified() else {
-        return false;
-    };
-    if let Ok(age) = modified.elapsed() {
-        return age > Duration::from_secs(ttl_hours * 3600);
-    }
-    false
-}
-
-fn remove_dir_all_best_effort(dir: &Path) -> bool {
-    if !dir.is_dir() {
-        return false;
-    }
-    fs::remove_dir_all(dir).is_ok()
-}
-
-fn sweep_progress_leaf(repo: &Path, top: &BusTopology, report: &mut SweepReport) -> Result<(), String> {
-    let progress_root = &top.progress;
-    if !progress_root.is_dir() {
-        return Ok(());
-    }
-    let ttl = progress_ttl_hours();
-    let orch = top.orchestration.clone();
-    let Ok(entries) = fs::read_dir(progress_root) else {
-        return Ok(());
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if !path.is_dir() {
-            continue;
-        }
-        let Some(corr) = path.file_name().and_then(|n| n.to_str()) else {
-            continue;
-        };
-        let terminal_pec = pec_terminal_for_correlation(&orch, corr);
-        let ttl_expired = dir_older_than_ttl(&path, ttl);
-        if terminal_pec || ttl_expired {
-            if remove_dir_all_best_effort(&path) {
-                report.purged.push(json!({
-                    "family": "progress",
-                    "correlation_id": corr,
-                    "reason": if terminal_pec { "pec-terminal" } else { "ttl" },
-                }));
-            }
-        }
-    }
-    let _ = repo;
+/// MAN-43 O5: el progreso vive en el puerto; no se indexan directorios `.events/progress/`.
+fn sweep_progress_leaf(_repo: &Path, _top: &BusTopology, _report: &mut SweepReport) -> Result<(), String> {
     Ok(())
 }
 
@@ -261,21 +174,16 @@ pub fn sweep_once(repo: &Path) -> Result<SweepReport, String> {
     let registry = load_registry(&bus).ok();
     let mut report = SweepReport::default();
 
-    if bus.pending.is_dir() {
-        let mut entries: Vec<PathBuf> = fs::read_dir(&bus.pending)
-            .map_err(|e| format!("read pending: {e}"))?
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
-            .collect();
-        entries.sort();
+    let pending_ids: Vec<String> = with_productive_port(repo, "sweep_list_pending", |port| {
+        port.list_pending(ListPendingRequest {
+            limit: Some(10_000),
+        })
+        .map(|r| r.events.into_iter().map(|e| e.event_id).collect())
+        .map_err(|e| e.to_string())
+    })?;
 
-        for parent_path in entries {
-            let event_uuid = parent_path
-                .file_stem()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .into_owned();
+    for event_uuid in pending_ids {
+        {
             let result = try_sweep_event(repo, &bus, &event_uuid, registry.as_ref())?;
             match result.get("status").and_then(|v| v.as_str()) {
                 Some("purged") => report.purged.push(json!({
@@ -525,34 +433,51 @@ fn applicable_subscriber_ids(registry: &Value, event_type: &str, payload: &Value
         .unwrap_or_default()
 }
 
-fn witness_folder<'a>(bus: &'a EdBusPaths, state_key: &str) -> &'a Path {
+fn resolve_witness_key(state_key: &str) -> &str {
     match state_key {
-        "processed_subscribers" => &bus.processed_subscribers,
-        "dead_letter_subscribers" => &bus.dead_letter_subscribers,
-        "processing_subscribers" => &bus.processing_subscribers,
-        _ => &bus.processed_subscribers,
+        "subscriber_processing" | "processing" => "processing_subscribers",
+        "subscriber_processed" | "processed" => "processed_subscribers",
+        "subscriber_dead_letter" | "dead_letter" => "dead_letter_subscribers",
+        other => other,
     }
 }
 
-pub fn list_witnesses(repo: &Path, bus: &EdBusPaths, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
-    let folder = witness_folder(bus, state_key);
-    let _ = repo;
-    if !folder.is_dir() {
-        return vec![];
-    }
-    let prefix = format!("{event_uuid}.");
-    let Ok(entries) = fs::read_dir(folder) else {
-        return vec![];
-    };
-    let mut paths: Vec<PathBuf> = entries
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| {
-            p.file_name()
-                .map(|n| n.to_string_lossy().starts_with(&prefix))
-                .unwrap_or(false)
+pub fn list_witnesses(repo: &Path, _bus: &EdBusPaths, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
+    let folder_key = resolve_witness_key(state_key);
+    let Ok(rows) = with_productive_port(repo, "list_witnesses", |port| {
+        port.list_deliveries(ListDeliveriesRequest {
+            event_id: Some(event_uuid.to_string()),
+            subscriber_id: None,
+            status: None,
+            cursor: None,
+            limit: Some(10_000),
         })
-        .collect();
+        .map_err(|e| e.to_string())
+    }) else {
+        return Vec::new();
+    };
+    let mut paths = Vec::new();
+    for row in rows.deliveries {
+        if row.event_id != event_uuid {
+            continue;
+        }
+        let Some(sub) = row
+            .subscriber_id
+            .as_deref()
+            .filter(|s| !s.is_empty())
+        else {
+            continue;
+        };
+        let include = matches!(
+            (folder_key, row.status),
+            ("processing_subscribers", DeliveryStatus::Processing)
+                | ("dead_letter_subscribers", DeliveryStatus::Nack)
+                | ("processed_subscribers", DeliveryStatus::Ack)
+        );
+        if include {
+            paths.push(PathBuf::from(format!("{event_uuid}.{sub}.json")));
+        }
+    }
     paths.sort();
     paths
 }
@@ -799,17 +724,17 @@ mod fractal_dlq_tests {
     }
 
     #[test]
-    fn progress_sweep_purges_on_terminal_pec() {
+    fn progress_sweep_leaf_does_not_purge_progress_dirs() {
         let base = std::env::temp_dir().join(format!("sddia-prog-sweep-{}", Uuid::new_v4()));
         let repo = base.join("repo");
         let progress = base.join("progress");
-        let orch = base.join("orch");
         let corr = "44444444-4444-4444-8444-444444444444";
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             format!(
-                r#"{{"eda_fractal":{{"telemetry":"{}/telemetry","progress":"{}/progress","orchestration":"{}/orch","domain":"{}/domain","dead_letter":"{}/dl"}}}}"#,
+                r#"{{"eda_bus":{{"store":".SddIA/runtime/events.redb"}},"eda_fractal":{{"telemetry":"{}/telemetry","progress":"{}/progress","orchestration":"{}/orch","domain":"{}/domain","dead_letter":"{}/dl"}}}}"#,
                 base.display(),
                 base.display(),
                 base.display(),
@@ -825,17 +750,11 @@ mod fractal_dlq_tests {
             r#"{"trace_id":"t1"}"#,
         )
         .unwrap();
-        std::fs::create_dir_all(&orch).unwrap();
-        let pec = json!({
-            "event_type": "Process_Execution_Completed",
-            "payload": {"correlation_id": corr, "status": "success", "cycle_phase": "completed"}
-        });
-        std::fs::write(orch.join("pec.json"), pec.to_string()).unwrap();
         let top = load_bus_topology(&repo);
         let mut report = SweepReport::default();
         sweep_progress_leaf(&repo, &top, &mut report).unwrap();
-        assert!(!progress.join(corr).exists());
-        assert_eq!(report.purged.len(), 1);
+        assert!(progress.join(corr).is_dir());
+        assert!(report.purged.is_empty());
         let _ = std::fs::remove_dir_all(base);
     }
 }

@@ -3,6 +3,7 @@
 use crate::linear_bridge::assimilate_tracker_items;
 use chrono::{DateTime, Utc};
 use hmac::{Hmac, Mac};
+use sddia_core::ports::event_manager::EventUri;
 use serde_json::{json, Value};
 use sha2::Sha256;
 use std::io::{Read, Write};
@@ -84,7 +85,7 @@ pub fn process_signed_webhook(
     secret: &str,
     signature: Option<&str>,
     now: DateTime<Utc>,
-) -> Result<Vec<PathBuf>, WebhookReject> {
+) -> Result<Vec<EventUri>, WebhookReject> {
     let sig = signature.ok_or(WebhookReject::InvalidSignature)?;
     if !verify_linear_signature(secret, body, sig) {
         return Err(WebhookReject::InvalidSignature);
@@ -99,7 +100,7 @@ pub fn process_signed_webhook(
             &proj.slug,
             &proj.label_hu,
             &proj.label_pbi,
-            &[item.clone()],
+            std::slice::from_ref(&item),
             now,
             "webhook",
         )
@@ -158,11 +159,9 @@ fn handle_connection(
     let signature = header_value(&headers, "Linear-Signature");
     let now = Utc::now();
     match process_signed_webhook(repo, projects, &body, secret, signature.as_deref(), now) {
-        Ok(paths) => {
-            for p in paths {
-                if let Ok(rel) = p.strip_prefix(repo) {
-                    eprintln!("[LINEAR-BRIDGE] webhook Tracker_Issue_Changed: {}", rel.display());
-                }
+        Ok(uris) => {
+            for uri in uris {
+                eprintln!("[LINEAR-BRIDGE] webhook Tracker_Issue_Changed: {}", uri.as_canonical());
             }
             write_http_response(&mut stream, 200, "OK")?;
         }
@@ -303,7 +302,7 @@ mod tests {
             label_hu: "hu".into(),
             label_pbi: "pbi".into(),
         }];
-        let paths = process_signed_webhook(
+        let uris = process_signed_webhook(
             &repo,
             &projects,
             &body,
@@ -312,10 +311,17 @@ mod tests {
             Utc::now(),
         )
         .unwrap();
-        assert_eq!(paths.len(), 1);
-        let raw = fs::read_to_string(&paths[0]).unwrap();
+        assert_eq!(uris.len(), 1);
+        let ev = sddia_event_manager_host::with_productive_port(&repo, "test_get_event", |port| {
+            port.get_event(sddia_core::ports::event_manager::GetEventRequest {
+                event_id: uris[0].event_id.clone(),
+            })
+            .map(|r| r.ecst)
+            .map_err(|e| e.to_string())
+        })
+        .expect("get_event");
+        let raw = serde_json::to_string(&ev).unwrap();
         assert!(!raw.contains(secret));
-        let ev: Value = serde_json::from_str(&raw).unwrap();
         assert_eq!(
             ev.pointer("/payload/source"),
             Some(&json!("webhook"))
@@ -335,7 +341,7 @@ mod tests {
             &serde_json::from_slice::<Value>(&body).unwrap(),
         )
         .unwrap();
-        let (paths, _) = assimilate_tracker_items(
+        let (uris, _) = assimilate_tracker_items(
             &repo,
             "lab",
             "hu",
@@ -345,8 +351,16 @@ mod tests {
             "webhook",
         )
         .unwrap();
-        for p in paths {
-            let raw = fs::read_to_string(&p).unwrap();
+        for uri in uris {
+            let ev = sddia_event_manager_host::with_productive_port(&repo, "test_get_event", |port| {
+                port.get_event(sddia_core::ports::event_manager::GetEventRequest {
+                    event_id: uri.event_id.clone(),
+                })
+                .map(|r| r.ecst)
+                .map_err(|e| e.to_string())
+            })
+            .expect("get_event");
+            let raw = serde_json::to_string(&ev).unwrap();
             assert!(!raw.contains(secret));
             assert!(!raw.contains("LINEAR_WEBHOOK_SECRET"));
         }

@@ -44,26 +44,19 @@ fn path_allowlisted(rel: &str) -> bool {
     if rel.contains("/tests/") || rel.ends_with("/tests.rs") {
         return true;
     }
-    if rel.starts_with("SddIA/sddia-event-store/")
-        || rel.starts_with("SddIA/infrastructure/")
+    if rel.starts_with("SddIA/infrastructure/")
         || rel.starts_with("SddIA/sddia-event-manager-host/")
     {
         return true;
     }
-    if rel.ends_with("eda_port_legacy.rs")
-        || rel.ends_with("eda_port.rs")
+    if rel.ends_with("eda_port.rs")
         || rel.ends_with("gate_eda_unit_no_real_backend.rs")
         || rel.ends_with("gate_event_manager_port.rs")
         || rel.ends_with("contract_suite.rs")
     {
         return true;
     }
-    if rel.contains("eda_store_io_matrix")
-        || rel.contains("eda_subscriber_")
-        || rel.contains("event_store_writers")
-        || rel.contains("memory_evolution_ingest")
-        || rel.contains("dlt_telemetry")
-    {
+    if rel.contains("memory_evolution_ingest") || rel.contains("dlt_telemetry") {
         return true;
     }
     // Integration-in-src (T3) — ver allowlists/eda-unit-backend.toml
@@ -101,7 +94,7 @@ fn path_allowlisted(rel: &str) -> bool {
         "SddIA/engine/execute-process/src/engine/materialize_kaizen_alert_doc.rs",
         "SddIA/engine/execute-process/src/engine/tracker_pbi_meta.rs",
     ];
-    if INTEGRATION_SRC.iter().any(|p| rel == *p) {
+    if INTEGRATION_SRC.contains(&rel) {
         return true;
     }
     if rel.contains("/handlers/kalma2") || rel.contains("/handlers/email_") {
@@ -159,8 +152,8 @@ fn unit_test_lines(src: &str) -> Vec<(u32, String)> {
         let trimmed = lines[i].trim();
         if trimmed == "#[cfg(test)]" || trimmed.starts_with("#[cfg(test)]") {
             let end = skip_cfg_test_item(&lines, i);
-            for j in i..end {
-                out.push((j as u32 + 1, lines[j].to_string()));
+            for (j, line) in lines.iter().enumerate().take(end).skip(i) {
+                out.push((j as u32 + 1, line.to_string()));
             }
             i = end;
             continue;
@@ -175,8 +168,8 @@ fn unit_test_lines(src: &str) -> Vec<(u32, String)> {
             } else {
                 i + 1
             };
-            for k in i..end {
-                out.push((k as u32 + 1, lines[k].to_string()));
+            for (k, line) in lines.iter().enumerate().take(end).skip(i) {
+                out.push((k as u32 + 1, line.to_string()));
             }
             i = end;
             continue;

@@ -2,7 +2,8 @@ use sddia_daemon_runtime::{
     ensure_bus_dirs, find_repo_root, load_bus_topology, BusTopology, DaemonRuntime,
 };
 use sddia_core::ports::event_manager::{
-    ClaimPendingRequest, DeliveryStatus, RecordDeliveryRequest,
+    ClaimPendingRequest, DeliveryStatus, ListDeliveriesRequest, ListEventsRequest,
+    RecordDeliveryRequest,
 };
 use sddia_event_manager_host::with_productive_port;
 use serde_json::{json, Value};
@@ -21,14 +22,14 @@ const MAX_ROUTE_ATTEMPTS: u32 = 3;
 const HEARTBEAT_TICK_SECONDS: u64 = 10;
 /// Crash-Only (Vía D): fallos consecutivos de emisión side-channel.
 const HEARTBEAT_EMIT_FAIL_BUDGET: u32 = 5;
-/// Chunk físico (Dogma del Despertador): tope de paths por invocación al orquestador.
-const PHYSICAL_ROUTE_CHUNK: usize = 50;
 /// Tope de rutas en vuelo (evita inanición: pending largo no bloquea domain/telemetry).
 const MAX_IN_FLIGHT_ROUTES: usize = 16;
 /// Misma cadencia que el sweeper. El watcher la dispara aunque ese proceso no corra.
 const HEARTBEAT_AUDIT_SWEEP_SECONDS: u64 = 30;
 /// Volcado de contadores acumulados en log de claim (AUT-32).
 const CLAIM_METRICS_EVERY_N_TICKS: u64 = 15;
+/// Entrega del watcher al cerrar `route-domain-event` (MAN-43 O3).
+const WATCHER_ROUTE_DOMAIN_SUBSCRIBER: &str = "watcher.route-domain-event";
 
 static METRIC_ROUTES_CLAIMED: AtomicU64 = AtomicU64::new(0);
 static METRIC_ROUTES_OK: AtomicU64 = AtomicU64::new(0);
@@ -56,7 +57,7 @@ fn log_claim_tick(store_label: &str, stats: ClaimTickStats) {
         stats.open_failed,
     );
     let tick = CLAIM_TICK_COUNTER.fetch_add(1, Ordering::Relaxed) + 1;
-    if tick % CLAIM_METRICS_EVERY_N_TICKS == 0 {
+    if tick.is_multiple_of(CLAIM_METRICS_EVERY_N_TICKS) {
         println!(
             "[WATCHER] claim_metrics cumulative routes_claimed={} routes_ok={} routes_fail={}",
             METRIC_ROUTES_CLAIMED.load(Ordering::Relaxed),
@@ -140,19 +141,14 @@ fn execute_process_bin(repo: &Path) -> PathBuf {
         .unwrap_or_else(|| repo.join("SddIA/target/debug/execute-process"))
 }
 
-fn rel_event_path(repo: &Path, event_path: &Path) -> String {
-    event_path
-        .canonicalize()
-        .ok()
-        .and_then(|p| p.strip_prefix(repo.canonicalize().ok()?).ok().map(|r| r.to_string_lossy().replace('\\', "/")))
-        .unwrap_or_else(|| event_path.to_string_lossy().replace('\\', "/"))
-}
-
 fn fractal_watch_enabled() -> bool {
-    match env::var("SDDIA_LAB_WATCH_FRACTAL").unwrap_or_else(|_| "0".into()) {
-        ref s if matches!(s.to_ascii_lowercase().as_str(), "0" | "false" | "no") => false,
-        _ => true,
-    }
+    !matches!(
+        env::var("SDDIA_LAB_WATCH_FRACTAL")
+            .unwrap_or_else(|_| "0".into())
+            .to_ascii_lowercase()
+            .as_str(),
+        "0" | "false" | "no"
+    )
 }
 
 fn watch_targets(repo: &Path, top: &sddia_daemon_runtime::BusTopology) -> Vec<(PathBuf, String)> {
@@ -161,7 +157,7 @@ fn watch_targets(repo: &Path, top: &sddia_daemon_runtime::BusTopology) -> Vec<(P
     if fractal_watch_enabled() {
         targets.push((top.telemetry.clone(), "route-telemetry".into()));
     }
-    targets.push((top.pending.clone(), "route-domain-event".into()));
+    // Dominio: solo claim_pending (MAN-43 O3); no read_dir sobre pending.
     if fractal_watch_enabled() {
         targets.push((top.domain.clone(), "route-domain".into()));
         targets.push((top.orchestration.clone(), "route-orchestration".into()));
@@ -170,47 +166,145 @@ fn watch_targets(repo: &Path, top: &sddia_daemon_runtime::BusTopology) -> Vec<(P
     targets
 }
 
-fn is_daemon_heartbeat(path: &Path) -> bool {
-    let Ok(raw) = fs::read_to_string(path) else {
-        return false;
-    };
-    let Ok(body) = serde_json::from_str::<Value>(&raw) else {
-        return false;
-    };
-    body.get("event_type").and_then(|v| v.as_str()) == Some("Daemon_Heartbeat")
+fn has_dead_letter_witnesses(repo: &Path, _top: &sddia_daemon_runtime::BusTopology, event_uuid: &str) -> bool {
+    with_productive_port(repo, "watcher_dl_witness", |port| {
+        let rows = port
+            .list_deliveries(ListDeliveriesRequest {
+                event_id: Some(event_uuid.to_string()),
+                subscriber_id: None,
+                status: Some(DeliveryStatus::Nack),
+                limit: Some(100),
+                cursor: None,
+            })
+            .map_err(|e| e.to_string())?;
+        Ok(!rows.deliveries.is_empty())
+    })
+    .unwrap_or(false)
 }
 
-/// Dentro de telemetry: HB primero (fairness bajo saturación).
-fn prioritize_heartbeat_paths(paths: &mut Vec<PathBuf>) {
-    paths.sort_by_key(|p| {
-        let hb = is_daemon_heartbeat(p);
-        // false < true en sort_by_key invertido: HB (0) antes que no-HB (1)
-        (!hb, p.to_string_lossy().to_string())
-    });
+fn fractal_process_family(process_name: &str) -> Option<&'static str> {
+    match process_name {
+        "route-telemetry" => Some("telemetry"),
+        "route-domain" => Some("domain"),
+        "route-orchestration" => Some("orchestration"),
+        _ => None,
+    }
 }
 
-fn has_dead_letter_witnesses(
+fn fractal_deliveries_all_terminal(repo: &Path, event_id: &str) -> bool {
+    with_productive_port(repo, "watcher_fractal_terminal", |port| {
+        let rows = port
+            .list_deliveries(ListDeliveriesRequest {
+                event_id: Some(event_id.to_string()),
+                subscriber_id: None,
+                status: None,
+                limit: Some(500),
+                cursor: None,
+            })
+            .map_err(|e| e.to_string())?;
+        if rows.deliveries.is_empty() {
+            return Ok(false);
+        }
+        Ok(rows.deliveries.iter().all(|d| {
+            matches!(d.status, DeliveryStatus::Ack | DeliveryStatus::Nack)
+        }))
+    })
+    .unwrap_or(false)
+}
+
+fn list_fractal_events(repo: &Path, family: &str) -> Result<Vec<(String, Value)>, String> {
+    with_productive_port(repo, "watcher_list_fractal", |port| {
+        port.list_events(ListEventsRequest {
+            family: Some(family.to_string()),
+            event_type: None,
+            state: None,
+            limit: Some(500),
+            cursor: None,
+        })
+        .map(|r| {
+            r.events
+                .into_iter()
+                .map(|e| (e.event_id, e.ecst))
+                .collect()
+        })
+        .map_err(|e| e.to_string())
+    })
+}
+
+fn tick_fractal_routes(
     repo: &Path,
-    top: &sddia_daemon_runtime::BusTopology,
-    event_uuid: &str,
-) -> bool {
-    let folder = &top.dead_letter_subscribers;
-    if !folder.is_dir() {
-        return false;
+    shared: &Arc<Mutex<DaemonRuntime>>,
+    book: &SharedBook,
+    watch_dir: &Path,
+    process_name: &str,
+    family: &str,
+) -> Result<(), String> {
+    let mut events = list_fractal_events(repo, family)?;
+    if process_name == "route-telemetry" {
+        events.sort_by_key(|(_, ecst)| {
+            let hb = ecst.get("event_type").and_then(|v| v.as_str()) == Some("Daemon_Heartbeat");
+            (
+                !hb,
+                ecst.get("event_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+            )
+        });
+    } else {
+        events.sort_by(|a, b| a.0.cmp(&b.0));
     }
-    let Ok(entries) = fs::read_dir(folder) else {
-        return false;
-    };
-    let prefix = format!("{event_uuid}.");
-    entries.filter_map(|e| e.ok()).any(|e| {
-        e.file_name()
-            .to_string_lossy()
-            .starts_with(&prefix)
-    }) || {
-        // fallback: glob pattern uuid.*.json under dead_letter if subscribers nested differently
-        let dl_root = repo.join(".events/dead-letter");
-        dl_root.join("subscribers").join(format!("{event_uuid}.json")).is_file()
+    for (event_uuid, _ecst) in events {
+        {
+            let b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
+            if b.in_flight() >= MAX_IN_FLIGHT_ROUTES {
+                break;
+            }
+        }
+        let rel = format!("eda://{family}/{event_uuid}");
+        let key = format!(
+            "{}/{}.json",
+            watch_dir.file_name().unwrap_or_default().to_string_lossy(),
+            event_uuid
+        );
+        {
+            let b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
+            if let Some(skip) = watcher_skip_reason(
+                &event_uuid,
+                &key,
+                process_name,
+                &PathBuf::from(&rel),
+                &b,
+                repo,
+                &load_bus_topology(repo),
+            ) {
+                let _ = watcher_skip_emits_hot_path_trace(&skip);
+                continue;
+            }
+        }
+        println!("[WATCHER] Puerto: {key} → {process_name} (async)");
+        if let Ok(mut rt) = shared.lock() {
+            rt.note_stimulus();
+        }
+        {
+            let mut b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
+            b.processing.insert(event_uuid.clone());
+            *b.attempts.entry(key.clone()).or_insert(0) += 1;
+        }
+        let book_c = Arc::clone(book);
+        let repo_c = repo.to_path_buf();
+        let pname = process_name.to_string();
+        let path_c = PathBuf::from(&rel);
+        let uuid_c = event_uuid.clone();
+        let key_c = key.clone();
+        thread::spawn(move || {
+            let out = invoke_route_process(&repo_c, &rel, &pname);
+            if let Ok(mut b) = book_c.lock() {
+                apply_route_outcome_fractal(&mut b, &pname, &path_c, &uuid_c, &key_c, &out);
+            }
+        });
     }
+    Ok(())
 }
 
 fn parse_vitality_probe_seconds(raw: Option<&str>) -> u64 {
@@ -316,11 +410,11 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
         }
         stats.claimed += 1;
         let path = top.pending.join(format!("{event_id}.json"));
-        let rel = format!(".events/pending/{event_id}.json");
-        launches.push((event_id, path, rel));
+        let key = format!("pending/{}.json", event_id);
+        launches.push((event_id, path, key));
     }
     log_claim_tick("port", stats);
-    for (uuid_c, path_c, rel) in launches {
+    for (uuid_c, path_c, key) in launches {
         METRIC_ROUTES_CLAIMED.fetch_add(1, Ordering::Relaxed);
         let repo_c = repo.to_path_buf();
         let book_c = Arc::clone(book);
@@ -329,7 +423,7 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
             println!(
                 "[WATCHER] route spawn event_id={event_id_log} subscriber=route-domain-event"
             );
-            let out = invoke_route_process(&repo_c, &rel, "route-domain-event");
+            let out = invoke_route_process(&repo_c, &event_id_log, "route-domain-event");
             let ack = if out.status.success() {
                 METRIC_ROUTES_OK.fetch_add(1, Ordering::Relaxed);
                 DeliveryStatus::Ack
@@ -337,11 +431,13 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
                 METRIC_ROUTES_FAIL.fetch_add(1, Ordering::Relaxed);
                 DeliveryStatus::Nack
             };
+            let delivery_id = format!("{uuid_c}:{WATCHER_ROUTE_DOMAIN_SUBSCRIBER}");
             let _ = with_productive_port(&repo_c, "record_delivery", |port| {
                 port.record_delivery(RecordDeliveryRequest {
                     event_id: uuid_c.clone(),
-                    delivery_id: uuid_c.clone(),
+                    delivery_id,
                     status: ack,
+                    subscriber_id: Some(WATCHER_ROUTE_DOMAIN_SUBSCRIBER.to_string()),
                     attempt: None,
                 })
                 .map_err(|e| e.to_string())
@@ -352,7 +448,7 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
                     "route-domain-event",
                     &path_c,
                     &uuid_c,
-                    &rel,
+                    &key,
                     &out,
                 );
             }
@@ -362,9 +458,14 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
 
 fn claim_store_fractal(_repo: &Path, _book: &SharedBook) {}
 
-fn invoke_route_process(repo: &Path, rel_path: &str, process_name: &str) -> Output {
+fn invoke_route_process(repo: &Path, route_input: &str, process_name: &str) -> Output {
     let runner = execute_process_bin(repo);
-    let payload = json!({ "event_file_path": rel_path }).to_string();
+    let payload = if process_name == "route-domain-event" {
+        json!({ "event_id": route_input })
+    } else {
+        json!({ "event_uri": route_input })
+    }
+    .to_string();
     Command::new(&runner)
         .args(["--process", process_name, "--inputs", &payload])
         .current_dir(repo)
@@ -374,71 +475,6 @@ fn invoke_route_process(repo: &Path, rel_path: &str, process_name: &str) -> Outp
             eprintln!("[WATCHER] spawn execute-process: {e}");
             Command::new("false").output().expect("false")
         })
-}
-
-fn invoke_route_process_batch(repo: &Path, rel_paths: &[String], process_name: &str) -> Output {
-    let runner = execute_process_bin(repo);
-    let payload = json!({ "event_file_paths": rel_paths }).to_string();
-    Command::new(&runner)
-        .args(["--process", process_name, "--inputs", &payload])
-        .current_dir(repo)
-        .env("SDDIA_CLI_FOREGROUND", "1")
-        .output()
-        .unwrap_or_else(|e| {
-            eprintln!("[WATCHER] spawn execute-process batch: {e}");
-            Command::new("false").output().expect("false")
-        })
-}
-
-fn extract_sweep(stdout: &str) -> Option<Value> {
-    let line = stdout.trim().lines().last()?;
-    let body: Value = serde_json::from_str(line).ok()?;
-    body.get("data")
-        .and_then(|d| d.get("sweep"))
-        .cloned()
-}
-
-fn log_route_outcome(
-    repo: &Path,
-    top: &sddia_daemon_runtime::BusTopology,
-    key: &str,
-    event_uuid: &str,
-    out: &Output,
-) {
-    if !out.status.success() {
-        let err = String::from_utf8_lossy(&out.stderr);
-        let so = String::from_utf8_lossy(&out.stdout);
-        eprintln!(
-            "[WATCHER] route-domain-event falló ({key}): {}",
-            if !err.trim().is_empty() { err.trim() } else { so.trim() }
-        );
-        return;
-    }
-    let stdout = String::from_utf8_lossy(&out.stdout);
-    let sweep = extract_sweep(&stdout);
-    let pending_path = top.pending.join(key);
-    if sweep.as_ref().and_then(|s| s.get("status")).and_then(|v| v.as_str()) == Some("kaizen-finalized") {
-        println!("[WATCHER] {key}: Kaizen terminalizado — padre retirado de pending");
-        return;
-    }
-    if has_dead_letter_witnesses(repo, top, event_uuid) {
-        println!("[WATCHER] {key}: testigo dead-letter — padre permanece en pending (Kaizen)");
-        return;
-    }
-    if sweep.as_ref().and_then(|s| s.get("status")).and_then(|v| v.as_str()) == Some("purged")
-        || !pending_path.is_file()
-    {
-        println!("[WATCHER] {key}: enrutado y purgado de pending");
-    } else if sweep.as_ref().and_then(|s| s.get("status")).and_then(|v| v.as_str()) == Some("awaiting") {
-        let subs = sweep
-            .as_ref()
-            .and_then(|s| s.get("pending_subscribers"))
-            .cloned()
-            .unwrap_or(json!([]));
-        println!("[WATCHER] {key}: enrutado — suscriptores pendientes: {subs}");
-    } else {
-        println!("[WATCHER] {key}: enrutado — consenso pendiente (sweeper)");
-    }
 }
 
 fn prune_routed_ok(book: &mut RouteBook, targets: &[(PathBuf, String)]) {
@@ -474,29 +510,6 @@ fn fractal_side_effect_committed(path: &Path) -> bool {
     })
 }
 
-fn fractal_fully_terminal(path: &Path) -> bool {
-    let Ok(raw) = fs::read_to_string(path) else {
-        return false;
-    };
-    let Ok(body) = serde_json::from_str::<Value>(&raw) else {
-        return false;
-    };
-    let Some(ds) = body.get("delivery_state").and_then(|v| v.as_object()) else {
-        return false;
-    };
-    if ds.is_empty() {
-        return false;
-    }
-    // Terminal = success|skipped*|failed. Con failed el sweeper/router mueven a DLQ (C2).
-    ds.values().all(|v| {
-        let st = v.as_str().unwrap_or("");
-        st == "success"
-            || st == "failed"
-            || st == "skipped-already-delivered"
-            || st.starts_with("skipped")
-    })
-}
-
 fn watcher_skip_reason(
     event_uuid: &str,
     key: &str,
@@ -512,7 +525,7 @@ fn watcher_skip_reason(
     if book.routed_ok.contains(event_uuid) && path.is_file() {
         return Some(format!("routed-ok pending file uuid={event_uuid}"));
     }
-    if process_name != "route-domain-event" && fractal_fully_terminal(path) {
+    if process_name != "route-domain-event" && fractal_deliveries_all_terminal(repo, event_uuid) {
         return Some(format!("fractal-terminal uuid={event_uuid}"));
     }
     if process_name == "route-domain-event" && has_dead_letter_witnesses(repo, top, event_uuid) {
@@ -533,9 +546,9 @@ fn watcher_skip_emits_hot_path_trace(_skip: &str) -> bool {
     false
 }
 
-fn run_route_cli(repo: &Path, event_file_path: &str) -> i32 {
+fn run_route_cli(repo: &Path, event_uri: &str) -> i32 {
     let runner = execute_process_bin(repo);
-    let payload = json!({ "event_file_path": event_file_path }).to_string();
+    let payload = json!({ "event_uri": event_uri }).to_string();
     let out = Command::new(&runner)
         .args(["--process", "route-domain-event", "--inputs", &payload])
         .current_dir(repo)
@@ -550,34 +563,6 @@ fn run_route_cli(repo: &Path, event_file_path: &str) -> i32 {
             eprintln!("{e}");
             1
         }
-    }
-}
-
-fn apply_route_outcome_pending(
-    book: &mut RouteBook,
-    repo: &Path,
-    top: &sddia_daemon_runtime::BusTopology,
-    path: &Path,
-    event_uuid: &str,
-    key: &str,
-    out: &Output,
-) {
-    book.processing.remove(event_uuid);
-    let file_name = path.file_name().unwrap_or_default().to_string_lossy();
-    if out.status.success() {
-        if path.is_file() {
-            book.routed_ok.insert(event_uuid.to_string());
-        } else {
-            book.routed_ok.remove(event_uuid);
-            book.attempts.remove(key);
-        }
-        if !has_dead_letter_witnesses(repo, top, event_uuid) && !path.is_file() {
-            book.attempts.remove(key);
-        }
-        log_route_outcome(repo, top, &file_name, event_uuid, out);
-    } else {
-        book.routed_ok.remove(event_uuid);
-        log_route_outcome(repo, top, &file_name, event_uuid, out);
     }
 }
 
@@ -658,157 +643,19 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
     }
     loop {
         tick_probes(&repo, &mut probes);
+        claim_store_pending(&repo, &top, &book);
         {
             let mut b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
             prune_routed_ok(&mut b, &targets);
         }
         for (watch_dir, process_name) in &targets {
-            if !watch_dir.is_dir() {
-                continue;
-            }
-            let Ok(entries) = fs::read_dir(watch_dir) else {
-                continue;
-            };
-            let mut paths: Vec<PathBuf> = entries
-                .filter_map(|e| e.ok())
-                .map(|e| e.path())
-                .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
-                .collect();
-            if process_name == "route-telemetry" {
-                prioritize_heartbeat_paths(&mut paths);
-            } else {
-                paths.sort();
-            }
             if process_name == "route-domain-event" {
-                let mut eligible: Vec<(PathBuf, String, String, String)> = Vec::new();
-                {
-                    let b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
-                    if b.in_flight() >= MAX_IN_FLIGHT_ROUTES {
-                        continue;
-                    }
-                    for path in paths {
-                        if b.in_flight() + eligible.len() >= MAX_IN_FLIGHT_ROUTES {
-                            break;
-                        }
-                        let file_name = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
-                        let key = format!(
-                            "{}/{}",
-                            watch_dir.file_name().unwrap_or_default().to_string_lossy(),
-                            file_name
-                        );
-                        let event_uuid = path
-                            .file_stem()
-                            .unwrap_or_default()
-                            .to_string_lossy()
-                            .into_owned();
-                        if let Some(skip) = watcher_skip_reason(
-                            &event_uuid,
-                            &key,
-                            process_name,
-                            &path,
-                            &b,
-                            &repo,
-                            &top,
-                        ) {
-                            let _ = watcher_skip_emits_hot_path_trace(&skip);
-                            continue;
-                        }
-                        let rel = rel_event_path(&repo, &path);
-                        eligible.push((path, event_uuid, key, rel));
-                    }
-                }
-                for chunk in eligible.chunks(PHYSICAL_ROUTE_CHUNK) {
-                    if chunk.is_empty() {
-                        continue;
-                    }
-                    let rels: Vec<String> = chunk.iter().map(|(_, _, _, r)| r.clone()).collect();
-                    let owned: Vec<(PathBuf, String, String)> = chunk
-                        .iter()
-                        .map(|(p, u, k, _)| (p.clone(), u.clone(), k.clone()))
-                        .collect();
-                    println!(
-                        "[WATCHER] Lote físico {} eventos → route-domain-event async (semantic batch in-engine)",
-                        rels.len()
-                    );
-                    if let Ok(mut rt) = shared.lock() {
-                        rt.note_stimulus();
-                    }
-                    {
-                        let mut b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
-                        for (_, event_uuid, key) in &owned {
-                            b.processing.insert(event_uuid.clone());
-                            *b.attempts.entry(key.clone()).or_insert(0) += 1;
-                        }
-                    }
-                    let book_c = Arc::clone(&book);
-                    let repo_c = repo.clone();
-                    let top_c = top.clone();
-                    let pname = process_name.clone();
-                    thread::spawn(move || {
-                        let out = invoke_route_process_batch(&repo_c, &rels, &pname);
-                        if let Ok(mut b) = book_c.lock() {
-                            for (path, event_uuid, key) in &owned {
-                                apply_route_outcome_pending(
-                                    &mut b, &repo_c, &top_c, path, event_uuid, key, &out,
-                                );
-                            }
-                        }
-                    });
-                }
                 continue;
             }
-            for path in paths {
-                {
-                    let b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
-                    if b.in_flight() >= MAX_IN_FLIGHT_ROUTES {
-                        break;
-                    }
-                }
-                let file_name = path.file_name().unwrap_or_default().to_string_lossy();
-                let key = format!("{}/{}", watch_dir.file_name().unwrap_or_default().to_string_lossy(), file_name);
-                let event_uuid = path.file_stem().unwrap_or_default().to_string_lossy().into_owned();
-                {
-                    let b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
-                    if let Some(skip) = watcher_skip_reason(
-                        &event_uuid,
-                        &key,
-                        process_name,
-                        &path,
-                        &b,
-                        &repo,
-                        &top,
-                    ) {
-                        let _ = watcher_skip_emits_hot_path_trace(&skip);
-                        continue;
-                    }
-                }
-                let rel = rel_event_path(&repo, &path);
-                println!("[WATCHER] Detectado nuevo evento: {key} → {process_name} (async)");
-                if let Ok(mut rt) = shared.lock() {
-                    rt.note_stimulus();
-                }
-                {
-                    let mut b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
-                    b.processing.insert(event_uuid.clone());
-                    *b.attempts.entry(key.clone()).or_insert(0) += 1;
-                }
-                let book_c = Arc::clone(&book);
-                let repo_c = repo.clone();
-                let pname = process_name.clone();
-                let path_c = path.clone();
-                let uuid_c = event_uuid.clone();
-                let key_c = key.clone();
-                thread::spawn(move || {
-                    let out = invoke_route_process(&repo_c, &rel, &pname);
-                    if let Ok(mut b) = book_c.lock() {
-                        apply_route_outcome_fractal(
-                            &mut b, &pname, &path_c, &uuid_c, &key_c, &out,
-                        );
-                    }
-                });
+            if let Some(family) = fractal_process_family(process_name) {
+                tick_fractal_routes(&repo, &shared, &book, watch_dir, process_name, family)?;
             }
         }
-        claim_store_pending(&repo, &top, &book);
         claim_store_fractal(&repo, &book);
         {
             let mut rt = shared

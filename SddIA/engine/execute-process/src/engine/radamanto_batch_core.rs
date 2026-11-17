@@ -52,10 +52,10 @@ fn load_stats(repo: &Path, cfg: &HashMap<String, Value>) -> Value {
         .ok()
         .and_then(|t| serde_json::from_str::<Value>(&t).ok())
         .map(|mut data| {
-            if !data.get("entities").and_then(|v| v.as_object()).is_some() {
+            if data.get("entities").and_then(|v| v.as_object()).is_none() {
                 data["entities"] = json!({});
             }
-            if !data.get("cognitive").and_then(|v| v.as_object()).is_some() {
+            if data.get("cognitive").and_then(|v| v.as_object()).is_none() {
                 data["cognitive"] = default_cognitive_block();
             }
             data
@@ -374,7 +374,7 @@ fn entity_bucket<'a>(stats: &'a mut Value, entity_id: &str) -> &'a mut Value {
     let entities = stats
         .as_object_mut()
         .expect("stats object");
-    if !entities.get(entity_id).and_then(|v| v.as_object()).is_some() {
+    if entities.get(entity_id).and_then(|v| v.as_object()).is_none() {
         entities.insert(
             entity_id.to_string(),
             json!({
@@ -483,11 +483,11 @@ fn emit_telemetry_captured_failsoft(
 fn emit_domain_and_route(repo: &Path, event: &Value) -> Result<Value, String> {
     let seal = write_fractal_event(repo, event, "domain")?;
     let route_out = if lab_route_sync() {
-        if let Some(target) = seal.get("target_path").and_then(|v| v.as_str()) {
+        if let Some(target) = seal.get("event_uri").and_then(|v| v.as_str()) {
             invoke_process_full(
                 repo,
                 "route-domain",
-                &json!({"event_file_path": target}),
+                &json!({"event_uri": target}),
             )
             .ok()
         } else {
@@ -518,10 +518,10 @@ fn load_ci_failures(repo: &Path, cfg: &HashMap<String, Value>) -> Value {
         .ok()
         .and_then(|t| serde_json::from_str::<Value>(&t).ok())
         .map(|mut data| {
-            if !data.get("failures").and_then(|v| v.as_array()).is_some() {
+            if data.get("failures").and_then(|v| v.as_array()).is_none() {
                 data["failures"] = json!([]);
             }
-            if !data.get("alerts").and_then(|v| v.as_object()).is_some() {
+            if data.get("alerts").and_then(|v| v.as_object()).is_none() {
                 data["alerts"] = json!({});
             }
             data
@@ -578,7 +578,7 @@ fn ci_alert_stamped(ledger: &Value, job_name: &str) -> bool {
 }
 
 fn stamp_ci_alert(ledger: &mut Value, job_name: &str, count: i64, event_type: &str) {
-    if !ledger.get("alerts").and_then(|v| v.as_object()).is_some() {
+    if ledger.get("alerts").and_then(|v| v.as_object()).is_none() {
         ledger["alerts"] = json!({});
     }
     ledger["alerts"][job_name] = json!({
@@ -1300,25 +1300,7 @@ mod tests {
     }
 
     fn domain_event_types(repo: &Path) -> Vec<String> {
-        let dir = repo.join(".events/domain");
-        if !dir.is_dir() {
-            return Vec::new();
-        }
-        let mut types = Vec::new();
-        let mut entries: Vec<_> = fs::read_dir(&dir)
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
-            .collect();
-        entries.sort();
-        for p in entries {
-            let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
-            if let Some(t) = body.get("event_type").and_then(|v| v.as_str()) {
-                types.push(t.to_string());
-            }
-        }
-        types
+        crate::engine::eda_port::test_lab::domain_event_types(repo, 10_000)
     }
 
     fn read_ledger(repo: &Path) -> Value {

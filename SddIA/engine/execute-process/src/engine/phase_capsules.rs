@@ -1166,8 +1166,8 @@ pub fn capsule_delivery_emit_presented(
         if let Some(eid) = seal.get("event_id") {
             obj.insert("event_id".into(), eid.clone());
         }
-        if let Some(tp) = seal.get("target_path") {
-            obj.insert("target_path".into(), tp.clone());
+        if let Some(tp) = seal.get("event_uri") {
+            obj.insert("event_uri".into(), tp.clone());
         }
     }
     let lifecycle_pr = super::lifecycle_phase_action::apply_pr_opened_fail_soft(
@@ -1648,7 +1648,7 @@ fn copy_delivery_close_into_state(state: &mut Value, data: &Value) {
         for key in [
             "pr_url",
             "event_id",
-            "target_path",
+            "event_uri",
             "closed_branch",
             "snapshot_commit_hash",
             "delivery_push",

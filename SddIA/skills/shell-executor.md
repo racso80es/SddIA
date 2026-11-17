@@ -7,7 +7,7 @@ context: "system-operations"
 capabilities:
   - "execute-external-binary"
   - "orchestrator-bridge"
-hash_signature: "sha256:f1e1478de696f477f7c66024d876cdb69d9eba270a3ed6a74e58e1ebab23a0ed"
+hash_signature: "sha256:26186ed7178123f51fa56f78157f07ebf0b2c4a78fc1ce02d0c2878804c1a8db"
 inputs:
   - "executable": "string; ejecutable permitido; validación por whitelist de Cerbero. Invariante anti-git: prohibido `git` / `git.exe` (por nombre o basename de ruta resuelta)."
   - "arguments": "string[]; tokens ya separados. Anti-inyección: prohibidos por token `\\n`, `\\r`, `;`, `&&`, `|`, `>`, `<`, backticks, `$(`, `)` y `&`."

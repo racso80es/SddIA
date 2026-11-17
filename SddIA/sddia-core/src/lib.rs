@@ -29,7 +29,7 @@ mod tests {
     fn shared_kernel_markers_are_stable() {
         assert_eq!(SHARED_KERNEL_ID, "sddia-core");
         assert_eq!(SHARED_KERNEL_VERSION, "0.1.0");
-        assert!(DOMAIN_BLIND);
+        const { assert!(DOMAIN_BLIND) };
     }
 
     #[test]

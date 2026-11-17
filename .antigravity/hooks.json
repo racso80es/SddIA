@@ -1,0 +1,16 @@
+{
+  "todos-linear-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "write_file|edit_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/SddIA/scripts/qa/cursor-guard-todos.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

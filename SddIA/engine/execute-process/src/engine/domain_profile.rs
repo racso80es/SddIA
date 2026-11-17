@@ -34,8 +34,10 @@ impl Default for ExecutionProfile {
 
 impl ExecutionProfile {
     pub fn from_value(v: &Value, source: &'static str) -> Self {
-        let mut p = Self::default();
-        p.source = source;
+        let mut p = Self {
+            source,
+            ..Default::default()
+        };
         if let Some(s) = v.get("codex_slug").and_then(|x| x.as_str()) {
             let t = s.trim();
             if !t.is_empty() && t != "null" {

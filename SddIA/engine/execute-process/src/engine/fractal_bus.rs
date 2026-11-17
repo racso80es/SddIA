@@ -1,8 +1,6 @@
 //! Utilidades bus fractal EDA (paridad subset `eda_bus_utils.py`).
 
 use super::eda_bus_topology::{safe_remove_path, subscriber_id};
-#[cfg(test)]
-use super::eda_bus_topology::write_json_atomic;
 use super::workspace::load_paths_config;
 use crate::core::parser::parse_frontmatter;
 use chrono::Utc;
@@ -129,40 +127,26 @@ pub fn load_telemetry_compliance_config(repo: &Path) -> Result<HashMap<String, S
     Ok(defaults)
 }
 
+pub fn stamp_fractal_delivery_state_by_id(
+    repo: &Path,
+    event_id: &str,
+    subscriber_key: &str,
+    status: &str,
+) {
+    let label = status.trim().to_ascii_lowercase();
+    if matches!(label.as_str(), "success" | "processed" | "skipped") {
+        let _ = eda_port::record_delivery_ack(repo, event_id, subscriber_key);
+    } else if label == "failed" {
+        let _ = eda_port::record_delivery_nack(repo, event_id, subscriber_key);
+    }
+}
+
 pub fn stamp_fractal_delivery_state(event_path: &Path, subscriber_key: &str, status: &str) {
     if let (Some(repo), Some(event_id)) = (
         repo_root_from_event(event_path),
         event_path.file_stem().and_then(|stem| stem.to_str()),
     ) {
-        let label = status.trim().to_ascii_lowercase();
-        if matches!(label.as_str(), "success" | "processed" | "skipped") {
-            let _ = eda_port::record_delivery_ack(&repo, event_id, subscriber_key);
-        }
-    }
-    #[cfg(test)]
-    {
-        if !event_path.is_file() {
-            return;
-        }
-        let Ok(text) = fs::read_to_string(event_path) else {
-            return;
-        };
-        let Ok(mut body) = serde_json::from_str::<Value>(&text) else {
-            return;
-        };
-        let ds = body
-            .as_object_mut()
-            .and_then(|o| {
-                if !o.contains_key("delivery_state") {
-                    o.insert("delivery_state".into(), json!({}));
-                }
-                o.get_mut("delivery_state")
-            })
-            .and_then(|v| v.as_object_mut());
-        if let Some(ds) = ds {
-            ds.insert(subscriber_key.to_string(), json!(status));
-            let _ = write_json_atomic(event_path, &body);
-        }
+        stamp_fractal_delivery_state_by_id(&repo, event_id, subscriber_key, status);
     }
 }
 
@@ -199,8 +183,9 @@ pub fn fractal_delivery_terminal_with_failure(body: &Value) -> bool {
     all_terminal && ds.values().any(|v| v.as_str() == Some("failed"))
 }
 
+#[cfg(test)]
 pub fn load_fractal_dead_letter_dir(repo: &Path) -> PathBuf {
-    let default = repo.join(".events/dead-letter");
+    let default = repo.join("dead-letter");
     let Ok(cfg) = load_paths_config(repo) else {
         return default;
     };
@@ -239,7 +224,7 @@ pub fn move_fractal_event_to_dead_letter(repo: &Path, event_path: &Path) -> bool
     }
     #[cfg(not(test))]
     {
-        return false;
+        false
     }
     #[cfg(test)]
     {

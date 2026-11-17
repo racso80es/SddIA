@@ -4,7 +4,7 @@ name: "email-watcher"
 version: "1.0.0"
 contract: "daemons-contract v1.0.0"
 context: "peripheral-sensing"
-hash_signature: "sha256:1c66d5e559177bd05752f28b22714469cd71faf15993ecd1490e5f4f50cb5b7d"
+hash_signature: "sha256:617878592acfba18922faf463fb94e1c035617b55ce6e3f7ac56704c6131a9b0"
 capabilities:
   - "imap-mailbox-poll"
   - "email-stimulus-injection"

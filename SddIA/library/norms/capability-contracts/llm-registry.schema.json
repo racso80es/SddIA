@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "3bef62d7-eda0-497f-9516-31f4ab990373",
+    "version": "1.0.0",
+    "hash_signature": "sha256:9727313da869bf32ad1f2008da4f2e5d1954bc05efbdc31980dc6f4a84ac6122"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/llm-registry.schema.json",
   "title": "llm-registry",

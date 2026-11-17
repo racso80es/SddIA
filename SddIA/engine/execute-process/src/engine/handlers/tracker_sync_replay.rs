@@ -299,25 +299,31 @@ mod tests {
 
     #[test]
     fn run_rejects_tampered_inline_event_against_store() {
-        use crate::core::repo::find_repo_root;
         use crate::engine::route_domain_core::materialize_pending_domain_event;
-        use sddia_event_store::{override_store_mode, StoreMode};
         use std::fs;
 
         struct Guard;
         impl Drop for Guard {
             fn drop(&mut self) {
                 crate::engine::eda_port::clear_port();
-                override_store_mode(None);
                 std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
             }
         }
         let _g = Guard;
-        override_store_mode(Some(StoreMode::Redb));
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
-        let repo = find_repo_root().expect("repo");
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending","subscriptions":"SddIA/core/event-subscriptions.json"}}"#,
+        )
+        .unwrap();
+        fs::write(repo.join("SddIA/core/event-subscriptions.json"), "{}\n").unwrap();
+        fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let _redb = crate::engine::eda_port::test_lab::redb_eda_for(repo);
         let rel = materialize_pending_domain_event(
-            &repo,
+            repo,
             "Tracker_Sync_Failed",
             "test",
             json!({
@@ -333,11 +339,11 @@ mod tests {
         if pending.is_file() {
             fs::remove_file(&pending).ok();
         }
-        let stored = crate::engine::ecst_input_loader::load_ecst_from_rel(&repo, &rel).expect("load");
+        let stored = crate::engine::ecst_input_loader::load_ecst_from_rel(repo, &rel).expect("load");
         let mut tampered = stored.clone();
         tampered["payload"]["issue_ref"] = json!("AUT-TAMPER");
         let err = run(
-            &repo,
+            repo,
             &json!({
                 "event": tampered,
                 "event_id": stored.get("event_id").cloned().unwrap_or(json!("")),

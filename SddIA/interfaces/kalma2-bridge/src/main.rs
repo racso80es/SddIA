@@ -387,7 +387,7 @@ fn accept_execute(
             bridge_live.as_deref(),
             orchestrator.as_deref(),
         )
-        .map_err(|e| AcceptSyncError::Orchestrator(e))?;
+        .map_err(AcceptSyncError::Orchestrator)?;
         if parity.get("ok").and_then(|v| v.as_bool()) != Some(true) {
             let stale: Vec<String> = parity
                 .get("stale")
@@ -707,41 +707,6 @@ fn normalize_rel(path: &str) -> String {
     p.strip_prefix("./").unwrap_or(&p).to_string()
 }
 
-fn load_fractal_paths(repo: &Path) -> (PathBuf, PathBuf, PathBuf) {
-    let defaults = (
-        repo.join(".events/domain"),
-        repo.join(".events/orchestration"),
-        repo.join(".events/dead-letter"),
-    );
-    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
-    let Ok(text) = std::fs::read_to_string(&cfg_path) else {
-        return defaults;
-    };
-    let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) else {
-        return defaults;
-    };
-    let fractal = cfg.get("eda_fractal");
-    let domain = fractal
-        .and_then(|f| f.get("domain"))
-        .and_then(|v| v.as_str())
-        .map(normalize_rel)
-        .map(|r| repo.join(r))
-        .unwrap_or(defaults.0);
-    let orch = fractal
-        .and_then(|f| f.get("orchestration"))
-        .and_then(|v| v.as_str())
-        .map(normalize_rel)
-        .map(|r| repo.join(r))
-        .unwrap_or(defaults.1);
-    let dead = fractal
-        .and_then(|f| f.get("dead_letter"))
-        .and_then(|v| v.as_str())
-        .map(normalize_rel)
-        .map(|r| repo.join(r))
-        .unwrap_or(defaults.2);
-    (domain, orch, dead)
-}
-
 fn load_proofs_dir(repo: &Path) -> PathBuf {
     let default = repo.join(".SddIA/proofs");
     let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
@@ -817,27 +782,14 @@ fn read_json_file(path: &Path) -> Option<serde_json::Value> {
 
 fn find_domain_event_with_proofs(
     repo: &Path,
-    domain_dir: &Path,
-    dead_dir: &Path,
+    _domain_dir: &Path,
+    _dead_dir: &Path,
     proofs_dir: Option<&Path>,
     event_id: &str,
-) -> Option<(PathBuf, serde_json::Value, bool)> {
+) -> Option<(serde_json::Value, bool)> {
     if eda_productive::store_active(repo) {
         if let Some(hit) = eda_productive::domain_event(repo, event_id) {
             return Some(hit);
-        }
-    }
-    let name = format!("{event_id}.json");
-    let in_domain = domain_dir.join(&name);
-    if in_domain.is_file() {
-        if let Some(v) = read_json_file(&in_domain) {
-            return Some((in_domain, v, false));
-        }
-    }
-    let in_dead = dead_dir.join(&name);
-    if in_dead.is_file() {
-        if let Some(v) = read_json_file(&in_dead) {
-            return Some((in_dead, v, true));
         }
     }
     if let Some(proofs) = proofs_dir {
@@ -851,13 +803,14 @@ fn find_domain_event_with_proofs(
                     "timestamp": v.get("timestamp"),
                     "payload": v.get("payload"),
                 });
-                return Some((in_proof, projected, false));
+                return Some((projected, false));
             }
         }
     }
     None
 }
 
+#[cfg(test)]
 fn find_pec_by_correlation(orch_dir: &Path, correlation_id: &str) -> Option<serde_json::Value> {
     let Ok(entries) = std::fs::read_dir(orch_dir) else {
         return None;
@@ -965,7 +918,7 @@ fn latest_phase_end_in(dir: &Path) -> Option<PhaseEndNotice> {
 }
 
 fn latest_phase_end(repo: &Path, correlation_id: &str) -> Option<PhaseEndNotice> {
-    latest_phase_end_in(&load_progress_path(repo).join(correlation_id))
+    load_progress_path(repo).and_then(|p| latest_phase_end_in(&p.join(correlation_id)))
 }
 
 fn trace_end_detail(
@@ -1115,15 +1068,12 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
         );
     }
 
-    let (domain_dir, orch_dir, dead_dir) = load_fractal_paths(repo);
     let proofs_dir = load_proofs_dir(repo);
-    let domain_hit = find_domain_event_with_proofs(repo, &domain_dir, &dead_dir, Some(&proofs_dir), event_id);
-    let pec = if eda_productive::store_active(repo) {
-        eda_productive::pec_for_correlation(repo, event_id)
-    } else {
-        find_pec_by_correlation(&orch_dir, event_id)
-    }
-    .or_else(|| find_pec_proof(&proofs_dir, event_id));
+    let domain_hit = find_domain_event_with_proofs(repo, Path::new(""), Path::new(""), Some(&proofs_dir), event_id);
+    let pec = eda_productive::store_active(repo)
+        .then(|| eda_productive::pec_for_correlation(repo, event_id))
+        .flatten()
+        .or_else(|| find_pec_proof(&proofs_dir, event_id));
 
     if domain_hit.is_none() && pec.is_none() {
         return (
@@ -1138,8 +1088,8 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
         );
     }
 
-    let in_dead = domain_hit.as_ref().map(|h| h.2).unwrap_or(false);
-    let domain_val = domain_hit.as_ref().map(|h| &h.1);
+    let in_dead = domain_hit.as_ref().map(|h| h.1).unwrap_or(false);
+    let domain_val = domain_hit.as_ref().map(|h| &h.0);
     let phase_end = latest_phase_end(repo, event_id);
     let (status, message) = project_status(domain_val, in_dead, pec.as_ref(), phase_end.as_ref());
 
@@ -1192,24 +1142,18 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
     )
 }
 
-fn load_progress_path(repo: &Path) -> PathBuf {
+fn load_progress_path(repo: &Path) -> Option<PathBuf> {
     let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
-    let default = repo.join(".events/progress");
-    let Ok(text) = std::fs::read_to_string(&cfg_path) else {
-        return default;
-    };
-    let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) else {
-        return default;
-    };
+    let text = std::fs::read_to_string(&cfg_path).ok()?;
+    let cfg = serde_json::from_str::<serde_json::Value>(&text).ok()?;
     cfg.get("eda_fractal")
         .and_then(|f| f.get("progress"))
         .and_then(|v| v.as_str())
         .map(normalize_rel)
         .map(|r| repo.join(r))
-        .unwrap_or(default)
 }
 
-fn query_param<'a>(url: &'a str, key: &str) -> Option<String> {
+fn query_param(url: &str, key: &str) -> Option<String> {
     url.split('?')
         .nth(1)?
         .split('&')
@@ -1222,6 +1166,7 @@ fn query_param<'a>(url: &'a str, key: &str) -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
+#[cfg(test)]
 fn list_trace_files(corr_dir: &Path) -> Vec<PathBuf> {
     let Ok(entries) = std::fs::read_dir(corr_dir) else {
         return vec![];
@@ -1231,10 +1176,11 @@ fn list_trace_files(corr_dir: &Path) -> Vec<PathBuf> {
         .map(|e| e.path())
         .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
         .collect();
-    paths.sort_by(|a, b| trace_sort_key(a).cmp(&trace_sort_key(b)));
+    paths.sort_by_key(|p| trace_sort_key(p));
     paths
 }
 
+#[cfg(test)]
 fn trace_sort_key(path: &Path) -> String {
     read_json_file(path)
         .and_then(|v| v.get("timestamp").and_then(|t| t.as_str()).map(str::to_string))
@@ -1259,7 +1205,7 @@ fn pad_sse_chunk_flush(pending: &mut Vec<u8>) {
     if pending.is_empty() {
         return;
     }
-    if pending.len() >= TINY_HTTP_CHUNK + 1 && pending.len() % TINY_HTTP_CHUNK == 1 {
+    if pending.len() > TINY_HTTP_CHUNK && pending.len() % TINY_HTTP_CHUNK == 1 {
         return;
     }
     let chunks = pending.len().div_ceil(TINY_HTTP_CHUNK);
@@ -1270,7 +1216,7 @@ fn pad_sse_chunk_flush(pending: &mut Vec<u8>) {
     let need = target - pending.len();
     pending.push(b':');
     if need > 2 {
-        pending.extend(std::iter::repeat(b' ').take(need - 2));
+        pending.extend(std::iter::repeat_n(b' ', need - 2));
     }
     if need >= 2 {
         pending.push(b'\n');
@@ -1278,6 +1224,7 @@ fn pad_sse_chunk_flush(pending: &mut Vec<u8>) {
 }
 
 enum ProgressOrigin {
+    #[cfg(test)]
     Dir(PathBuf),
     Store { repo: PathBuf, correlation_id: String },
 }
@@ -1292,6 +1239,7 @@ struct ProgressStreamReader {
 }
 
 impl ProgressStreamReader {
+    #[cfg(test)]
     fn from_dir(corr_dir: PathBuf) -> Self {
         Self::new(ProgressOrigin::Dir(corr_dir))
     }
@@ -1301,6 +1249,15 @@ impl ProgressStreamReader {
             repo,
             correlation_id,
         })
+    }
+
+    fn inactive() -> Self {
+        let mut reader = Self::new(ProgressOrigin::Store {
+            repo: PathBuf::new(),
+            correlation_id: String::new(),
+        });
+        reader.finished = true;
+        reader
     }
 
     fn new(origin: ProgressOrigin) -> Self {
@@ -1326,6 +1283,7 @@ impl ProgressStreamReader {
 
     fn collect_new_frames(&mut self) {
         match &self.origin {
+            #[cfg(test)]
             ProgressOrigin::Dir(corr_dir) => {
                 let corr_dir = corr_dir.clone();
                 for path in list_trace_files(&corr_dir) {
@@ -1397,7 +1355,7 @@ fn handle_progress_stream(req: tiny_http::Request, repo: &Path) {
     let reader = if eda_productive::store_active(repo) {
         ProgressStreamReader::from_store(repo.to_path_buf(), correlation_id)
     } else {
-        ProgressStreamReader::from_dir(load_progress_path(repo).join(&correlation_id))
+        ProgressStreamReader::inactive()
     };
     let response = Response::new(
         StatusCode(200),
@@ -1503,22 +1461,6 @@ fn new_event_id() -> String {
     )
 }
 
-fn load_eda_pending(repo: &Path) -> PathBuf {
-    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
-    if let Ok(text) = std::fs::read_to_string(&cfg_path) {
-        if let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) {
-            if let Some(rel) = cfg
-                .pointer("/eda_bus/pending")
-                .and_then(|v| v.as_str())
-                .map(normalize_rel)
-            {
-                return repo.join(rel);
-            }
-        }
-    }
-    repo.join(".events/pending")
-}
-
 fn emit_system_fracture(
     repo: &Path,
     fracture_kind: &str,
@@ -1526,8 +1468,6 @@ fn emit_system_fracture(
     attempted_action: &str,
 ) {
     let event_id = new_event_id();
-    let pending = load_eda_pending(repo);
-    let _ = std::fs::create_dir_all(&pending);
     let ts = chrono_like_now();
     let event = serde_json::json!({
         "event_id": event_id,
@@ -2319,15 +2259,6 @@ fn handle_email_quick_action(mut req: tiny_http::Request, repo: &Path) {
         return;
     }
     let event_id = new_event_id();
-    let (domain_dir, _, _) = load_fractal_paths(repo);
-    if std::fs::create_dir_all(&domain_dir).is_err() {
-        reply(
-            req,
-            500,
-            r#"{"success":false,"message":"mkdir domain","exit_code":1}"#.into(),
-        );
-        return;
-    }
     let mut payload = serde_json::json!({
         "message_uid": uid,
         "action": action,
@@ -2341,7 +2272,7 @@ fn handle_email_quick_action(mut req: tiny_http::Request, repo: &Path) {
     {
         payload["source_event_id"] = serde_json::json!(src);
     }
-    let event = serde_json::json!({
+    let mut event = serde_json::json!({
         "event_id": event_id,
         "event_type": "Email_Quick_Action_Requested",
         "event_family": "domain",
@@ -2349,12 +2280,13 @@ fn handle_email_quick_action(mut req: tiny_http::Request, repo: &Path) {
         "emitter_agent": "kalma2-bridge",
         "payload": payload,
     });
-    let target = domain_dir.join(format!("{event_id}.json"));
-    if std::fs::write(&target, format!("{event}\n")).is_err() {
+    if sddia_eda_catalog::stamp_published_event(repo, &mut event).is_err()
+        || eda_productive::publish_pending(repo, &event).is_err()
+    {
         reply(
             req,
             500,
-            r#"{"success":false,"message":"write domain event","exit_code":1}"#.into(),
+            r#"{"success":false,"message":"publish domain event","exit_code":1}"#.into(),
         );
         return;
     }
@@ -2457,15 +2389,6 @@ fn handle_user_preference_change(mut req: tiny_http::Request, repo: &Path) {
         }
     }
     let event_id = new_event_id();
-    let (domain_dir, _, _) = load_fractal_paths(repo);
-    if std::fs::create_dir_all(&domain_dir).is_err() {
-        reply(
-            req,
-            500,
-            r#"{"success":false,"message":"mkdir domain","exit_code":1}"#.into(),
-        );
-        return;
-    }
     let mut payload = serde_json::json!({
         "operation": operation,
         "channel": "kalma2",
@@ -2499,7 +2422,7 @@ fn handle_user_preference_change(mut req: tiny_http::Request, repo: &Path) {
     {
         payload["priority_level"] = serde_json::json!(v);
     }
-    let event = serde_json::json!({
+    let mut event = serde_json::json!({
         "event_id": event_id,
         "event_type": "User_Preference_Change_Requested",
         "event_family": "domain",
@@ -2507,12 +2430,13 @@ fn handle_user_preference_change(mut req: tiny_http::Request, repo: &Path) {
         "emitter_agent": "kalma2-bridge",
         "payload": payload,
     });
-    let target = domain_dir.join(format!("{event_id}.json"));
-    if std::fs::write(&target, format!("{event}\n")).is_err() {
+    if sddia_eda_catalog::stamp_published_event(repo, &mut event).is_err()
+        || eda_productive::publish_pending(repo, &event).is_err()
+    {
         reply(
             req,
             500,
-            r#"{"success":false,"message":"write domain event","exit_code":1}"#.into(),
+            r#"{"success":false,"message":"publish domain event","exit_code":1}"#.into(),
         );
         return;
     }
@@ -2529,23 +2453,6 @@ fn handle_user_preference_change(mut req: tiny_http::Request, repo: &Path) {
         })
         .to_string(),
     );
-}
-
-fn load_telemetry_dir(repo: &Path) -> PathBuf {
-    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
-    let default = repo.join(".events/telemetry");
-    let Ok(text) = std::fs::read_to_string(&cfg_path) else {
-        return default;
-    };
-    let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) else {
-        return default;
-    };
-    cfg.get("eda_fractal")
-        .and_then(|f| f.get("telemetry"))
-        .and_then(|v| v.as_str())
-        .map(normalize_rel)
-        .map(|r| repo.join(r))
-        .unwrap_or(default)
 }
 
 fn load_radamanto_stats_path(repo: &Path) -> PathBuf {
@@ -2600,34 +2507,6 @@ fn list_cognitive_events(repo: &Path, limit: usize) -> Vec<serde_json::Value> {
                 .to_string();
             items.push((ts, ecst));
         }
-    } else {
-        let tele_dir = load_telemetry_dir(repo);
-        if tele_dir.is_dir() {
-            if let Ok(entries) = std::fs::read_dir(&tele_dir) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path.extension().and_then(|e| e.to_str()) != Some("json") {
-                        continue;
-                    }
-                    let Some(body) = read_json_file(&path) else {
-                        continue;
-                    };
-                    if body
-                        .pointer("/payload/telemetry_receipt")
-                        .and_then(|v| v.as_object())
-                        .is_none()
-                    {
-                        continue;
-                    }
-                    let ts = body
-                        .get("timestamp")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                    items.push((ts, body));
-                }
-            }
-        }
     }
     let inbox = load_cognitive_inbox_dir(repo);
     if inbox.is_dir() {
@@ -2644,7 +2523,7 @@ fn list_cognitive_events(repo: &Path, limit: usize) -> Vec<serde_json::Value> {
                     .get("timestamp")
                     .and_then(|v| v.as_str())
                     .map(str::to_string)
-                    .unwrap_or_else(|| chrono_like_now());
+                    .unwrap_or_else(chrono_like_now);
                 let projected = serde_json::json!({
                     "event_type": "Cognitive_Stream_Receipt",
                     "timestamp": ts,
@@ -2908,6 +2787,11 @@ fn main() {
 mod tests {
     use super::*;
     use std::sync::Mutex;
+
+    /// Fuente productiva del binario (excluye `mod tests` y helpers `#[cfg(test)]` inline).
+    fn production_source(src: &str) -> &str {
+        src.split("mod tests {").next().unwrap_or(src)
+    }
 
     static MAYEUTA_RESOLVE_LOCK: Mutex<()> = Mutex::new(());
 
@@ -3181,7 +3065,7 @@ mod tests {
         let mut buf = vec![0u8; 64 * 1024];
         let n = reader.read(&mut buf).unwrap();
         assert!(started.elapsed() < Duration::from_secs(1), "replay tardó {:?}", started.elapsed());
-        assert!(n >= TINY_HTTP_CHUNK + 1, "n={n}");
+        assert!(n > TINY_HTTP_CHUNK, "n={n}");
         assert_eq!(n % TINY_HTTP_CHUNK, 1, "n={n}");
         let text = std::str::from_utf8(&buf[..n]).unwrap();
         assert!(text.contains("fase-init"), "{text}");
@@ -3307,29 +3191,26 @@ mod tests {
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_fractal":{"domain":".events/domain","orchestration":".events/orchestration","dead_letter":".events/dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb"},"eda_fractal":{"domain":".events/domain","orchestration":".events/orchestration","dead_letter":".events/dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
         )
         .unwrap();
-        std::fs::create_dir_all(repo.join(".events/domain")).unwrap();
-        std::fs::create_dir_all(repo.join(".events/orchestration")).unwrap();
-        std::fs::create_dir_all(repo.join(".events/dead-letter")).unwrap();
+        std::fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
         let eid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-        std::fs::write(
-            repo.join(".events/domain").join(format!("{eid}.json")),
-            serde_json::json!({
-                "event_id": eid,
-                "event_type": "Email_Triaged",
-                "event_family": "domain",
-                "payload": {
-                    "message_uid": "42",
-                    "verdict": "noise",
-                    "decision_path": "deterministic",
-                    "thermodynamic_cost": {"tokens_in": 0, "tokens_out": 0, "duration_ms": 0}
-                }
-            })
-            .to_string(),
-        )
-        .unwrap();
+        let mut event = serde_json::json!({
+            "event_id": eid,
+            "event_type": "Email_Triaged",
+            "event_family": "domain",
+            "timestamp": "2026-08-18T15:00:00Z",
+            "payload": {
+                "message_uid": "42",
+                "verdict": "noise",
+                "decision_path": "deterministic",
+                "thermodynamic_cost": {"tokens_in": 0, "tokens_out": 0, "duration_ms": 0}
+            },
+            "delivery_state": {},
+        });
+        sddia_eda_catalog::stamp_published_event(&repo, &mut event).unwrap();
+        eda_productive::publish_domain(&repo, &event).unwrap();
         let (code, body) = build_status_body(&repo, eid);
         assert_eq!(code, 200);
         let v: serde_json::Value = serde_json::from_str(&body).unwrap();
@@ -3407,7 +3288,7 @@ mod tests {
     #[test]
     fn progress_stream_route_before_static() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         let dispatch = prod.split("fn dispatch").nth(1).expect("dispatch");
         let status_pos = dispatch.find("\"/api/status\"").expect("status route");
         let progress_pos = dispatch
@@ -3469,7 +3350,7 @@ mod tests {
     #[test]
     fn email_routes_exist_in_dispatch() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         assert!(prod.contains("\"/api/email-inbox\""));
         assert!(prod.contains("\"/api/email-quick-action\""));
         assert!(prod.contains("\"/api/user-preference-change\""));
@@ -3485,7 +3366,7 @@ mod tests {
     #[test]
     fn telemetry_routes_exist_in_dispatch() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         assert!(prod.contains("\"/api/telemetry/stream\""));
         assert!(prod.contains("\"/api/telemetry/cognitive\""));
         assert!(prod.contains("\"/api/system-health\""));
@@ -3514,7 +3395,7 @@ mod tests {
     #[test]
     fn sync_assets_route_exists_in_dispatch() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         assert!(
             prod.contains("\"/api/sync-assets\""),
             "dispatch debe tener la ruta /api/sync-assets"
@@ -3528,7 +3409,7 @@ mod tests {
     #[test]
     fn sync_assets_handler_is_fire_and_forget() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         let handler_start = prod.find("fn handle_sync_assets").expect("handle_sync_assets");
         let handler_slice = &prod[handler_start..];
         let next_fn = handler_slice[1..].find("\nfn ").unwrap_or(handler_slice.len());
@@ -3550,7 +3431,7 @@ mod tests {
     #[test]
     fn stale_runtime_gate_409_in_production() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         assert!(prod.contains("STALE_RUNTIME_BINARY"));
         assert!(prod.contains("AcceptSyncError::StaleRuntime"));
         assert!(prod.contains("sddia_runtime_parity::assess_runtime_binary_parity"));
@@ -3569,7 +3450,7 @@ mod tests {
         // Audit estático AC-R2: producción (antes de #[cfg(test)]) sin sellado fractal.
         // Excluye el módulo de tests: include_str se autoincriminaría con este assert.
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         assert!(
             !prod.contains("write_fractal_event"),
             "bridge prod no debe llamar write_fractal_event"
@@ -3588,7 +3469,7 @@ mod tests {
     #[test]
     fn aiua_interact_route_before_static() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         let dispatch = prod.split("fn dispatch").nth(1).expect("dispatch");
         let aiua_pos = dispatch
             .find("\"/api/aiua/interact\"")
@@ -3601,7 +3482,7 @@ mod tests {
     #[test]
     fn aiua_handler_never_calls_kalma2_interact() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         let start = prod.find("fn handle_aiua_interact").expect("handle_aiua_interact");
         let slice = &prod[start..];
         let next = slice[1..].find("\nfn ").unwrap_or(slice.len());
@@ -3617,7 +3498,7 @@ mod tests {
     #[test]
     fn spawn_orchestrator_process_name_is_parametrized() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         let start = prod.find("fn spawn_orchestrator").expect("spawn_orchestrator");
         let slice = &prod[start..];
         let next = slice[1..].find("\nfn ").unwrap_or(slice.len());

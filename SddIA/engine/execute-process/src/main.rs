@@ -40,6 +40,7 @@ fn emit_frontmatter_json(md_path: &str) -> Result<(), String> {
     Ok(())
 }
 
+#[allow(clippy::type_complexity)] // CLI: arity fija del orquestador binario (MAN-43 O14)
 fn parse_args() -> Result<(Option<String>, Option<String>, Option<String>, bool, bool, bool, Value, Option<String>), String> {
     let args: Vec<String> = env::args().collect();
     let mut process_name: Option<String> = None;
@@ -486,7 +487,7 @@ fn main() {
         }
     }
 
-    let result = panic::catch_unwind(|| run_main());
+    let result = panic::catch_unwind(run_main);
     match result {
         Ok(Ok(envelope)) => emit(envelope),
         Ok(Err(e)) => emit(OrchestratorEnvelope::failure(e, 1)),

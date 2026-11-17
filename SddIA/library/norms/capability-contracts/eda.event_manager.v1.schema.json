@@ -1,20 +1,656 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sddia.local/capability-contracts/eda.event_manager.v1.schema.json",
-  "title": "eda.event_manager",
-  "description": "Contrato EventManager v1.2.0 — I/O capsule-json-io. Ops v1.0 + consultas/admin (get_event, list_*, verify_inline_ecst, seal_dlt, list_progress, purge_event).",
-  "type": "object",
-  "oneOf": [
-    { "$ref": "#/$defs/request" },
-    { "$ref": "#/$defs/response" }
-  ],
+  "x-sddia": {
+    "uuid": "c69b2839-f3c5-4ac2-9b9d-d480d0f1cf67",
+    "version": "2.0.0",
+    "hash_signature": "sha256:410ef150e4df578cbffaa6225c80ab631d973d8fd60d1a2d89eb4b968fc6bbba"
+  },
   "$defs": {
     "request": {
-      "type": "object",
-      "required": ["operation", "payload"],
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "publish_ecst"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "ecst": {
+                    "type": "object"
+                  },
+                  "event_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "event_uri": {
+                    "additionalProperties": false,
+                    "description": "EventUri tal como lo serializa sddia-core (family + event_id). event_id debe coincidir con payload.event_id (PublishEcstRequest::validate); JSON Schema no expresa la igualdad entre campos.",
+                    "properties": {
+                      "event_id": {
+                        "minLength": 1,
+                        "pattern": "^[^/\\\\]+$",
+                        "type": "string"
+                      },
+                      "family": {
+                        "enum": [
+                          "domain",
+                          "telemetry",
+                          "orchestration"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "family",
+                      "event_id"
+                    ],
+                    "type": "object"
+                  },
+                  "trace_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_uri",
+                  "event_id",
+                  "ecst"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "claim_pending"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "lease_owner": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "lease_ttl_ms": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "lease_owner",
+                  "limit"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "record_delivery"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "attempt": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "delivery_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "event_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "ack",
+                      "nack",
+                      "processing"
+                    ],
+                    "type": "string"
+                  },
+                  "subscriber_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "delivery_id",
+                  "status"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "move_to_dlq"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "event_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "reason": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "reason"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "replay_dlq"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "all": {
+                    "type": "boolean"
+                  },
+                  "event_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "append_trace"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "frame": {
+                    "type": "object"
+                  },
+                  "trace_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "trace_id",
+                  "frame"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "handshake_version"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "requested_range": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "requested_range"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "get_event"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "event_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "list_pending"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "limit": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "list_dlq"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "limit": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "list_traces"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "trace_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "trace_id"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "purge_event"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "event_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "verify_inline_ecst"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "ecst": {
+                    "type": "object"
+                  },
+                  "event_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "ecst"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "list_events"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "cursor": {
+                    "type": "string"
+                  },
+                  "event_type": {
+                    "type": "string"
+                  },
+                  "family": {
+                    "enum": [
+                      "domain",
+                      "telemetry",
+                      "orchestration",
+                      ""
+                    ],
+                    "type": "string"
+                  },
+                  "limit": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "state": {
+                    "enum": [
+                      "pending",
+                      "claimed",
+                      "processed",
+                      "dead_letter"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "list_deliveries"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "cursor": {
+                    "type": "string"
+                  },
+                  "event_id": {
+                    "type": "string"
+                  },
+                  "limit": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "status": {
+                    "enum": [
+                      "ack",
+                      "nack",
+                      "processing"
+                    ],
+                    "type": "string"
+                  },
+                  "subscriber_id": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "list_terminal_events"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "description": "Barrido de terminales (DLQ + processed) sin FS (L-6).",
+                "properties": {
+                  "cursor": {
+                    "type": "string"
+                  },
+                  "family": {
+                    "enum": [
+                      "domain",
+                      "telemetry",
+                      "orchestration",
+                      ""
+                    ],
+                    "type": "string"
+                  },
+                  "limit": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "list_progress"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "anyOf": [
+                  {
+                    "required": [
+                      "trace_id"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "correlation_id"
+                    ]
+                  }
+                ],
+                "properties": {
+                  "correlation_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "trace_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "seal_dlt"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "digest": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "event_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "scope": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "tx_hash": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "tx_hash",
+                  "digest",
+                  "scope"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "get_dlt_seal"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "additionalProperties": true,
+                "properties": {
+                  "event_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        }
+      ],
       "properties": {
+        "meta": {
+          "additionalProperties": true,
+          "type": "object"
+        },
         "operation": {
-          "type": "string",
           "enum": [
             "publish_ecst",
             "claim_pending",
@@ -30,226 +666,75 @@
             "purge_event",
             "list_events",
             "list_deliveries",
+            "list_terminal_events",
             "seal_dlt",
             "get_dlt_seal",
             "list_progress",
             "verify_inline_ecst"
-          ]
+          ],
+          "type": "string"
         },
         "payload": {
-          "type": "object",
-          "description": "Payload polimórfico por operation (if-then)."
-        },
-        "meta": {
-          "type": "object",
-          "additionalProperties": true
+          "description": "Payload polimórfico por operation (if-then).",
+          "type": "object"
         }
       },
-      "allOf": [
-        {
-          "if": { "properties": { "operation": { "const": "publish_ecst" } } },
-          "then": {
-            "properties": {
-              "payload": {
-                "type": "object",
-                "required": ["event_id", "ecst"],
-                "properties": {
-                  "event_id": { "type": "string", "minLength": 1 },
-                  "ecst": { "type": "object" },
-                  "trace_id": { "type": "string" }
-                },
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        {
-          "if": { "properties": { "operation": { "const": "claim_pending" } } },
-          "then": {
-            "properties": {
-              "payload": {
-                "type": "object",
-                "required": ["lease_owner", "limit"],
-                "properties": {
-                  "lease_owner": { "type": "string", "minLength": 1 },
-                  "limit": { "type": "integer", "minimum": 1 },
-                  "lease_ttl_ms": { "type": "integer", "minimum": 1 }
-                },
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        {
-          "if": { "properties": { "operation": { "const": "record_delivery" } } },
-          "then": {
-            "properties": {
-              "payload": {
-                "type": "object",
-                "required": ["event_id", "delivery_id", "status"],
-                "properties": {
-                  "event_id": { "type": "string", "minLength": 1 },
-                  "delivery_id": { "type": "string", "minLength": 1 },
-                  "status": { "type": "string", "enum": ["ack", "nack"] },
-                  "attempt": { "type": "integer", "minimum": 0 }
-                },
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        {
-          "if": { "properties": { "operation": { "const": "move_to_dlq" } } },
-          "then": {
-            "properties": {
-              "payload": {
-                "type": "object",
-                "required": ["event_id", "reason"],
-                "properties": {
-                  "event_id": { "type": "string", "minLength": 1 },
-                  "reason": { "type": "string", "minLength": 1 }
-                },
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        {
-          "if": { "properties": { "operation": { "const": "replay_dlq" } } },
-          "then": {
-            "properties": {
-              "payload": {
-                "type": "object",
-                "properties": {
-                  "event_id": { "type": "string", "minLength": 1 },
-                  "all": { "type": "boolean" }
-                },
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        {
-          "if": { "properties": { "operation": { "const": "append_trace" } } },
-          "then": {
-            "properties": {
-              "payload": {
-                "type": "object",
-                "required": ["trace_id", "frame"],
-                "properties": {
-                  "trace_id": { "type": "string", "minLength": 1 },
-                  "frame": { "type": "object" }
-                },
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        {
-          "if": { "properties": { "operation": { "const": "handshake_version" } } },
-          "then": {
-            "properties": {
-              "payload": {
-                "type": "object",
-                "required": ["requested_range"],
-                "properties": {
-                  "requested_range": { "type": "string", "minLength": 1 }
-                },
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        {
-          "if": { "properties": { "operation": { "const": "get_event" } } },
-          "then": {
-            "properties": {
-              "payload": {
-                "type": "object",
-                "required": ["event_id"],
-                "properties": { "event_id": { "type": "string", "minLength": 1 } },
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        {
-          "if": { "properties": { "operation": { "const": "list_pending" } } },
-          "then": {
-            "properties": {
-              "payload": {
-                "type": "object",
-                "properties": { "limit": { "type": "integer", "minimum": 1 } },
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        {
-          "if": { "properties": { "operation": { "const": "list_dlq" } } },
-          "then": {
-            "properties": {
-              "payload": {
-                "type": "object",
-                "properties": { "limit": { "type": "integer", "minimum": 1 } },
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        {
-          "if": { "properties": { "operation": { "const": "list_traces" } } },
-          "then": {
-            "properties": {
-              "payload": {
-                "type": "object",
-                "required": ["trace_id"],
-                "properties": { "trace_id": { "type": "string", "minLength": 1 } },
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        {
-          "if": { "properties": { "operation": { "const": "purge_event" } } },
-          "then": {
-            "properties": {
-              "payload": {
-                "type": "object",
-                "required": ["event_id"],
-                "properties": { "event_id": { "type": "string", "minLength": 1 } },
-                "additionalProperties": true
-              }
-            }
-          }
-        }
+      "required": [
+        "operation",
+        "payload"
       ],
-      "additionalProperties": true
+      "type": "object"
     },
     "response": {
-      "type": "object",
-      "required": ["success", "exitCode"],
+      "additionalProperties": true,
       "properties": {
-        "success": { "type": "boolean" },
-        "exitCode": { "type": "integer" },
-        "message": { "type": "string" },
+        "error": {
+          "additionalProperties": true,
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "exitCode": {
+          "type": "integer"
+        },
+        "message": {
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": true,
+          "type": "object"
+        },
         "result": {
           "description": "Carga de resultado por operación."
         },
-        "meta": {
-          "type": "object",
-          "additionalProperties": true
-        },
-        "error": {
-          "type": "object",
-          "properties": {
-            "code": { "type": "string" },
-            "message": { "type": "string" }
-          },
-          "additionalProperties": true
+        "success": {
+          "type": "boolean"
         }
       },
-      "additionalProperties": true
+      "required": [
+        "success",
+        "exitCode"
+      ],
+      "type": "object"
     }
-  }
+  },
+  "$id": "https://sddia.local/capability-contracts/eda.event_manager.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Contrato EventManager v2.0.0 (MAN-43) — I/O capsule-json-io. Las 19 operaciones de EventManagerPort; identidad canónica EventUri (family + event_id) en publish_ecst. El enum y las ramas if/then se contrastan con el trait y los tipos de sddia-core en el test de paridad eda_contract_parity (execute-process).",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/request"
+    },
+    {
+      "$ref": "#/$defs/response"
+    }
+  ],
+  "title": "eda.event_manager",
+  "type": "object"
 }

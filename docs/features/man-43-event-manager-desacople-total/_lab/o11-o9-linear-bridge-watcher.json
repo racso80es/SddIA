@@ -1,0 +1,1 @@
+{"entity_class":"daemon","entity_name":"linear-bridge-watcher","lifecycle_operation":"update","semantic_seed":{"implementation_source_git_apply":{"commit":"c60ae233","paths":["SddIA/daemons/linear-bridge-watcher/src/main.rs"]}}}

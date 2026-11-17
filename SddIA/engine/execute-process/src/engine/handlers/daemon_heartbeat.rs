@@ -30,7 +30,7 @@ fn load_state(repo: &Path) -> Value {
         .ok()
         .and_then(|t| serde_json::from_str::<Value>(&t).ok())
         .unwrap_or(json!({"daemons": {}}));
-    if !body.get("daemons").and_then(|v| v.as_object()).is_some() {
+    if body.get("daemons").and_then(|v| v.as_object()).is_none() {
         if let Some(obj) = body.as_object_mut() {
             obj.insert("daemons".into(), json!({}));
         }
@@ -244,7 +244,7 @@ fn record_heartbeat_at(state: &mut Value, repo: &Path, payload: &Value, at: Opti
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .or_else(|| payload.get("timestamp").and_then(|v| v.as_str()))
-        .unwrap_or_else(|| "");
+        .unwrap_or("");
     let ts = if ts.is_empty() { iso_now() } else { ts.to_string() };
     let prev = entry
         .get("last_heartbeat_at")
@@ -285,16 +285,16 @@ fn heartbeats_side_dir(repo: &Path) -> Result<std::path::PathBuf, String> {
     Ok(state_dir(repo)?.join("heartbeats"))
 }
 
-fn telemetry_dir(repo: &Path) -> std::path::PathBuf {
+fn telemetry_dir(repo: &Path) -> Option<std::path::PathBuf> {
     use super::super::eda_bus::load_eda_fractal;
     load_eda_fractal(repo)
         .ok()
         .and_then(|m| m.get("telemetry").cloned())
+        .filter(|rel| rel.contains('/') || rel.contains('\\'))
         .map(|rel| {
             let t = rel.trim().trim_start_matches("./");
             repo.join(t)
         })
-        .unwrap_or_else(|| repo.join(".events/telemetry"))
 }
 
 fn ingest_regime(repo: &Path, state: &mut Value) -> Result<u32, String> {
@@ -332,8 +332,7 @@ fn ingest_regime(repo: &Path, state: &mut Value) -> Result<u32, String> {
         }
     }
 
-    let tel = telemetry_dir(repo);
-    if tel.is_dir() {
+    if let Some(tel) = telemetry_dir(repo).filter(|p| p.is_dir()) {
         let mut latest: std::collections::HashMap<String, (std::time::SystemTime, Value, String)> =
             std::collections::HashMap::new();
         for entry in fs::read_dir(&tel).map_err(|e| e.to_string())? {
@@ -672,7 +671,7 @@ pub fn audit_telemetry_file(repo: &Path, rel_path: &str) -> Result<Value, String
 }
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
-    if let Some(rel) = process_inputs.get("event_file_path").and_then(|v| v.as_str()) {
+    if let Some(rel) = process_inputs.get("event_uri").and_then(|v| v.as_str()) {
         if !rel.trim().is_empty() {
             let result = audit_telemetry_file(repo, rel.trim())?;
             let ok = result.get("ok").and_then(|v| v.as_bool()) == Some(true);
@@ -860,7 +859,7 @@ mod tests {
 
     #[test]
     fn orphan_lock_dead_pid_emits_fracture_once() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let dir = tempfile::TempDir::new().unwrap();
         let repo = dir.path();
         std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
@@ -880,30 +879,34 @@ mod tests {
         let audit = audit_staleness(repo).unwrap();
         assert_eq!(audit.fractures.len(), 1, "{:?}", audit.fractures);
         let eid = audit.fractures[0]["event_id"].as_str().unwrap();
-        let raw = std::fs::read_to_string(repo.join(".events/pending").join(format!("{eid}.json")))
-            .unwrap();
-        assert!(raw.contains("lock huérfano"), "{raw}");
+        let body = crate::engine::eda_port::test_lab::ecst_for_event_id(repo, eid);
+        let trace = body
+            .get("payload")
+            .and_then(|p| p.get("error_trace"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert!(trace.contains("lock huérfano"), "{trace}");
         let audit2 = audit_staleness(repo).unwrap();
         assert!(
             audit2.fractures.is_empty(),
             "idempotente: {:?}",
             audit2.fractures
         );
-        sddia_event_store::override_store_mode(None);
     }
 
     #[test]
     fn orphan_lock_redb_does_not_write_pending_json() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
         let dir = tempfile::TempDir::new().unwrap();
         let repo = dir.path();
         std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./.events/pending"}}"#,
+            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"store":".SddIA/runtime/events.redb","pending":"./.events/pending"}}"#,
         )
         .unwrap();
+        std::fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let _redb = crate::engine::eda_port::test_lab::redb_eda_for(repo);
         std::fs::write(
             repo.join("SddIA/daemons/kalma2-bridge.md"),
             "---\nuuid: \"00000000-0000-4000-8000-000000000099\"\nname: kalma2-bridge\nexecution:\n  heartbeat_interval_seconds: 30\n---\n",
@@ -918,7 +921,6 @@ mod tests {
         );
         let rows = crate::engine::eda_port::load_domain_ecsts(repo, 64).unwrap();
         assert!(rows.iter().any(|e| e["event_id"] == eid));
-        sddia_event_store::override_store_mode(None);
     }
 
     #[test]

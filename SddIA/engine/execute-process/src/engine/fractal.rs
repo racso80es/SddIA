@@ -7,10 +7,10 @@ use std::path::Path;
 
 pub fn load_fractal_dirs(repo: &Path) -> (String, String, String, String) {
     let defaults = (
-        "./.events/telemetry".to_string(),
-        "./.events/orchestration".to_string(),
-        "./.events/domain".to_string(),
-        "./.events/progress".to_string(),
+        "telemetry".to_string(),
+        "orchestration".to_string(),
+        "domain".to_string(),
+        "progress".to_string(),
     );
     let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
     let Ok(text) = fs::read_to_string(&cfg_path) else {
@@ -59,11 +59,13 @@ pub fn write_fractal_event(repo: &Path, event: &Value, family_dir: &str) -> Resu
         sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
     }
     eda_port::record_ecst(repo, family, &stamped)?;
-    // Token lógico de observabilidad (L-LOGICAL-EVENTS / CA-4); no ruta física Redb.
-    let logical = format!(".events/{family}/{event_id}.json");
+    let uri = sddia_core::ports::event_manager::EventUri::new(
+        sddia_core::ports::event_manager::EventFamily::parse(family)?,
+        event_id,
+    )?;
     Ok(json!({
         "event_id": event_id,
-        "target_path": logical,
+        "event_uri": uri.as_canonical(),
         "family": family,
     }))
 }

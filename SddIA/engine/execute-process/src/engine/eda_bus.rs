@@ -36,17 +36,17 @@ pub fn load_eda_bus(repo: &Path) -> Result<EdaBusPaths, String> {
         .and_then(|b| b.get("pending"))
         .and_then(|v| v.as_str())
         .filter(|s| crate::engine::eda_port::is_filesystem_rel(s))
-        .unwrap_or("./.events/pending");
+        .unwrap_or("pending");
     let processing = bus
         .and_then(|b| b.get("processing"))
         .and_then(|v| v.as_str())
         .filter(|s| crate::engine::eda_port::is_filesystem_rel(s))
-        .unwrap_or("./.events/processing");
+        .unwrap_or("processing");
     let processed = bus
         .and_then(|b| b.get("processed"))
         .and_then(|v| v.as_str())
         .filter(|s| crate::engine::eda_port::is_filesystem_rel(s))
-        .unwrap_or("./.events/processed");
+        .unwrap_or("processed");
     Ok(EdaBusPaths {
         pending: resolve_bus_path(repo, pending),
         processing: resolve_bus_path(repo, processing),
@@ -93,7 +93,7 @@ pub fn iter_bus_event_files(repo: &Path) -> Result<Vec<PathBuf>, String> {
             .map(|e| bus.pending.join(format!("{}.json", e.event_id)))
             .collect();
         files.sort();
-        return Ok(files);
+        Ok(files)
     }
     #[cfg(test)]
     {
@@ -137,7 +137,7 @@ pub fn find_existing_domain_event(
                 .unwrap_or("");
             return Ok(Some(serde_json::json!({
                 "event_id": body.get("event_id"),
-                "target_path": format!(".events/pending/{event_id}.json"),
+                "event_uri": format!("eda://domain/{event_id}"),
                 "event_type": body.get("event_type"),
             })));
         }
@@ -150,12 +150,9 @@ const FRACTAL_FAMILIES: &[&str] = &["telemetry", "orchestration", "domain"];
 pub fn load_eda_fractal(repo: &Path) -> Result<std::collections::HashMap<String, String>, String> {
     let cfg = load_paths_config(repo)?;
     let mut defaults = std::collections::HashMap::from([
-        ("telemetry".to_string(), "./.events/telemetry".to_string()),
-        (
-            "orchestration".to_string(),
-            "./.events/orchestration".to_string(),
-        ),
-        ("domain".to_string(), "./.events/domain".to_string()),
+        ("telemetry".to_string(), "telemetry".to_string()),
+        ("orchestration".to_string(), "orchestration".to_string()),
+        ("domain".to_string(), "domain".to_string()),
     ]);
     if let Some(fractal) = cfg.get("eda_fractal").and_then(|v| v.as_object()) {
         for (key, value) in fractal {
@@ -198,11 +195,13 @@ pub fn write_fractal_event(repo: &Path, event: &Value, family: &str) -> Result<V
         sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
     }
     eda_port::record_ecst(repo, family, &stamped)?;
-    // Token lógico (L-LOGICAL-EVENTS / CA-4); no ruta física Redb.
-    let logical = format!(".events/{family}/{event_id}.json");
+    let uri = sddia_core::ports::event_manager::EventUri::new(
+        sddia_core::ports::event_manager::EventFamily::parse(family)?,
+        event_id,
+    )?;
     Ok(json!({
         "event_id": event_id,
-        "target_path": logical,
+        "event_uri": uri.as_canonical(),
         "family": family,
     }))
 }

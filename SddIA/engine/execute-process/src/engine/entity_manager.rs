@@ -15,7 +15,12 @@ use uuid::Uuid;
 
 const PILOT_CLASSES: &[&str] = &[
     "skill", "event", "process", "agent", "tool", "action", "norm", "codex", "suite", "daemon",
+    CAPABILITY_CONTRACT_CLASS,
 ];
+
+/// Sustrato B de la Cicatriz Digital (`{name}.schema.json` + `x-sddia`). Solo forja nativa:
+/// sin proceso `*-creator` y, por tanto, sin fallback que enmascare un fallo nativo.
+const CAPABILITY_CONTRACT_CLASS: &str = "capability-contract";
 
 fn str_field(v: &Value, key: &str) -> Option<String> {
     v.get(key)
@@ -84,7 +89,12 @@ fn with_forge_seed_optionals(mut out: Value, seed: &Value) -> Value {
         for key in [
             "hash_refresh_only",
             "markdown_body_replacements",
+            "artifact_full_replacements",
+            "artifact_yaml_replacements",
+            "artifact_body_replacements",
+            "implementation_source_git_apply",
             "daemon_declaration_patch",
+            "tactical_norm_version",
         ] {
             if let Some(v) = seed.get(key) {
                 map.insert(key.into(), v.clone());
@@ -237,9 +247,8 @@ fn creator_inputs_from_entity(
             }
             merge_maps(&base, fields)
         }
-        "norm" => merge_maps(
-            &base,
-            Map::from_iter([
+        "norm" => {
+            let mut fields = Map::from_iter([
                 ("tactical_norm_name".into(), seed_field(seed, "tactical_norm_name", json!(entity_name))),
                 ("tactical_norm_version".into(), seed_field(seed, "tactical_norm_version", json!("1.0.0"))),
                 (
@@ -255,8 +264,19 @@ fn creator_inputs_from_entity(
                 ("norms_contract_version".into(), seed_field(seed, "norms_contract_version", json!("1.1.0"))),
                 ("norm_scope".into(), seed_field(seed, "norm_scope", json!("agnostic"))),
                 ("norm_category".into(), seed_field(seed, "norm_category", json!("workflow"))),
-            ]),
-        ),
+            ]);
+            for key in [
+                "artifact_full_replacements",
+                "artifact_yaml_replacements",
+                "artifact_body_replacements",
+                "markdown_body_replacements",
+            ] {
+                if let Some(v) = seed.get(key) {
+                    fields.insert(key.into(), v.clone());
+                }
+            }
+            merge_maps(&base, fields)
+        }
         "codex" => {
             let mut fields = Map::from_iter([
                 ("domain_codex_slug".into(), seed_field(seed, "domain_codex_slug", json!(entity_name))),
@@ -329,6 +349,16 @@ fn creator_inputs_from_entity(
                 ),
             ]),
         ),
+        CAPABILITY_CONTRACT_CLASS => merge_maps(
+            &base,
+            Map::from_iter([
+                ("entity_name".into(), json!(entity_name)),
+                ("schema_version".into(), seed_field(seed, "schema_version", Value::Null)),
+                ("schema_json".into(), seed_field(seed, "schema_json", Value::Null)),
+                ("schema_json_patch".into(), seed_field(seed, "schema_json_patch", Value::Null)),
+                ("adopt".into(), seed_field(seed, "adopt", json!(false))),
+            ]),
+        ),
         other => return Err(format!("entity_class no soportada en forja rápida: {other}")),
     };
     Ok(with_forge_seed_optionals(out, seed))
@@ -357,9 +387,24 @@ fn delegate_creator(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Va
         return Err(format!("entity_class fuera del piloto: {class}"));
     }
     let entity_name = str_field(inputs, "entity_name").ok_or("entity_name requerido")?;
-    let creator = creator_name(&class).ok_or_else(|| format!("sin creator para {class}"))?;
     let seed = inputs.get("semantic_seed").cloned().unwrap_or(json!({}));
     let child_inputs = creator_inputs_from_entity(&class, &entity_name, &lifecycle, &seed)?;
+
+    if class == CAPABILITY_CONTRACT_CLASS {
+        let forge = materialize_by_inputs(repo, &child_inputs)
+            .map_err(|e| format!("forja nativa de {class} fallida (clase solo nativa, sin fallback): {e}"))?;
+        if forge.get("handoff_entity_uuid").is_none() {
+            return Err(format!("forja nativa de {class} terminó sin handoff_entity_uuid"));
+        }
+        merge_handoff(state, &forge);
+        return Ok(json!({
+            "child_process": null,
+            "handoff": state.get("handoff"),
+            "forge_only": true,
+        }));
+    }
+
+    let creator = creator_name(&class).ok_or_else(|| format!("sin creator para {class}"))?;
 
     let forge_error = match materialize_by_inputs(repo, &child_inputs) {
         Ok(forge) => {
@@ -419,6 +464,9 @@ fn filesystem_delete(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
     }
     let class = str_field(inputs, "entity_class").ok_or("entity_class requerido")?;
     let name = str_field(inputs, "entity_name").ok_or("entity_name requerido")?;
+    if class == CAPABILITY_CONTRACT_CLASS {
+        return Err("delete de capability-contract no soportado".into());
+    }
     let rel_dir = dir_by_class(&class).ok_or_else(|| format!("entity_class desconocida: {class}"))?;
     let artifact = repo.join(rel_dir).join(format!("{name}.md"));
     if !artifact.is_file() {
@@ -436,9 +484,12 @@ fn filesystem_delete(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
     });
     std::fs::remove_file(&artifact).map_err(|e| e.to_string())?;
     if class == "daemon" {
-        let index = repo.join(&rel_dir).join("index.md");
+        let index = repo.join(rel_dir).join("index.md");
         crate::forges::common::remove_catalog_row(&index, &name)?;
         crate::forges::common::sync_daemons_index_census(&index)?;
+    } else if class == "tool" || class == "skill" {
+        let index = repo.join(rel_dir).join("index.md");
+        let _ = crate::forges::common::remove_catalog_row(&index, &name)?;
     }
     merge_handoff(state, &handoff);
     Ok(json!({
@@ -625,7 +676,7 @@ pub fn run(
         "process_name": "entity-manager",
         "handoff": handoff,
     });
-    for key in ["event_id", "target_path", "workspace_path", "execution_id"] {
+    for key in ["event_id", "event_uri", "workspace_path", "execution_id"] {
         if let Some(v) = handoff.get(key).or_else(|| state.get(key)) {
             data[key] = v.clone();
         }
@@ -694,6 +745,40 @@ mod tests {
         assert_eq!(child.get("hash_refresh_only").and_then(|v| v.as_bool()), Some(true));
         let forge = materialize_by_inputs(&repo, &child).expect("forge");
         assert!(forge.get("handoff_entity_uuid").is_some());
+    }
+
+    #[test]
+    fn capability_contract_is_native_only_pilot_class() {
+        assert!(PILOT_CLASSES.contains(&"capability-contract"));
+        assert!(creator_name("capability-contract").is_none(), "sin creator ni fallback");
+        let child = creator_inputs_from_entity(
+            "capability-contract",
+            "eda.event_manager.v1",
+            "update",
+            &json!({"adopt": true, "schema_version": "1.2.0"}),
+        )
+        .expect("inputs");
+        assert_eq!(child["entity_name"], json!("eda.event_manager.v1"));
+        assert_eq!(child["adopt"], json!(true));
+        assert_eq!(child["schema_version"], json!("1.2.0"));
+        assert!(child["schema_json_patch"].is_null());
+    }
+
+    #[test]
+    fn capability_contract_delete_is_rejected_explicitly() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut state = json!({"handoff": {}});
+        let err = filesystem_delete(
+            tmp.path(),
+            &json!({
+                "lifecycle_operation": "delete",
+                "entity_class": "capability-contract",
+                "entity_name": "doc.closure",
+            }),
+            &mut state,
+        )
+        .unwrap_err();
+        assert!(err.contains("no soportado"), "{err}");
     }
 
     #[test]

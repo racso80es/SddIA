@@ -23,8 +23,7 @@ fn strip_known_suffixes(path: &Path) -> PathBuf {
     let allowed_suffixes = [".notificado", ".procesado", ".error"];
     let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
     for suffix in allowed_suffixes.iter() {
-        if name.ends_with(suffix) {
-            let new_name = &name[..name.len() - suffix.len()];
+        if let Some(new_name) = name.strip_suffix(suffix) {
             return path.with_file_name(new_name);
         }
     }

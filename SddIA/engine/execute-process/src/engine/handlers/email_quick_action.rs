@@ -161,13 +161,19 @@ mod tests {
     fn gate_skips_invalid_action() {
         let (_fs, tmp) = fs_lab_tempdir();
         let repo = tmp.path();
-        let ev_path = repo.join("ev.json");
-        fs::write(
-            &ev_path,
-            r#"{"event_id":"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee","event_type":"Email_Quick_Action_Requested","payload":{"message_uid":"1","action":"explode"}}"#,
+        let eid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+        crate::engine::eda_port::test_lab::seed_domain_ecst(
+            repo,
+            eid,
+            "Email_Quick_Action_Requested",
+            json!({"message_uid": "1", "action": "explode"}),
         )
         .unwrap();
-        let env = run(repo, &json!({"event_file_path": ev_path.to_string_lossy()})).unwrap();
+        let env = run(
+            repo,
+            &json!({"event_uri": format!(".events/domain/{eid}.json")}),
+        )
+        .unwrap();
         assert!(env.success);
         assert_eq!(env.data.unwrap()["recorded"], json!(false));
     }
@@ -182,13 +188,23 @@ mod tests {
             r#"{"eda_instance":{"proofs":".SddIA/proofs"}}"#,
         )
         .unwrap();
-        let ev_path = repo.join("ev.json");
-        fs::write(
-            &ev_path,
-            r#"{"event_id":"11111111-1111-1111-1111-111111111111","event_type":"Email_Quick_Action_Requested","timestamp":"2026-08-19T00:00:00Z","payload":{"message_uid":"42","action":"archive","channel":"kalma2"}}"#,
+        let eid = "11111111-1111-1111-1111-111111111111";
+        crate::engine::eda_port::test_lab::seed_domain_ecst(
+            repo,
+            eid,
+            "Email_Quick_Action_Requested",
+            json!({
+                "message_uid": "42",
+                "action": "archive",
+                "channel": "kalma2"
+            }),
         )
         .unwrap();
-        let env = run(repo, &json!({"event_file_path": ev_path.to_string_lossy()})).unwrap();
+        let env = run(
+            repo,
+            &json!({"event_uri": format!(".events/domain/{eid}.json")}),
+        )
+        .unwrap();
         assert!(env.success);
         assert_eq!(env.data.unwrap()["recorded"], json!(true));
         assert!(repo

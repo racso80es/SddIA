@@ -210,11 +210,6 @@ pub fn subscriber_id(subscriber: &Value) -> String {
     sddia_eda_catalog::subscriber_id(subscriber)
 }
 
-#[cfg(test)]
-fn witness_filename(event_uuid: &str, subscriber_name: &str) -> String {
-    format!("{event_uuid}.{subscriber_name}.json")
-}
-
 pub fn iso_now() -> String {
     Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string()
 }
@@ -229,33 +224,24 @@ pub fn write_json_atomic(path: &Path, payload: &Value) -> Result<(), String> {
     fs::rename(&tmp, path).map_err(|e| e.to_string())
 }
 
-fn copy_header_atomic(source: &Path, dest: &Path) -> Result<(), String> {
-    if let Some(parent) = dest.parent() {
-        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
-    fs::copy(source, dest).map_err(|e| e.to_string())?;
-    Ok(())
-}
-
+/// Token lógico de cabecera; MAN-43 O3: sin copia FS (SSOT = puerto).
 pub fn ensure_state_header(
     repo: &Path,
     bus: &EventBusTopology,
     state: &str,
     event_uuid: &str,
-    source_path: &Path,
+    _source_path: &Path,
 ) -> Result<PathBuf, String> {
-    let dest = header_path_repo(repo, bus, state, event_uuid);
-    copy_header_atomic(source_path, &dest)?;
-    Ok(dest)
+    Ok(header_path_repo(repo, bus, state, event_uuid))
 }
 
 pub fn ensure_processing_header(
     repo: &Path,
     bus: &EventBusTopology,
     event_uuid: &str,
-    pending_path: &Path,
+    _pending_path: &Path,
 ) -> Result<PathBuf, String> {
-    ensure_state_header(repo, bus, "processing", event_uuid, pending_path)
+    Ok(header_path_repo(repo, bus, "processing", event_uuid))
 }
 
 fn resolve_witness_key(state_key: &str) -> &str {
@@ -265,43 +251,6 @@ fn resolve_witness_key(state_key: &str) -> &str {
         "subscriber_dead_letter" | "dead_letter" => "dead_letter_subscribers",
         other => other,
     }
-}
-
-#[cfg(test)]
-fn list_fs_witnesses(
-    repo: &Path,
-    bus: &EventBusTopology,
-    state_key: &str,
-    event_uuid: &str,
-) -> Vec<PathBuf> {
-    let folder_key = resolve_witness_key(state_key);
-    let folder = match folder_key {
-        "processing_subscribers" => resolve_bus_path(repo, &bus.processing_subscribers),
-        "processed_subscribers" => resolve_bus_path(repo, &bus.processed_subscribers),
-        "dead_letter_subscribers" => resolve_bus_path(repo, &bus.dead_letter_subscribers),
-        _ => return Vec::new(),
-    };
-    if !folder.is_dir() {
-        return Vec::new();
-    }
-    let prefix = format!("{event_uuid}.");
-    let Ok(entries) = fs::read_dir(&folder) else {
-        return Vec::new();
-    };
-    let mut paths: Vec<PathBuf> = entries
-        .flatten()
-        .map(|e| e.path())
-        .filter(|p| {
-            p.is_file()
-                && p.extension().and_then(|e| e.to_str()) == Some("json")
-                && p.file_name()
-                    .and_then(|n| n.to_str())
-                    .map(|n| n.starts_with(&prefix))
-                    .unwrap_or(false)
-        })
-        .collect();
-    paths.sort();
-    paths
 }
 
 fn list_port_witnesses(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
@@ -323,19 +272,24 @@ fn list_port_witnesses(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<Pa
     };
     let mut paths = Vec::new();
     for row in rows.deliveries {
-        if row.event_id != event_uuid && !row.delivery_id.contains(event_uuid) {
+        if row.event_id != event_uuid {
             continue;
         }
-        let sub = row
-            .delivery_id
-            .strip_prefix(&format!("{event_uuid}."))
-            .or_else(|| row.delivery_id.rsplit(':').next())
-            .unwrap_or(row.delivery_id.as_str());
-        let include = match (folder_key, row.status) {
-            ("dead_letter_subscribers", PortDeliveryStatus::Nack) => true,
-            ("processed_subscribers", PortDeliveryStatus::Ack) => true,
-            _ => false,
+        let Some(sub) = row
+            .subscriber_id
+            .as_deref()
+            .filter(|s| !s.is_empty())
+        else {
+            continue;
         };
+        let include = matches!(
+            (folder_key, row.status),
+            (
+                "processing_subscribers",
+                PortDeliveryStatus::Processing
+            ) | ("dead_letter_subscribers", PortDeliveryStatus::Nack)
+                | ("processed_subscribers", PortDeliveryStatus::Ack)
+        );
         if include {
             paths.push(PathBuf::from(format!("{event_uuid}.{sub}.json")));
         }
@@ -344,72 +298,13 @@ fn list_port_witnesses(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<Pa
     paths
 }
 
-#[cfg(test)]
-fn list_store_witnesses_legacy(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
-    use sddia_event_store::{DeliveryStatus, EventStore};
-    let folder_key = resolve_witness_key(state_key);
-    let Ok(store) = EventStore::open(eda_port::runtime_db_path(repo)) else {
-        return Vec::new();
-    };
-    let Ok(rows) = store.list_deliveries() else {
-        return Vec::new();
-    };
-    let mut paths = Vec::new();
-    for (eid, sub, status) in rows {
-        if eid != event_uuid {
-            continue;
-        }
-        let include = match (folder_key, status) {
-            ("dead_letter_subscribers", DeliveryStatus::Failed) => true,
-            ("processed_subscribers", DeliveryStatus::Success | DeliveryStatus::Skipped) => true,
-            ("processing_subscribers", DeliveryStatus::Pending) => true,
-            _ => false,
-        };
-        if include {
-            paths.push(PathBuf::from(format!("{event_uuid}.{sub}.json")));
-        }
-    }
-    paths.sort();
-    paths
-}
-
-#[allow(unused_variables)]
 pub fn list_witnesses(
     repo: &Path,
-    bus: &EventBusTopology,
+    _bus: &EventBusTopology,
     state_key: &str,
     event_uuid: &str,
 ) -> Vec<PathBuf> {
-    #[cfg(not(test))]
-    {
-        return list_port_witnesses(repo, state_key, event_uuid);
-    }
-    #[cfg(test)]
-    {
-        let mode = sddia_event_store::store_mode();
-        let mut paths = Vec::new();
-        if sddia_event_store::writes_filesystem(mode) {
-            paths.extend(list_fs_witnesses(repo, bus, state_key, event_uuid));
-            if !sddia_event_store::writes_store(mode) {
-                paths.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
-                paths.dedup_by(|a, b| a.file_name() == b.file_name());
-                return paths;
-            }
-        }
-        if sddia_event_store::writes_store(mode) {
-            let legacy = list_store_witnesses_legacy(repo, state_key, event_uuid);
-            if !legacy.is_empty() {
-                paths.extend(legacy);
-            } else {
-                paths.extend(list_port_witnesses(repo, state_key, event_uuid));
-            }
-        } else {
-            paths.extend(list_port_witnesses(repo, state_key, event_uuid));
-        }
-        paths.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
-        paths.dedup_by(|a, b| a.file_name() == b.file_name());
-        paths
-    }
+    list_port_witnesses(repo, state_key, event_uuid)
 }
 
 pub fn purge_store_event(repo: &Path, event_id: &str) {
@@ -427,90 +322,25 @@ fn delivery_status_from_label(status: &str) -> &'static str {
     }
 }
 
-fn delivery_terminal_in_ecst(ecst: &Value, subscriber_name: &str) -> bool {
-    ecst.get("delivery_state")
-        .and_then(|d| d.get(subscriber_name))
-        .and_then(|v| v.as_str())
-        .is_some_and(|s| matches!(s, "success" | "processed" | "failed" | "skipped" | "dead-letter"))
-}
-
-#[cfg(test)]
-fn witness_exists(
-    repo: &Path,
-    bus: &EventBusTopology,
-    state_key: &str,
-    event_uuid: &str,
-    subscriber_name: &str,
-) -> bool {
-    let folder_key = resolve_witness_key(state_key);
-    let folder = match folder_key {
-        "processing_subscribers" => resolve_bus_path(repo, &bus.processing_subscribers),
-        "processed_subscribers" => resolve_bus_path(repo, &bus.processed_subscribers),
-        "dead_letter_subscribers" => resolve_bus_path(repo, &bus.dead_letter_subscribers),
-        _ => return false,
-    };
-    folder
-        .join(witness_filename(event_uuid, subscriber_name))
-        .is_file()
-}
-
 pub fn terminal_witness_exists(
     repo: &Path,
     _bus: &EventBusTopology,
     event_uuid: &str,
     subscriber_name: &str,
 ) -> bool {
-    if let Ok(Some(ecst)) = eda_port::load_dispatched(
-        repo,
-        event_uuid,
-        &repo.join(format!(".events/pending/{event_uuid}.json")),
-    ) {
-        if delivery_terminal_in_ecst(&ecst, subscriber_name) {
-            return true;
-        }
-    }
-    #[cfg(test)]
-    {
-        return witness_exists(
-            repo,
-            _bus,
-            "processed_subscribers",
-            event_uuid,
-            subscriber_name,
-        ) || witness_exists(
-            repo,
-            _bus,
-            "dead_letter_subscribers",
-            event_uuid,
-            subscriber_name,
-        );
-    }
-    #[cfg(not(test))]
-    {
-        false
-    }
+    eda_port::delivery_terminal_for_subscriber(repo, event_uuid, subscriber_name)
 }
 
 pub fn write_processing_witness(
-    _repo: &Path,
+    repo: &Path,
     _bus: &EventBusTopology,
     event_uuid: &str,
     subscriber_name: &str,
-    event_type: &str,
-    dispatch_mode: &str,
+    _event_type: &str,
+    _dispatch_mode: &str,
 ) -> Result<PathBuf, String> {
-    let witness = json!({
-        "event_uuid": event_uuid,
-        "subscriber": subscriber_name,
-        "state": "processing",
-        "started_at": iso_now(),
-        "event_type": event_type,
-        "dispatch_mode": dispatch_mode,
-    });
-    let _ = witness;
-    Ok(PathBuf::from(format!(
-        ".events/processing_subscribers/{event_uuid}.{subscriber_name}.json"
-    )))
+    eda_port::record_delivery_processing(repo, event_uuid, subscriber_name)?;
+    Ok(PathBuf::from(format!("{event_uuid}.{subscriber_name}.json")))
 }
 
 pub fn delegation_meta(subscriber: &Value, exit_code: i32) -> Value {
@@ -537,39 +367,17 @@ pub fn delegation_meta(subscriber: &Value, exit_code: i32) -> Value {
 
 pub fn promote_witness(
     repo: &Path,
-    bus: &EventBusTopology,
+    _bus: &EventBusTopology,
     event_uuid: &str,
     subscriber_name: &str,
     to_state: &str,
     extra: Option<&Value>,
     _pending_header: Option<&Path>,
 ) -> Result<PathBuf, String> {
-    let rel = match to_state {
-        "processed" => &bus.processed_subscribers,
-        "dead-letter" => &bus.dead_letter_subscribers,
+    match to_state {
+        "processed" | "dead-letter" => {}
         other => return Err(format!("unknown witness state: {other}")),
     };
-    let mut witness = json!({
-        "event_uuid": event_uuid,
-        "subscriber": subscriber_name,
-        "state": to_state,
-        "finished_at": iso_now(),
-    });
-    if let Some(ex) = extra {
-        if let Some(obj) = ex.as_object() {
-            for (k, v) in obj {
-                witness[k.clone()] = v.clone();
-            }
-        }
-    }
-    let path = repo
-        .join(rel.trim_start_matches("./"))
-        .join(format!("{event_uuid}.{subscriber_name}.json"));
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
-    write_json_atomic(&path, &witness)?;
-
     let label = extra
         .and_then(|e| e.get("result_status").and_then(|v| v.as_str()))
         .unwrap_or(if to_state == "processed" {
@@ -585,12 +393,13 @@ pub fn promote_witness(
         if store_lock_contention::is_store_lock_contention_message(cause) {
             // MAN-42: contención pura → sin DLQ; entrega sigue pending para el siguiente tick.
         } else {
+            eda_port::record_delivery_nack(repo, event_uuid, subscriber_name)?;
             eda_port::move_to_dlq(repo, event_uuid, cause)?;
         }
     } else {
         eda_port::record_delivery_ack(repo, event_uuid, subscriber_name)?;
     }
-    Ok(path)
+    Ok(PathBuf::from(format!("{event_uuid}.{subscriber_name}.json")))
 }
 
 fn terminal_subscriber_names(
@@ -1032,14 +841,11 @@ fn finalize_kaizen_terminal(
     origin_topology: &str,
 ) -> Value {
     let mut counts = json!({"pending": 0, "headers": 0});
-    let dead_header = header_path_repo(repo, bus, "dead_letter", event_uuid);
-    if !dead_header.is_file() && pending_path.is_file() {
-        if ensure_state_header(repo, bus, "dead_letter", event_uuid, pending_path).is_ok() {
-            counts["headers"] = json!(1);
-        }
-    }
     if pending_path.is_file() && safe_remove_path(pending_path) {
         counts["pending"] = json!(1);
+    }
+    if eda_port::purge_event(repo, event_uuid).is_ok() {
+        counts["headers"] = json!(1);
     }
     if maybe_purge_processing_header(repo, bus, event_uuid, registry, event_type, origin_topology) {
         counts["headers"] = json!(counts["headers"].as_i64().unwrap_or(0) + 1);
@@ -1054,39 +860,20 @@ fn archive_event_after_sweep(
     event_type: Option<&str>,
 ) -> Value {
     let mut counts = json!({"witnesses": 0, "headers": 0, "pending": 0});
-    let mut resolved_type = event_type.map(str::to_string);
-    if resolved_type.is_none() {
-        for state in ["processed", "processing"] {
-            let header = header_path_repo(repo, bus, state, event_uuid);
-            if !header.is_file() {
-                continue;
-            }
-            if let Ok(text) = fs::read_to_string(&header) {
-                if let Ok(body) = serde_json::from_str::<Value>(&text) {
-                    if let Some(et) = body.get("event_type").and_then(|v| v.as_str()) {
-                        resolved_type = Some(et.to_string());
-                        break;
-                    }
-                }
-            }
-        }
-    }
+    let _ = event_type;
     let pending = resolve_bus_path(repo, &bus.pending).join(format!("{event_uuid}.json"));
     if pending.is_file() && safe_remove_path(&pending) {
         counts["pending"] = json!(1);
     }
-    for state in ["processing", "processed"] {
+    if eda_port::purge_event(repo, event_uuid).is_ok() {
+        counts["headers"] = json!(1);
+    }
+    for state in ["processing", "processed", "dead_letter"] {
         let header = header_path_repo(repo, bus, state, event_uuid);
         if header.is_file() && safe_remove_path(&header) {
             counts["headers"] = json!(counts["headers"].as_i64().unwrap_or(0) + 1);
         }
     }
-    for path in list_witnesses(repo, bus, "processed_subscribers", event_uuid) {
-        if safe_remove_path(&path) {
-            counts["witnesses"] = json!(counts["witnesses"].as_i64().unwrap_or(0) + 1);
-        }
-    }
-    let _ = resolved_type;
     counts
 }
 
@@ -1146,24 +933,13 @@ fn dead_letter_includes_tracker_stamp(dead: &[PathBuf], event_uuid: &str) -> boo
 
 fn pending_tracker_sync_failed_for_ref(
     repo: &Path,
-    bus: &EventBusTopology,
+    _bus: &EventBusTopology,
     tracker_ref: &str,
 ) -> bool {
-    let pending_dir = resolve_bus_path(repo, &bus.pending);
-    let Ok(entries) = fs::read_dir(&pending_dir) else {
+    let Ok(rows) = eda_port::load_domain_ecsts(repo, 5000) else {
         return false;
     };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("json") {
-            continue;
-        }
-        let Ok(text) = fs::read_to_string(&path) else {
-            continue;
-        };
-        let Ok(event) = serde_json::from_str::<Value>(&text) else {
-            continue;
-        };
+    for event in rows {
         if event.get("event_type").and_then(|v| v.as_str()) != Some("Tracker_Sync_Failed") {
             continue;
         }
@@ -1428,6 +1204,59 @@ mod tests {
         crate::engine::eda_port::test_lab::fs_lab_tempdir()
     }
 
+    fn seed_pending_ecst(repo: &Path, event_id: &str, event_type: &str, payload: Value) {
+        let mut event = json!({
+            "event_id": event_id,
+            "event_type": event_type,
+            "payload": payload,
+        });
+        sddia_eda_catalog::stamp_published_event(repo, &mut event).unwrap();
+        crate::engine::eda_port::record_ecst(repo, "pending", &event).unwrap();
+    }
+
+    fn seed_subscriber_witness(repo: &Path, event_id: &str, subscriber: &str, success: bool) {
+        if success {
+            crate::engine::eda_port::record_delivery_ack(repo, event_id, subscriber).unwrap();
+        } else {
+            crate::engine::eda_port::record_delivery_nack(repo, event_id, subscriber).unwrap();
+        }
+    }
+
+    #[test]
+    fn promote_witness_does_not_materialize_subscriber_json() {
+        use crate::engine::eda_port::test_harness::EventManagerTestHarness;
+        use sddia_core::ports::event_manager::{publish_request_domain, EventManagerPort};
+
+        let h = EventManagerTestHarness::new();
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        write_minimal_paths(repo);
+        let bus = ensure_event_bus_topology(repo).unwrap();
+        let event_id = "evt-o2-promote-witness";
+        h.mock()
+            .publish_ecst(publish_request_domain(
+                event_id,
+                json!({"event_type": "T"}),
+                None,
+            ))
+            .unwrap();
+        let fs_path = resolve_bus_path(repo, &bus.processed_subscribers)
+            .join(format!("{event_id}.sub-a.json"));
+        assert!(!fs_path.is_file());
+        promote_witness(
+            repo,
+            &bus,
+            event_id,
+            "sub-a",
+            "processed",
+            Some(&json!({"result_status": "success"})),
+            None,
+        )
+        .unwrap();
+        assert!(!fs_path.is_file(), "no debe existir testigo FS de suscriptor");
+        assert!(terminal_witness_exists(repo, &bus, event_id, "sub-a"));
+    }
+
     #[test]
     fn adu_ca5_docs_prefix_features_then_fixes() {
         let tmp = tempfile::tempdir().unwrap();
@@ -1483,25 +1312,21 @@ mod tests {
         write_minimal_paths(repo);
         let event_id = "aaaaaaaa-bbbb-4ccc-8ddd-000000000001";
         let bus = ensure_event_bus_topology(repo).unwrap();
-        let pending = resolve_bus_path(repo, &bus.pending).join(format!("{event_id}.json"));
-        fs::create_dir_all(pending.parent().unwrap()).unwrap();
-        write_json_atomic(
-            &pending,
-            &json!({
-                "event_id": event_id,
-                "event_type": "System_Fracture_Detected",
-                "payload": { "origin_topology": "core" }
-            }),
-        )
-        .unwrap();
-        fs::create_dir_all(resolve_bus_path(repo, &bus.dead_letter_subscribers)).unwrap();
-        fs::create_dir_all(resolve_bus_path(repo, &bus.processed_subscribers)).unwrap();
-        let dead = resolve_bus_path(repo, &bus.dead_letter_subscribers)
-            .join(format!("{event_id}.cumulo.materialize-fracture-pbi.json"));
-        write_json_atomic(&dead, &json!({"status": "failed"})).unwrap();
-        let tele = resolve_bus_path(repo, &bus.processed_subscribers)
-            .join(format!("{event_id}.argos.send-telegram-notification.json"));
-        write_json_atomic(&tele, &json!({"status": "success"})).unwrap();
+        seed_pending_ecst(
+            repo,
+            event_id,
+            "System_Fracture_Detected",
+            json!({ "origin_topology": "core" }),
+        );
+        seed_subscriber_witness(repo, event_id, "cumulo.materialize-fracture-pbi", false);
+        seed_subscriber_witness(repo, event_id, "argos.send-telegram-notification", true);
+        // ACK terminal puede expulsar el ECST del bucket pending; restaurar cabecera para el barrido.
+        seed_pending_ecst(
+            repo,
+            event_id,
+            "System_Fracture_Detected",
+            json!({ "origin_topology": "core" }),
+        );
         let registry = json!({
             "System_Fracture_Detected": [
                 {"agent": "cumulo", "action": "materialize-fracture-pbi"},
@@ -1514,26 +1339,20 @@ mod tests {
             Some("fracture-unmaterialized")
         );
         assert_eq!(sweep.get("purged").and_then(|v| v.as_bool()), Some(false));
-        assert!(pending.is_file());
+        assert!(crate::engine::eda_port::test_lab::event_exists(repo, event_id));
     }
 
-    fn write_pr_merged_pending(repo: &Path, bus: &EventBusTopology, event_id: &str, tracker_ref: &str) -> PathBuf {
-        let pending = resolve_bus_path(repo, &bus.pending).join(format!("{event_id}.json"));
-        fs::create_dir_all(pending.parent().unwrap()).unwrap();
-        write_json_atomic(
-            &pending,
-            &json!({
-                "event_id": event_id,
-                "event_type": "PullRequest_Merged",
-                "payload": {
-                    "origin_topology": "core",
-                    "tracker_ref": tracker_ref,
-                    "merge_commit_hash": "abc123"
-                }
+    fn write_pr_merged_pending(repo: &Path, _bus: &EventBusTopology, event_id: &str, tracker_ref: &str) {
+        seed_pending_ecst(
+            repo,
+            event_id,
+            "PullRequest_Merged",
+            json!({
+                "origin_topology": "core",
+                "tracker_ref": tracker_ref,
+                "merge_commit_hash": "abc123"
             }),
-        )
-        .unwrap();
-        pending
+        );
     }
 
     fn pr_merged_registry() -> Value {
@@ -1553,24 +1372,28 @@ mod tests {
         write_minimal_paths(repo);
         let event_id = "bbbbbbbb-bbbb-4ccc-8ddd-000000000002";
         let bus = ensure_event_bus_topology(repo).unwrap();
-        let pending = write_pr_merged_pending(repo, &bus, event_id, "AUT-72");
-        fs::create_dir_all(resolve_bus_path(repo, &bus.dead_letter_subscribers)).unwrap();
-        fs::create_dir_all(resolve_bus_path(repo, &bus.processed_subscribers)).unwrap();
-        let dead = resolve_bus_path(repo, &bus.dead_letter_subscribers)
-            .join(format!("{event_id}.{TRACKER_STAMP_SUBSCRIBER}.json"));
-        write_json_atomic(&dead, &json!({"status": "failed"})).unwrap();
+        write_pr_merged_pending(repo, &bus, event_id, "AUT-72");
+        seed_subscriber_witness(repo, event_id, TRACKER_STAMP_SUBSCRIBER, false);
         for sub in ["cumulo.iota-immutable-publisher", "argos.notify-humanized-pr-merged"] {
-            let p = resolve_bus_path(repo, &bus.processed_subscribers)
-                .join(format!("{event_id}.{sub}.json"));
-            write_json_atomic(&p, &json!({"status": "success"})).unwrap();
+            seed_subscriber_witness(repo, event_id, sub, true);
         }
+        seed_pending_ecst(
+            repo,
+            event_id,
+            "PullRequest_Merged",
+            json!({
+                "origin_topology": "core",
+                "tracker_ref": "AUT-72",
+                "merge_commit_hash": "abc123"
+            }),
+        );
         let sweep = try_sweep_event(repo, &bus, event_id, Some(&pr_merged_registry()));
         assert_eq!(
             sweep.get("status").and_then(|v| v.as_str()),
             Some("tracker-stamp-unreconciled")
         );
         assert_eq!(sweep.get("purged").and_then(|v| v.as_bool()), Some(false));
-        assert!(pending.is_file());
+        assert!(crate::engine::eda_port::test_lab::event_exists(repo, event_id));
     }
 
     #[test]
@@ -1580,17 +1403,21 @@ mod tests {
         write_minimal_paths(repo);
         let event_id = "cccccccc-bbbb-4ccc-8ddd-000000000003";
         let bus = ensure_event_bus_topology(repo).unwrap();
-        let pending = write_pr_merged_pending(repo, &bus, event_id, "AUT-72");
-        fs::create_dir_all(resolve_bus_path(repo, &bus.dead_letter_subscribers)).unwrap();
-        fs::create_dir_all(resolve_bus_path(repo, &bus.processed_subscribers)).unwrap();
-        let dead = resolve_bus_path(repo, &bus.dead_letter_subscribers)
-            .join(format!("{event_id}.{TRACKER_STAMP_SUBSCRIBER}.json"));
-        write_json_atomic(&dead, &json!({"status": "failed"})).unwrap();
+        write_pr_merged_pending(repo, &bus, event_id, "AUT-72");
+        seed_subscriber_witness(repo, event_id, TRACKER_STAMP_SUBSCRIBER, false);
         for sub in ["cumulo.iota-immutable-publisher", "argos.notify-humanized-pr-merged"] {
-            let p = resolve_bus_path(repo, &bus.processed_subscribers)
-                .join(format!("{event_id}.{sub}.json"));
-            write_json_atomic(&p, &json!({"status": "success"})).unwrap();
+            seed_subscriber_witness(repo, event_id, sub, true);
         }
+        seed_pending_ecst(
+            repo,
+            event_id,
+            "PullRequest_Merged",
+            json!({
+                "origin_topology": "core",
+                "tracker_ref": "AUT-72",
+                "merge_commit_hash": "abc123"
+            }),
+        );
         crate::engine::done_gate::write_tracker_done_proof(
             repo,
             "AUT-72",
@@ -1604,6 +1431,6 @@ mod tests {
             Some("kaizen-finalized")
         );
         assert_eq!(sweep.get("purged").and_then(|v| v.as_bool()), Some(true));
-        assert!(!pending.is_file());
+        assert!(!crate::engine::eda_port::test_lab::event_exists(repo, event_id));
     }
 }

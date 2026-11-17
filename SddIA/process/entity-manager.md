@@ -1,9 +1,9 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:d4a6b778b8671653c8b8da02aa9508dc2c30b7cab4ceb24445f4692547de1682
+hash_signature: sha256:97074887f6db705427ce07758c47b8be06dc92c97df7bd8b5f6f44eeac4a8b70
 inputs:
-- entity_class: 'string; enum: process | agent | skill | tool | action | norm | codex | event | suite | daemon'
+- entity_class: 'string; enum: process | agent | skill | tool | action | norm | codex | event | suite | daemon | capability-contract'
 - entity_name: string; identificador kebab-case de la entidad
 - lifecycle_operation: 'string; enum: create | update | delete'
 - semantic_seed: object|null; parámetros de forja para el creator hijo; ignorado en delete
@@ -11,16 +11,16 @@ inputs:
 minteo_maximo: null
 name: entity-manager
 outputs:
-- event_id: UUID v4 del evento Domain_Entity_* en eda_bus.pending
-- target_path: Ruta relativa del JSON emitido en pending/
-- handoff_entity_uuid: UUID de la entidad afectada (desde creator o frontmatter en delete)
-- handoff_hash_signature_new: Sello post-mutación o null en delete
-- handoff_hash_signature_old: Sello pre-mutación o null en create
-- handoff_version: Versión SemVer resultante
+- 'event_id: UUID v4 del evento Domain_Entity_* en eda_bus.pending'
+- 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://pending/{event_id})'
+- 'handoff_entity_uuid: UUID de la entidad afectada (desde creator o frontmatter en delete)'
+- 'handoff_hash_signature_new: Sello post-mutación o null en delete'
+- 'handoff_hash_signature_old: Sello pre-mutación o null en create'
+- 'handoff_version: Versión SemVer resultante'
 phases:
 - delegates_to:
   - action:execute-process
-  intent: 'En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto S+: las 10 clases (skill, event, process, agent, tool, action, norm, codex, suite, daemon).'
+  intent: 'En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto S+: las 11 clases (skill, event, process, agent, tool, action, norm, codex, suite, daemon y capability-contract, esta última por forja nativa sin creator).'
   name: Delegación al creator
 - intent: 'Solo en delete: READ_FILE del artefacto para extraer uuid/version/hash_signature; DELETE_FILE del .md bajo directories.*.'
   name: Delete físico
@@ -34,7 +34,7 @@ phases:
   name: Sello universal
 porcentaje_de_exito: null
 uuid: 62f08bbd-e9ce-479d-8d1b-792684e1bd26
-version: 1.0.2
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
@@ -56,6 +56,7 @@ Proceso orquestador (**Gestor de Entidad**) que envuelve los `*-creator` del gen
 | `codex` | `codex-creator` | **Piloto** |
 | `suite` | `suite-creator` | **Piloto** |
 | `daemon` | `daemon-creator` | **Piloto** |
+| `capability-contract` | _(ninguno: forja nativa `forges/capability_contract.rs`)_ | **Piloto nativo** (sustrato B de la Cicatriz Digital: `{name}.schema.json` + `x-sddia`; sin fallback; `create`, `update` por `adopt` o `schema_json_patch` RFC 6902; `delete` no soportado) |
 
 Entradas bajo `SddIA/evolution/` **no** pasan por este proceso (no emiten `Domain_Entity_*`).
 
@@ -183,7 +184,7 @@ Invocar `action:emit-domain-mutation`:
 | `emitter_agent` | `entity-manager` |
 | `origin_topology` | resuelto en Fase 1 (`core` \| `local`) |
 
-Propagar `event_id` y `target_path` a outputs del proceso.
+Propagar `event_id` y `event_uri` a outputs del proceso.
 
 ### Mandato DLT (Pilar 2 — post-sello core)
 

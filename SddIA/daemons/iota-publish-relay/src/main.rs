@@ -291,11 +291,6 @@ mod tests {
     }
 
     #[test]
-    fn socket_addr_unused_ok() {
-        let _: Option<SocketAddr> = "127.0.0.1:8787".parse().ok();
-    }
-
-    #[test]
     fn grace_refused_does_not_kill() {
         let grace = Duration::from_secs(GRACE_SECS);
         let action = decide_supervisor_tick(false, in_grace(true, Some(Duration::ZERO), grace), true);

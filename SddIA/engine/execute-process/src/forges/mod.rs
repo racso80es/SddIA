@@ -1,3 +1,4 @@
+pub mod capability_contract;
 pub mod common;
 pub mod factory;
 

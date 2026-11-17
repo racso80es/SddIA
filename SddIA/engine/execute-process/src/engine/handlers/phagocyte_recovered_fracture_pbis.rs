@@ -165,7 +165,7 @@ fn apply_documental(
                             && !t.starts_with("fix_ref:")
                     })
                     .collect();
-                lines.push(format!("status: cerrado"));
+                lines.push("status: cerrado".to_string());
                 lines.push(format!("closed: \"{closed}\""));
                 lines.push("laudo: B-automatic-phagocyte".to_string());
                 lines.push(format!("fix_ref: {fix_ola}"));

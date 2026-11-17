@@ -3,7 +3,7 @@ context:
 - quality-assurance
 - event-routing
 contract: process-contract v1.4.0
-hash_signature: sha256:f5cb7744f3bf4d32c6013f8fd2376b1c9fbb1841d18a90578c40783018188a3b
+hash_signature: "sha256:f5cb7744f3bf4d32c6013f8fd2376b1c9fbb1841d18a90578c40783018188a3b"
 inputs: []
 minteo_maximo: null
 name: event-bus-audit
@@ -29,7 +29,7 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # event-bus-audit
 
-Proceso on-demand de auditoría empírica del bus EDA. Con `SDDIA_EVENT_STORE=redb` el censo lee `events.redb`; con `filesystem` escanea `./.events/`. Valida coherencia ECST, detecta anomalías y genera informe. Emite `Kaizen_Alert_Required` vía gate del store (no JSON residual en `redb`) solo si `emit_kaizen_alert` y (`circuit_alert` o pending estancados accionables no fractura). El volumen histórico de dead-letter no dispara Kaizen.
+Proceso on-demand de auditoría empírica del bus EDA. El censo lee el store productivo vía `EventManagerPort` / `events.redb` (bóveda `SDDIA_EVENT_MANAGER_*`). El escaneo de `./.events/` solo ocurre si Cúmulo declara rutas legacy explícitas (ver `event-bus-audit` binario, MAN-43 O7). Valida coherencia ECST, detecta anomalías y genera informe. Emite `Kaizen_Alert_Required` vía gate del store (no JSON residual en `redb`) solo si `emit_kaizen_alert` y (`circuit_alert` o pending estancados accionables no fractura). El volumen histórico de dead-letter no dispara Kaizen.
 
 ```bash
 # Auditoría completa con emisión Kaizen (default)

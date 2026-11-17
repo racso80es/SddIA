@@ -343,23 +343,21 @@ pub fn put_revision(repo: &Path, pref: UserPreference) -> Result<UserPreference,
     let pref = finalize_preference_ids(pref);
     write_revision(&root, &pref)?;
     let mut index = read_head_index(&root)?;
-    if matches!(pref.status, PreferenceStatus::Active | PreferenceStatus::Proposed) {
-        index.insert(
-            pref.preference_id.clone(),
-            json!({
-                "revision_id": pref.revision_id,
-                "status": format!("{:?}", pref.status).to_lowercase(),
-            }),
-        );
-    } else if matches!(pref.status, PreferenceStatus::Revoked | PreferenceStatus::Superseded) {
-        index.insert(
-            pref.preference_id.clone(),
-            json!({
-                "revision_id": pref.revision_id,
-                "status": format!("{:?}", pref.status).to_lowercase(),
-            }),
-        );
-    }
+    // Cubre exactamente las cuatro variantes de PreferenceStatus (Active/Proposed/Revoked/Superseded).
+    debug_assert!(matches!(
+        pref.status,
+        PreferenceStatus::Active
+            | PreferenceStatus::Proposed
+            | PreferenceStatus::Revoked
+            | PreferenceStatus::Superseded
+    ));
+    index.insert(
+        pref.preference_id.clone(),
+        json!({
+            "revision_id": pref.revision_id,
+            "status": format!("{:?}", pref.status).to_lowercase(),
+        }),
+    );
     write_head_index(&root, &index)?;
     Ok(pref)
 }

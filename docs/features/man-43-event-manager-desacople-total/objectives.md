@@ -1,10 +1,12 @@
 ---
+
 feature_name: man-43-event-manager-desacople-total
 created: "2026-11-11"
 updated: "2026-11-11"
 process: feature
 purpose: Objetivos estabilizados — EventManagerPort v2 / EventUri única frontera; cero dualismo Redb+FS ni topología runtime `.events/`
 branch_name: feat/man-43-event-manager-desacople-total
+rebaseline_branch: docs/man-43-post-merge-handoff
 persist_ref: docs/features/man-43-event-manager-desacople-total
 pbi_ref: MAN-43
 parent_ref: MAN-40
@@ -16,11 +18,13 @@ contract_version: "2.0.0"
 status: requisitos-estabilizados
 mayeuta_verdict: ok
 phase: mayeuta-stabilization
+rebaseline: remediation-waves-v1
+audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-43.jsonl"
 refine_workspace: ".SddIA/workspaces/refine-item/c7976303-3b56-4175-9303-415e8b187623"
-execution_id: "3278ec5b-21ae-4fe0-af14-62a7e5ba0e07"
 seed: continue-tekton
+execution_id: "3654517b-c915-4e35-a965-3c7550a7b706"
 ---
 # Objetivos — man-43-event-manager-desacople-total
 
@@ -30,6 +34,16 @@ Convertir **`EventManagerPort` v2** en la única frontera para existencia, ident
 
 **Por qué:** tras el cutover a puerto 1.2 (MAN-35), bóveda (MAN-36) y sello lógico (MAN-40), el runtime aún conserva descubrimiento/estado vía `.events/*`, doble materialización, testigos y barridos FS, identificadores con apariencia de ruta, API física Redb expuesta por `eda_port`, y `sddia-event-store` / puentes legacy en laboratorio. El gap parental de desacople permanece hasta este ciclo (meta AC-13 → `APTO_TOTAL`).
 
+## Rebaseline post-H1 — auditoría 2026-11-11
+
+La auditoría `docs/audits/man-32-lineage-man-43-remediation-20261111.md` fija el estado posterior al merge del PR #453:
+
+- El sello H1 permanece válido como **milestone parcial**; no equivale a cierre de MAN-43.
+- H1 requiere remediación: integridad Redb, familia/estado persistidos, filtros reales, terminales completos, suite ampliada y convergencia Genoma 2.0.
+- H2–H6 permanecen obligatorios.
+- La ejecución se reordena en olas **O0–O6**. O0 contiene riesgo de corrupción por coincidencia textual antes de ampliar el uso del puerto.
+- El veredicto del feature completo es **`NO_APTO_TOTAL`** hasta O6.
+
 ## Contexto estabilizado
 
 | Hecho | Impacto |
@@ -38,7 +52,7 @@ Convertir **`EventManagerPort` v2** en la única frontera para existencia, ident
 | Semilla / documento | **PBI-0f4f0f5f** (refine `verdict: refined`; origen metadato `refactorization`; ciclo runtime **`feature`**) |
 | Semilla esta pasada | **`continue tekton`** — reconfirmar requisitos; handoff a Ejecución sin nuevas preguntas |
 | Predecesores | MAN-32…MAN-40 — **no** se reabre bóveda/precedencia; sí se **supera** el token T0 `.events/...json` por `EventUri` |
-| Gap parental | R1 watcher FS, R2 store lab, R3 API física — meta `APTO_TOTAL` (AC-13). Paths `docs/audits/desacople-event-manager-man-32-20261110.md` / `legacy-pending-events-eda-20261110.md` **ausentes en disco** esta pasada; inventarios vigentes vía refine + `clarify.md` + `spec.md` §0 |
+| Gap parental | R1 watcher FS, R2 store lab, R3 API física — meta `APTO_TOTAL` (AC-13). Evidencia consolidada en `docs/audits/man-32-lineage-man-43-remediation-20261111.md`; los dos paths legacy de 20261110 quedan supersedidos, no inventados retrospectivamente. |
 | Inventario residual | F-1…F-6 / L-P* (actions doble write, Kalma2 fallback, workspace-server telemetría FS, github DL FS, sweeper, watcher) |
 | Blueprint | `spec.md` + `plan.md` v1.0.0 `blueprint-ready` (Dedalo); no reabre el *qué* |
 | Clarificaciones | `clarify.md` (laudos L-1…L-7 + L-CONTINUE-TEKTON / L-AUDIT-DISK; veredicto **ok**) |
@@ -54,6 +68,18 @@ Convertir **`EventManagerPort` v2** en la única frontera para existencia, ident
 | **H4** | Periféricos (`actions`, Kalma2, workspace-server, GitHub bridge) sin fallback/emisión FS; consumidores sin `runtime_db_path`/`path_is_resolved_redb`. |
 | **H5** | Migrar matrices de test; demoler `eda_port_legacy` y `sddia-event-store`; allowlists legacy vacías; gates verdes. |
 | **H6** | Convergencia documental + evolution; `cumulo.paths.json` solo IDs/tablas/suscripciones lógicas; auditorías → `APTO_TOTAL` (recuperar evidencia si falta en disco). |
+
+## Olas de remediación O0–O6
+
+| Ola | Encaje | Objetivo de salida |
+|-----|--------|--------------------|
+| **O0 — Contención de integridad** | H1R | Eliminar matching `contains` en entregas/trazas/purga; claves y errores tipados; tests de colisión de IDs. |
+| **O1 — Contrato v2 íntegro** | H1 completo | Persistir familia/estado; filtros/cursor; terminales; schema/bindings/taxonomía 2.0; suite mock/Redb/externo. |
+| **O2 — Estado y testigos** | H2 | Entregas y estados detrás del puerto; cero testigo FS. |
+| **O3 — Cutover centinelas** | H3 | Watcher/sweeper solo puerto; cero descubrimiento físico o doble despacho. |
+| **O4 — Periferia limpia** | H4 | Actions/Kalma2/workspace-server/GitHub sin fallback o emisión FS. |
+| **O5 — Demolición** | H5 | `sddia-event-store`, `eda_port_legacy` y allowlists eliminados; matrices migradas. |
+| **O6 — Convergencia** | H6 | Docs/Constitución/Cúmulo/evolution/auditorías convergentes; AC-1…14 evidenciados. |
 
 ## Objetivos medibles
 
@@ -88,6 +114,16 @@ Convertir **`EventManagerPort` v2** en la única frontera para existencia, ident
 | **AC-12** | `cargo test --workspace`, clippy, contract suite y gates verdes. |
 | **AC-13** | Auditorías parentales pasan a `APTO_TOTAL` (con evidencia materializada; no inventar APTO). |
 | **AC-14** | Cambio registrado en `SddIA/evolution/` y documentación constitucional convergente. |
+
+## Criterios de remediación añadidos
+
+| ID | Criterio |
+|----|----------|
+| **AC-15** | Purga y consulta de entregas/trazas usan igualdad exacta sobre campos tipados; IDs solapados no producen selección cruzada. |
+| **AC-16** | `PublishEcstRequest` transporta identidad/familia canónica y el adapter persiste `EventFamily` y estado de cola. |
+| **AC-17** | `list_events` aplica familia, tipo, estado, cursor y límite; `list_terminal_events` incluye todos los estados terminales acordados. |
+| **AC-18** | Duplicado es una variante de error tipada; ninguna decisión de idempotencia depende de buscar texto en mensajes. |
+| **AC-19** | La suite contractual ejecuta colisiones de ID, entregas, terminales, filtros, paginación y purga sobre mock, Redb y adaptador externo. |
 
 ## Invariantes
 

@@ -18,7 +18,7 @@ outputs:
   - "success": "boolean"
   - "exitCode": "integer"
   - "error": "string; diagnóstico si aplica"
-hash_signature: "sha256:ee711c90805f62f4f11863c731dae4b5cb66f4299fc6d821c5ec943e148b8d63"
+hash_signature: "sha256:22a93d2cdeda779fb8c23ecf8fb88287121b5d95f3dbccad1713496ca6857e19"
 implementation_path_ref: "SddIA/tools/io-choke"
 ---
 

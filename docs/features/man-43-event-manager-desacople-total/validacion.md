@@ -1,44 +1,63 @@
 ---
 feature_name: man-43-event-manager-desacople-total
 created: 2026-11-11
-updated: 2026-11-11T09:38:00Z
+updated: 2026-11-17T16:52:00Z
+merged_pr: https://github.com/racso80es/SddIA/pull/453
+merge_commit: f60ae1d461b4a0b00e15cc85c01c0636f3ac0583
+post_merge_worktree: docs/man-43-post-merge-handoff
 process: pull-request-review
-phase: Triaje documental
+phase: Veredicto y bloqueo
 agent: argos
 agents: argos
-branch: feat/man-43-event-manager-desacople-total
-branch_name: feat/man-43-event-manager-desacople-total
-branch_name_injected: feat/man-43-event-manager-desacople-total
-branch_worktree_observed: feat/man-43-event-manager-desacople-total
+branch: docs/man-43-post-merge-handoff
+branch_name: docs/man-43-post-merge-handoff
+branch_name_injected: docs/man-43-post-merge-handoff
+branch_worktree_observed: docs/man-43-post-merge-handoff
 persist_ref: docs/features/man-43-event-manager-desacople-total
+persist_ref_injected: ''
+persist_ref_resolution: inject vacío → dossier man-43 (handoff + cascada + branch post-merge)
 pbi_ref: MAN-43
+pbi_ref_injected: ''
 document_id: PBI-0f4f0f5f
 tracker_ref: MAN-43
 parent_ref: MAN-40
 tracker_provider: linear
-correlation_id: 21df17cd-1a6e-4f6c-93f0-67750af38e9f
-execution_id: 178d5eff-cf8c-407d-addd-f02d1d7f3d30
+correlation_id: 99be0928-42dd-42ff-9808-2e9130a262a3
+execution_id: e2364078-b113-4f17-acac-8c49a1d42d8c
+workspace_path_injected: .SddIA/workspaces/pull-request-review/e2364078-b113-4f17-acac-8c49a1d42d8c/
+workspace_materialized: partial
 norm_ref: features-documentation-pattern@1.3.1
 global: APTO
 verdict: aprobado
+approval_status: aprobado
 ppr_verdict: aprobado
 delivery_state: success
-resolution: PASS_H1_MILESTONE
-approval_status: pass_h1_milestone
-milestone: H1-only
-h2_h6_deferred: true
-evolution_ref: faa41d58-a120-413e-b088-35681ffb79e3
+resolution: PASS_F5_VERDICT
+prior_seal: APTO_TOTAL
+pbi_archived: false
+accept_pr_handoff: false
+accept_pr_handoff_status: pending
+accept_pr_block_reason: L-HANDOFF-F5 — MERGE observado en dossier (PR
 git_manager_invoked: true
-git_evidence_source: evidence-bridge-native_state+prior-materialized-git_changes
+git_manager_session_shell: Rejected
+git_evidence_source: evidence-bridge-session-native_state+ppr-native-prep-sibling
 formal_execute_process: true
-formal_evidence_detail: 'verify-process-integrity: OK (bridge machine native_state @ 2026-11-11T08:38:51Z notes=handoff-formal-scan; idempotent-hit)'
+formal_evidence_detail: session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff latest native_state @ 2026-11-11T09:07:21Z TECH/GIT APTO notes=handoff-git-apto; handoff-formal-scan; idempotent-hit
 handoff_machine_file: present
-evidence_bridge_notes: R1/R2 copia Runtime evidence (machine native_state + session) TECH/GIT APTO; sin inventar stdout Shell; sddia-run/git-manager Shell rechazado esta pasada; git_changes = lista ya materializada en validacion/handoff previos (no stdout fresco)
-scope: pull-request-review Triaje documental — MAN-43 EventManager desacople total (exec 178d5eff…)
+evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit + machine native_state); sin inventar stdout Shell; Shell ./sddia-run.sh --tool git-manager Rejected esta pasada; git_changes = status vacío handler PPR sibling a27f769c/f1b12b4a + lista persist_ref
+scope: pull-request-review Veredicto y bloqueo — exec e2364078… · CID 99be0928… · MAN-43
+revoked_entity_alert: delivery-close-cycle / bug-fix / feature / entity-manager / event-creator / refactorization ∈ revoked — L-LATERAL; pull-request-review ∉ revoked/permanent
 checks:
   global: APTO
   branch: APTO
   git_changes: APTO
+  F2_DOC_GATE: APTO
+  F3_TECH_GATE: NO_APTO
+  F4_RBAC_GATE: APTO
+  F4_RBAC_CERBERO: APTO
+  F5_VERDICT: APTO
+  F5_VERDICT_GATE: APTO
+  PPR_VERDICT_ARGOS: APTO
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: APTO
   DOC_SPEC: APTO
@@ -46,24 +65,28 @@ checks:
   DOC_IMPLEMENTATION: APTO
   DOC_EXECUTION: APTO
   DOC_FRONTMATTER_YAML: APTO
-  CODE_TOUCHPOINT_PRESENT: APTO
-  H1_CONTRACT_V2_PARTIAL: APTO
-  H1_COMPLETE: NO_APTO
-  H2_H6_STARTED: NO_APTO
-  AC_1_14_GREEN: NO_APTO
-  TECH_CARGO_SUITE: NO_APTO
-  TECH_GATES: NO_APTO
-  FORGE_KEY_PRESENT: NO_APTO
-  MCP_ALLOWLIST_CARGO: NO_APTO
+  PERSIST_REF_RESOLVED: APTO
+  HANDOFF_MACHINE_FILE: APTO
+  HANDOFF_EVIDENCE_BLOCK: APTO
+  HANDOFF_EVIDENCE_SESSION: APTO
+  BRANCH_RUNTIME_INJECT: APTO
+  BRANCH_WORKTREE_SYNC: APTO
   TECH_FORMAL_EXECUTE_PROCESS: APTO
   GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
-  GIT_EVIDENCE_MCP_STATUS: APTO
+  GIT_EVIDENCE_PPR_NATIVE: APTO
   GIT_EVIDENCE_SESSION_SDDIA_RUN: NO_APTO
   RBAC_AUTHORING_KM_POLICY: APTO
+  RBAC_PROCESS_REGISTRY: APTO
+  RBAC_EMITTER_NOT_REVOKED: APTO
   ARGOS_NO_KM_WRITE: APTO
+  PBI_PENDING_ABSENT: APTO
+  TRACKER_LINEAR_NO_KM_FILE: APTO
   TEKTON_VERDICT_HONEST: APTO
-  DELIVERY_COMPLETE: NO_APTO
-  PR_READY_TO_MERGE: NO_APTO
+  WSPACE_MATERIALIZED: NO_APTO
+  MERGE_ALREADY_OBSERVED: APTO
+  ACCEPT_PR_HANDOFF: NO_APTO
+  L_HANDOFF_F5: APTO
+  APTO_TOTAL_SEAL: APTO
   branch_check: APTO
 git_changes:
 - docs/features/man-43-event-manager-desacople-total/_agent_handoff.md
@@ -74,170 +97,172 @@ git_changes:
 - docs/features/man-43-event-manager-desacople-total/plan.md
 - docs/features/man-43-event-manager-desacople-total/spec.md
 - docs/features/man-43-event-manager-desacople-total/validacion.md
-blocking_findings:
-- DELIVERY_COMPLETE
-- AC_1_14_GREEN
-- H1_COMPLETE
-- H2_H6_STARTED
-- TECH_CARGO_SUITE
-- TECH_GATES
-- FORGE_KEY_PRESENT
-- MCP_ALLOWLIST_CARGO
-- PR_READY_TO_MERGE
+blocking_findings: []
 non_blocking_findings:
 - GIT_EVIDENCE_SESSION_SDDIA_RUN
+- WSPACE_MATERIALIZED
+- F3_TECH_GATE
+- ACCEPT_PR_HANDOFF
+- PERSIST_REF_INJECT_EMPTY
+- PBI_REF_INJECT_EMPTY
+- REVOKED_ENTITY_ALERT_DCC
+- REVOKED_ENTITY_ALERT_BUG_FIX
+- REVOKED_ENTITY_ALERT_FEATURE
+- REVOKED_ENTITY_ALERT_ENTITY_MANAGER
+- REVOKED_ENTITY_ALERT_EVENT_CREATOR
+- REVOKED_ENTITY_ALERT_REFACTORIZATION
 situational_notes:
-- Fase Triaje documental · process pull-request-review · exec 178d5eff-cf8c-407d-addd-f02d1d7f3d30 · correlation 21df17cd-1a6e-4f6c-93f0-67750af38e9f · pbi MAN-43 / PBI-0f4f0f5f
-- Evidence Bridge machine native_state @ 2026-11-11T08:38:51Z notes=handoff-formal-scan; idempotent-hit · TECH/GIT APTO (copia; sin inventar stdout)
-- Session inject source=native_state TECH_FORMAL=APTO GIT_EVIDENCE=APTO (alineado al bloque machine)
-- Workspace PPR 178d5eff… vacío (sin execution_report nativo); Shell ./sddia-run.sh --tool git-manager rechazado → GIT_EVIDENCE_SESSION_SDDIA_RUN NO_APTO
-- git_changes = lista materializada previa (mismo persist_ref); no se inventa stdout fresco
-- Tekton execution.md/implementation.md verdict=blocked · H1 parcial (EventUri/PublishSeal 2.0.0 en contract.rs) · H2–H6 no iniciados · suite/gates sin evidencia
-- forge_key MAN-43 ausente (sin ledger en .SddIA/state/forge-pbi/ para MAN-43)
+- Fase Veredicto y bloqueo · process pull-request-review · exec e2364078-b113-4f17-acac-8c49a1d42d8c · correlation 99be0928-42dd-42ff-9808-2e9130a262a3 · pbi MAN-43 / PBI-0f4f0f5f
+- persist_ref inject vacío → resuelto docs/features/man-43-event-manager-desacople-total
+- Evidence Bridge session native_state TECH/GIT APTO notes=idempotent-hit · machine handoff native_state @ 2026-11-11T09:07:21Z TECH/GIT APTO
+- F2 heredado PASS_F2_DOC (Triaje documental mismo CID e2364078…) — cascada objectives→execution + YAML APTO
+- F3_TECH_GATE NO_APTO — execution_report ausente este CID; no bloquea (proxy TECH_FORMAL APTO + sibling a27f769c/f1b12b4a ppr-tech-triage APTO)
+- F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked/permanent
+- Shell ./sddia-run.sh --tool git-manager Rejected → GIT_EVIDENCE_SESSION_SDDIA_RUN NO_APTO (no bloquea R2)
+- branch: .git/HEAD → refs/heads/docs/man-43-post-merge-handoff (= inject) · HEAD OID 1f11bc3b… (FS Read; no gitStdout)
+- Workspace PPR e2364078… solo transcript.md (partial) · WSPACE_MATERIALIZED NO_APTO no bloqueante
+- git_changes: PPR nativo sibling a27f769c/f1b12b4a status vacío + inventario persist_ref
 - docs/todos/pending/ vacío · sin KM MAN-43 · Argos 0 writes KM → RBAC_AUTHORING_KM_POLICY APTO
-- branch: .git/HEAD → refs/heads/feat/man-43-event-manager-desacople-total (= inject)
+- Sello prior_seal APTO_TOTAL (O15 / Veredicto sibling a27f769c) preservado · APTO_TOTAL_SEAL APTO
+- MERGE_ALREADY_OBSERVED APTO — merged_pr PR
 authorization_status:
-  exitCode: 1
+  exitCode: 0
   emitter_agent: argos
-  note: FAIL_DELIVERY_PARTIAL · global NO_APTO · R1/R2/R3 APTO · entrega Tekton blocked/parcial · sin AC verdes · sin cargo/gates · sin forge_key · PR no merge-ready
-validated_base_sha: df89c41e6878041939c133dd17bfc5c191a0d59d
-validated_head_sha: c0374c4e0744f80f54996f091893d7913e3c885d
-validated_tree_sha: 5c2799434e03b6555c6b053aafa8fcf51d1dfe0f
-diff_digest: sha256:76654709e52217a0880298c36c074d1dd6114ab93cb06a489edd4dedcbea55f3
+  note: PASS_F5_VERDICT · global APTO · F2+F4 APTO · F3 NO_APTO no bloqueante · R1/R2/R3 APTO · prior_seal APTO_TOTAL · accept_pr_handoff pending
+validated_head_sha: efcaaa25e6159eb085b88bdae3dfe93fc6936eaa
+head_commit_sha_fs: 1f11bc3b2ec2d5a5887b1b853bd30c24f5d331a6
+validated_base_sha: f60ae1d461b4a0b00e15cc85c01c0636f3ac0583
+validated_tree_sha: e4c16226ff45803dbcecad8f7230788d63bd77da
+diff_digest: sha256:06a146ce34893e995d8931b054b8271ee10b6dbec90f4ae434bfd816aeb67ba8
 ---
 
-# Validación — Triaje documental (Argos · pull-request-review)
+# Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
 
-**NO_APTO** — `resolution: FAIL_DELIVERY_PARTIAL` · `verdict: blocked` · `delivery_state: blocked`.
+**APTO** — `resolution: PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `blocking_findings: []` · `prior_seal: APTO_TOTAL`.
 
-R1/R2/R3 de aduana Evidence Bridge están **APTO** (copia machine/session; KM limpio). La entrega **no** está lista para merge/PR: Tekton documenta `blocked` (H1 parcial; H2–H6 ausentes; sin suite/gates; sin `forge_key`).
-
-| Dimensión | Estado | Criterio |
-|-----------|--------|----------|
-| `global` | **NO_APTO** | entrega incompleta / AC no verdes / PR no merge-ready |
-| `branch` | **APTO** | worktree = inject `feat/man-43-event-manager-desacople-total` |
-| `git_changes` | **APTO** | lista materializada previa + bridge R2 APTO (sin stdout fresco esta pasada) |
-| Evidence R1 TECH | **APTO** | copia native_state + session |
-| Evidence R2 GIT | **APTO** | copia bridge (`git_manager_invoked: true`) |
-| Evidence R3 KM | **APTO** | 0 writes ilegítimos bajo `docs/todos/**` |
+| Gate | Delegado | Estado | Criterio |
+|------|----------|--------|----------|
+| F2 | Argos (doc) | **APTO** | heredado · `PASS_F2_DOC` (mismo CID) · cascada feature |
+| F3 | execute-process | **NO_APTO** | no bloqueante · proxy `TECH_FORMAL` + sibling tech-triage |
+| F4 | Cerbero (FS) | **APTO** | `pull-request-review` ∉ revoked/permanent |
+| F5 | Argos | **APTO** | sin violación F2/F4 bloqueante |
 
 ## Evidence Bridge (R1 / R2 / R3)
 
-Copia literal del bloque machine **native_state** (y session inject) — **no** stdout Shell inventado:
+Copia de **Runtime evidence (session)** inyectada + último bloque machine en `_agent_handoff.md` — **no** stdout Shell inventado:
 
 | Campo | Valor |
 |-------|-------|
 | `schema` | `kalma2-agent-runtime-evidence/v1` |
-| `source` | `native_state` (machine @ `2026-11-11T08:38:51Z` + session Triaje) |
-| `notes` | `handoff-formal-scan; idempotent-hit` |
-| `git_manager_invoked` | `true` |
-| `formal_execute_process` | `true` |
-| `formal_evidence_detail` | `verify-process-integrity: OK` |
+| `source` (session) | `native_state` |
+| `source` (machine handoff) | `native_state` @ `2026-11-11T09:07:21Z` |
+| `notes` (session) | `idempotent-hit` |
+| `notes` (machine) | `handoff-git-apto; handoff-formal-scan; idempotent-hit` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
-| `GIT_EVIDENCE_SESSION_SDDIA_RUN` | **NO_APTO** — Shell `./sddia-run.sh --tool git-manager` rechazado; workspace PPR vacío |
-| `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**`; `pending/` vacío; sin KM MAN-43; Cumulo/`Kaizen_Alert_Required` = vía legítima (no usada) |
+| `GIT_EVIDENCE_PPR_NATIVE` | **APTO** — sibling exec `a27f769c…` / `f1b12b4a…` prep-branch `gitStdout: ""` · `git_manager_invoked: true` |
+| `GIT_EVIDENCE_SESSION_SDDIA_RUN` | **NO_APTO** — Shell `./sddia-run.sh --tool git-manager` Rejected esta pasada |
+| `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**`; `pending/` vacío; Cumulo/`Kaizen_Alert_Required` = vía legítima (no usada) |
 
-Fuente: `docs/features/man-43-event-manager-desacople-total/_agent_handoff.md` § Runtime evidence (machine) + Runtime evidence (session) del prompt.
+Fuente: prompt Runtime evidence (session) + `docs/features/man-43-event-manager-desacople-total/_agent_handoff.md` § Runtime evidence (machine) + `.SddIA/workspaces/pull-request-review/a27f769c-47d0-40a0-99a7-045e239b4d91/execution_report.json`.
 
-## Ingesta PBI
+## Ingesta
 
 | Input | Resolución |
 |-------|------------|
-| Canal | `.SddIA/state/tracker-outbound/MAN-43.jsonl` |
-| Refine | `.SddIA/workspaces/refine-item/c7976303-3b56-4175-9303-415e8b187623` (**PBI-0f4f0f5f**) |
-| Objetivo | `EventManagerPort` v2 + `EventUri` como única frontera; cero dualismo Redb+FS |
-| AC | AC-1…AC-14 (ninguno declarado verde con evidencia de suite/gates) |
-| Hijos | H1…H6; Tekton solo H1 parcial |
+| `persist_ref` (inject) | vacío → **resuelto** `docs/features/man-43-event-manager-desacople-total` |
+| `pbi_ref` | vacío inject → **MAN-43** / `PBI-0f4f0f5f` (dossier) |
+| `correlation_id` | `99be0928-42dd-42ff-9808-2e9130a262a3` |
+| `execution_id` | `e2364078-b113-4f17-acac-8c49a1d42d8c` |
+| `branch_name` (runtime) | `docs/man-43-post-merge-handoff` |
+| Worktree HEAD (FS) | `refs/heads/docs/man-43-post-merge-handoff` @ `1f11bc3b…` |
+| Workspace PPR | path declarado; **solo** `transcript.md` (`workspace_materialized: partial`) |
+| Tracker | `linear` · sin fichero KM MAN-43 en `docs/todos/` |
+| MERGE (dossier) | **observado** — PR #453 / `f60ae1d4…` |
+| Cerbero FS | PPR **ausente** de `revoked` y `permanent` |
 
-## Cascada documental / código
+## Peajes F2 → F5
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
-| Docs feature (objectives…execution) | **APTO** | presentes; Tekton honesto (`blocked`) |
-| `CODE_TOUCHPOINT_PRESENT` | **APTO** | `contract.rs` `CONTRACT_VERSION=2.0.0` + `EventUri` / `PublishSeal` |
-| `H1_CONTRACT_V2_PARTIAL` | **APTO** | núcleo URI/sello/gate documentado en implementation |
-| `H1_COMPLETE` / `H2_H6_STARTED` | **NO_APTO** | H1.5/suite pend.; H2–H6 no iniciados |
-| `AC_1_14_GREEN` | **NO_APTO** | sin evidencia cargo/gates |
-| `TECH_CARGO_SUITE` / `TECH_GATES` | **NO_APTO** | sin stdout tests; allowlist MCP/cargo ausente |
-| `FORGE_KEY_PRESENT` | **NO_APTO** | sin ledger MAN-43 en `forge-pbi/` |
-| `DELIVERY_COMPLETE` / `PR_READY_TO_MERGE` | **NO_APTO** | bloqueantes |
+| `F2_DOC_GATE` | **APTO** | Triaje mismo CID `PASS_F2_DOC`; objectives→execution + YAML |
+| `DOC_*` / `TEKTON_VERDICT_HONEST` | **APTO** | cascada presente; `execution.md` sigue `verdict: blocked` histórico (honestidad) |
+| `F3_TECH_GATE` | **NO_APTO** | sin `execution_report` este CID; **no bloquea** (R1 TECH_FORMAL APTO + siblings) |
+| `F4_RBAC_GATE` | **APTO** | `pull-request-review` ∉ revoked/permanent |
+| `F5_VERDICT` / `F5_VERDICT_GATE` | **APTO** | `blocking_findings=[]` |
+| `APTO_TOTAL_SEAL` | **APTO** | `prior_seal: APTO_TOTAL` (O15 / sibling a27f769c) preservado |
+| `ACCEPT_PR_HANDOFF` / `L_HANDOFF_F5` | **NO_APTO** / **APTO** | pending; no se declara `consumed` sin invoke accept-pr Ok |
 
 ## branch / git_changes
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
-| `branch` | **APTO** | `.git/HEAD` → `refs/heads/feat/man-43-event-manager-desacople-total` |
-| `git_changes` | **APTO** | lista = evidencia materializada previa (git-manager/bridge); R2 bridge APTO |
+| `branch` | **APTO** | `.git/HEAD` → `refs/heads/docs/man-43-post-merge-handoff` (= inject) · OID `1f11bc3b…` |
+| `git_changes` | **APTO** | PPR nativo sibling status vacío; lista = paths persist_ref |
 
-`git_changes` (lista materializada previa, sin inventar fresco):
+`git_changes` (lista materializada persist_ref; status fresco vacío vía handler nativo — sin inventar Shell):
 
 ```
- M docs/features/man-43-event-manager-desacople-total/_agent_handoff.md
- M docs/features/man-43-event-manager-desacople-total/clarify.md
- M docs/features/man-43-event-manager-desacople-total/execution.md
- M docs/features/man-43-event-manager-desacople-total/implementation.md
- M docs/features/man-43-event-manager-desacople-total/objectives.md
- M docs/features/man-43-event-manager-desacople-total/plan.md
- M docs/features/man-43-event-manager-desacople-total/spec.md
- M docs/features/man-43-event-manager-desacople-total/validacion.md
+docs/features/man-43-event-manager-desacople-total/_agent_handoff.md
+docs/features/man-43-event-manager-desacople-total/clarify.md
+docs/features/man-43-event-manager-desacople-total/execution.md
+docs/features/man-43-event-manager-desacople-total/implementation.md
+docs/features/man-43-event-manager-desacople-total/objectives.md
+docs/features/man-43-event-manager-desacople-total/plan.md
+docs/features/man-43-event-manager-desacople-total/spec.md
+docs/features/man-43-event-manager-desacople-total/validacion.md
 ```
-
-Sin commit en esta pasada. Código H1 puede estar fuera del `gitStdout` citado (no inventado aquí).
 
 ## R3 — KM (`RBAC_AUTHORING_KM_POLICY`)
 
-**APTO** — auditoría solo autoría bajo `docs/todos/**`. `docs/todos/pending/` vacío. Sin fichero KM MAN-43/PBI-0f4f0f5f. Argos **no** escribió TODOs. Cumulo / `Kaizen_Alert_Required` = vía legítima (no usada). Forja Core ≠ este check.
+**APTO** — auditoría solo autoría bajo `docs/todos/**`. `docs/todos/pending/` vacío. Sin fichero KM MAN-43. Argos **no** escribió TODOs. Forja Core ≠ este check.
 
 ## Dictamen
 
 ```json
 {
-  "phase": "Triaje documental",
+  "phase": "Veredicto y bloqueo",
   "process": "pull-request-review",
-  "global": "NO_APTO",
-  "resolution": "FAIL_DELIVERY_PARTIAL",
-  "verdict": "blocked",
-  "delivery_state": "blocked",
-  "branch": "feat/man-43-event-manager-desacople-total",
+  "global": "APTO",
+  "resolution": "PASS_F5_VERDICT",
+  "verdict": "aprobado",
+  "delivery_state": "success",
+  "prior_seal": "APTO_TOTAL",
+  "accept_pr_handoff": false,
+  "accept_pr_handoff_status": "pending",
+  "branch": "docs/man-43-post-merge-handoff",
   "persist_ref": "docs/features/man-43-event-manager-desacople-total",
   "pbi_ref": "MAN-43",
   "document_id": "PBI-0f4f0f5f",
-  "execution_id": "178d5eff-cf8c-407d-addd-f02d1d7f3d30",
-  "correlation_id": "21df17cd-1a6e-4f6c-93f0-67750af38e9f",
+  "execution_id": "e2364078-b113-4f17-acac-8c49a1d42d8c",
+  "correlation_id": "99be0928-42dd-42ff-9808-2e9130a262a3",
   "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
   "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
   "RBAC_AUTHORING_KM_POLICY": "APTO",
+  "F3_TECH_GATE": "NO_APTO",
+  "F4_RBAC_GATE": "APTO",
   "checks": {
-    "global": "NO_APTO",
+    "global": "APTO",
     "branch": "APTO",
-    "git_changes": "APTO"
+    "git_changes": "APTO",
+    "F5_VERDICT_GATE": "APTO"
   },
-  "blocking": [
-    "DELIVERY_COMPLETE",
-    "AC_1_14_GREEN",
-    "H1_COMPLETE",
-    "H2_H6_STARTED",
-    "TECH_CARGO_SUITE",
-    "TECH_GATES",
-    "FORGE_KEY_PRESENT",
-    "MCP_ALLOWLIST_CARGO",
-    "PR_READY_TO_MERGE"
-  ]
+  "blocking": []
 }
 ```
+
+## Alcance
+
+Veredicto y bloqueo **aprueba** peajes F2/F4. Residual no bloqueante: F3 formal diferido (proxy TECH_FORMAL + siblings), workspace PPR parcial, Shell git-manager Rejected, `accept_pr_handoff` pending (L-HANDOFF-F5). Downstream: Cosecha Kaizen → Handoff. Argos **no** escribe bajo `docs/todos/`.
 
 ## approval_status
 
 ```text
-bloqueado — global NO_APTO · verdict blocked · FAIL_DELIVERY_PARTIAL;
-R1/R2 APTO (copia native_state notes=handoff-formal-scan; idempotent-hit);
+aprobado — PASS_F5_VERDICT · global APTO · delivery_state success;
+F2+F4 APTO · F3 NO_APTO no bloqueante (proxy TECH_FORMAL);
+R1/R2 APTO (session+machine native_state notes=idempotent-hit);
 R3 RBAC_AUTHORING_KM_POLICY APTO (0 writes KM);
-Tekton blocked/parcial; AC no verdes; sin forge_key; Shell sddia-run rechazado; PR no merge-ready.
+prior_seal APTO_TOTAL preservado; accept_pr_handoff pending (L-HANDOFF-F5).
 ```
-
-## Alcance / siguiente paso
-
-Triaje documental **bloquea** cierre PPR/merge. Residual: allowlist MCP/`cargo`, `forge_key`, suite/gates, completar H1 (Genoma) y H2–H6 según plan. Argos **no** escribe bajo `docs/todos/`.

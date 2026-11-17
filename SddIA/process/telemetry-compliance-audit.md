@@ -1,11 +1,9 @@
 ---
-context:
-- event-routing
-- quality-assurance
+context: ecosystem-evolution
 contract: process-contract v1.4.0
 hash_signature: sha256:87881548d653d0fe182faecf5481c0e622fdbc981c9c8af617857a4cfc449c11
 inputs:
-- event_file_path: Ruta relativa al JSON de telemetría en ./.events/telemetry/
+- 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
 name: telemetry-compliance-audit
 outputs:
@@ -21,7 +19,7 @@ phases:
     version: '>=1.0.0'
 porcentaje_de_exito: null
 uuid: b3c4d5e6-f7a8-4901-b2c3-d4e5f6a7b8c9
-version: 1.0.1
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

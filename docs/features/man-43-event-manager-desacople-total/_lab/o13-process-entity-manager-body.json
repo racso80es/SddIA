@@ -1,0 +1,14 @@
+{
+  "entity_class": "process",
+  "entity_name": "entity-manager",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "process_name": "entity-manager",
+    "markdown_body_replacements": [
+      {
+        "from": "| `daemon` | `daemon-creator` | **Piloto** |\n",
+        "to": "| `daemon` | `daemon-creator` | **Piloto** |\n| `capability-contract` | _(ninguno: forja nativa `forges/capability_contract.rs`)_ | **Piloto nativo** (sustrato B de la Cicatriz Digital: `{name}.schema.json` + `x-sddia`; sin fallback; `create`, `update` por `adopt` o `schema_json_patch` RFC 6902; `delete` no soportado) |\n"
+      }
+    ]
+  }
+}

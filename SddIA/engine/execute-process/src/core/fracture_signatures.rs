@@ -293,10 +293,8 @@ fn ast_matches(hay: &str, ast: &MatchAst, surfaces: &MatchSurfaces) -> bool {
     }
     if !ast.all.is_empty() {
         // `all` acotado arriba; `any` / `any_groups` adicionales siguen abajo.
-    } else if !ast.any.is_empty() && ast.any.iter().any(|t| hay_contains(hay, t)) {
-        return true;
-    } else if !ast.any_groups.is_empty()
-        && ast.any_groups.iter().any(|g| group_matches(hay, g))
+    } else if (!ast.any.is_empty() && ast.any.iter().any(|t| hay_contains(hay, t)))
+        || (!ast.any_groups.is_empty() && ast.any_groups.iter().any(|g| group_matches(hay, g)))
     {
         return true;
     } else if !ast.any.is_empty() || !ast.any_groups.is_empty() {
@@ -436,6 +434,16 @@ pub fn resolve_refined_diagnosis(
     (parent.id.clone(), d)
 }
 
+pub fn extract_evidence_lines(error_trace_norm: &str, max_lines: usize) -> Vec<String> {
+    error_trace_norm
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .take(max_lines)
+        .map(str::to_string)
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -461,7 +469,7 @@ mod tests {
             report_friction_id: None,
             report_error_code: Some("STORE_LOCK_CONTENTION"),
         };
-        assert!(signature_matches_dcc_suppress(&catalog, sig, &ctx, &surfaces));
+        assert!(signature_matches_dcc_suppress(catalog, sig, &ctx, &surfaces));
     }
 
     #[test]
@@ -500,14 +508,4 @@ mod tests {
         assert_eq!(id, "CHILD");
         assert_eq!(diagnosis.root_cause, "child-root");
     }
-}
-
-pub fn extract_evidence_lines(error_trace_norm: &str, max_lines: usize) -> Vec<String> {
-    error_trace_norm
-        .lines()
-        .map(str::trim)
-        .filter(|l| !l.is_empty())
-        .take(max_lines)
-        .map(str::to_string)
-        .collect()
 }

@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-43-event-manager-desacople-total
 created: "2026-11-11"
 updated: "2026-11-11"
@@ -16,13 +17,15 @@ contract: "eda.event_manager"
 contract_version: "2.0.0"
 agent: dedalo
 phase: diseno-blueprint
-version_spec: "1.0.1"
+version_spec: "1.1.0"
 status: blueprint-ready
+rebaseline: remediation-waves-v1
+audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-43.jsonl"
 refine_workspace: ".SddIA/workspaces/refine-item/c7976303-3b56-4175-9303-415e8b187623"
-execution_id: "3278ec5b-21ae-4fe0-af14-62a7e5ba0e07"
 seed: continue-tekton
+execution_id: "3654517b-c915-4e35-a965-3c7550a7b706"
 ---
 # Especificación técnica — man-43-event-manager-desacople-total
 
@@ -33,12 +36,14 @@ Cuerpo Linear MAN-43: **no materializado** en disco; canal outbound + refine + l
 Semilla **`continue tekton`** (**L-CONTINUE-TEKTON**): revalidar blueprint; **cero** cambio del *qué*; handoff a Ejecución en solo lectura.
 Pasada Dedalo `execution_id` **3278ec5b-21ae-4fe0-af14-62a7e5ba0e07**: Diseño de Blueprint **v1.0.1** (reconfirmación sobre v1.0.0).
 
+Rebaseline técnico **v1.1.0**: incorpora la auditoría post-H1 del 2026-11-11. No altera L-1…L-7; añade contención de integridad y criterios AC-15…AC-19 antes del cutover.
+
 ## 0. Evidencia viva (revalidada 2026-11-11 — continue-tekton)
 
 | Artefacto | Estado vivo | Implicación forja |
 |-----------|-------------|-------------------|
-| Auditoría parental `docs/audits/desacople-event-manager-man-32-20261110.md` | **Ausente en disco** esta pasada MCP (**L-AUDIT-DISK**). Gap parental R1/R2/R3 permanece por refine + laudos + inventario residual | H6/Argos rematerializan evidencia antes de AC-13 → `APTO_TOTAL`; **no inventar APTO** |
-| Anexo legacy `docs/audits/legacy-pending-events-eda-20261110.md` | **Ausente en disco** (**L-AUDIT-DISK**). Mapa F-1…F-6 / L-P* vigente vía refine + `clarify.md` + esta tabla | Mapa de tajos H2–H5; H6 recupera anexo si hace falta |
+| Auditoría consolidada `docs/audits/man-32-lineage-man-43-remediation-20261111.md` | **Materializada**. Sustituye los paths legacy ausentes sin fingir que existieron; veredicto `NO_APTO_TOTAL` | Fuente vinculante F-01…F-12 y olas O0–O6; H6/Argos reauditan antes de AC-13 |
+| Inventario legacy | Integrado en la auditoría consolidada + refine + `clarify.md` | Mapa de tajos O2–O5; no requiere anexo paralelo |
 | Canal LLM `docs/audits/MAN-43.md` | Vivo (interacciones LLM; no sustituye auditorías de desacople) | Solo trazabilidad de proceso |
 | `sddia-core/.../contract.rs` | `CONTRACT_VERSION = "1.2.0"`; `REQUIRED_CONTRACT_RANGE = "^1.2.0"` | H1 publica **2.0.0** / `^2.0.0` |
 | `PublishSeal` en `runtime_bridge.rs` | Campos `logical_rel` + `target_path: PathBuf` + token `.events/{fam}/{id}.json` | Eliminar en v2; sustituir por `event_uri` |
@@ -49,6 +54,23 @@ Pasada Dedalo `execution_id` **3278ec5b-21ae-4fe0-af14-62a7e5ba0e07**: Diseño d
 | Inventario residual F-1…F-6 / L-P* | actions doble write; Kalma2 fallback; workspace-server telemetría FS; github DL FS; sweeper; watcher dual | H2–H5 |
 | Excepciones permanentes | `SddIA/events/`, `.SddIA/events/` | Fuera de alcance (**L-5** / **L-NON-GOALS**) |
 | Host `sddia-event-manager-host` | Dueño legítimo path Redb / composition | Frontera estable; no reabrir MAN-36 |
+
+## 0.1 Hallazgos post-H1 vinculantes
+
+| ID auditoría | Defecto observado | Decisión de diseño |
+|---------------|-------------------|--------------------|
+| **F-01** | `purge_event` / `list_deliveries` infieren pertenencia con `contains(event_id)` | **L-8 — Integridad exacta:** persistir `DeliveryRecord` tipado y comparar `event_id`/`subscriber_id` por igualdad. Prohibido inferir identidad por substring. |
+| **F-02** | Kernel 2.0 frente a Genoma/schema 1.2/v1 | **L-9 — Contrato indivisible:** H1 no está completo sin schema, bindings, taxonomía, índices y handshake 2.0 coherentes. |
+| **F-04/F-05** | Familia/estado no persisten y filtros se ignoran | **L-10 — Consulta honesta:** toda dimensión declarada por request se persiste o deriva sin ambigüedad y se aplica realmente. |
+| **F-06** | Terminales default = solo DLQ | **L-11 — Terminalidad explícita:** processed y dead-letter se modelan como estados terminales consultables; el adapter no hereda un default incompleto. |
+| **F-07** | Suite no prueba operaciones nuevas | **L-12 — Paridad contractual:** ninguna operación v2 se considera soportada sin casos comunes sobre mock, Redb y externo. |
+| **F-08** | Duplicado detectado por texto | **L-13 — Error tipado:** añadir variante estable `AlreadyExists`/equivalente; runtime bridge no inspecciona mensajes. |
+
+Estas decisiones añaden **O0** delante de H1 remanente y convierten H1 en **H1R + H1C**:
+
+- **H1R / O0:** contención de integridad del adapter existente.
+- **H1C / O1:** finalización contractual y genómica.
+- H2–H6 conservan su semántica y se ejecutan como O2–O6.
 
 ## 1. Contexto y decisión
 
@@ -67,7 +89,7 @@ Tras MAN-35 (puerto 1.2), MAN-36 (bóveda) y MAN-40 (sello lógico T0), el runti
 | Hijos | **L-CHILDREN** — H1…H6 obligatorios |
 | Supersede T0 | **L-SUPERSEDE-T0** — token `.events/...json` deja de ser canónico |
 | Auditoría gap | **L-AUDIT-GAP** — cerrar R1/R2/R3 + F-* → `APTO_TOTAL` |
-| Auditoría en disco | **L-AUDIT-DISK** — paths desacople/legacy ausentes; H6 rematerializa; no inventar APTO |
+| Auditoría en disco | **L-AUDIT-DISK** — ausencia histórica registrada; auditoría consolidada 20261111 materializada; no inventar APTO |
 | Continue Tekton | **L-CONTINUE-TEKTON** — *qué* cerrado; blueprint solo-lectura para Ejecución |
 | Proceso / git / genoma / tracker | **L-PROCESS** / **L-GIT** / **L-GENOME** / **L-TRACKER** |
 | Forja | **L-FORGE** — precondiciones listadas en §3 |
@@ -147,11 +169,56 @@ Conservar y endurecer: `publish_ecst`, `claim_pending`, `record_delivery` (ACK/N
 
 Suite contractual: mock + Redb + cápsula/adaptador externo; `version_gate` / handshake exige `^2.0.0`; consumidores v1 → rechazo explícito (**L-3**).
 
-### 4.4 Artefactos de contrato Genoma
+### 4.4 Modelo persistente mínimo v2
+
+`PublishEcstRequest` debe portar `event_uri: EventUri` como fuente única de identidad. Si se conserva `event_id` por ergonomía, debe validarse igualdad exacta con `event_uri.event_id`.
+
+```rust
+struct StoredEvent {
+    event_uri: EventUri,
+    state: EventQueueState,
+    ecst: Value,
+    trace_id: Option<String>,
+}
+
+struct DeliveryRecord {
+    event_id: String,
+    subscriber_id: String,
+    delivery_id: String,
+    status: DeliveryStatus,
+    attempt: Option<u32>,
+}
+```
+
+Invariantes:
+
+1. `EventFamily` se obtiene de `event_uri.family`; nunca del path, tabla o estado.
+2. `event_id`, `subscriber_id` y `delivery_id` se filtran por igualdad exacta.
+3. La purga elimina solo registros cuya FK lógica `event_id` coincide exactamente.
+4. `list_events` aplica `family`, `event_type`, `state`, `cursor` y `limit`; si una dimensión no está soportada, la operación falla explícitamente, no la ignora.
+5. `list_terminal_events` retorna estados terminales pactados (`processed`, `dead_letter`) y respeta familia/cursor/límite.
+6. La publicación duplicada retorna error tipado; solo esa variante activa idempotencia.
+
+### 4.5 Artefactos de contrato Genoma
 
 - Schema `eda.event_manager` **v2** (JSON Schema).
 - Bindings / taxonomía / índices de capacidad alineados a `2.0.0`.
 - Mutaciones de entidades Genoma **solo** vía `entity-manager` (**L-GENOME**).
+
+### 4.6 Suite contractual ampliada
+
+La suite v2 debe ejecutar sobre mock, Redb y adaptador externo:
+
+| Caso | Assert |
+|------|--------|
+| IDs `abc` / `xabcx` | Purga/listado de uno no afecta al otro |
+| Entregas multi-suscriptor | Filtro exacto por evento, suscriptor y estado |
+| Familia | Domain/telemetry/orchestration persisten y filtran sin cruce |
+| Estado | Pending/claimed/processed/dead-letter se consultan correctamente |
+| Terminales | Processed + dead-letter aparecen; pending/claimed no |
+| Paginación | Cursor estable, sin duplicados ni omisiones |
+| Duplicado | Solo `AlreadyExists`/equivalente se trata idempotentemente |
+| Reopen | Familia, estado, entregas y trazas sobreviven reapertura Redb |
 
 ## 5. Absorción de entregas y testigos (H2)
 
@@ -195,7 +262,7 @@ Precondición dura: ops H1 (§4.3) suficientes **antes** de retirar FS (**L-6**)
 3. **H3** — watcher/sweeper cortan FS en el mismo cutover en que dejan de necesitar espejos (no watcher sin fuente).
 4. **H4** — periféricos sin fallback (puede solaparse tras H1; F-3 puede ir temprano).
 5. **H5** — lab + demolición tras matrices verdes.
-6. **H6** — docs/evolution/auditorías (incl. rematerializar evidencia si falta en disco — **L-AUDIT-DISK**).
+6. **H6** — docs/evolution/auditorías (reejecutar evidencia consolidada; **L-AUDIT-DISK** queda como cicatriz histórica).
 
 **Corte final productivo:** productores v2 → puerto v2 → consumidores v2. **Prohibido** dualidad productiva v1/v2.
 
@@ -224,7 +291,7 @@ Verificación global: `cargo test --workspace`, clippy, contract suite, gates (*
 |-----------|--------|
 | README / Constitución / contratos / procesos | Retirar `.events/` como topología runtime; describir `EventUri` + puerto v2 |
 | `cumulo.paths.json` | Solo IDs/tablas/suscripciones lógicas; sin paths de cola runtime `.events/` |
-| Auditorías parentales + legacy | **Rematerializar o recuperar** evidencia ausente (**L-AUDIT-DISK**); actualizar a **`APTO_TOTAL`** solo con evidencia (AC-13) |
+| Auditorías parentales + legacy | Reejecutar `man-32-lineage-man-43-remediation-20261111.md`; actualizar a **`APTO_TOTAL`** solo con evidencia (AC-13) |
 | `SddIA/evolution/` | Registrar cutover 2.0.0 (AC-14) |
 | Genoma `SddIA/events/` / `.SddIA/events/` | **No eliminar** |
 
@@ -246,6 +313,11 @@ Verificación global: `cargo test --workspace`, clippy, contract suite, gates (*
 | **AC-12** | Tests workspace + clippy + suite + gates verdes | H5 | O9 |
 | **AC-13** | Auditorías → `APTO_TOTAL` (con evidencia materializada) | H6 | O10 |
 | **AC-14** | Evolution + docs constitucionales convergentes | H6 | O10 |
+| **AC-15** | Igualdad exacta en entregas/trazas/purga; IDs solapados aislados | H1R / O0 | O6 |
+| **AC-16** | Familia e identidad canónica persistidas desde `PublishEcstRequest` | H1C / O1 | O1, O2 |
+| **AC-17** | Filtros/terminales/cursor aplicados realmente | H1C / O1 | O5, O6 |
+| **AC-18** | Error de duplicado tipado, sin matching textual | H1R / O0 | O1 |
+| **AC-19** | Suite ampliada ejecutada en mock/Redb/externo | H1C / O1 | O9 |
 
 ## 12. Touchpoints (mapa de forja)
 
@@ -280,8 +352,7 @@ Verificación global: `cargo test --workspace`, clippy, contract suite, gates (*
 | Padre / historia MAN-40 | `docs/features/man-40-eda-consumers-logical-seal/` |
 | Bóveda MAN-36 | `docs/features/man-36-event-manager-instance-config/` |
 | Cutover MAN-35 | `docs/features/event-manager-port-cutover/` |
-| Auditoría parental (recuperar en H6) | `docs/audits/desacople-event-manager-man-32-20261110.md` |
-| Inventario legacy FS (recuperar en H6) | `docs/audits/legacy-pending-events-eda-20261110.md` |
+| Auditoría consolidada | `docs/audits/man-32-lineage-man-43-remediation-20261111.md` |
 | Canal LLM | `docs/audits/MAN-43.md` |
 | Canal Linear | `.SddIA/state/tracker-outbound/MAN-43.jsonl` |
 | Semilla / refine | **PBI-0f4f0f5f** / workspace `c7976303-…` |

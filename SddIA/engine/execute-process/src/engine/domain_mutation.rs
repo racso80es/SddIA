@@ -11,6 +11,7 @@ use uuid::Uuid;
 
 const ENTITY_CLASSES: &[&str] = &[
     "process", "agent", "skill", "tool", "action", "norm", "codex", "event", "suite", "daemon",
+    "capability-contract",
 ];
 const LIFECYCLE_OPS: &[&str] = &["create", "update", "delete"];
 
@@ -77,7 +78,7 @@ fn write_pending_event(repo: &Path, event: &Value) -> Result<Value, String> {
     let seal = crate::engine::eda_port::publish_ecst(repo, "pending", &stamped)?;
     Ok(json!({
         "event_id": event_id,
-        "event_uri": seal.event_uri.to_string(),
+        "event_uri": seal.event_uri.as_canonical(),
     }))
 }
 
@@ -189,7 +190,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                         "idempotent": true,
                         "event_type": event_type,
                         "event_id": existing.get("event_id"),
-                        "target_path": existing.get("target_path"),
+                        "event_uri": existing.get("event_uri"),
                     }));
                 }
             }

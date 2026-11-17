@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-43-event-manager-desacople-total
 created: "2026-11-11"
 updated: "2026-11-11"
@@ -10,10 +11,12 @@ parent_ref: MAN-40
 document_id: PBI-0f4f0f5f
 agent: tekton
 phase: ejecucion
-status: in-progress
-execution_id: "3278ec5b-21ae-4fe0-af14-62a7e5ba0e07"
+status: remediation-ready
 seed: continue-tekton
 norm_ref: features-documentation-pattern@1.3.1
+execution_id: "3654517b-c915-4e35-a965-3c7550a7b706"
+rebaseline: remediation-waves-v1
+audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 ---
 # Implementation — man-43-event-manager-desacople-total
 
@@ -97,6 +100,127 @@ H2 entregas/testigos FS · H3 watcher/sweeper · H4 periféricos F-1..F-4 / AC-8
 
 ## Notas honestas
 
-- Espejo FS en `emit_pr_presented` (`.events/domain/...`) **aún presente** → F-1 / H4.
-- `runtime_db_path` / `path_is_resolved_redb` aún en superficie consumidores → AC-8 / H4.
-- No se declara AC-1…AC-14 verdes sin evidencia de tests/gates.
+- Espejo FS en `emit_pr_presented` eliminado (O4).
+- Crate `sddia-event-store` demolido en `877c1791` (O5.2). O6 documental en rama; **AC-13 abierto** (`NO_APTO_TOTAL` en `docs/audits/man-43-o6-remediation-20261113.md`).
+- Genoma `SddIA/process/` (event-bus-audit, route-domain-event) y codex library: citas legacy FS — solo inventario; refinar vía `entity-manager`.
+- No se declara AC-1…AC-19 verdes sin evidencia de tests/gates.
+
+---
+
+## Rebaseline post-auditoría — O0…O6
+
+Auditoría canónica: `docs/audits/man-32-lineage-man-43-remediation-20261111.md`.
+
+El merge #453 materializó H1 parcial. La siguiente implementación **no** comienza en H2: comienza en **O0/H1R**, porque el adapter Redb vigente selecciona entregas/trazas mediante coincidencias textuales y puede cruzar IDs opacos solapados.
+
+| Ola | Estado | Touchpoints principales |
+|-----|--------|-------------------------|
+| **O0 / H1R** | `done` (rama; sin merge) | `DeliveryRecord`, `AlreadyExists`, purga/listado exactos (Redb/FS/mock), suite `o0_containment_integrity`, cápsula dummy + puente; `cargo test` verde en los cuatro crates del plan § O0 |
+| **O1 / H1C** | `done` (rama; sin merge) | `event_uri` en publish, listados reales, `em_processed` / FS `processed`, suite `o1_listing_integrity`; Genoma 2.0 **pendiente** (`entity-manager`) |
+| **O2 / H2** | `done` (rama; sin merge) | Testigos vía entregas del puerto; `DeliveryStatus::Processing`; sin JSON de suscriptor |
+| **O3 / H3** | `done` (rama) | Dominio + fractal watcher/sweep por puerto; progress leaf aún indexa dirs |
+| **O3.1** | `done` (rama; sin merge) | `sweep_fractal_family`, `list_witnesses` puerto, watcher `list_events`, DL por Nack |
+| **O4 / H4** | `done` (rama) | F-1…F-4; `actions` test helper sin `EventStore::open`; Kalma2 sin fallback `.events/` en dominio/telemetría/progress |
+| **O5** | `done` (rama) | `scan_presented_for_branch`, `presented_ids_in_store`, `sweep_progress_leaf` sin disco |
+| **O5.1** | `done` (rama) | `eda_port` solo `EventManagerPort`; borrado `eda_port_legacy`; `test_lab` ampliado; ~44 unitarios migrados de lectura `.events/` |
+| **O5.2 / H5** | `done` (rama) | Crate `sddia-event-store` demolido; matrices/harness puerto; gates v2; `runtime_db_path` retirado de `eda_port` |
+| **O6 / H6** | `done (rama)` | README/Constitución convergentes; evolution `c4e8f2a1-…`; audit O6; AC-13 abierto |
+| **O7** | `done (rama)` | `event-bus-audit` sin default `/.events/`; AC-13 abierto |
+| **O8** | `done (rama)` | Bindings 2.0.0; procesos forjados; F-02 schema abierto |
+| **O8.1** | `done (rama)` | `route-domain-event` v1.0.2 sin `fs.persist` en fases; schema v1 fuera |
+| **O9** | `done (rama)` | Gate `rustc` verde; clippy residual acotado a `execute-process` (excluido por norma); C-2 latente |
+| **O10** | `done (rama)` | `contract_schema` en resolver/gate/validador; C-2 cerrado; C-4 taxonomía 1.0.12 / eda 2.0.0; O9 tools/skills/daemons sellados vía entity-manager |
+| **O14** | `done (rama)` | Evolution `d0bb10b2`, F-02 `schema_uri`, clippy workspace 0 errores, `execute-process --lib` 849/0; `cargo test --workspace` residual `linear-tracker-adapter` AUT-68 (preexistente). Auditoría `man-43-o14-preaudit-20261114.md`. Siguiente: O14b/O14c |
+| **O14b** | `done (rama)` | Commit `f4f0fecd`, evolution `bc17f9a8` (`EVOL_OK`); motor + genoma `event_uri`; oráculo 5/0; `linear-tracker-adapter` 14/0; `execute-process --lib` 854/0. Nota `docs/audits/man-43-o14b-event-token-20261114.md`. Residual webhook resuelto en O14c |
+| **O14c** | `done (rama)` | Commit 1 `0a2162c9`, Commit 2 `c7ca5efc`, evolution `7ed0df40` (`EVOL_OK`); rutas virtuales `.events/pending` → `EventUri`; oráculo G-2 7/7; clippy 0 avisos; dossier `man-43-o14c-reaudit-ac13-20261116.md` (`NO_APTO_TOTAL` propuesto) |
+| **O14d** | `done (rama)` | Cierre de bloqueos O14c (`78471284`, `0473e8a4`, evolution `59c5c632`): `thought-graph-access` + `lancedb_thought_repo` por `EventManagerPort`, fix `gate_evolution` CA14 + `ecosystem-health` MAN-25, poda total `.events/` (0 productivos fuera de higiene/QA); `cargo test --workspace` **43 suites: 1226 passed, 0 failed, 1 ignored**; `clippy` 0 avisos; dossier `man-43-o14d-reaudit-ac13-20261116.md` (**`APTO_TOTAL_PROPUESTO`**) |
+| **O15** | `done (cierre)` | Certificación Argos (`APTO_TOTAL` en `validacion.md` `qa_profile: full` y auditorías H6.3 `man-32-lineage-…` / `man-43-o6-…`), release bundles/testigos `.sha256` compilados y lanzamiento de `delivery-close-cycle` |
+| **O13** | `done (rama)` | Regresión O10 (3 tests validador DI) + baseline O12 inválida; clase `capability-contract` en `entity-manager`; C-3 (schema `eda.event_manager` 2.0, paridad schema↔serde); identidad `x-sddia` de los 17 contratos |
+| **O12** | `done` | Línea base; C-4 por cauce oficial; C-5 `event_uri` + process 1.1.0; 4 fallos lib documentados |
+| **O11** | `done` | Remediación forja O10: binario canónico, guarda anti-sobrescritura, restauración 3 `.md`, delete stubs, sellos daemons/O9, `hash_refresh` taxonomía (contenido 2.0.0 heredado de O10) |
+
+### Backlog técnico O0
+
+Implementado según `plan.md` § O0 / H1R (2026-11-11). Evidencia: `sddia-core` (`error`, `contract`, `memory_mock`, `runtime_bridge`, `contract_suite`), `redb_event_adapter`, `fs_event_adapter`, `external_capsule_event_adapter` (+ `capsule_dummy`). Pendiente: PR/commit y cierre documental en rama.
+
+### Backlog técnico O1
+
+Kernel y adapters en `b6a73ba2`. Genoma 2.0 sigue pendiente vía `entity-manager` y no bloquea O2.
+
+### Backlog técnico O2
+
+Cerrado en `de2161ed`. Secuencia en `plan.md` § O2 / H2.
+
+### Backlog técnico O3
+
+O3.1 en `1a4c84af`. Residual de progress (`sweep_progress_leaf`) fuera de O4.
+
+### Backlog técnico O4
+
+Cerrado en `c1700a47`. Residual de lectores (Presented por disco, progress leaf) = hilo **O5** en `plan.md` v1.1.7. La demolición del crate queda en **O5.1** (L-7).
+
+### Backlog técnico O5
+
+Cerrado en rama: Presented y `presented_event_id_for_branch` solo puerto; `sweep_progress_leaf` no-op sin `read_dir`. Siguiente: **O5.1**.
+
+### Backlog técnico O5.1
+
+Cerrado en `0d37e9d6`. Verificación: `cargo test -p execute-process --lib` (816), matrices IO, `gate_event_manager_port`.
+
+### Backlog técnico O5.2
+
+Cerrado en rama: `tests/common` + matrices pending/fractal + `event_store_writers` vía puerto; eliminados `eda_subscriber_*`; `event-bus-audit` sin dep store; `eda_port` sin `runtime_db_path`/`path_is_resolved_redb`; workspace sin `sddia-event-store/`; allowlists QA endurecidas. Verificación: `cargo build/test -p execute-process`, `gate_event_manager_port`, `event-bus-audit`.
+
+### Backlog técnico O6
+
+Cerrado en `f9ef35d9`. F-02 y prosa de `SddIA/process/` → **O8** vía `entity-manager`. AC-13 sigue abierto.
+
+### Backlog técnico O7
+
+Cerrado en rama: `cumulo_string_is_legacy_fs_dir` + `optional_queue_dir`; sin `unwrap_or(".events/…")`; tests `cumulo_table_ids_*` y `run_audit_with_core_cumulo_*`. Verificación: `cargo test -p event-bus-audit`, `gate-event-manager-port`.
+
+### Backlog técnico O8
+
+Cerrado en rama: `capability-bindings` v1.10.0 / contrato `2.0.0`; README/Constitución `^2.0.0`; `event-bus-audit` y `route-domain-event` actualizados vía `entity-manager`. Re-audit `man-43-o8-contract-20261113.md`. Residual de cabecera → **O8.1**. Schema v1 → ciclo `norm` posterior. AC-13 abierto.
+
+### Backlog técnico O8.1
+
+Cerrado en rama: `entity-manager` reescribió `phases` e `inputs` de `route-domain-event` a v1.0.2 (token de puerto, sin `fs.persist`). `context` restaurado (`event-routing`, `ecosystem-evolution`). `outputs` de cabecera y `eda.event_manager.v1.schema.json` siguen fuera. AC-13 abierto.
+
+### Backlog técnico O9
+
+Cerrado en rama. **Hallazgo normativo:** `rust-warning-gate` §1 excluye Clippy; la CI usa `RUSTFLAGS=-Dwarnings` sin clippy, así que AC-12 se mide con `cargo check/build`. Partiendo de un workspace **inmedible** (`sddia-io` fallaba), se corrigieron 33 ficheros de lint mecánico. `cargo check --workspace` verde; `execute-process --lib` 816/816. Residual clippy (~85) acotado a `execute-process` y de tipo estructural (`too_many_arguments`, `needless_return` en `match`, `type_complexity`). Fallos preexistentes confirmados con `git stash`: `linear_bridge_webhook::ac13_*` y `ecosystem_health_map_absent_still_ok`. C-2 (`eda.event_manager.schema.json` inalcanzable) sigue latente: ningún proceso declara `requires_capability` de ese contrato. AC-13 abierto.
+
+### Backlog técnico O10
+
+Cerrado en rama: `BindingRow` + `contract_schema_file`; validador usa `contract_schema_rel`; gate lee fila de bindings; forja norm/tool/skill/daemon ampliada (`artifact_yaml/body`, `hash_refresh`, `implementation_source_git_apply`); `capability-taxonomy` **1.0.12** / catálogo **2.0.0**; O9 genoma sellado vía entity-manager. Verificación: test `core_bindings_eda_event_manager_resolves_v1_schema` (tras `cargo test -p execute-process --lib`). C-3 (schema v1.2.0) y C-5 (`route-domain-event.outputs`) siguen abiertos; AC-13 abierto.
+
+### Backlog técnico O14
+
+Cerrado en rama (`plan.md` § O14, v1.2.15). Entregado: registro evolution `d0bb10b2-7c02-4955-8637-2451c2d5eeb3` (136 rutas `relacionado`), `schema_uri` → `eda.event_manager.v1.schema.json` + test, clippy workspace sin errores, `execute-process --lib` 849/0, nota `docs/audits/man-43-o14-preaudit-20261114.md`. **Residual AC-12:** `cargo test --workspace` falla en `linear-tracker-adapter::aut68_missing_label_names_team` (preexistente en rama). `gate-evolution --range` → validar tras commit (correladores `in_diff`). Siguiente: **O14b** / **O14c**.
+
+### Backlog técnico O14b
+
+Cerrado en rama (`plan.md` § O14b, commit `f4f0fecd`, evolution `bc17f9a8`). El residual de `ac13_valid_signature_emits_webhook_source` quedó diagnosticado como determinista y resuelto en O14c.
+
+### Backlog técnico O14c
+
+Cerrado en rama (`plan.md` § O14c, v1.2.17, commits `0a2162c9` y `c7ca5efc`, evolution `7ed0df40`). Dossier `docs/audits/man-43-o14c-reaudit-ac13-20261116.md` (**NO_APTO_TOTAL** propuesto).
+
+### Backlog técnico O14d
+
+Cerrado en rama (`plan.md` § O14d, v1.2.18). Dossier `docs/audits/man-43-o14d-reaudit-ac13-20261116.md` (**`APTO_TOTAL_PROPUESTO`**). Cierra H-1 (`thought-graph-access` por puerto), H-2 (`gate_evolution` CA14 y `ecosystem-health` MAN-25) y H-3 b (poda total de 15 ficheros con `.events/` y 2 escrituras FS en `kalma2-bridge`; oráculo estricto `".events/"` 7/7; `cargo test --workspace` 1226/0; `clippy` 0 avisos). Listo para **O15** (`delivery-close-cycle` → PR → `pull-request-review` por Argos).
+
+### Backlog técnico O13
+
+Cerrado en rama (`plan.md` § O13, v1.2.14; auditoría `docs/audits/man-43-o13-contract-schema-20261114.md`, APTO_PARCIAL). **Corrige O10 y O12:** los 3 tests `capability_di_output_validator` fallan por fixtures `contract_schema_rel: "x"` tras O10 (regresión mía; la suite completa no se corrió); el 4.º fallo (`tier_dispatch`) fue una variable `SDDIA_EXECUTE_PROCESS_BIN` relativa exportada en mi shell. O12 los llamó «no bloqueantes» contra su propio plan: baseline inválida. Pasos: fixtures + hermetizar test + suite limpia + corregir auditoría O12 → forja nativa `capability-contract` (RFC 6902, descriptor `{contract}.md`, directorio por Cúmulo, sin fallback a proceso) → test de paridad rojo antes/verde después → enums de clase en `emit-domain-mutation` y `entity-manager` → patch C-3 → auditoría. Identidad (laudo): opción A, bloque `x-sddia` embebido (uuid, versión de catálogo, hash del JSON canónico sin `x-sddia`); los 16 contratos restantes se adoptan en este hilo por inserción textual (diff = solo el bloque) vía `entity-manager`. Laudo: **Norma de Identidad Polimórfica** (sustrato A `{name}.md`, sustrato B `{name}.schema.json` + `x-sddia`), ya recogida en `.cursorrules` §2/§3 y `README.md`; el registro en `evolution/` documenta la evolución del estándar de Cicatriz Digital.
+
+### Backlog técnico O12 (cerrado en rama)
+
+Ejecutado (`plan.md` § O12). Auditoría: `docs/audits/man-43-o12-baseline-20261114.md`. Línea base completa (suite lib, `cargo check --workspace`, `gate-event-manager-port`; no corridas desde O9). C-4 por cauce oficial en dos `entity-manager` (restore desde `c60ae233` + parche); en O11 el paso 1 nunca se ejecutó porque su semilla no existía, no por límite del motor. C-5: `route-domain-event` 1.1.0 con `event_uri`; el runtime deja de fabricar `processing_header_path` en modo puerto; `run_process_forge` update admite `process_outputs` sin fases. Higiene de 5 semillas `_lab` de O11. C-3 pasa a O13 (laudo: nueva clase `capability-contract` en `entity-manager`; sin edit IDE). C-5 decidido: `event_uri`.
+
+### Backlog técnico O11 (cerrado en rama)
+
+Ejecutado (`plan.md` § O11). **Corrige O10:** `SddIA/target/debug/execute-process` era del 2026-11-13 12:14; las invocaciones `entity-manager` de O10 usaron la forja anterior, que en `update` sin parche sobrescribe con `create`. Daño en `419d89d5`: `shell-executor.md`, `cryptography-manager.md`, `event-bus-audit.md` con esqueleto y UUID nuevo; `file-tracker-adapter.md` y `manage-event-receipt.md` creados; `capability-taxonomy.md` escrita con `StrReplace` (incumple DA-2 y el laudo C-4); daemons sin sellar; el «re-gobierno O9» solo refrescó hashes. Pasos: build canónico → guarda anti-sobrescritura → restaurar desde `c60ae233` vía `implementation_source_git_apply` → delete de fantasmas → C-4 en dos `update` → sellar daemons → 18 reaplicaciones O9 → inventario de eventos con UUID falso → docs.
+
+No se modifica el veredicto histórico de `validacion.md` H1 en la nota de O11; el cierre total **O15 (`APTO_TOTAL`)** queda sellado por Argos sobre `validacion.md` (`qa_profile: full`) y el dossier O14d.

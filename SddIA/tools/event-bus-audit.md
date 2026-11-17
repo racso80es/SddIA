@@ -15,7 +15,7 @@ outputs:
   - "success": "boolean"
   - "exitCode": "integer"
   - "error": "string; diagnóstico si aplica"
-hash_signature: "sha256:e6126a24d4f370a368f4fc4bbb5addcd2d4a19f92c21f06ca5d17e50e2960e09"
+hash_signature: "sha256:db32483193eeb0ec20c8f80f2bc5b1fa5c1a901ad811efa5b902447307f0c918"
 implementation_path_ref: "SddIA/tools/event-bus-audit"
 ---
 

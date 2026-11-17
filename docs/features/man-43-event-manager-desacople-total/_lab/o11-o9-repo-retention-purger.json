@@ -1,0 +1,1 @@
+{"entity_class":"tool","entity_name":"repo-retention-purger","lifecycle_operation":"update","semantic_seed":{"implementation_source_git_apply":{"commit":"c60ae233","paths":["SddIA/tools/repo-retention-purger/src/slice_target.rs"]}}}

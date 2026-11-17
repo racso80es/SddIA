@@ -1,7 +1,7 @@
 ---
 uuid: "b0c1d2e3-f4a5-4678-9012-3456789abcde"
 name: "emit-tracker-sync-failed"
-version: "1.0.0"
+version: "2.0.0"
 contract: "actions-contract v1.2.0"
 context: "tracker-operations"
 capabilities:
@@ -24,10 +24,10 @@ inputs:
 outputs:
   - "success": "boolean"
   - "event_id": "string"
-  - "target_path": "string"
+  - "event_uri": "string"
+hash_signature: "sha256:53ca6de7e782059e662b787e9bd8a850235f3cab62987c128aeefdb02eec56a3"
 minteo_maximo: null
 porcentaje_de_exito: null
-hash_signature: "sha256:71aa7970cc08531dbddaeeb607cf66addcd42c4c44af5e78e3d9c48ba27e22d1"
 ---
 
 # Acción: emit-tracker-sync-failed

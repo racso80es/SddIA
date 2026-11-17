@@ -151,7 +151,7 @@ fn dispatch_mode_label() -> &'static str {
 }
 
 pub fn input_truthy(inputs: &Value, key: &str) -> bool {
-    inputs.get(key).map_or(false, |v| {
+    inputs.get(key).is_some_and(|v| {
         v.as_bool().unwrap_or_else(|| {
             v.as_str()
                 .map(|s| matches!(s.trim().to_lowercase().as_str(), "1" | "true" | "yes"))
@@ -221,12 +221,8 @@ fn fracture_event_content_hash(event_type: &str, payload: &Value) -> String {
     format!("{:x}", hasher.finalize())[..12].to_string()
 }
 
-fn pending_virtual_event_path(pending_dir: &Path, event_id: &str) -> PathBuf {
-    pending_dir.join(format!("{event_id}.json"))
-}
-
 pub(crate) fn is_runtime_db_event_path(repo: &Path, path: &Path) -> bool {
-    eda_port::path_is_resolved_redb(repo, path)
+    sddia_event_manager_host::path_matches_productive_redb(repo, path)
 }
 
 fn find_fracture_stored_event_id(repo: &Path, event: &Value) -> Result<Option<String>, String> {
@@ -261,11 +257,10 @@ fn find_fracture_stored_event_id(repo: &Path, event: &Value) -> Result<Option<St
 
 fn write_pending_domain_event_file(
     repo: &Path,
-    pending_dir: &Path,
     event_type: &str,
     emitter_agent: &str,
     payload: Value,
-) -> Result<PathBuf, String> {
+) -> Result<sddia_core::ports::event_manager::EventUri, String> {
     let content_hash = if event_type == "System_Fracture_Detected" {
         Some(fracture_event_content_hash(event_type, &payload))
     } else {
@@ -283,11 +278,14 @@ fn write_pending_domain_event_file(
     sddia_eda_catalog::stamp_published_event(repo, &mut event)?;
     if content_hash.is_some() {
         if let Some(existing_id) = find_fracture_stored_event_id(repo, &event)? {
-            return Ok(pending_virtual_event_path(pending_dir, &existing_id));
+            return sddia_core::ports::event_manager::EventUri::new(
+                sddia_core::ports::event_manager::EventFamily::Domain,
+                existing_id,
+            );
         }
     }
-    eda_port::publish_ecst(repo, "pending", &event).map_err(|e| e.to_string())?;
-    Ok(pending_virtual_event_path(pending_dir, &event_uuid))
+    let seal = eda_port::publish_ecst(repo, "pending", &event).map_err(|e| e.to_string())?;
+    Ok(seal.event_uri)
 }
 
 pub fn materialize_pending_domain_event(
@@ -296,18 +294,9 @@ pub fn materialize_pending_domain_event(
     emitter_agent: &str,
     payload: Value,
 ) -> Result<String, String> {
-    let bus = ensure_event_bus_topology(repo)?;
-    let pending_dir = repo.join(&bus.pending);
-    #[cfg(test)]
-    fs::create_dir_all(&pending_dir).map_err(|e| e.to_string())?;
-    let event_path = write_pending_domain_event_file(
-        repo,
-        &pending_dir,
-        event_type,
-        emitter_agent,
-        payload,
-    )?;
-    Ok(rel_event_path(repo, &event_path))
+    let _bus = ensure_event_bus_topology(repo)?;
+    let uri = write_pending_domain_event_file(repo, event_type, emitter_agent, payload)?;
+    Ok(uri.as_canonical())
 }
 
 fn validate_blocking_subscribers(
@@ -337,14 +326,23 @@ fn validate_blocking_subscribers(
     Ok(())
 }
 
-/// Resuelve `event_file_path` desde inputs del orquestador (modo blocking / CLI hook).
+/// Resuelve `event_uri` desde inputs del orquestador (modo blocking / CLI hook).
 pub fn resolve_route_event_path(
     repo: &Path,
     process_inputs: &Value,
     blocking: bool,
 ) -> Result<String, String> {
+    if let Some(id) = process_inputs
+        .get("event_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        return Ok(format!("eda://domain/{id}"));
+    }
+
     if let Some(rel) = process_inputs
-        .get("event_file_path")
+        .get("event_uri")
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
@@ -358,7 +356,7 @@ pub fn resolve_route_event_path(
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
-        .ok_or("event_file_path o event_type requerido")?;
+        .ok_or("event_uri o event_type requerido")?;
 
     if blocking {
         let target = process_inputs
@@ -389,7 +387,10 @@ pub fn resolve_route_event_path(
         }
     }
 
-    materialize_pending_domain_event(repo, event_type, emitter, payload)
+    let uri = materialize_pending_domain_event(repo, event_type, emitter, payload)?;
+    let parsed = sddia_core::ports::event_manager::EventUri::parse(&uri)
+        .map_err(|e| format!("event_id ausente en materialización ({uri}): {e}"))?;
+    Ok(format!("eda://domain/{}", parsed.event_id))
 }
 
 pub fn is_local_qa_event(event: &Value) -> bool {
@@ -773,17 +774,6 @@ fn emit_dlt_batch_fracture(repo: &Path, causa: &str) {
     if dlt_transient_error_trace(causa) {
         return;
     }
-    let pending_rel = if let Ok(cfg) = super::workspace::load_paths_config(repo) {
-        cfg.get("eda_bus")
-            .and_then(|b| b.get("pending"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.trim().trim_start_matches("./").to_string())
-            .unwrap_or_else(|| ".events/pending".into())
-    } else {
-        ".events/pending".into()
-    };
-    let pending = repo.join(&pending_rel);
-    let _ = fs::create_dir_all(&pending);
     let (friction_id, error_trace) = classify_batch_anchor_friction(causa);
     let payload = json!({
         "process_name": "route-domain-event",
@@ -794,7 +784,6 @@ fn emit_dlt_batch_fracture(repo: &Path, causa: &str) {
     });
     let _ = write_pending_domain_event_file(
         repo,
-        &pending,
         "System_Fracture_Detected",
         "execute-process",
         payload,
@@ -871,7 +860,7 @@ fn resolve_reanchor_event_path(
         if stored.is_file() {
             return None;
         }
-        return Some(stored);
+        Some(stored)
     }
     #[cfg(test)]
     {
@@ -1539,7 +1528,7 @@ pub(crate) fn build_ecst_subscriber_inputs(
     }
     if let Some(path) = event_path {
         let rel = rel_event_path(repo, path);
-        process_inputs.insert("event_file_path".into(), json!(rel));
+        process_inputs.insert("event_uri".into(), json!(rel));
     }
     process_inputs
 }
@@ -1753,10 +1742,9 @@ pub(crate) fn dispatch_subscriber(
         .and_then(|v| v.as_str())
         .map(|et| et.starts_with("Domain_Entity_"))
         == Some(true)
+        && !subscriber_applies_to_topology(subscriber, &origin_topology)
     {
-        if !subscriber_applies_to_topology(subscriber, &origin_topology) {
-            return (sid, "skipped-topology".into(), None, 0);
-        }
+        return (sid, "skipped-topology".into(), None, 0);
     }
 
     let agent_name = agent.unwrap();
@@ -2313,8 +2301,30 @@ fn handle_subscriber(
     (sid, status)
 }
 
+fn domain_event_uri_token(event_id: &str) -> String {
+    format!("eda://domain/{event_id}")
+}
+
+fn merge_route_result_identity(
+    data: &mut Map<String, Value>,
+    repo: &Path,
+    from_store: bool,
+    event_uuid: &str,
+    event_path: &Path,
+    processing_header: &Path,
+) {
+    data.insert("event_uri".into(), json!(domain_event_uri_token(event_uuid)));
+    if !from_store {
+        data.insert("parent_path".into(), json!(rel_event_path(repo, event_path)));
+        data.insert(
+            "processing_header_path".into(),
+            json!(rel_event_path(repo, processing_header)),
+        );
+    }
+}
+
 /// Ejecuta enrutamiento ECST/fan-out de un evento de dominio.
-pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: bool) -> Value {
+pub fn route_domain_event(repo: &Path, event_uri: &str, batch_mode_iota: bool) -> Value {
     let bus = match ensure_event_bus_topology(repo) {
         Ok(b) => b,
         Err(e) => {
@@ -2327,13 +2337,17 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
         }
     };
 
-    let raw_path = PathBuf::from(event_file_path);
-    let event_path = if raw_path.is_absolute() {
-        raw_path
-    } else {
-        repo.join(&raw_path)
+    let event_path = match sddia_core::ports::event_manager::EventUri::parse(event_uri) {
+        Ok(uri) => PathBuf::from(format!("{}.json", uri.event_id)),
+        Err(e) => {
+            return json!({
+                "success": false,
+                "exitCode": 1,
+                "data": null,
+                "error": e,
+            });
+        }
     };
-    let event_path = event_path.canonicalize().unwrap_or(event_path);
 
     if is_runtime_db_event_path(repo, &event_path) {
         return json!({
@@ -2398,6 +2412,22 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
         }
     };
 
+    let processing_header = if from_store {
+        PathBuf::new()
+    } else {
+        match ensure_processing_header(repo, &bus, &event_uuid, &event_path) {
+            Ok(p) => p,
+            Err(e) => {
+                return json!({
+                    "success": false,
+                    "exitCode": 1,
+                    "data": null,
+                    "error": e,
+                });
+            }
+        }
+    };
+
     inject_domain_entity_topology_defaults(&mut event);
     let payload = event.get("payload").cloned().unwrap_or(json!({}));
     let origin_topology = resolve_origin_topology(&payload);
@@ -2426,33 +2456,28 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
             })),
             Some(&event_path),
         );
+        let mut data = Map::from_iter([
+            ("success".into(), json!(false)),
+            (
+                "delivery_status".into(),
+                json!({ ECST_GATE_SUBSCRIBER: "failed" }),
+            ),
+        ]);
+        merge_route_result_identity(
+            &mut data,
+            repo,
+            from_store,
+            &event_uuid,
+            &event_path,
+            &processing_header,
+        );
         return json!({
             "success": false,
             "exitCode": 1,
-            "data": {
-                "success": false,
-                "delivery_status": { ECST_GATE_SUBSCRIBER: "failed" },
-                "parent_path": rel_event_path(repo, &event_path),
-            },
+            "data": Value::Object(data),
             "error": ecst_errors.join("; "),
         });
     }
-
-    let processing_header = if from_store {
-        repo.join(format!(".events/pending/{event_uuid}.json"))
-    } else {
-        match ensure_processing_header(repo, &bus, &event_uuid, &event_path) {
-            Ok(p) => p,
-            Err(e) => {
-                return json!({
-                    "success": false,
-                    "exitCode": 1,
-                    "data": null,
-                    "error": e,
-                });
-            }
-        }
-    };
 
     let subs_path = repo.join(&bus.subscriptions);
     let registry: Value = match fs::read_to_string(&subs_path) {
@@ -2493,16 +2518,24 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
                 "parent_path": rel_event_path(repo, &event_path),
             }),
         );
+        let mut data = Map::from_iter([
+            ("success".into(), json!(true)),
+            ("disposition".into(), json!("dead-letter")),
+            ("reason".into(), json!("no_subscriber")),
+            ("dead_letter_path".into(), json!(rel_event_path(repo, &dl))),
+        ]);
+        merge_route_result_identity(
+            &mut data,
+            repo,
+            from_store,
+            &event_uuid,
+            &event_path,
+            &processing_header,
+        );
         return json!({
             "success": true,
             "exitCode": 0,
-            "data": {
-                "success": true,
-                "disposition": "dead-letter",
-                "reason": "no_subscriber",
-                "parent_path": rel_event_path(repo, &event_path),
-                "dead_letter_path": rel_event_path(repo, &dl),
-            },
+            "data": Value::Object(data),
         });
     }
 
@@ -2517,17 +2550,24 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
 
     if subscribers.is_empty() {
         let sweep = try_sweep_event(repo, &bus, &event_uuid, Some(&registry));
+        let mut data = Map::from_iter([
+            ("success".into(), json!(true)),
+            ("delivery_status".into(), json!({})),
+            ("dispatch_mode".into(), json!(dispatch_mode)),
+            ("sweep".into(), sweep),
+        ]);
+        merge_route_result_identity(
+            &mut data,
+            repo,
+            from_store,
+            &event_uuid,
+            &event_path,
+            &processing_header,
+        );
         return json!({
             "success": true,
             "exitCode": 0,
-            "data": {
-                "success": true,
-                "delivery_status": {},
-                "parent_path": rel_event_path(repo, &event_path),
-                "processing_header_path": rel_event_path(repo, &processing_header),
-                "dispatch_mode": dispatch_mode,
-                "sweep": sweep,
-            },
+            "data": Value::Object(data),
         });
     }
 
@@ -2626,19 +2666,28 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
     let all_success = delivery_status.is_empty()
         || delivery_status.values().all(|v| status_is_terminal_ok(v));
 
-    let mut result_data = json!({
-        "success": all_success || skip_only,
-        "delivery_status": delivery_status,
-        "parent_path": rel_event_path(repo, &event_path),
-        "processing_header_path": rel_event_path(repo, &processing_header),
-        "dispatch_mode": dispatch_mode,
-    });
+    let mut result_data = Map::from_iter([
+        ("success".into(), json!(all_success || skip_only)),
+        (
+            "delivery_status".into(),
+            json!(delivery_status),
+        ),
+        ("dispatch_mode".into(), json!(dispatch_mode)),
+    ]);
+    merge_route_result_identity(
+        &mut result_data,
+        repo,
+        from_store,
+        &event_uuid,
+        &event_path,
+        &processing_header,
+    );
 
     {
         let ev = recover_lock(&event_arc);
         if let Some(ds) = ev.get("delivery_state").and_then(|v| v.as_object()) {
             if let Some(d) = ds.get("transaction_digest").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()) {
-                result_data["transaction_digest"] = json!(d);
+                result_data.insert("transaction_digest".into(), json!(d));
             }
         }
     }
@@ -2646,7 +2695,7 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
     let mut result = json!({
         "success": all_success || skip_only,
         "exitCode": if all_success || skip_only { 0 } else { 1 },
-        "data": result_data,
+        "data": Value::Object(result_data),
     });
 
     if !all_success && !skip_only {
@@ -2667,17 +2716,8 @@ mod blocking_tests {
     use std::fs;
     use std::path::PathBuf;
 
-    struct LabFilesystemMode;
-    impl Drop for LabFilesystemMode {
-        fn drop(&mut self) {
-            sddia_event_store::override_store_mode(None);
-            eda_port::clear_port();
-        }
-    }
-
-    fn lab_filesystem_eda() -> LabFilesystemMode {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        LabFilesystemMode
+    fn lab_filesystem_eda() -> crate::engine::eda_port::test_lab::FilesystemEdaGuard {
+        crate::engine::eda_port::test_lab::filesystem_eda()
     }
 
     fn repo_root() -> PathBuf {
@@ -2690,19 +2730,10 @@ mod blocking_tests {
 
     #[test]
     fn aut63_kaizen_idea_captured_l_a4_intentional_sink_routes() {
-        let _reset = {
-            struct R;
-            impl Drop for R {
-                fn drop(&mut self) {
-                    sddia_event_store::override_store_mode(None);
-                    eda_port::clear_port();
-                }
-            }
-            sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-            R
-        };
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
+        fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let _redb = eda_port::test_lab::redb_eda_for(repo);
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/event-domain-subscriptions.json"),
@@ -2738,7 +2769,7 @@ mod blocking_tests {
         sddia_eda_catalog::stamp_published_event(repo, &mut body).expect("stamp");
         eda_port::publish_ecst(repo, "pending", &body).expect("publish");
         assert!(!abs.is_file());
-        let out = route_domain_event(repo, &rel, false);
+        let out = route_domain_event(repo, &format!("eda://domain/{event_id}"), false);
         assert_eq!(out.get("success"), Some(&json!(true)), "{out}");
         assert_eq!(out.get("exitCode"), Some(&json!(0)));
         let delivery = out
@@ -2747,6 +2778,15 @@ mod blocking_tests {
             .map(|m| m.is_empty())
             .unwrap_or(false);
         assert!(delivery, "expected empty delivery_status (sink), got {out}");
+        let data = out.get("data").and_then(|v| v.as_object()).expect("data");
+        assert_eq!(
+            data.get("event_uri"),
+            Some(&json!(format!("eda://domain/{event_id}")))
+        );
+        assert!(
+            !data.contains_key("processing_header_path"),
+            "store mode must not fabricate processing_header_path: {out}"
+        );
     }
 
     #[test]
@@ -3014,18 +3054,12 @@ mod blocking_tests {
             repo,
             "iota-relay-publish-error: status=500 config-missing: IOTA_WALLET_SECRET",
         );
-        let pending = repo.join(".events/pending");
-        let mut found = false;
-        for ent in fs::read_dir(&pending).unwrap() {
-            let p = ent.unwrap().path();
-            let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
-            if body.get("event_type").and_then(|v| v.as_str()) == Some("System_Fracture_Detected")
-            {
-                assert_eq!(body["payload"]["friction_id"], "F-DLT-PUBLISH-ERROR");
-                found = true;
-            }
-        }
-        assert!(found);
+        let body = crate::engine::eda_port::test_lab::find_pending_by_event_type(
+            repo,
+            "System_Fracture_Detected",
+        )
+        .expect("fracture pending");
+        assert_eq!(body["payload"]["friction_id"], "F-DLT-PUBLISH-ERROR");
     }
 
     #[test]
@@ -3180,18 +3214,12 @@ mod blocking_tests {
             repo,
             "iota-relay-publish-error: status=500 Transaction execution failed due to issues with transaction inputs, please review the errors and try again:\n- Invalid object type",
         );
-        let pending = repo.join(".events/pending");
-        let mut found = false;
-        for ent in fs::read_dir(&pending).unwrap() {
-            let p = ent.unwrap().path();
-            let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
-            if body.get("event_type").and_then(|v| v.as_str()) == Some("System_Fracture_Detected")
-            {
-                assert_eq!(body["payload"]["friction_id"], "F-DLT-PUBLISH-ERROR");
-                found = true;
-            }
-        }
-        assert!(found);
+        let body = crate::engine::eda_port::test_lab::find_pending_by_event_type(
+            repo,
+            "System_Fracture_Detected",
+        )
+        .expect("fracture pending");
+        assert_eq!(body["payload"]["friction_id"], "F-DLT-PUBLISH-ERROR");
     }
 
     #[test]
@@ -3206,22 +3234,16 @@ mod blocking_tests {
         )
         .unwrap();
         emit_dlt_batch_fracture(repo, "iota-relay-unreachable: Connection refused");
-        let pending = repo.join(".events/pending");
-        let mut found = false;
-        for ent in fs::read_dir(&pending).unwrap() {
-            let p = ent.unwrap().path();
-            let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
-            if body.get("event_type").and_then(|v| v.as_str()) == Some("System_Fracture_Detected")
-            {
-                assert_eq!(
-                    body["payload"]["friction_id"],
-                    "F-DLT-RELAY-SIN-SUPERVISOR"
-                );
-                assert_eq!(body["payload"]["attempted_action"], "merkle-batch-preseal");
-                found = true;
-            }
-        }
-        assert!(found);
+        let body = crate::engine::eda_port::test_lab::find_pending_by_event_type(
+            repo,
+            "System_Fracture_Detected",
+        )
+        .expect("fracture pending");
+        assert_eq!(
+            body["payload"]["friction_id"],
+            "F-DLT-RELAY-SIN-SUPERVISOR"
+        );
+        assert_eq!(body["payload"]["attempted_action"], "merkle-batch-preseal");
     }
 
     #[test]
@@ -3946,51 +3968,56 @@ mod blocking_tests {
         assert!(tele_digest.starts_with("local-"), "{tele_digest}");
         assert!(!tele_digest.starts_with("lab-sim-"));
 
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        let fs_tmp = tempfile::tempdir().unwrap();
-        let mut fs_event = json!({
-            "event_id": "eeeeeeee-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+        {
+            let _mock = lab_filesystem_eda();
+            let fs_tmp = tempfile::tempdir().unwrap();
+            let mut fs_event = json!({
+                "event_id": "eeeeeeee-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+                "event_type": "PullRequest_Merged",
+                "payload": {
+                    "source_branch": "feat/x",
+                    "target_branch": "main",
+                    "merge_commit_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    "author": "racso",
+                    "security_clearance": "core"
+                },
+                "delivery_state": {}
+            });
+            let (_sid, status, err, code) =
+                dispatch_subscriber(fs_tmp.path(), &sub, &mut fs_event, false, None);
+            assert_eq!(status, "success", "{err:?}");
+            assert_eq!(code, 0);
+            assert!(fs_event["delivery_state"]["transaction_digest"]
+                .as_str()
+                .unwrap()
+                .starts_with("lab-sim-"));
+        }
+
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending","subscriptions":"SddIA/core/event-domain-subscriptions.json"}}"#,
+        )
+        .unwrap();
+        fs::write(repo.join("SddIA/core/event-domain-subscriptions.json"), "{}\n").unwrap();
+        fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let _redb = eda_port::test_lab::redb_eda_for(repo);
+        let event_id = "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let mut stored = json!({
+            "event_id": event_id,
             "event_type": "PullRequest_Merged",
             "payload": {
                 "source_branch": "feat/x",
                 "target_branch": "main",
-                "merge_commit_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "merge_commit_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "author": "racso",
                 "security_clearance": "core"
             },
-            "delivery_state": {}
         });
-        let (_sid, status, err, code) =
-            dispatch_subscriber(fs_tmp.path(), &sub, &mut fs_event, false, None);
-        assert_eq!(status, "success", "{err:?}");
-        assert_eq!(code, 0);
-        assert!(fs_event["delivery_state"]["transaction_digest"]
-            .as_str()
-            .unwrap()
-            .starts_with("lab-sim-"));
-        eda_port::clear_port();
-
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let tmp = tempfile::tempdir().unwrap();
-        let repo = tmp.path();
-        let db = crate::engine::eda_port::runtime_db_path(repo);
-        fs::create_dir_all(db.parent().unwrap()).unwrap();
-        let event_id = "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-        {
-            let store = sddia_event_store::EventStore::open(&db).unwrap();
-            store
-                .insert_event(
-                    &sddia_event_store::StoredEvent {
-                        event_id: event_id.into(),
-                        family: sddia_event_store::Family::Domain,
-                        event_type: "PullRequest_Merged".into(),
-                        created_at: 10,
-                        ecst: json!({"event_id": event_id, "event_type": "PullRequest_Merged"}),
-                    },
-                    &["cumulo"],
-                )
-                .unwrap();
-        }
+        let _ = sddia_eda_catalog::stamp_published_event(repo, &mut stored);
+        eda_port::record_ecst(repo, "domain", &stored).expect("seed domain");
         let mut event = json!({
             "event_id": event_id,
             "event_type": "PullRequest_Merged",
@@ -4010,11 +4037,9 @@ mod blocking_tests {
         assert_eq!(code, 0);
         let digest = event["delivery_state"]["transaction_digest"].as_str().unwrap();
         assert!(digest.starts_with("lab-sim-"), "{digest}");
-        eda_port::clear_port();
         let seal = eda_port::get_dlt_seal(repo, event_id).expect("sello");
         assert_eq!(seal.tx_hash, digest);
         assert_eq!(seal.scope, "external_public_interest");
-        sddia_event_store::override_store_mode(None);
         eda_port::clear_port();
         match prev_sim {
             Some(v) => std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", v),
@@ -4024,14 +4049,7 @@ mod blocking_tests {
 
     #[test]
     fn promote_failure_keeps_delegation_status() {
-        struct Reset;
-        impl Drop for Reset {
-            fn drop(&mut self) {
-                sddia_event_store::override_store_mode(None);
-            }
-        }
-        let _reset = Reset;
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         let bus = EventBusTopology {
@@ -4070,12 +4088,24 @@ mod blocking_tests {
         );
         assert_eq!(sid, "tekton");
         assert_eq!(status, "skipped-topology");
-        let witness = repo
-            .join(".events/processed/subscribers")
-            .join(format!("{event_uuid}.tekton.json"));
-        let raw = fs::read_to_string(&witness).expect("processed witness");
-        assert!(raw.contains("skipped-topology") || raw.contains("result_status"), "{raw}");
-        assert!(raw.contains("delegation"), "{raw}");
+        use sddia_core::ports::event_manager::{DeliveryStatus, ListDeliveriesRequest};
+        let rows = crate::engine::eda_port::with_event_port(repo, "promote_witness_lab", |port| {
+            port.list_deliveries(ListDeliveriesRequest {
+                event_id: Some(event_uuid.to_string()),
+                subscriber_id: Some("tekton".into()),
+                status: None,
+                limit: Some(10),
+                cursor: None,
+            })
+            .map_err(|e| e.to_string())
+        })
+        .expect("list deliveries");
+        assert!(
+            rows.deliveries.iter().any(|d| {
+                matches!(d.status, DeliveryStatus::Ack | DeliveryStatus::Nack)
+            }),
+            "witness delivery missing"
+        );
     }
 
     #[test]
@@ -4103,7 +4133,7 @@ mod blocking_tests {
         for key in KEYS {
             let (event, payload) = catalog_success_event_and_payload(key);
             let out = assemble_domain_process_subscriber_inputs(
-                &repo,
+                repo,
                 key,
                 &event,
                 Some(&path),
@@ -4118,7 +4148,7 @@ mod blocking_tests {
                 event.get("event_id").and_then(|v| v.as_str()),
                 "process={key}"
             );
-            assert!(inputs.get("event_file_path").is_some(), "process={key}");
+            assert!(inputs.get("event_uri").is_some(), "process={key}");
         }
     }
 
@@ -4209,7 +4239,7 @@ mod blocking_tests {
 }
 
 
-pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>) -> Value {
+pub fn route_domain_batch(repo: &std::path::Path, event_uris: Vec<String>) -> Value {
     let bus = match ensure_event_bus_topology(repo) {
         Ok(b) => b,
         Err(e) => return json!({ "success": false, "exitCode": 1, "error": e }),
@@ -4230,12 +4260,14 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
     let mut results = vec![];
     let mut batch_errors: Vec<String> = vec![];
 
-    for path_str in &event_file_paths {
-        let raw_path = PathBuf::from(path_str);
-        let event_path = if raw_path.is_absolute() {
-            raw_path
-        } else {
-            repo.join(&raw_path)
+    for path_str in &event_uris {
+        let event_path = match sddia_core::ports::event_manager::EventUri::parse(path_str)
+        {
+            Ok(uri) => PathBuf::from(format!("{}.json", uri.event_id)),
+            Err(e) => {
+                batch_errors.push(e);
+                continue;
+            }
         };
 
         if is_runtime_db_event_path(repo, &event_path) {
@@ -4309,7 +4341,7 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
         &event_paths_by_uuid,
     );
 
-    for path_str in &event_file_paths {
+    for path_str in &event_uris {
         let out = route_domain_event(repo, path_str, true);
         let ok = out.get("success").and_then(|v| v.as_bool()) == Some(true)
             && out.get("exitCode").and_then(|v| v.as_i64()).unwrap_or(1) == 0;
@@ -4463,6 +4495,10 @@ mod tier_dispatch {
         );
         let prev_cmd = std::env::var("SDDIA_AGENT_RUNTIME_COMMAND").ok();
         let prev_marker = std::env::var("SDDIA_TIER_MARKER").ok();
+        // Hermético: el test espera "orquestador no encontrado"; un binario heredado del
+        // entorno (p. ej. ruta relativa exportada por el shell) cambiaría el resultado.
+        let prev_bin = std::env::var("SDDIA_EXECUTE_PROCESS_BIN").ok();
+        std::env::remove_var("SDDIA_EXECUTE_PROCESS_BIN");
         std::env::set_var("SDDIA_AGENT_RUNTIME_COMMAND", &spawn_bin);
         std::env::set_var("SDDIA_TIER_MARKER", &marker);
 
@@ -4500,6 +4536,10 @@ mod tier_dispatch {
         match prev_marker {
             Some(v) => std::env::set_var("SDDIA_TIER_MARKER", v),
             None => std::env::remove_var("SDDIA_TIER_MARKER"),
+        }
+        match prev_bin {
+            Some(v) => std::env::set_var("SDDIA_EXECUTE_PROCESS_BIN", v),
+            None => std::env::remove_var("SDDIA_EXECUTE_PROCESS_BIN"),
         }
         let _ = fs::remove_dir_all(&root);
     }
@@ -4542,7 +4582,7 @@ mod tier_dispatch {
 #[cfg(test)]
 mod aut52_route_redb {
     use super::is_runtime_db_event_path;
-    use crate::engine::eda_port;
+    use sddia_event_manager_host::{productive_store_present, resolved_redb_path};
     use serde_json::json;
     use std::fs;
     use std::path::Path;
@@ -4551,13 +4591,20 @@ mod aut52_route_redb {
     fn aut52_runtime_db_path_is_detected() {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
+        )
+        .unwrap();
         fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
-        let db = eda_port::runtime_db_path(repo);
+        let db = resolved_redb_path(repo).unwrap();
         fs::write(&db, b"").unwrap();
+        assert!(productive_store_present(repo));
         assert!(is_runtime_db_event_path(repo, &db));
         assert!(!is_runtime_db_event_path(
             repo,
-            &Path::new(".events/pending/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.json")
+            Path::new(".events/pending/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.json")
         ));
     }
 
@@ -4565,9 +4612,15 @@ mod aut52_route_redb {
     fn aut52_route_domain_batch_rejects_redb_path() {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
+        )
+        .unwrap();
         fs::create_dir_all(repo.join(".events/pending")).unwrap();
         fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
-        let db = eda_port::runtime_db_path(repo);
+        let db = resolved_redb_path(repo).unwrap();
         fs::write(&db, b"").unwrap();
         let rel = db.strip_prefix(repo).unwrap().to_string_lossy().to_string();
         let out = super::route_domain_batch(repo, vec![rel]);

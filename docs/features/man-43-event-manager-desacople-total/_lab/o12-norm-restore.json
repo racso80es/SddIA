@@ -1,0 +1,12 @@
+{
+  "entity_class": "norm",
+  "entity_name": "capability-taxonomy",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "tactical_norm_name": "capability-taxonomy",
+    "implementation_source_git_apply": {
+      "commit": "c60ae233",
+      "paths": ["SddIA/library/norms/capability-taxonomy.md"]
+    }
+  }
+}

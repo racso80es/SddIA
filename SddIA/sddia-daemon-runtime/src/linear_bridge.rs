@@ -1,8 +1,9 @@
 //! Sensor Linear → `Tracker_Issue_Changed` (HU-B 02). Sin apply markdown.
 
 use crate::eda_bus::{ensure_event_bus_topology, write_json_atomic};
-use chrono::{DateTime, Utc};
 use crate::record_ecst_productive;
+use chrono::{DateTime, Utc};
+use sddia_core::ports::event_manager::{EventFamily, EventUri};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -281,8 +282,8 @@ pub fn compose_tracker_issue_changed(
     })
 }
 
-pub fn materialize_pending(repo: &Path, bus_event: &Value) -> Result<PathBuf, String> {
-    let bus = ensure_event_bus_topology(repo)?;
+pub fn materialize_pending(repo: &Path, bus_event: &Value) -> Result<EventUri, String> {
+    let _bus = ensure_event_bus_topology(repo)?;
     let event_id = bus_event
         .get("event_id")
         .and_then(|v| v.as_str())
@@ -290,11 +291,10 @@ pub fn materialize_pending(repo: &Path, bus_event: &Value) -> Result<PathBuf, St
     let mut stamped = bus_event.clone();
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
     record_ecst_productive(repo, "domain", &stamped)?;
-    let _ = bus;
-    Ok(repo.join(format!(".events/pending/{event_id}.json")))
+    EventUri::new(EventFamily::Domain, event_id)
 }
 
-/// Procesa un lote `list_issues` (ítems ya reducidos). Devuelve rutas de eventos materializados.
+/// Procesa un lote `list_issues` (ítems ya reducidos). Devuelve identidades `EventUri` de eventos materializados.
 pub fn assimilate_list_issues(
     repo: &Path,
     project_slug: &str,
@@ -302,7 +302,7 @@ pub fn assimilate_list_issues(
     pbi_label: &str,
     items: &[Value],
     now: DateTime<Utc>,
-) -> Result<(Vec<PathBuf>, WatcherState), String> {
+) -> Result<(Vec<EventUri>, WatcherState), String> {
     assimilate_tracker_items(repo, project_slug, hu_label, pbi_label, items, now, "poll")
 }
 
@@ -314,7 +314,7 @@ pub fn assimilate_tracker_items(
     items: &[Value],
     now: DateTime<Utc>,
     source: &str,
-) -> Result<(Vec<PathBuf>, WatcherState), String> {
+) -> Result<(Vec<EventUri>, WatcherState), String> {
     let mut state = load_state(repo, project_slug);
     let mut emitted = Vec::new();
     for item in items {
@@ -386,13 +386,10 @@ mod tests {
         let first = item("OSC-11", "Backlog", &["hu"]);
         let _ = assimilate_list_issues(&repo, slug, hu, pbi, &[first], Utc::now()).unwrap();
         let second = item("OSC-11", "Todo", &["hu"]);
-        let (paths, _) =
+        let (uris, _) =
             assimilate_list_issues(&repo, slug, hu, pbi, &[second], Utc::now()).unwrap();
-        assert_eq!(paths.len(), 1);
-        let event_id = paths[0]
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .expect("event_id desde path lógico");
+        assert_eq!(uris.len(), 1);
+        let event_id = uris[0].event_id.as_str();
         let ev = sddia_event_manager_host::with_productive_port(&repo, "test_get_event", |port| {
             port.get_event(GetEventRequest {
                 event_id: event_id.to_string(),

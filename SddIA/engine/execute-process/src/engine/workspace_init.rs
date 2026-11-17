@@ -881,12 +881,12 @@ pub fn is_workspace_init_phase(phase: &Value, inputs: &Value, process_name: &str
     if phase.get("name").and_then(|v| v.as_str()) != Some("Inicialización de Espacio de Trabajo") {
         return false;
     }
-    let has_identity = workspace_task_name(inputs).is_some()
+    
+    workspace_task_name(inputs).is_some()
         || input_non_empty_str(inputs, "project_slug")
         || (process_name == "bug-fix"
             && input_non_empty_str(inputs, "branch_name")
-            && input_non_empty_str(inputs, "persist_ref"));
-    has_identity
+            && input_non_empty_str(inputs, "persist_ref"))
 }
 
 #[cfg(test)]

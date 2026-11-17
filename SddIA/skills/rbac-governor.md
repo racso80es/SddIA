@@ -1,7 +1,7 @@
 ---
 uuid: "131ca963-db42-43cd-ade3-a41c3b704147"
 name: "rbac-governor"
-version: "1.0.0"
+version: "2.0.0"
 contract: "skills-contract v1.1.0"
 context: "knowledge-management"
 capabilities:
@@ -11,10 +11,10 @@ provides:
   - id: "gov:rbac"
     contract: "gov.rbac"
     version: "1.0.0"
-hash_signature: "sha256:f9efcfaf84c66e41b05c5ccd4faab35fe6fe1fcbc30ddc665d00acbedc656d6d"
+hash_signature: "sha256:6184655dd46a4d91663794122fafedc307dd2e45ed5b6e3b26c41d77252e0a9e"
 inputs:
   - "operation": "string; enum: REACT_RBAC_GOVERNANCE"
-  - "operation_payload": "object; event_file_path / event_type"
+  - "operation_payload": "object; event_uri / event_type"
 outputs:
   - "success": "boolean"
   - "exitCode": "integer"

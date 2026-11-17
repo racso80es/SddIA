@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::ports::event_manager::contract::REQUIRED_CONTRACT_RANGE;
+use crate::ports::event_manager::REQUIRED_CONTRACT_RANGE;
 use crate::ports::event_manager::error::EventManagerError;
 use crate::ports::event_manager::memory_mock::InMemoryEventManagerMock;
 use crate::ports::event_manager::port::EventManagerPort;
@@ -94,7 +94,7 @@ mod tests {
         let f = EventManagerDiFactory::with_test_role_defaults();
         let port = f.resolve("test").expect("resolve test");
         let hs = port
-            .handshake_version(crate::ports::event_manager::contract::HandshakeVersionRequest {
+            .handshake_version(crate::ports::event_manager::HandshakeVersionRequest {
                 requested_range: crate::ports::event_manager::REQUIRED_CONTRACT_RANGE.into(),
             })
             .expect("handshake");

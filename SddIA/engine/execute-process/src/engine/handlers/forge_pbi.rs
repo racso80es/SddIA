@@ -519,7 +519,7 @@ fn success_envelope(
     let mut data = json!({
         "document_id": document_id,
         "uuid": entity_uuid,
-        "event_path": event_path,
+        "event_uri": event_path,
         "create_issue_invoked": tracker.invoked,
         "delivery_mode": bound.delivery_mode.as_str(),
         "delivery_mode_source": bound.delivery_mode_source,
@@ -748,7 +748,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                     "PARENT_REF_REQUIRED".into()
                 }
             });
-            let reg_status = if tracker.invoked { "failed" } else { "failed" };
+            let reg_status = "failed";
             return Ok(OrchestratorEnvelope {
                 success: false,
                 status_code: 1,

@@ -1,12 +1,10 @@
 ---
-context:
-- event-routing
-- quality-assurance
+context: ecosystem-evolution
 contract: process-contract v1.4.0
 deprecated: true
 hash_signature: sha256:7f7cc081acf3327b99382eca446625f04a7137fc784ce38e31ee085283e4a0bc
 inputs:
-- event_file_path: Ruta relativa al JSON de telemetría en ./.events/telemetry/
+- 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
 name: telemetry-batch-stub
 outputs:
@@ -21,7 +19,7 @@ phases:
 porcentaje_de_exito: null
 superseded_by: radamanto-batch
 uuid: f1e2d3c4-b5a6-4789-8c0d-1e2f3a4b5c6d
-version: 1.0.1
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
