@@ -171,24 +171,15 @@ pub fn load_bus_topology(repo: &Path) -> BusTopology {
     top
 }
 
+/// MAN-49 R-01: no materializa topología de bus en disco (puerto = SSOT).
 pub fn ensure_fractal_dirs(top: &BusTopology) -> Result<(), String> {
-    for dir in [
-        &top.telemetry,
-        &top.progress,
-        &top.orchestration,
-        &top.domain,
-        &top.dead_letter,
-    ] {
-        fs::create_dir_all(dir).map_err(|e| format!("mkdir {}: {e}", dir.display()))?;
-    }
+    let _ = top;
     Ok(())
 }
 
+/// MAN-49 R-01: no-op; pending/dead-letter viven en EventManagerPort.
 pub fn ensure_bus_dirs(top: &BusTopology) -> Result<(), String> {
-    fs::create_dir_all(&top.pending).map_err(|e| format!("mkdir pending: {e}"))?;
-    fs::create_dir_all(&top.dead_letter).map_err(|e| format!("mkdir dead_letter: {e}"))?;
-    fs::create_dir_all(&top.dead_letter_subscribers)
-        .map_err(|e| format!("mkdir dead_letter_subscribers: {e}"))?;
+    let _ = top;
     Ok(())
 }
 
@@ -196,7 +187,7 @@ fn iso_now() -> String {
     Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
 
-fn write_json_atomic(path: &Path, value: &Value) -> Result<(), String> {
+pub fn write_json_atomic(path: &Path, value: &Value) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("mkdir: {e}"))?;
     }

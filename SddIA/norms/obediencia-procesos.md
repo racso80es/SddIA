@@ -40,7 +40,7 @@ Ante colapso de un proceso oficial:
 
 ### Colapso mudo (v1.2)
 
-Si un proceso oficial retorna `failed` o `blocked` **sin** depositar `System_Fracture_Detected` en el bus (`.events/pending/` o ruta equivalente en `eda_bus`):
+Si un proceso oficial retorna `failed` o `blocked` **sin** depositar `System_Fracture_Detected` en el bus vía `EventManagerPort` (`eda://domain/<event_id>`):
 
 1. El operador **emite** el evento por la vía canónica (`execute-process` / acción de emisión documentada) con `friction_id` estable del ciclo.
 2. **Detiene** de inmediato; prohibido improvisar transporte raw (`git push`, `gh pr create`, `curl`).

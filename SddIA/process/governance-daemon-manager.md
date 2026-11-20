@@ -134,7 +134,7 @@ Prohibidos procesos zombie: verificar que el PID no quede en estado `Z` tras kil
 
 ## Fase 4 — Sello orchestration
 
-Emitir **obligatoriamente** instancia ECST `Process_Execution_Completed` en `./.events/orchestration/` vía **skill:bus-operator** (`write_fractal_event`, familia `orchestration`).
+Emitir **obligatoriamente** instancia ECST `Process_Execution_Completed` vía `EventManagerPort` (`eda://orchestration/<event_id>`) vía **skill:bus-operator** (`write_fractal_event`, familia `orchestration`).
 
 ### Envelope mínimo
 

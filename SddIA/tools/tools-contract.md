@@ -56,7 +56,7 @@ El **único puente** entre ambos es:
 Las Tools deben respetar un estándar de comunicación **machine-readable**:
 
 - **Entrada**: `request` (estructurado), idealmente por **stdin** o argumentos equivalentes (delivery decide).
-- **`io_mode`** (frontmatter `{name}.md`, v1.6.0): `capsule-json-io` (default) | `mcp-stdio`. En `mcp-stdio` la salida es **JSON-RPC 2.0** línea a línea (MCP); cada `tools/call` además deja un envelope `capsule-json-io` en el `workspace_path` de la fase y emite `Raw_Execution_Finished` en `./.events/telemetry/`.
+- **`io_mode`** (frontmatter `{name}.md`, v1.6.0): `capsule-json-io` (default) | `mcp-stdio`. En `mcp-stdio` la salida es **JSON-RPC 2.0** línea a línea (MCP); cada `tools/call` además deja un envelope `capsule-json-io` en el `workspace_path` de la fase y emite `Raw_Execution_Finished` vía `EventManagerPort` (`eda://telemetry/<event_id>`).
 - **Salida** (`io_mode: capsule-json-io`, default): un **único envelope JSON** (por stdout o canal equivalente) con:
   - **`name`**: string — identificador kebab-case de la tool que emitió el resultado (**obligatorio** en implementaciones nuevas).
   - **`toolId`**: *(deprecado)* — alias legado del identificador; si aparece, **debe coincidir** con `name`. Los emisores nuevos no deben usar este campo.

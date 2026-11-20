@@ -238,16 +238,16 @@ mod tests {
 
     fn setup_repo(tmp: &Path) {
         fs::create_dir_all(tmp.join("SddIA/core")).unwrap();
-        fs::create_dir_all(tmp.join(".events/domain")).unwrap();
+        fs::create_dir_all(tmp.join("domain")).unwrap();
         fs::write(
             tmp.join("SddIA/core/cumulo.paths.json"),
-            r#"{"paths":{"userPreferencesStore":".SddIA/vector_store/user_preferences"},"eda_fractal":{"domain":".events/domain"}}"#,
+            r#"{"paths":{"userPreferencesStore":".SddIA/vector_store/user_preferences"},"eda_fractal":{"domain":"domain"}}"#,
         )
         .unwrap();
     }
 
     fn write_domain_event(tmp: &Path, event_id: &str, payload: Value) -> PathBuf {
-        let path = tmp.join(".events/domain").join(format!("{event_id}.json"));
+        let path = tmp.join("domain").join(format!("{event_id}.json"));
         crate::engine::eda_port::test_lab::seed_domain_ecst(
             tmp,
             event_id,
@@ -280,7 +280,7 @@ mod tests {
         );
         let activate = run_ingest(
             tmp.path(),
-            &json!({"event_uri": ".events/domain/evt-activate-1.json"}),
+            &json!({"event_uri": "domain/evt-activate-1.json"}),
         )
         .unwrap();
         assert!(activate.success);
@@ -311,7 +311,7 @@ mod tests {
         );
         let revoke = run_ingest(
             tmp.path(),
-            &json!({"event_uri": ".events/domain/evt-revoke-1.json"}),
+            &json!({"event_uri": "domain/evt-revoke-1.json"}),
         )
         .unwrap();
         assert!(revoke.success);
@@ -346,7 +346,7 @@ mod tests {
         );
         let ingest = run_ingest(
             tmp.path(),
-            &json!({"event_uri": ".events/domain/evt-hint-1.json"}),
+            &json!({"event_uri": "domain/evt-hint-1.json"}),
         )
         .unwrap();
         assert!(ingest.success);

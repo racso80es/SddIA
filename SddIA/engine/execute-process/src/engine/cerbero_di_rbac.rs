@@ -300,7 +300,7 @@ mod tests {
             "SddIA/core/cumulo.paths.json",
             r#"{
   "event_bus": "./.events",
-  "eda_bus": { "dead_letter": "./.events/dead-letter" }
+  "eda_bus": { "dead_letter": "dead-letter" }
 }"#,
         );
         write_md(

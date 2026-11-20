@@ -41,7 +41,7 @@ El cuerpo Markdown debe incluir, como mínimo:
 | Plano | Ubicación SSOT | Naturaleza | Versionado |
 |-------|----------------|------------|------------|
 | **Clase de Evento** | `SddIA/events/{event_family}/{name}.md` | Contrato funcional, genoma | Sí (Git) |
-| **Instancia ECST** | Modo `filesystem`: `.events/{pending,processing,processed,dead-letter}/` + testigos en `{estado}/subscribers/`. Modo **`redb`** (default): `.SddIA/runtime/events.redb` (tablas `events`, `subscriber_delivery`, …). Modo **`dual`**: store + espejo FS transitorio. La ruta lógica `.events/pending/{event_id}.json` sigue siendo el identificador que reciben suscriptores; en `redb` el fichero puede no existir. | JSON volátil, runtime | No (`/.events/` en `.gitignore`; DB fuera de Git) |
+| **Instancia ECST** | **`EventManagerPort` ^2.0.0** (`EventUri`: `eda://{family}/{event_id}`) sobre `.SddIA/runtime/events.redb` (tablas `events`, `subscriber_delivery`, …) gestionado por `sddia-event-manager-host`. | JSON / Redb, runtime | No (DB fuera de Git) |
 | **Personalización** | `.SddIA/events/` (`eda_instance.customization`) | Overrides Vía C | No |
 
 Toda ruta operativa se resuelve vía `cumulo.paths.json`. Prohibido hardcodear literales fuera del SSOT inyectado.
@@ -95,7 +95,7 @@ flowchart TB
 ```
 
 1. Emisores registran el ECST con `record_ecst` / `materialize_pending_domain_event`: en **`redb`** solo store; en **`filesystem`** JSON en `eda_bus.pending`; en **`dual`** ambos.
-2. `event-watcher` reclama entregas **`Pending`** en store y/o detecta JSON en `pending/`; invoca `route-domain-event` con `event_uri` lógico (`.events/pending/{event_id}.json`) aunque el fichero no exista en `redb`.
+2. `event-watcher` reclama entregas **`Pending`** vía `EventManagerPort`; invoca `route-domain-event` con `event_uri` canónico (`eda://{family}/{event_id}`).
 3. `route-domain-event` carga el ECST desde fichero si existe; si no, desde store (`load_dispatched_event`). En fan-out, los suscriptores con `process`/`action`/`tool` reciben el ECST en línea (`event` + `event_id` en stdin JSON); `event_uri` es compatibilidad lab. Valida contra la Clase catalogada.
 4. Fan-out asíncrono a suscriptores (`event-subscriptions.json`). Cada intento actualiza `subscriber_delivery` cuando el store está activo; en `filesystem`/`dual` también materializa testigos JSON bajo `processing/subscribers/`.
 5. Resultado por suscriptor: `success`, `failed` o `skipped-<motivo>` en la respuesta del router; en store se persisten como `DeliveryStatus` (`success`, `failed`, `skipped`). **Prohibido** registrar `success` cuando el handler no produjo efecto (laudo AUT-20).
@@ -139,9 +139,9 @@ Variantes **Updated** y **Deleted** se documentan en sus Clases; heredan la dist
 
 | Familia | Naturaleza | Emisor autorizado | Destino runtime (Fase 3+) |
 |---------|------------|-------------------|---------------------------|
-| `telemetry` | Ruido físico — infraestructura | CLI (Peaje Termodinámico) **y** centinelas catalogados en la Clase (`Daemon_Heartbeat`, `CI_Job_Failed`) | `./.events/telemetry/` |
-| `orchestration` | Comunicación entre ED | CLI (éxito) o auditores | `./.events/orchestration/` |
-| `domain` | Verdad ontológica | Cúmulo, Cerbero, Radamanto | `./.events/domain/` + V3+ `pending/` (coexistencia) |
+| `telemetry` | Ruido físico — infraestructura | CLI (Peaje Termodinámico) **y** centinelas catalogados en la Clase (`Daemon_Heartbeat`, `CI_Job_Failed`) | `eda://telemetry/{event_id}` vía `EventManagerPort` |
+| `orchestration` | Comunicación entre ED | CLI (éxito) o auditores | `eda://orchestration/{event_id}` vía `EventManagerPort` |
+| `domain` | Verdad ontológica | Cúmulo, Cerbero, Radamanto | `eda://domain/{event_id}` vía `EventManagerPort` |
 
 **Regla de oro:** prohibido mezclar telemetría cruda con orquestación u ontología en la misma ruta de consumo.
 

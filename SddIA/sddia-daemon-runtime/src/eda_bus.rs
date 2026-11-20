@@ -2,7 +2,6 @@ use crate::is_filesystem_rel;
 use serde_json::Value;
 use std::env;
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone)]
@@ -138,34 +137,9 @@ fn set_subscriber_path(mut paths: EdBusPaths, key: &str, rel: &str) -> EdBusPath
     paths
 }
 
-pub fn write_json_atomic(path: &Path, value: &Value) -> Result<(), String> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|e| format!("mkdir {}: {e}", parent.display()))?;
-    }
-    let tmp = path.with_extension("json.tmp");
-    let bytes = serde_json::to_vec_pretty(value).map_err(|e| format!("json: {e}"))?;
-    {
-        let mut file = fs::File::create(&tmp).map_err(|e| format!("create tmp: {e}"))?;
-        file.write_all(&bytes).map_err(|e| format!("write tmp: {e}"))?;
-        file.write_all(b"\n").map_err(|e| format!("write nl: {e}"))?;
-    }
-    fs::rename(&tmp, path).map_err(|e| format!("rename: {e}"))
-}
-
+/// MAN-49 R-01: calcula paths sin `create_dir_all` (topología legacy no se materializa).
 pub fn ensure_event_bus_topology(repo: &Path) -> Result<EdBusPaths, String> {
-    let bus = load_eda_bus(repo);
-    for dir in [
-        &bus.pending,
-        &bus.processing,
-        &bus.processing_subscribers,
-        &bus.processed,
-        &bus.processed_subscribers,
-        &bus.dead_letter,
-        &bus.dead_letter_subscribers,
-    ] {
-        fs::create_dir_all(dir).map_err(|e| format!("mkdir {}: {e}", dir.display()))?;
-    }
-    Ok(bus)
+    Ok(load_eda_bus(repo))
 }
 
 pub fn header_path(bus: &EdBusPaths, state: &str, event_uuid: &str) -> PathBuf {

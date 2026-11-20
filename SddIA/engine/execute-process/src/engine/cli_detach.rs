@@ -65,7 +65,6 @@ pub fn emit_detach_pec(
     correlation_id: &str,
 ) -> Result<Value, String> {
     let (_, orch_dir, _, _) = load_fractal_dirs(repo);
-    fs::create_dir_all(repo.join(&orch_dir)).ok();
     let orch_id = Uuid::new_v4().to_string();
     let payload = json!({
         "process_name": process_name,
@@ -243,7 +242,7 @@ mod tests {
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_fractal":{"telemetry":"./.events/telemetry","orchestration":"./.events/orchestration","domain":"./.events/domain"},"eda_instance":{"customization":".SddIA/events"}}"#,
+            r#"{"eda_fractal":{"telemetry":"telemetry","orchestration":"orchestration","domain":"domain"},"eda_instance":{"customization":".SddIA/events"}}"#,
         )
         .unwrap();
         let seal = emit_detach_pec(repo, "pull-request-review", "exec-1", "corr-1").expect("pec");

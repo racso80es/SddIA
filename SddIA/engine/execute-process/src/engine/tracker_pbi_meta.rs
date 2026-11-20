@@ -391,7 +391,7 @@ mod tests {
         fs::create_dir_all(dir.join("SddIA/core")).unwrap();
         fs::write(
             dir.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"pending":"pending"}}"#,
         )
         .unwrap();
         fs::create_dir_all(dir.join(".SddIA/runtime")).ok();

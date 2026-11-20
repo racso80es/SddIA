@@ -161,20 +161,9 @@ pub fn load_event_bus_topology(repo: &Path) -> Result<EventBusTopology, String> 
     Ok(defaults)
 }
 
+/// MAN-49 R-01: no ejecuta `fs::create_dir_all` sobre topología de bus.
 pub fn ensure_event_bus_topology(repo: &Path) -> Result<EventBusTopology, String> {
-    let bus = load_event_bus_topology(repo)?;
-    for key in [
-        &bus.pending,
-        &bus.processing,
-        &bus.processing_subscribers,
-        &bus.processed,
-        &bus.processed_subscribers,
-        &bus.dead_letter,
-        &bus.dead_letter_subscribers,
-    ] {
-        fs::create_dir_all(repo.join(key)).map_err(|e| e.to_string())?;
-    }
-    Ok(bus)
+    load_event_bus_topology(repo)
 }
 
 fn resolve_bus_path(repo: &Path, rel: &str) -> PathBuf {

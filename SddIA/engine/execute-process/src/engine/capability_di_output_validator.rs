@@ -144,7 +144,7 @@ mod tests {
     "capability_contracts": "SddIA/library/norms/capability-contracts/"
   },
   "event_bus": "./.events",
-  "eda_bus": { "dead_letter": "./.events/dead-letter" }
+  "eda_bus": { "dead_letter": "./dead-letter" }
 }"#,
         );
         write_file(
@@ -272,7 +272,7 @@ mod tests {
             message: "test".into(),
         };
         write_output_dead_letter(td.path(), &err, "phase", "feature", "doc.closure");
-        let dlq = td.path().join(".events/dead-letter");
+        let dlq = td.path().join("dead-letter");
         let count = fs::read_dir(&dlq).unwrap().count();
         assert!(count >= 1);
     }

@@ -1,6 +1,7 @@
 //! Materialización ECST PullRequest_Presented (DEBT-K2 — sin Python).
 
-use crate::eda_bus::{ensure_event_bus_topology, write_json_atomic};
+use crate::eda_bus::ensure_event_bus_topology;
+use crate::write_json_atomic;
 use crate::{write_fractal_event, BusTopology};
 use chrono::Utc;
 use sddia_core::ports::event_manager::{

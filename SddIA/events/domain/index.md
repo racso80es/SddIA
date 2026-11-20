@@ -15,7 +15,7 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 | Campo | Valor |
 |-------|-------|
 | **Emisores autorizados** | Agentes Core: Cúmulo, Cerbero, **Radamanto** (Self-Healing + Telemetry_Captured); acciones `emit-*` indexadas |
-| **Consumidor runtime** | `./.events/domain/` → `route-domain` + pipeline V3+ `pending/` (coexistencia D0.2) |
+| **Consumidor runtime** | `EventManagerPort` (`eda://domain/<event_id>`) → `route-domain` / `route-domain-event` |
 | **Ingesta vectorial** | `Domain_Entity_Telemetry_Captured` → `memory-evolution-ingest` (no es CRUD `Domain_Entity_Updated`) |
 
 ## Catálogo de Clases ECST

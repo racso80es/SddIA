@@ -753,7 +753,6 @@ mod tests {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         setup_repo(repo);
-        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
 
         let inputs = json!({
             "process_name": "event-watcher",
@@ -800,7 +799,6 @@ mod tests {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         setup_repo(repo);
-        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
 
         let first = json!({
             "process_name": "event-watcher",
@@ -837,7 +835,6 @@ mod tests {
         let (_fs, tmp) = crate::engine::eda_port::test_lab::fs_lab_tempdir();
         let repo = tmp.path();
         setup_repo(repo);
-        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
 
         let inputs = json!({
             "process_name": "route-domain-event",
@@ -1005,7 +1002,6 @@ mod tests {
         let (_fs, tmp) = crate::engine::eda_port::test_lab::fs_lab_tempdir();
         let repo = tmp.path();
         setup_repo(repo);
-        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
         let inputs = json!({
             "process_name": "event-watcher",
             "error_trace": "colapsó el daemon pre-push hook",

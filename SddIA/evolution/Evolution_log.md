@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `dcb149cd-c795-4737-8446-e03ab907fe1d` | 2026-11-20 | MAN-49: remediación post-merge MAN-43 (R-01..R-04: cero mkdir raíz, watcher/sweep puerto, gates y genoma) | CANONICO | `SddIA/evolution/dcb149cd-c795-4737-8446-e03ab907fe1d.md` |
 | `33bf81d5-4d59-4eb6-b40d-f2664494463f` | 2026-11-17 | MAN-43 CI fix: excluir sddia-workspace-server de WASI y limpiar .events/ en unitarios | CANONICO | `SddIA/evolution/33bf81d5-4d59-4eb6-b40d-f2664494463f.md` |
 | `7fe2affc-26f7-4033-b0e9-a276feb726d8` | 2026-11-17 | MAN-43 O15: certificacion Argos APTO_TOTAL (validacion.md, H6.3) y refresco source_sha256 de capsulas | CANONICO | `SddIA/evolution/7fe2affc-26f7-4033-b0e9-a276feb726d8.md` |
 | `59c5c632-9720-4c5a-be9b-7bba27892003` | 2026-11-16 | MAN-43 O14d: poda total .events/ en runtime, thought-graph-access por puerto, fix tests workspace y dossier APTO_TOTAL_PROPUESTO | CANONICO | `SddIA/evolution/59c5c632-9720-4c5a-be9b-7bba27892003.md` |

@@ -3,9 +3,9 @@ context:
 - quality-assurance
 - event-routing
 contract: process-contract v1.4.0
-hash_signature: sha256:75a0939297864a7eb48dff64507c855ab1476bcfb697aca89ff5d7d5136e120b
+hash_signature: "sha256:75a0939297864a7eb48dff64507c855ab1476bcfb697aca89ff5d7d5136e120b"
 inputs:
-- event_uri: Opcional; ruta relativa al JSON Daemon_Heartbeat en ./.events/telemetry/
+- event_uri: Opcional; URI canónica eda://telemetry/<event_id> de Daemon_Heartbeat
 - sweep: Opcional boolean; si true y sin event_uri, audita staleness de todos los Centinelas con lock vivo
 minteo_maximo: null
 name: daemon-heartbeat-audit

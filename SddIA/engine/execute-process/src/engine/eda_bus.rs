@@ -7,6 +7,7 @@ use sddia_core::ports::event_manager::ListPendingRequest;
 use serde_json::{json, Value};
 #[cfg(test)]
 use std::collections::HashSet;
+#[cfg(test)]
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -170,14 +171,7 @@ pub fn load_eda_fractal(repo: &Path) -> Result<std::collections::HashMap<String,
 fn ensure_fractal_bus_topology(
     repo: &Path,
 ) -> Result<std::collections::HashMap<String, String>, String> {
-    let fractal = load_eda_fractal(repo)?;
-    for key in FRACTAL_FAMILIES {
-        if let Some(rel) = fractal.get(*key) {
-            let dir = resolve_bus_path(repo, rel);
-            fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-        }
-    }
-    Ok(fractal)
+    load_eda_fractal(repo)
 }
 
 pub fn write_fractal_event(repo: &Path, event: &Value, family: &str) -> Result<Value, String> {

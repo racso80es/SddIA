@@ -60,6 +60,27 @@ mod tests {
         GENOME_TARGET_PATH_ALLOW.contains(&rel_path)
     }
 
+
+    /// MAN-49 R-01: regresión — raíz del repo sin dirs de topología de bus.
+    fn assert_repo_root_bus_dirs_absent(repo: &Path) -> Result<(), String> {
+        for name in [
+            "orchestration",
+            "telemetry",
+            "pending",
+            "domain",
+            "dead-letter",
+            "progress",
+        ] {
+            let p = repo.join(name);
+            if p.is_dir() {
+                return Err(format!(
+                    "raíz contaminada: existe directorio de topología `{name}/`"
+                ));
+            }
+        }
+        Ok(())
+    }
+
     fn scan_genome_contract(repo: &Path) -> Result<(), String> {
         for root in GENOME_SCAN_ROOTS {
             let abs = repo.join(root);
@@ -202,6 +223,49 @@ mod tests {
     }
 
     #[test]
+    fn eda_event_token_hygiene_repo_root_no_bus_topology_dirs() {
+        let repo = find_repo_root().expect("repo");
+        assert_repo_root_bus_dirs_absent(&repo).expect("raíz sin dirs de bus");
+    }
+
+    /// MAN-49 R-03: escaneo cuerpo completo (oráculo AC-3). Se activa cuando genoma/README estén limpios.
+    fn scan_genome_and_readme_body(repo: &Path) -> Result<(), String> {
+        const BODY_FORBIDDEN: &[&str] = &[".events/", "event_file_path"];
+        let mut files = Vec::new();
+        for ent in walkdir_light(&repo.join("SddIA"))? {
+            if ent.extension().is_some_and(|e| e == "md") {
+                files.push(ent);
+            }
+        }
+        let readme = repo.join("README.md");
+        if readme.is_file() {
+            files.push(readme);
+        }
+        for ent in files {
+            let rel_path = rel(repo, &ent);
+            if rel_path.starts_with("SddIA/evolution/")
+                || rel_path == "SddIA/scripts/qa/clean-project-ephemeral.md"
+            {
+                continue;
+            }
+            let raw = fs::read_to_string(&ent).map_err(|e| e.to_string())?;
+            let text = raw.replace("directories.events/", "directories_events/");
+            for token in BODY_FORBIDDEN {
+                if text.contains(token) {
+                    return Err(format!("{rel_path}: token legacy `{token}`"));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn eda_event_token_hygiene_genome_and_readme_body() {
+        let repo = find_repo_root().expect("repo");
+        scan_genome_and_readme_body(&repo).expect("SddIA/**/*.md + README sin tokens legacy");
+    }
+
+    #[test]
     fn eda_event_token_hygiene_genome_domain_codex_processes() {
         let repo = find_repo_root().expect("repo");
         let roots = [
@@ -275,7 +339,7 @@ mod tests {
         ),
     ];
 
-    const VIRTUAL_EVENT_SUBDIRS: &[&str] = &[concat!('.', "events/")];
+    const VIRTUAL_EVENT_SUBDIRS: &[&str] = &[".events/"];
 
     fn collect_workspace_rs(dir: &Path, out: &mut Vec<PathBuf>) {
         let Ok(read) = fs::read_dir(dir) else {

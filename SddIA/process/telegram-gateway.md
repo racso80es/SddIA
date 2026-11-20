@@ -12,7 +12,7 @@ inputs:
 minteo_maximo: null
 name: telegram-gateway
 outputs:
-- emitted: Si se escribió instancia en ./.events/domain/
+- emitted: Si se emitió instancia eda://domain/<event_id> vía EventManagerPort
 - event_type: Tipo ECST emitido
 - event_id: UUID de la instancia
 phases:

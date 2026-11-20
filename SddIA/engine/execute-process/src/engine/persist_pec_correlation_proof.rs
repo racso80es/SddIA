@@ -180,7 +180,7 @@ mod tests {
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
               "eda_fractal": {
-                "orchestration": "./.events/orchestration",
+                "orchestration": "orchestration",
                 "orchestration_subscriptions": "SddIA/core/event-orchestration-subscriptions.json"
               },
               "eda_instance": {"proofs": ".SddIA/proofs"}
@@ -196,7 +196,7 @@ mod tests {
             }"#,
         )
         .unwrap();
-        let orch = repo.join(".events/orchestration");
+        let orch = repo.join("orchestration");
         fs::create_dir_all(&orch).unwrap();
         let eid = "9ff24776-26c7-4596-8b08-7b6fc4531641";
         let cid = "e273713c-dd91-487b-8716-1bdc8c5da741";

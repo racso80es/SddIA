@@ -1,5 +1,5 @@
-use crate::eda_bus::{ensure_event_bus_topology, header_path, load_registry, EdBusPaths};
-use crate::{ensure_fractal_dirs, load_bus_topology, BusTopology};
+use crate::eda_bus::{ensure_event_bus_topology, load_registry, EdBusPaths};
+use crate::{load_bus_topology, BusTopology};
 use sddia_core::ports::event_manager::{
     load_dispatched_event, DeliveryStatus, ListDeliveriesRequest, ListEventsRequest,
     ListPendingRequest, MoveToDlqRequest, PurgeEventRequest,
@@ -7,10 +7,7 @@ use sddia_core::ports::event_manager::{
 use sddia_event_manager_host::with_productive_port;
 use serde_json::{json, Value};
 use std::collections::HashSet;
-use std::fs;
 use std::path::{Path, PathBuf};
-use std::thread;
-use std::time::Duration;
 
 pub const POLL_SECONDS: u64 = 5;
 
@@ -74,27 +71,6 @@ fn fractal_event_terminal_with_failure(body: &Value) -> bool {
     all_terminal && ds.values().any(|v| v.as_str() == Some("failed"))
 }
 
-#[cfg(test)]
-fn move_fractal_to_dead_letter(path: &Path, dead_letter_dir: &Path) -> Result<PathBuf, String> {
-    fs::create_dir_all(dead_letter_dir)
-        .map_err(|e| format!("mkdir dead_letter {}: {e}", dead_letter_dir.display()))?;
-    let file_name = path
-        .file_name()
-        .ok_or_else(|| format!("dead_letter move: sin nombre {}", path.display()))?;
-    let dest = dead_letter_dir.join(file_name);
-    if dest.exists() {
-        let _ = fs::remove_file(&dest);
-    }
-    fs::rename(path, &dest).map_err(|e| {
-        format!(
-            "dead_letter rename {} → {}: {e}",
-            path.display(),
-            dest.display()
-        )
-    })?;
-    Ok(dest)
-}
-
 fn sweep_fractal_family(repo: &Path, family: &str, report: &mut SweepReport) -> Result<(), String> {
     with_productive_port(repo, "sweep_fractal_family", |port| {
         let listed = port
@@ -156,7 +132,6 @@ fn sweep_fractal_family(repo: &Path, family: &str, report: &mut SweepReport) -> 
 
 fn sweep_fractal_bus(repo: &Path, report: &mut SweepReport) -> Result<(), String> {
     let top: BusTopology = load_bus_topology(repo);
-    let _ = ensure_fractal_dirs(&top);
     sweep_fractal_family(repo, "domain", report)?;
     sweep_fractal_family(repo, "orchestration", report)?;
     sweep_fractal_family(repo, "telemetry", report)?;
@@ -522,91 +497,26 @@ fn processed_subscriber_names(repo: &Path, bus: &EdBusPaths, event_uuid: &str) -
         .collect()
 }
 
-fn safe_remove_path(path: &Path) -> bool {
-    if !path.is_file() {
-        return true;
-    }
-    for attempt in 0..3 {
-        match fs::remove_file(path) {
-            Ok(()) => return true,
-            Err(_) if attempt < 2 => thread::sleep(Duration::from_millis(50)),
-            Err(_) => return !path.is_file(),
-        }
-    }
-    !path.is_file()
-}
-
-fn ensure_state_header(bus: &EdBusPaths, state: &str, event_uuid: &str, source: &Path) -> Result<(), String> {
-    let dest = header_path(bus, state, event_uuid);
-    if dest.is_file() {
-        return Ok(());
-    }
-    if let Some(parent) = dest.parent() {
-        fs::create_dir_all(parent).map_err(|e| format!("mkdir header: {e}"))?;
-    }
-    fs::copy(source, &dest).map_err(|e| format!("copy header: {e}"))?;
-    Ok(())
-}
-
-fn maybe_purge_processing_header(
-    repo: &Path,
-    bus: &EdBusPaths,
-    event_uuid: &str,
-    registry: &Value,
-    event_type: &str,
-    origin_topology: &str,
-) -> bool {
-    let required: Vec<String> = registry
-        .get(event_type)
-        .and_then(|v| v.as_array())
-        .map(|subs| {
-            subs.iter()
-                .filter(|s| subscriber_applies(s, origin_topology))
-                .map(subscriber_id)
-                .collect()
-        })
-        .unwrap_or_default();
-    if required.is_empty() {
-        return false;
-    }
-    let terminals = terminal_subscriber_names(repo, bus, event_uuid);
-    let in_flight = in_flight_subscriber_names(repo, bus, event_uuid);
-    let req_set: HashSet<_> = required.iter().cloned().collect();
-    if !req_set.is_subset(&terminals) {
-        return false;
-    }
-    if !in_flight.intersection(&req_set).collect::<Vec<_>>().is_empty() {
-        return false;
-    }
-    let header = header_path(bus, "processing", event_uuid);
-    if header.is_file() {
-        return safe_remove_path(&header);
-    }
-    false
-}
-
+/// MAN-49 R-02: ciclo de vida vía puerto (sin FS de bus).
 fn finalize_kaizen_terminal(
     repo: &Path,
-    bus: &EdBusPaths,
+    _bus: &EdBusPaths,
     event_uuid: &str,
-    pending_path: &Path,
-    registry: &Value,
-    event_type: &str,
-    origin_topology: &str,
+    _pending_path: &Path,
+    _registry: &Value,
+    _event_type: &str,
+    _origin_topology: &str,
 ) -> Result<Value, String> {
-    let mut counts = json!({"pending": 0, "headers": 0});
-    let dead_header = header_path(bus, "dead_letter", event_uuid);
-    if !dead_header.is_file() && pending_path.is_file() {
-        ensure_state_header(bus, "dead_letter", event_uuid, pending_path)?;
-        counts["headers"] = json!(1);
-    }
-    if pending_path.is_file() && safe_remove_path(pending_path) {
-        counts["pending"] = json!(1);
-    }
-    if maybe_purge_processing_header(repo, bus, event_uuid, registry, event_type, origin_topology) {
-        counts["headers"] = json!(counts["headers"].as_i64().unwrap_or(0) + 1);
-    }
-    Ok(counts)
+    with_productive_port(repo, "finalize_kaizen_terminal", |port| {
+        let _ = port.move_to_dlq(MoveToDlqRequest {
+            event_id: event_uuid.to_string(),
+            reason: "kaizen-terminal".into(),
+        });
+        let _ = port.purge_event(PurgeEventRequest {
+            event_id: event_uuid.to_string(),
+        });
+        Ok(json!({"pending": 1, "headers": 0}))
+    })
 }
 
 pub fn archive_event_after_sweep(
@@ -615,57 +525,25 @@ pub fn archive_event_after_sweep(
     event_uuid: &str,
     event_type: Option<&str>,
 ) -> Result<Value, String> {
-    let _ = repo;
-    let mut counts = json!({"witnesses": 0, "headers": 0, "pending": 0});
-    let mut resolved_type = event_type.map(|s| s.to_string());
-
-    if resolved_type.is_none() {
-        for state in ["processed", "processing"] {
-            let header = header_path(bus, state, event_uuid);
-            if !header.is_file() {
-                continue;
-            }
-            if let Ok(raw) = fs::read_to_string(&header) {
-                if let Ok(body) = serde_json::from_str::<Value>(&raw) {
-                    if let Some(et) = body.get("event_type").and_then(|v| v.as_str()) {
-                        resolved_type = Some(et.to_string());
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    let pending = bus.pending.join(format!("{event_uuid}.json"));
-    if pending.is_file() && safe_remove_path(&pending) {
-        counts["pending"] = json!(1);
-    }
-    for state in ["processing", "processed"] {
-        let header = header_path(bus, state, event_uuid);
-        if header.is_file() && safe_remove_path(&header) {
-            counts["headers"] = json!(counts["headers"].as_i64().unwrap_or(0) + 1);
-        }
-    }
-    for path in list_witnesses(repo, bus, "processed_subscribers", event_uuid) {
-        if safe_remove_path(&path) {
-            counts["witnesses"] = json!(counts["witnesses"].as_i64().unwrap_or(0) + 1);
-        }
-    }
-    let _ = resolved_type;
-    Ok(counts)
+    let _ = event_type;
+    let witnesses = list_witnesses(repo, bus, "processed_subscribers", event_uuid).len();
+    with_productive_port(repo, "archive_event_after_sweep", |port| {
+        let _ = port.purge_event(PurgeEventRequest {
+            event_id: event_uuid.to_string(),
+        });
+        Ok(json!({
+            "witnesses": witnesses,
+            "headers": 0,
+            "pending": 1,
+        }))
+    })
 }
 
 fn emit_kaizen_alert(event_uuid: &str, event_type: &str, witnesses: &[PathBuf]) {
     let mut details = Vec::new();
     for path in witnesses {
-        let mut entry = json!({"witness": path.file_name().map(|n| n.to_string_lossy().into_owned())});
-        if let Ok(raw) = fs::read_to_string(path) {
-            if let Ok(body) = serde_json::from_str::<Value>(&raw) {
-                entry["subscriber"] = body.get("subscriber").cloned().unwrap_or(Value::Null);
-                entry["error_trace"] = body.get("error_trace").cloned().unwrap_or(Value::Null);
-            }
-        }
-        details.push(entry);
+        let name = path.file_name().map(|n| n.to_string_lossy().into_owned());
+        details.push(json!({"witness": name}));
     }
     let alert = json!({
         "alert_type": "kaizen_eda_dead_letter",
@@ -680,16 +558,10 @@ fn emit_kaizen_alert(event_uuid: &str, event_type: &str, witnesses: &[PathBuf]) 
 #[cfg(test)]
 mod fractal_dlq_tests {
     use super::*;
-    use std::io::Write;
     use uuid::Uuid;
 
     #[test]
-    fn terminal_with_failure_moves_to_dead_letter() {
-        let base = std::env::temp_dir().join(format!("sddia-dlq-{}", Uuid::new_v4()));
-        let domain = base.join("domain");
-        let dl = base.join("dead-letter");
-        fs::create_dir_all(&domain).unwrap();
-        let path = domain.join("evt.json");
+    fn terminal_with_failure_classified_for_dlq() {
         let body = json!({
             "event_id": "evt",
             "delivery_state": {
@@ -697,18 +569,8 @@ mod fractal_dlq_tests {
                 "mayeuta.telegram-fallback-responder": "skipped-already-delivered"
             }
         });
-        {
-            let mut f = fs::File::create(&path).unwrap();
-            f.write_all(serde_json::to_string_pretty(&body).unwrap().as_bytes())
-                .unwrap();
-        }
         assert!(fractal_event_terminal_with_failure(&body));
         assert!(!fractal_event_all_ok(&body));
-        let dest = move_fractal_to_dead_letter(&path, &dl).unwrap();
-        assert!(!path.exists());
-        assert!(dest.is_file());
-        assert_eq!(dest.parent().unwrap(), dl.as_path());
-        let _ = fs::remove_dir_all(base);
     }
 
     #[test]

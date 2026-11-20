@@ -7,8 +7,7 @@ Este directorio **no** es cola del bus EDA. Almacena overrides locales de suscri
 | Plano | Ruta SSOT | Naturaleza |
 |-------|-----------|------------|
 | **Clase (genoma)** | `SddIA/events/{telemetry,orchestration,domain}/{name}.md` | Contrato ECST versionado en Git (Trinidad de Estímulos) |
-| **Instancia (runtime V3+)** | `.events/{pending,processing,processed,dead-letter}/` + `{estado}/subscribers/` | JSON volátil del bus legacy |
-| **Instancia (runtime fractal)** | `.events/{telemetry,orchestration,domain}/` + `dead-letter/` (C2) | JSON volátil por familia (Fase 3+) |
+| **Instancia (runtime `EventManagerPort`)** | `eda://{telemetry,orchestration,domain}/{event_id}` en `.SddIA/runtime/events.redb` | Registro transaccional vía puerto (sin árbol en disco) |
 | **Personalización (Vía C)** | `.SddIA/events/` | Overrides locales no versionados |
 
 ## Overrides de suscripción
@@ -36,12 +35,8 @@ Redirige rutas del bus en entornos de desarrollo sin mutar el genoma:
 
 ```json
 {
-  "event_bus": "./.events",
-  "eda_bus": {
-    "pending": "./.events/pending",
-    "processing": "./.events/processing",
-    "processed": "./.events/processed",
-    "dead_letter": "./.events/dead-letter"
+  "eda_instance": {
+    "customization": ".SddIA/events"
   }
 }
 ```

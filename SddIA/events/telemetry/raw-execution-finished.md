@@ -9,12 +9,12 @@ context: "system-operations"
 capabilities:
   - "raw_execution_finished"
   - "thermodynamic_toll"
-hash_signature: "sha256:1966b61a60f674771546de1f248bed6a4957a31f74ca16ad65ff1580e9405cf7"
+hash_signature: "sha256:0c67d682796f0ea29847dbfc4e7da18349ade9d28ab6363bee343ad344b7e00e"
 ---
 
 # Event: Raw_Execution_Finished
 
-Telemetría física emitida por el CLI al finalizar el Peaje Termodinámico (cronómetro, `exit_code`, `asset_id`). Instancias en `./.events/telemetry/` (`eda_fractal.telemetry`).
+Telemetría física emitida por el CLI al finalizar el Peaje Termodinámico (cronómetro, `exit_code`, `asset_id`). Instancias vía `EventManagerPort` (`eda://telemetry/<event_id>`).
 
 ## Payload ECST
 

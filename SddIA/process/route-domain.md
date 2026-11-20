@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:28aaa21d0cddc7ab0fab779ea43e2a3af8f1e7b90090440846283f8dff2cfc53
+hash_signature: "sha256:d5ce011bde908549238a4ac0ec883faf647c37125f6cf6cab814b567f9aafd81"
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
@@ -12,7 +12,7 @@ outputs:
 phases:
 - delegates_to:
   - agent:cumulo
-  intent: Cargar event-domain-subscriptions.json y despachar suscriptores sobre instancias en ./.events/domain/.
+  intent: Cargar event-domain-subscriptions.json y despachar suscriptores sobre instancias vía EventManagerPort (familia domain).
   name: Fan-out dominio fractal
   requires_capability:
   - contract: bus.route

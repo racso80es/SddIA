@@ -10,14 +10,14 @@ inputs:
   - "telemetry_batch": "Acumulado estadístico derivado exclusivamente de Raw_Execution_Finished"
   - "radamanto_thresholds": "Umbrales deterministas resueltos vía cumulo.paths.json"
 outputs:
-  - "domain_status_events": "Domain_Entity_Degraded, Domain_Entity_Restored, Domain_Entity_Deprecated en ./.events/domain/"
+  - "domain_status_events": "Domain_Entity_Degraded, Domain_Entity_Restored, Domain_Entity_Deprecated vía EventManagerPort (eda://domain/<event_id>)"
   - "domain_telemetry_snapshots": "Domain_Entity_Telemetry_Captured por cada consumo OK (trazabilidad vectorial)"
   - "dlt_seals": "Sellado iota-immutable-publisher exclusivo sobre gobernanza entidades / inmunidad"
 llm_profile:
   tier: "none"
   description: "Actuario de umbrales; prohibido LLM"
 cognitive_role_descriptor: "Actuario de umbrales sobre telemetría"
-hash_signature: "sha256:bf68de4cc0fb4c626c046a545bd7dc9a384073b8a1ae85dd4e0cebeee5b65570"
+hash_signature: "sha256:f9cfe14ad0e564c4051943dbb630463633f42148237a73c345afaabb819d5c53"
 ---
 
 # Agente Radamanto: Certificador / Actuario
@@ -48,7 +48,7 @@ No evalúa código ni interpreta intenciones. Opera bajo **genoma determinista**
 
 ## 4. Emisión de telemetría activa (no-DLT)
 
-Tras cada consumo válido de `Raw_Execution_Finished` (no duplicado), emite **`Domain_Entity_Telemetry_Captured`** en `./.events/domain/` (fail-soft). Suscriptor: proceso `memory-evolution-ingest` → store `.SddIA/vector_store/evolution/`.
+Tras cada consumo válido de `Raw_Execution_Finished` (no duplicado), emite **`Domain_Entity_Telemetry_Captured`** vía `EventManagerPort` (`eda://domain/<event_id>`, fail-soft). Suscriptor: proceso `memory-evolution-ingest` → store `.SddIA/vector_store/evolution/`.
 
 Ortogonal a Self-Healing: el snapshot se emite también cuando la entidad permanece `healthy`.
 

@@ -53,6 +53,7 @@ fn path_allowlisted(rel: &str) -> bool {
         || rel.ends_with("gate_eda_unit_no_real_backend.rs")
         || rel.ends_with("gate_event_manager_port.rs")
         || rel.ends_with("contract_suite.rs")
+        || rel.ends_with("eda_event_token_hygiene.rs")
     {
         return true;
     }
@@ -62,42 +63,10 @@ fn path_allowlisted(rel: &str) -> bool {
     // Integration-in-src (T3) — ver allowlists/eda-unit-backend.toml
     const INTEGRATION_SRC: &[&str] = &[
         "SddIA/engine/execute-process/src/engine/route_domain_core.rs",
-        "SddIA/engine/execute-process/src/engine/delivery_close.rs",
-        "SddIA/engine/execute-process/src/engine/actions.rs",
-        "SddIA/engine/execute-process/src/engine/accept_pr.rs",
-        "SddIA/engine/execute-process/src/engine/aiua_intent.rs",
-        "SddIA/engine/execute-process/src/engine/progress_trace.rs",
-        "SddIA/engine/execute-process/src/engine/suite_execution_requested.rs",
-        "SddIA/engine/execute-process/src/engine/radamanto_batch_core.rs",
-        "SddIA/engine/execute-process/src/engine/workspace_init.rs",
-        "SddIA/engine/execute-process/src/engine/thermodynamic.rs",
-        "SddIA/engine/execute-process/src/engine/cli_detach.rs",
-        "SddIA/engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs",
-        "SddIA/engine/execute-process/src/engine/persist_pec_correlation_proof.rs",
-        "SddIA/engine/execute-process/src/engine/domain_authority.rs",
-        "SddIA/engine/execute-process/src/engine/capability_di_reactor.rs",
-        "SddIA/engine/execute-process/src/engine/eda_bus_topology.rs",
-        "SddIA/engine/execute-process/src/engine/linear_direct_cycle_e2e.rs",
-        "SddIA/engine/execute-process/src/engine/linear_done_gate_both_e2e.rs",
         "SddIA/engine/execute-process/src/engine/handlers/system_vitality.rs",
         "SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs",
-        "SddIA/engine/execute-process/src/engine/handlers/tracker_markdown_apply.rs",
-        "SddIA/engine/execute-process/src/engine/handlers/tracker_sync_replay.rs",
-        "SddIA/engine/execute-process/src/engine/handlers/aiua_stimulus.rs",
-        "SddIA/engine/execute-process/src/engine/handlers/user_preference.rs",
-        "SddIA/engine/execute-process/src/engine/capability_di_gate.rs",
-        "SddIA/engine/execute-process/src/engine/capability_di_output_validator.rs",
-        "SddIA/engine/execute-process/src/engine/cerbero_di_envelope.rs",
-        "SddIA/engine/execute-process/src/engine/cerbero_di_rbac.rs",
-        "SddIA/engine/execute-process/src/engine/handlers/instance_creator.rs",
-        "SddIA/engine/execute-process/src/engine/materialize_fracture_pbi.rs",
-        "SddIA/engine/execute-process/src/engine/materialize_kaizen_alert_doc.rs",
-        "SddIA/engine/execute-process/src/engine/tracker_pbi_meta.rs",
     ];
     if INTEGRATION_SRC.contains(&rel) {
-        return true;
-    }
-    if rel.contains("/handlers/kalma2") || rel.contains("/handlers/email_") {
         return true;
     }
     if rel.starts_with("SddIA/interfaces/kalma2-bridge/")

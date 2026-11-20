@@ -352,9 +352,9 @@ mod tests {
   },
   "event_bus": "./.events",
   "eda_bus": {
-    "pending": "./.events/pending",
-    "processed": "./.events/processed",
-    "dead_letter": "./.events/dead-letter"
+    "pending": "pending",
+    "processed": "processed",
+    "dead_letter": "dead-letter"
   }
 }"#,
         );

@@ -47,7 +47,7 @@ Bajo ninguna circunstancia puedes **crear, modificar o eliminar** archivos en lo
 | Invocación directa (lab / CI) | `SddIA/target/debug/execute-process --process …` |
 | Aduana QA (índices, EDA, smokes) | `SddIA/target/debug/sddia-qa …` |
 
-Prohibido bypass del bus EDA (`/.events/`). Prohibido `git commit` de genoma sin correlato en bus cuando la aduana física esté activa. Prohibido invocar el orquestador sin pasar por `./sddia-run.sh` / `SDDIA_EXECUTE_PROCESS_BIN` / binario nativo compilado.
+Prohibido bypass del bus EDA (`EventManagerPort`). Prohibido `git commit` de genoma sin correlato en bus cuando la aduana física esté activa. Prohibido invocar el orquestador sin pasar por `./sddia-run.sh` / `SDDIA_EXECUTE_PROCESS_BIN` / binario nativo compilado.
 
 ### DA-4 — Acoplamiento Raw Kernel ↔ ciclo feature
 
@@ -60,7 +60,7 @@ Prohibido aplicar el bisturí sobre el código base bajo Raw Kernel sin cobertur
 Tras invocar la Aduana (`./sddia-run.sh` / `execute-process`) y recibir el JSON de acuse (`success` + `exitCode`), la IA obrera **prohíbe**:
 
 - `sleep`, `timeout`, `wait` de shell cuyo objeto sea dar tiempo al Core.
-- Bucles `while` / reintentos de lectura sobre `./.events/`, status HTTP o artefactos de `persist_ref`.
+- Bucles `while` / reintentos de lectura sobre colas/store EDA, status HTTP o artefactos de `persist_ref`.
 - `AwaitShell` / `notify_on_output` / esperas extra **después** del acuse para vigilar `event-watcher` o materialización.
 
 Éxito de Tekton = **inyección acusada**, no = trabajo remoto terminado. El siguiente estímulo lo dictan el Vértice Biológico o Kalma2.
@@ -69,7 +69,7 @@ Tras invocar la Aduana (`./sddia-run.sh` / `execute-process`) y recibir el JSON 
 
 **Relevo IDE (lab):** con `SDDIA_AGENT_RELAY_IDE=1` (o `true`/`yes`/`on`), las fases `agent:` quedan `simulated` aunque la bóveda defina `SDDIA_AGENT_RUNTIME_COMMAND`. El motor emite en stderr: `agent-runtime: lab-relay activo (bóveda ignorada)`. `unset` o ausencia de `COMMAND` **no** es contrato de relevo; usar el flag explícito. Paridad bóveda: `_sddia_load_vault` aplica `setdefault` (misma semántica que `apply_env` en Rust); precedencia incondicional solo para `SDDIA_LAB_SIMULATE_IOTA` y `SDDIA_IOTA_TIMEOUT_SECONDS`.
 
-Procesos largos (`pull-request-review` y los listados en `SDDIA_CLI_DETACH_PROCESSES`) el CLI desprende el hijo y acusa con `data.detached: true` al depositar `Process_Execution_Completed` (`cycle_phase: awaiting_agents`) en `eda_fractal.orchestration` (`./.events/orchestration/`). Prohibido tratar `.SddIA/events/` como cola.
+Procesos largos (`pull-request-review` y los listados en `SDDIA_CLI_DETACH_PROCESSES`) el CLI desprende el hijo y acusa con `data.detached: true` al depositar `Process_Execution_Completed` (`cycle_phase: awaiting_agents`) vía `EventManagerPort` (`eda://orchestration/<event_id>`). Prohibido tratar `.SddIA/events/` como cola.
 
 ### DA-6 — Veto de Vigilancia Remota (CI)
 

@@ -455,7 +455,7 @@ mod tests {
   },
   "event_bus": "./.events",
   "eda_bus": {
-    "dead_letter": "./.events/dead-letter"
+    "dead_letter": "dead-letter"
   }
 }"#,
         );
