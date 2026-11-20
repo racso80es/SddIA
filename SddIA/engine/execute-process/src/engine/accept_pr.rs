@@ -27,14 +27,6 @@ fn env_truthy(key: &str) -> bool {
         .unwrap_or(false)
 }
 
-fn truthy_flag(v: &Value, key: &str) -> bool {
-    match v.get(key) {
-        Some(Value::Bool(b)) => *b,
-        Some(Value::String(s)) => matches!(s.to_lowercase().as_str(), "true" | "1" | "yes" | "on"),
-        _ => false,
-    }
-}
-
 /// Paridad `emit-pr-merged-event` / lifecycle (`apply_review_ci_fail_soft`): enriquece inputs
 /// con `tracker_ref` y `persist_ref` resolubles desde rama o docs del ciclo (merge ya materializado).
 pub(crate) fn enrich_inputs_for_lifecycle_stamp(repo: &Path, inputs: &Value, source_branch: &str) -> Value {
@@ -172,22 +164,27 @@ pub fn execute_accept_pr_phase(
             let Some(source) = str_field(inputs, "source_branch") else {
                 return Some(Err("source_branch es obligatorio para accept-pr".into()));
             };
-            if truthy_flag(inputs, "merge_already_done") {
-                if let Ok(hit) = qa_attestation::validate_for_accept_pr(repo, inputs) {
-                    return Some(Ok(json!({
-                        "status": "executed",
-                        "handler": "accept-genomic-audit",
-                        "attestation_hit": true,
-                        "note": format!("attested-by:{}", hit.execution_id),
-                        "presented_found": scan_presented_for_branch(repo, &source),
-                    })));
+            let hit = if qa_attestation::lab_skip_ppr_attestation() {
+                qa_attestation::AttestationHit {
+                    execution_id: "lab-skip".into(),
+                    qa_profile: "full".into(),
+                    path: std::path::PathBuf::new(),
                 }
-            }
+            } else {
+                match qa_attestation::validate_for_accept_pr_with_state(repo, inputs, Some(state)) {
+                    Ok(h) => h,
+                    Err(fault) => return Some(Err(fault.to_error_string())),
+                }
+            };
             let presented = scan_presented_for_branch(repo, &source);
             let orphan = !presented;
             if let Some(obj) = state.as_object_mut() {
                 obj.insert("orphan_merge".into(), json!(orphan));
                 obj.insert("source_branch".into(), json!(source));
+                obj.insert(
+                    "qa_attestation_execution_id".into(),
+                    json!(hit.execution_id.clone()),
+                );
                 if orphan {
                     let handoff = obj.entry("handoff".to_string()).or_insert(json!({}));
                     if let Some(h) = handoff.as_object_mut() {
@@ -201,6 +198,9 @@ pub fn execute_accept_pr_phase(
             Some(Ok(json!({
                 "status": "executed",
                 "handler": "accept-genomic-audit",
+                "attestation_hit": true,
+                "note": format!("attested-by:{}", hit.execution_id),
+                "qa_profile": hit.qa_profile,
                 "orphan_merge": orphan,
                 "presented_found": presented,
             })))
@@ -939,5 +939,59 @@ mod tests {
         assert_eq!(reports[0]["fail_soft"], true);
         let v = crate::engine::phase_terminal::aggregate_execution_terminal(&reports, &state);
         assert!(v.success);
+    }
+
+    /// KA-PPR-1 vía fase: sin atestación ⇒ Err con qa_attestation_required (no merge).
+    #[test]
+    fn ka_ppr_1_genomic_audit_aborts_without_attestation() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        std::process::Command::new("git")
+            .args(["init", "-q"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        std::process::Command::new("git")
+            .args(["config", "user.email", "t@t"])
+            .current_dir(repo)
+            .status()
+            .ok();
+        std::process::Command::new("git")
+            .args(["config", "user.name", "t"])
+            .current_dir(repo)
+            .status()
+            .ok();
+        fs::write(repo.join("a.txt"), "a\n").unwrap();
+        std::process::Command::new("git")
+            .args(["add", "a.txt"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        std::process::Command::new("git")
+            .args(["commit", "-qm", "seed"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let _ = std::process::Command::new("git")
+            .args(["branch", "-M", "main"])
+            .current_dir(repo)
+            .status();
+        std::process::Command::new("git")
+            .args(["checkout", "-qb", "feat/ka-ppr-gate"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let mut state = json!({});
+        let inputs = json!({
+            "source_branch": "feat/ka-ppr-gate",
+            "delta_class": "active"
+        });
+        let err = execute_accept_pr_phase(repo, "Auditoría Genómica", &inputs, &mut state)
+            .expect("fase")
+            .expect_err("must abort");
+        assert!(
+            err.contains("qa_attestation_required"),
+            "friction esperada, got: {err}"
+        );
     }
 }
