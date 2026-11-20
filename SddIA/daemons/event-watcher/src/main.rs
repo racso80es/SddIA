@@ -1,15 +1,14 @@
 use sddia_daemon_runtime::{
-    ensure_bus_dirs, find_repo_root, load_bus_topology, BusTopology, DaemonRuntime,
+    find_repo_root, load_bus_topology, BusTopology, DaemonRuntime,
 };
 use sddia_core::ports::event_manager::{
-    ClaimPendingRequest, DeliveryStatus, ListDeliveriesRequest, ListEventsRequest,
-    RecordDeliveryRequest,
+    ClaimPendingRequest, DeliveryStatus, EventManagerError, GetEventRequest,
+    ListDeliveriesRequest, ListEventsRequest, RecordDeliveryRequest,
 };
 use sddia_event_manager_host::with_productive_port;
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 use std::env;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -273,7 +272,6 @@ fn tick_fractal_routes(
                 &event_uuid,
                 &key,
                 process_name,
-                &PathBuf::from(&rel),
                 &b,
                 repo,
                 &load_bus_topology(repo),
@@ -294,13 +292,15 @@ fn tick_fractal_routes(
         let book_c = Arc::clone(book);
         let repo_c = repo.to_path_buf();
         let pname = process_name.to_string();
-        let path_c = PathBuf::from(&rel);
+        let uri_c = rel.clone();
         let uuid_c = event_uuid.clone();
         let key_c = key.clone();
         thread::spawn(move || {
-            let out = invoke_route_process(&repo_c, &rel, &pname);
+            let out = invoke_route_process(&repo_c, &uri_c, &pname);
             if let Ok(mut b) = book_c.lock() {
-                apply_route_outcome_fractal(&mut b, &pname, &path_c, &uuid_c, &key_c, &out);
+                apply_route_outcome_fractal(
+                    &mut b, &pname, &repo_c, &uuid_c, &key_c, &uri_c, &out,
+                );
             }
         });
     }
@@ -397,7 +397,7 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
         }
     };
     stats.pending_rows = claimed.len();
-    let mut launches: Vec<(String, std::path::PathBuf, String)> = Vec::new();
+    let mut launches: Vec<(String, String)> = Vec::new();
     for ev in claimed {
         let event_id = ev.event_id;
         {
@@ -409,16 +409,17 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
             b.processing.insert(event_id.clone());
         }
         stats.claimed += 1;
-        let path = top.pending.join(format!("{event_id}.json"));
         let key = format!("pending/{}.json", event_id);
-        launches.push((event_id, path, key));
+        launches.push((event_id, key));
     }
+    let _ = top;
     log_claim_tick("port", stats);
-    for (uuid_c, path_c, key) in launches {
+    for (uuid_c, key) in launches {
         METRIC_ROUTES_CLAIMED.fetch_add(1, Ordering::Relaxed);
         let repo_c = repo.to_path_buf();
         let book_c = Arc::clone(book);
         let event_id_log = uuid_c.clone();
+        let uri_c = format!("eda://domain/{uuid_c}");
         thread::spawn(move || {
             println!(
                 "[WATCHER] route spawn event_id={event_id_log} subscriber=route-domain-event"
@@ -446,9 +447,10 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
                 apply_route_outcome_fractal(
                     &mut b,
                     "route-domain-event",
-                    &path_c,
+                    &repo_c,
                     &uuid_c,
                     &key,
+                    &uri_c,
                     &out,
                 );
             }
@@ -477,32 +479,46 @@ fn invoke_route_process(repo: &Path, route_input: &str, process_name: &str) -> O
         })
 }
 
-fn prune_routed_ok(book: &mut RouteBook, targets: &[(PathBuf, String)]) {
-    let mut still = HashSet::new();
-    for (dir, _) in targets {
-        if let Ok(entries) = fs::read_dir(dir) {
-            for e in entries.flatten() {
-                if e.path().extension().and_then(|x| x.to_str()) == Some("json") {
-                    still.insert(e.path().file_stem().unwrap_or_default().to_string_lossy().into_owned());
-                }
-            }
+fn event_exists_on_port(repo: &Path, event_id: &str) -> bool {
+    with_productive_port(repo, "watcher_get_event", |port| {
+        match port.get_event(GetEventRequest {
+            event_id: event_id.to_string(),
+        }) {
+            Ok(_) => Ok(true),
+            Err(EventManagerError::NotFound(_)) => Ok(false),
+            Err(e) => Err(e.to_string()),
         }
-    }
-    book.routed_ok.retain(|u| still.contains(u));
+    })
+    .unwrap_or(false)
 }
 
-fn fractal_side_effect_committed(path: &Path) -> bool {
-    let Ok(raw) = fs::read_to_string(path) else {
-        return false;
-    };
-    let Ok(body) = serde_json::from_str::<Value>(&raw) else {
+fn load_event_ecst(repo: &Path, event_id: &str) -> Option<Value> {
+    with_productive_port(repo, "watcher_load_ecst", |port| {
+        match port.get_event(GetEventRequest {
+            event_id: event_id.to_string(),
+        }) {
+            Ok(r) => Ok(Some(r.ecst)),
+            Err(EventManagerError::NotFound(_)) => Ok(None),
+            Err(e) => Err(e.to_string()),
+        }
+    })
+    .ok()
+    .flatten()
+}
+
+fn prune_routed_ok(book: &mut RouteBook, repo: &Path) {
+    book.routed_ok
+        .retain(|u| event_exists_on_port(repo, u));
+}
+
+fn fractal_side_effect_committed(repo: &Path, event_uuid: &str) -> bool {
+    let Some(body) = load_event_ecst(repo, event_uuid) else {
         return false;
     };
     let Some(ds) = body.get("delivery_state").and_then(|v| v.as_object()) else {
         return false;
     };
-    // Eco Telegram: si el fallback ya entregó, no re-despachar el archivo completo
-    // mientras queden fallos no-terminales (el router salta skipped-already-delivered).
+    // Eco Telegram: si el fallback ya entregó, no re-despachar mientras queden fallos no-terminales.
     ds.iter().any(|(k, v)| {
         let st = v.as_str().unwrap_or("");
         (k.contains("telegram-fallback") || k.contains("send-telegram"))
@@ -514,7 +530,6 @@ fn watcher_skip_reason(
     event_uuid: &str,
     key: &str,
     process_name: &str,
-    path: &Path,
     book: &RouteBook,
     repo: &Path,
     top: &sddia_daemon_runtime::BusTopology,
@@ -522,8 +537,8 @@ fn watcher_skip_reason(
     if book.processing.contains(event_uuid) {
         return Some(format!("in-flight uuid={event_uuid}"));
     }
-    if book.routed_ok.contains(event_uuid) && path.is_file() {
-        return Some(format!("routed-ok pending file uuid={event_uuid}"));
+    if book.routed_ok.contains(event_uuid) && event_exists_on_port(repo, event_uuid) {
+        return Some(format!("routed-ok pending event uuid={event_uuid}"));
     }
     if process_name != "route-domain-event" && fractal_deliveries_all_terminal(repo, event_uuid) {
         return Some(format!("fractal-terminal uuid={event_uuid}"));
@@ -532,8 +547,7 @@ fn watcher_skip_reason(
         return Some("dead-letter kaizen".into());
     }
     if book.attempts.get(key).copied().unwrap_or(0) >= MAX_ROUTE_ATTEMPTS {
-        // Si ya hubo side-effect Telegram, no seguir reintentando eco.
-        if process_name != "route-domain-event" && fractal_side_effect_committed(path) {
+        if process_name != "route-domain-event" && fractal_side_effect_committed(repo, event_uuid) {
             return Some(format!("max attempts + side-effect committed ({MAX_ROUTE_ATTEMPTS})"));
         }
         return Some(format!("max attempts ({MAX_ROUTE_ATTEMPTS})"));
@@ -569,44 +583,42 @@ fn run_route_cli(repo: &Path, event_uri: &str) -> i32 {
 fn apply_route_outcome_fractal(
     book: &mut RouteBook,
     process_name: &str,
-    path: &Path,
+    repo: &Path,
     event_uuid: &str,
     key: &str,
+    event_uri: &str,
     out: &Output,
 ) {
     book.processing.remove(event_uuid);
+    let still = event_exists_on_port(repo, event_uuid);
     if out.status.success() {
-        if path.is_file() {
+        if still {
             book.routed_ok.insert(event_uuid.to_string());
         } else {
             book.routed_ok.remove(event_uuid);
             book.attempts.remove(key);
         }
     } else if !(process_name != "route-domain-event"
-        && path.is_file()
-        && fractal_side_effect_committed(path))
+        && still
+        && fractal_side_effect_committed(repo, event_uuid))
     {
         book.routed_ok.remove(event_uuid);
     }
     if out.status.success() {
-        if !path.is_file() {
+        if !still {
             book.attempts.remove(key);
         }
-        let note = if path.is_file() {
-            " (archivo persiste — consenso incompleto)"
+        let note = if still {
+            " (evento persiste — consenso incompleto)"
         } else {
             " (purgado)"
         };
-        let file_name = path.file_name().unwrap_or_default().to_string_lossy();
-        println!(
-            "[WATCHER] {file_name}: enrutado ({process_name}){note}"
-        );
+        println!("[WATCHER] {event_uri}: enrutado ({process_name}){note}");
     } else {
         let err = String::from_utf8_lossy(&out.stderr);
         let so = String::from_utf8_lossy(&out.stdout);
-        let file_name = path.file_name().unwrap_or_default().to_string_lossy();
         eprintln!(
-            "[WATCHER] {process_name} falló ({file_name}): {}",
+            "[WATCHER] {process_name} falló ({event_uri}): {}",
             if !err.trim().is_empty() {
                 err.trim()
             } else {
@@ -618,7 +630,6 @@ fn apply_route_outcome_fractal(
 
 fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
     let top = load_bus_topology(&repo);
-    ensure_bus_dirs(&top)?;
     let mut centinela = DaemonRuntime::new(repo.clone(), "event-watcher");
     centinela.bootstrap(&top)?;
     let shared = Arc::new(Mutex::new(centinela));
@@ -646,7 +657,7 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
         claim_store_pending(&repo, &top, &book);
         {
             let mut b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
-            prune_routed_ok(&mut b, &targets);
+            prune_routed_ok(&mut b, &repo);
         }
         for (watch_dir, process_name) in &targets {
             if process_name == "route-domain-event" {

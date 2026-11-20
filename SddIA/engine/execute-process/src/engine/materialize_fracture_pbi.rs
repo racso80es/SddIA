@@ -619,7 +619,6 @@ mod tests {
         .unwrap();
         fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
         fs::create_dir_all(repo.join("docs/todos/done")).unwrap();
-        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
         fs::create_dir_all(repo.join(".SddIA/projects")).unwrap();
         fs::write(
             repo.join(".SddIA/projects/lab.md"),
@@ -928,7 +927,6 @@ process: bug-fix
         .unwrap();
         fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
         fs::create_dir_all(repo.join("docs/todos/done")).unwrap();
-        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
         fs::write(
             repo.join("docs/todos/pending/huerfano.md"),
             "---\nfracture_hash: pendiente\nfracture_process: event-watcher\nstatus: abierto\n---\n",

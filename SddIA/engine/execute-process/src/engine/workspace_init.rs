@@ -1223,7 +1223,7 @@ mod tests {
     }
 
     fn count_system_fracture_pending(repo: &Path) -> usize {
-        let pending = repo.join(".events/pending");
+        let pending = repo.join("pending");
         if !pending.is_dir() {
             return 0;
         }
@@ -1303,7 +1303,7 @@ mod tests {
         let root = td.path();
         write_cumulo(root);
         link_capsule_target(root);
-        fs::create_dir_all(root.join(".events/pending")).unwrap();
+        fs::create_dir_all(root.join("pending")).unwrap();
         init_git_repo(root);
         fs::write(root.join("outside-dirty.txt"), "dirty\n").unwrap();
         let prior_out = Command::new("git")

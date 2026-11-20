@@ -14,7 +14,7 @@ Ruido físico de infraestructura (Nivel 1): Peaje Termodinámico (CLI) y sensore
 | Campo | Valor |
 |-------|-------|
 | **Emisores autorizados** | CLI (`execute-process`, `execute-action`, cápsulas) **y** centinelas listados en cada Clase (`Daemon_Heartbeat`, `CI_Job_Failed` → `github-bridge-watcher`) |
-| **Consumidor runtime** | `./.events/telemetry/` → `route-telemetry` → `radamanto-batch` + `telemetry-compliance-audit` (+ `daemon-heartbeat-audit` para latidos; `CI_Job_Failed` solo `radamanto-batch` rama ledger) |
+| **Consumidor runtime** | `EventManagerPort` (`eda://telemetry/<event_id>`) → `route-telemetry` → `radamanto-batch` + `telemetry-compliance-audit` (+ `daemon-heartbeat-audit` para latidos; `CI_Job_Failed` solo `radamanto-batch` rama ledger) |
 | **Chispa secundaria (domain)** | Tras consumo OK, Radamanto emite `Domain_Entity_Telemetry_Captured` → `memory-evolution-ingest` |
 
 ## Catálogo de Clases ECST

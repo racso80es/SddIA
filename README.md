@@ -33,7 +33,7 @@ Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asign
 | Ruta | Rol | Contenido |
 |------|-----|-----------|
 | **`SddIA/events/`** | Genoma (Core) | **Trinidad de Estímulos:** Clases ECST en `{telemetry,orchestration,domain}/`; contrato maestro [`events-contract.md`](SddIA/events/events-contract.md) e índice agregador [`index.md`](SddIA/events/index.md) en raíz. Códice por familia: [`telemetry/index.md`](SddIA/events/telemetry/index.md), [`orchestration/index.md`](SddIA/events/orchestration/index.md), [`domain/index.md`](SddIA/events/domain/index.md). |
-| **`/.events/*` (tokens)** | Identificadores lógicos | Rutas de conveniencia en APIs y genoma; **no** son cola ni SSOT. El estado del bus vive en **`EventManagerPort`** y Redb (`.SddIA/runtime/events.redb` vía bóveda). |
+| **`event_uri` (`eda://{family}/{event_id}`)** | Identidad canónica | Única clave de resolución vía **`EventManagerPort`**. El estado del bus vive en el puerto y Redb (`.SddIA/runtime/events.redb` vía bóveda). |
 | **`.SddIA/events/`** | Instancia (proyecto) | Personalización por repositorio productivo (Vía C). **No** es cola del bus federal. |
 
 Definición operativa de **Event**: *contrato inmutable de comunicación asíncrona; señal con propósito que opera bajo coreografía pura.* Toda Clase declara `event_family`: `{ telemetry, orchestration, domain }` (enum estricto en [`events-contract.md`](SddIA/events/events-contract.md)).
@@ -77,7 +77,7 @@ Simetría fractal: las **familias** del genoma (`telemetry`, `orchestration`, `d
 
 #### Bus fractal (`eda_fractal`)
 
-SSOT de suscripciones: [`cumulo.paths.json`](SddIA/core/cumulo.paths.json) → `eda_fractal.*` (nombres de tabla + rutas a JSON de suscripción). Tokens legacy `/.events/{family}/` pueden aparecer en documentación o inputs; la materialización es el puerto.
+SSOT de suscripciones: [`cumulo.paths.json`](SddIA/core/cumulo.paths.json) → `eda_fractal.*` (nombres de tabla + rutas a JSON de suscripción). Identidad de instancia: `event_uri` (`eda://{family}/{event_id}`) vía `EventManagerPort`.
 
 | Familia | Propósito | Enrutador | Suscripciones |
 |---------|-----------|-----------|---------------|
@@ -89,7 +89,7 @@ Telemetría con **fan-out** (p. ej. `radamanto-batch` + `telemetry-compliance-au
 
 #### Pipeline dominio (estados lógicos)
 
-Flujos como `PullRequest_Presented` → `pull-request-review` usan estados del puerto (`pending` → `processing` → `processed` / `dead-letter`) y entregas consultables con `list_deliveries`; no hay árbol JSON bajo `.events/` en productivo.
+Flujos como `PullRequest_Presented` → `pull-request-review` usan estados del puerto (`pending` → `processing` → `processed` / `dead-letter`) y entregas consultables con `list_deliveries`; no hay árbol JSON de bus en la raíz del repo en productivo.
 
 ```mermaid
 flowchart LR
@@ -102,16 +102,16 @@ flowchart LR
 
 | Paso | Componente | Responsabilidad |
 |------|------------|-----------------|
-| 1 | Emisores (`emit-domain-mutation`, `emit-pr-presented-event`, …) | `publish_ecst` / `record_ecst` vía puerto (sin I/O directo sobre `.events/`) |
+| 1 | Emisores (`emit-domain-mutation`, `emit-pr-presented-event`, …) | `publish_ecst` / `record_ecst` vía puerto (sin I/O directo de bus) |
 | 2 | `event-watcher` (binario Rust) | `claim_pending` + `record_delivery` por puerto; delega en `route-domain-event` |
 | 3 | **`route-domain-event`** | Gate ECST; fan-out; ACK/NACK/DLQ en el puerto |
 | 4 | Suscriptores | Trabajo de dominio; entregas consultables con `list_deliveries` |
 
-**Invocación manual (laboratorio):** el input `event_file_path` es un **token lógico** (convención `.events/pending/<event_id>.json`); el orquestador resuelve el ECST vía puerto, no lee JSON en disco.
+**Invocación manual (laboratorio):** el input canónico es `event_uri` (`eda://{family}/{event_id}`); el orquestador resuelve el ECST vía `EventManagerPort`.
 
 ```bash
 ./sddia-run.sh --process route-domain-event \
-  --inputs '{"event_file_path":".events/pending/<event_id>.json"}'
+  --inputs '{"event_uri":"eda://domain/<event_id>"}'
 ```
 
 **Resolución del orquestador:** SSOT en `SddIA/scripts/common/sddia_shell_lib.sh` — binario Rust obligatorio (`SddIA/target/{debug,release}/execute-process`). Wrapper: `./sddia-run.sh`. Override: `SDDIA_EXECUTE_PROCESS_BIN=/ruta/al/binario`. Compilar: `cd SddIA && cargo build -p execute-process`.
@@ -240,14 +240,14 @@ Toda ejecución transita por el **orquestador** (`execute-process` binario Rust 
 |------|--------|
 | 1 | Cronómetro antes de ejecutar la cápsula |
 | 2 | Al finalizar: capturar `exit_code`, `duration_ms`, `asset_id` |
-| 3 | Emitir `Raw_Execution_Finished` (familia `telemetry`) en `./.events/telemetry/` |
+| 3 | Emitir `Raw_Execution_Finished` (familia `telemetry`) como `eda://telemetry/{event_id}` vía puerto |
 | 4 | En éxito: emitir además evento de orquestación según blueprint del proceso |
 
 **Fail-soft (D3.13):** fallo E/S al escribir telemetría no detiene el hilo de negocio.
 
 **Recibos termodinámicos (opcionales):** si la cápsula devuelve `telemetry_receipt` en stdout JSON, el CLI lo anexa al payload telemetría. Omisión **no** falla la ejecución de negocio. Contratos ED declaran `telemetry_provided` / `telemetry_schema` en skills y actions.
 
-**Auditoría de cumplimiento:** el proceso [`telemetry-compliance-audit`](SddIA/process/telemetry-compliance-audit.md) cruza recibo vs contrato ED; incumplimiento → `Telemetry_Compliance_Breached` en `./.events/domain/`. Gobernanza reactiva post-breach: pendiente (Kaizen). Detalle: [telemetria-reactiva-eda-fase5](docs/features/telemetria-reactiva-eda-fase5/).
+**Auditoría de cumplimiento:** el proceso [`telemetry-compliance-audit`](SddIA/process/telemetry-compliance-audit.md) cruza recibo vs contrato ED; incumplimiento → `Telemetry_Compliance_Breached` (`eda://domain/{event_id}`) vía puerto. Gobernanza reactiva post-breach: pendiente (Kaizen). Detalle: [telemetria-reactiva-eda-fase5](docs/features/telemetria-reactiva-eda-fase5/).
 
 **Ingesta vectorial (post-aduana):** cada ejecución consumida por Radamanto deja rastro indexable vía `Domain_Entity_Telemetry_Captured` → `memory-evolution-ingest` (LanceDB `{paths.vectorStore}/lancedb/`, tabla `evolution`). No sustituye recibos ni umbrales Self-Healing.
 

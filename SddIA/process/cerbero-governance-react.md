@@ -3,9 +3,9 @@ context:
 - event-routing
 - knowledge-management
 contract: process-contract v1.4.0
-hash_signature: sha256:4dc3cde6bd2635814d445f22d30316bf700ea1f3fb4dbc2f96e0bb22022d9bb6
+hash_signature: "sha256:4dc3cde6bd2635814d445f22d30316bf700ea1f3fb4dbc2f96e0bb22022d9bb6"
 inputs:
-- event_uri: Ruta relativa al JSON dominio en ./.events/domain/
+- event_uri: URI canónica eda://domain/<event_id> (vía EventManagerPort)
 - event_type: Tipo ECST (Domain_Entity_Degraded, Domain_Entity_Restored, Domain_Entity_Deprecated)
 minteo_maximo: null
 name: cerbero-governance-react

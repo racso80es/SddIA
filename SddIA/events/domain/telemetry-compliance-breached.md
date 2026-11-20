@@ -9,7 +9,7 @@ context: "quality-assurance"
 capabilities:
   - "telemetry_compliance_breached"
   - "contract_audit_alert"
-hash_signature: "sha256:pending-anchor-on-merge"
+hash_signature: "sha256:b909ee33006cc4aa201be956713bacdc8d637616e4f77e3980a6af2f328742ee"
 ---
 
 # Event: Telemetry_Compliance_Breached
@@ -40,4 +40,4 @@ Alerta de incumplimiento termodinámico: una ED declaró `telemetry_provided: tr
 
 ## Suscripciones
 
-Ninguna reactiva en Fase 5 (§5.D placeholder). Disponible en `./.events/domain/` para gobernanza futura.
+Ninguna reactiva en Fase 5 (§5.D placeholder). Disponible vía `EventManagerPort` (`eda://domain/<event_id>`) para gobernanza futura.

@@ -627,13 +627,13 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::create_dir_all(repo.join("SddIA/conscience")).unwrap();
         fs::create_dir_all(repo.join("SddIA/target/debug")).unwrap();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        fs::create_dir_all(repo.join("pending")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
   "directories": {"conscience": "SddIA/conscience"},
   "paths": {"vectorStore": ".SddIA/vector_store/"},
-  "eda_bus": {"pending": "./.events/pending"}
+  "eda_bus": {"pending": "pending"}
 }"#,
         )
         .unwrap();
@@ -671,7 +671,7 @@ mod tests {
         assert!(data["telemetry"]["duration_ms"].as_u64().is_some());
         assert_eq!(data["telemetry"]["model"].as_str().unwrap_or(""), "lab-flash");
         assert!(data["telemetry"].get("tokens").is_none());
-        let pending = repo.join(".events/pending");
+        let pending = repo.join("pending");
         if pending.is_dir() {
             let events: Vec<_> = fs::read_dir(&pending)
                 .unwrap()
@@ -704,14 +704,14 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/conscience")).unwrap();
         fs::create_dir_all(repo.join("SddIA/events/domain")).unwrap();
         fs::create_dir_all(repo.join("SddIA/target/debug")).unwrap();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        fs::create_dir_all(repo.join("pending")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
   "directories": {"conscience": "SddIA/conscience", "events": "SddIA/events", "suites": "SddIA/suites"},
   "paths": {"vectorStore": ".SddIA/vector_store/"},
-  "eda_bus": {"pending": "./.events/pending"},
-  "eda_fractal": {"domain": "./.events/domain"}
+  "eda_bus": {"pending": "pending"},
+  "eda_fractal": {"domain": "domain"}
 }"#,
         )
         .unwrap();
@@ -769,14 +769,14 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/conscience")).unwrap();
         fs::create_dir_all(repo.join("SddIA/events/domain")).unwrap();
         fs::create_dir_all(repo.join("SddIA/target/debug")).unwrap();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        fs::create_dir_all(repo.join("pending")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
   "directories": {"conscience": "SddIA/conscience", "events": "SddIA/events", "suites": "SddIA/suites"},
   "paths": {"vectorStore": ".SddIA/vector_store/"},
-  "eda_bus": {"pending": "./.events/pending"},
-  "eda_fractal": {"domain": "./.events/domain"}
+  "eda_bus": {"pending": "pending"},
+  "eda_fractal": {"domain": "domain"}
 }"#,
         )
         .unwrap();
@@ -844,13 +844,13 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::create_dir_all(repo.join("SddIA/conscience")).unwrap();
         fs::create_dir_all(repo.join("SddIA/target/debug")).unwrap();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        fs::create_dir_all(repo.join("pending")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
   "directories": {"conscience": "SddIA/conscience"},
   "paths": {"vectorStore": ".SddIA/vector_store/"},
-  "eda_bus": {"pending": "./.events/pending"}
+  "eda_bus": {"pending": "pending"}
 }"#,
         )
         .unwrap();

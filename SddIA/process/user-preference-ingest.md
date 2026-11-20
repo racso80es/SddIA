@@ -31,7 +31,7 @@ Consume `User_Preference_Change_Requested`. Handler nativo `user-preference-inge
 
 ```bash
 ./sddia-run.sh --process user-preference-ingest \
-  --inputs '{"event_uri":".events/domain/<event_id>.json"}'
+  --inputs '{"event_uri":"eda://domain/<event_id>"}'
 ```
 
 Prohibido anclaje DLT. Inferencias quedan `proposed` hasta confirmación explícita.

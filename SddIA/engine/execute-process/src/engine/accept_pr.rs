@@ -678,7 +678,7 @@ mod tests {
         let branch = "docs/merge-thermo-hu-f2-close";
         assert!(!scan_presented_for_branch(repo, branch));
 
-        let processed = repo.join(".events/processed");
+        let processed = repo.join("processed");
         fs::create_dir_all(&processed).unwrap();
         fs::write(
             processed.join("presented.json"),
@@ -691,7 +691,7 @@ mod tests {
         .unwrap();
         assert!(!scan_presented_for_branch(repo, branch));
 
-        let dl = repo.join(".events/dead-letter");
+        let dl = repo.join("dead-letter");
         fs::create_dir_all(&dl).unwrap();
         fs::write(
             dl.join("presented.json"),
@@ -715,7 +715,7 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"pending":"pending"}}"#,
         )
         .unwrap();
         fs::create_dir_all(repo.join(".SddIA/runtime")).ok();
@@ -733,7 +733,7 @@ mod tests {
         assert!(!scan_presented_for_branch(repo, "other"));
     }
 
-    /// REDB-CA3: Presented solo en store (puerto) sin JSON bajo `.events/`.
+    /// REDB-CA3: Presented solo en store (puerto) sin JSON en disco.
     #[test]
     fn t_redb_ca3_scan_presented_from_store_only() {
         let _h = crate::engine::eda_port::EventManagerTestHarness::new();
@@ -743,7 +743,7 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"pending":"pending"}}"#,
         )
         .unwrap();
         let event_id = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
@@ -854,7 +854,7 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending"},"directories":{"documentation":"docs"}}"#,
+            r#"{"eda_bus":{"pending":"pending"},"directories":{"documentation":"docs"}}"#,
         )
         .unwrap();
         fs::create_dir_all(repo.join(".SddIA/runtime")).ok();

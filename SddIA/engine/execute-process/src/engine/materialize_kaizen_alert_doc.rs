@@ -442,8 +442,8 @@ mod tests {
         seed_lab_file_tracker(repo);
 
         let files = json!([
-            ".events/pending/aaa.json",
-            ".events/pending/bbb.json"
+            "eda://domain/aaa",
+            "eda://domain/bbb"
         ]);
         let first = json!({
             "project_slug": "lab",
@@ -458,8 +458,8 @@ mod tests {
             "alert_justification": "Auditoría event-bus-audit: 86 dead-letter (otra corrida)",
             "alert_kind": "event-bus-audit",
             "implicated_files": [
-                ".events/pending/bbb.json",
-                ".events/pending/aaa.json"
+                "eda://domain/bbb",
+                "eda://domain/aaa"
             ],
         });
 

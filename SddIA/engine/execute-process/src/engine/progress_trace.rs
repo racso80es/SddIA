@@ -213,7 +213,7 @@ mod tests {
             Some("feature"),
             None,
         );
-        assert!(!base.join(".events/progress").exists());
+        assert!(!base.join("progress").exists());
         let _ = std::fs::remove_dir_all(base);
     }
 
@@ -225,7 +225,7 @@ mod tests {
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_fractal":{"telemetry":"./.events/telemetry","progress":"./.events/progress"}}"#,
+            r#"{"eda_fractal":{"telemetry":"telemetry","progress":"progress"}}"#,
         )
         .unwrap();
         let cid = "22222222-2222-4222-8222-222222222222";
@@ -250,7 +250,7 @@ mod tests {
         })
         .expect("list_progress");
         assert_eq!(frames.len(), 1);
-        assert!(!repo.join(".events/progress").join(cid).exists());
+        assert!(!repo.join("progress").join(cid).exists());
         let _ = std::fs::remove_dir_all(base);
     }
 
@@ -260,9 +260,9 @@ mod tests {
         let repo = base.join("repo");
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         let cfg = repo.join("SddIA/core/cumulo.paths.json");
-        std::fs::write(&cfg, r#"{"eda_fractal":{"progress":"./.events/progress"}}"#).unwrap();
+        std::fs::write(&cfg, r#"{"eda_fractal":{"progress":"progress"}}"#).unwrap();
         // Bloquear escritura: progress es un archivo, no directorio.
-        let blocked = repo.join(".events/progress");
+        let blocked = repo.join("progress");
         std::fs::create_dir_all(blocked.parent().unwrap()).unwrap();
         let mut f = std::fs::File::create(&blocked).unwrap();
         f.write_all(b"not-a-dir").unwrap();

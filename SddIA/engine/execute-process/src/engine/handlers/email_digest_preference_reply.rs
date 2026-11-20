@@ -302,13 +302,13 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
-        fs::create_dir_all(repo.join(".events/domain")).unwrap();
+        fs::create_dir_all(repo.join("domain")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
   "eda_instance": {"proofs": ".SddIA/proofs"},
   "daemons_instance": {"state": ".SddIA/daemons/state"},
-  "eda_fractal": {"domain": ".events/domain", "orchestration": ".events/orchestration", "telemetry": ".events/telemetry"},
+  "eda_fractal": {"domain": "domain", "orchestration": "orchestration", "telemetry": "telemetry"},
   "paths": {"userPreferencesStore": ".SddIA/vector_store/user_preferences"}
 }"#,
         )
@@ -328,7 +328,7 @@ mod tests {
             }),
         )
         .expect("seed TelegramCallback_Received");
-        format!(".events/domain/{name}.json")
+        format!("domain/{name}.json")
     }
 
     fn seed_token(repo: &Path, token: &str, from: &str) {
@@ -441,7 +441,7 @@ mod tests {
             .to_string();
         let ingest = user_preference::run_ingest(
             repo,
-            &json!({"event_uri": format!(".events/domain/{eid}.json")}),
+            &json!({"event_uri": format!("domain/{eid}.json")}),
         )
         .unwrap();
         assert!(ingest.success);
@@ -468,7 +468,7 @@ mod tests {
             }),
         )
         .unwrap();
-        let triage = email_triage::run(repo, &json!({"event_uri": ".events/domain/mail1.json"}))
+        let triage = email_triage::run(repo, &json!({"event_uri": "domain/mail1.json"}))
             .unwrap();
         let phases = triage.execution_report.as_ref().unwrap()["phases"]
             .as_array()

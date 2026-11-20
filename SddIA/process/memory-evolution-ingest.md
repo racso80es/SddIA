@@ -31,7 +31,7 @@ Runtime nativo: `memory_evolution_ingest_core` en `execute-process` (despacho fr
 
 ```bash
 ./sddia-run.sh --process memory-evolution-ingest \
-  --inputs '{"event_uri":".events/domain/<event_id>.json"}'
+  --inputs '{"event_uri":"eda://domain/<event_id>"}'
 ```
 
 Idempotencia por `origin_stimulus.event_id`. Fail-soft hacia Radamanto (no tumba Self-Healing).

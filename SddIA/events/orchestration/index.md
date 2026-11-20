@@ -14,7 +14,7 @@ Comunicación táctica entre Entidades de Dominio (Nivel 2): chispas de línea d
 | Campo | Valor |
 |-------|-------|
 | **Emisores autorizados** | CLI tras `status: success`; agentes auditores (p. ej. Argos → `Artifact_Validated` en Fase 3) |
-| **Consumidor runtime (Fase 3)** | `./.events/orchestration/` → `route-orchestration` |
+| **Consumidor runtime (Fase 3)** | `EventManagerPort` (`eda://orchestration/<event_id>`) → `route-orchestration` |
 
 ## Catálogo de Clases ECST
 

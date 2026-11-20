@@ -3,7 +3,6 @@
 use super::fractal::{load_fractal_dirs, write_fractal_event};
 use chrono::Utc;
 use serde_json::{json, Value};
-use std::fs;
 use std::path::Path;
 use uuid::Uuid;
 
@@ -178,8 +177,6 @@ pub fn run(
     success: bool,
 ) -> Value {
     let (tele_dir, orch_dir, _, _) = load_fractal_dirs(repo);
-    fs::create_dir_all(repo.join(&tele_dir)).ok();
-    fs::create_dir_all(repo.join(&orch_dir)).ok();
 
     let asset_id = state
         .get("asset_id")
@@ -386,7 +383,6 @@ pub fn emit_initialized_pec(
     correlation_id: &str,
 ) -> Result<Value, String> {
     let (_, orch_dir, _, _) = load_fractal_dirs(repo);
-    fs::create_dir_all(repo.join(&orch_dir)).ok();
     let orch_id = Uuid::new_v4().to_string();
     let payload = json!({
         "process_name": process_name,
@@ -563,7 +559,7 @@ mod tests {
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_fractal":{"telemetry":"./.events/telemetry","orchestration":"./.events/orchestration","domain":"./.events/domain"}}"#,
+            r#"{"eda_fractal":{"telemetry":"telemetry","orchestration":"orchestration","domain":"domain"}}"#,
         )
         .unwrap();
         let seal = emit_initialized_pec(repo, "feature", "11111111-1111-4111-8111-111111111111")

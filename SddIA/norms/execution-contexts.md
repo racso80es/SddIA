@@ -1,10 +1,10 @@
 ---
 uuid: "d8e9f0a1-b2c3-4d5e-6f7a-8b9c0d1e2f3a"
 name: "execution-contexts"
-version: "1.0.1"
+version: "1.0.0"
 entity_type: "norm"
 jurisdiction: "cerbero"
-hash_signature: "sha256:5781fb047962cc909031a1492771d70c5409789dadcdb019b7d4a5c0f24ba2b8"
+hash_signature: "sha256:be274adc529a8877b8dae51bf6c259d9e37aa6b1a49ad4e6ead4b08a7c52ddc5"
 ---
 
 # Normativa de Contextos de Ejecución (RBAC Simbiótico)
@@ -49,7 +49,7 @@ Toda Entidad Operativa debe declarar su pertenencia a uno de estos contextos. Cu
 
 ### 2.7. `event-routing`
 * **Jurisdicción:** Orquestación, triaje y movimiento de archivos en el bus de eventos asíncrono (EDA).
-* **Autorización:** Permisos estrictos de lectura del padre en `.events/pending/`; escritura/movimiento de testigos en `.events/subscribers/{processing,processed,dead-letter}/` (resuelto vía `event_bus` + `eda_bus` en `cumulo.paths.json`). Prohibida la mutación del genoma (`SddIA/events/`) y del JSON padre tras emisión.
+* **Autorización:** Permisos estrictos de lectura/entrega del padre vía `EventManagerPort` (`eda://{family}/{event_id}` y estado de suscriptores en el puerto) (resuelto vía `event_bus` + `eda_bus` en `cumulo.paths.json`). Prohibida la mutación del genoma (`SddIA/events/`) y del JSON padre tras emisión.
 * **Cápsulas asociadas:** `process:route-domain-event` (orquestador vía Centinela `event-watcher` → `execute-process`).
 
 ### 2.8. `dlt-auditing`

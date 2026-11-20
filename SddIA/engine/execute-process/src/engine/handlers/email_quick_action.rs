@@ -171,7 +171,7 @@ mod tests {
         .unwrap();
         let env = run(
             repo,
-            &json!({"event_uri": format!(".events/domain/{eid}.json")}),
+            &json!({"event_uri": format!("domain/{eid}.json")}),
         )
         .unwrap();
         assert!(env.success);
@@ -202,7 +202,7 @@ mod tests {
         .unwrap();
         let env = run(
             repo,
-            &json!({"event_uri": format!(".events/domain/{eid}.json")}),
+            &json!({"event_uri": format!("domain/{eid}.json")}),
         )
         .unwrap();
         assert!(env.success);

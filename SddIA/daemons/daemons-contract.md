@@ -113,7 +113,7 @@ El Centinela **debe** emitir periódicamente una instancia ECST de tipo **`Daemo
 | `last_stimulus_at` | No | ISO-8601 del último estímulo físico procesado |
 | `status` | Sí | `alive` \| `degraded` \| `shutting_down` |
 
-**Destino de emisión:** preferente `eda_fractal.telemetry` (`./.events/telemetry/`). Si la saturación del bus principal lo exige, redirigir vía `eda_instance.customization` (`.SddIA/events/telemetry/`) sin contaminar el registro histórico DLT del bus V3+.
+**Destino de emisión:** preferente `EventManagerPort` (`eda://telemetry/<event_id>`, `eda_fractal.telemetry`). Si la saturación del bus principal lo exige, redirigir vía `eda_instance.customization` (`.SddIA/events/telemetry/`) sin contaminar el registro histórico DLT del bus V3+.
 
 Omisión de **tres ciclos consecutivos** de heartbeat para un Centinela crítico habilita alerta `System_Fracture_Detected` (fan-out Argos — fuera de alcance CEN-01).
 

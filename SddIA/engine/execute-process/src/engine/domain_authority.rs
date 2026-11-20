@@ -513,7 +513,7 @@ docs_layout:
         fs::create_dir_all(td.path().join("SddIA/core")).unwrap();
         fs::write(
             td.path().join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"pending":"pending"}}"#,
         )
         .unwrap();
         fs::create_dir_all(td.path().join(".SddIA/runtime")).unwrap();

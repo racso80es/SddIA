@@ -21,6 +21,14 @@ const PATH_SYMBOL_FORBIDDEN: &[&str] = &[
     "DEFAULT_REDB_REL",
 ];
 
+/// MAN-49 R-02: ops FS de bus prohibidas en watcher + eda_*.rs productivos.
+const FS_OPS_FORBIDDEN: &[&str] = &[
+    "fs::read_dir",
+    "fs::create_dir_all",
+    "fs::remove_file",
+    "fs::rename",
+];
+
 #[derive(Debug, Serialize)]
 struct Violation {
     path: String,
@@ -180,8 +188,29 @@ fn scan_file(repo: &Path, path: &Path) -> Vec<Violation> {
                 }
             }
         }
+        if fs_ops_scope(&rel) {
+            for pat in FS_OPS_FORBIDDEN {
+                if line.contains(pat) {
+                    out.push(Violation {
+                        path: rel.clone(),
+                        line: line_no,
+                        pattern: (*pat).into(),
+                        snippet: line.trim().chars().take(120).collect(),
+                    });
+                }
+            }
+        }
     }
     out
+}
+
+fn fs_ops_scope(rel: &str) -> bool {
+    rel.starts_with("SddIA/daemons/event-watcher/")
+        || (rel.starts_with("SddIA/sddia-daemon-runtime/src/")
+            && Path::new(rel)
+                .file_name()
+                .and_then(|s| s.to_str())
+                .is_some_and(|n| n.starts_with("eda_") && n.ends_with(".rs")))
 }
 
 pub fn run(repo: &Path, json: bool) -> i32 {

@@ -8,8 +8,8 @@ execution:
   entrypoint: SddIA/daemons/event-watcher.sh
   heartbeat_interval_seconds: 30
   runtime: native-rust
-hash_signature: sha256:5d74ff81693cabe8ec81719348c4caa733e658bb197bc64487dbf72c418f8301
-jurisdiction: Aislada — Ceguera Lógica. Reclama pending (claim_store_pending) y fractal (claim_store_fractal) del store o ficheros .events/pending. En redb no enruta JSON residual (F-EDA-RESIDUAL-FILESYSTEM / F-EDA-RESIDUAL-FRACTAL). Side-channel latidos en .SddIA/daemons/state/heartbeats/ sin fila ECST. No abre el ECST en el claim.
+hash_signature: "sha256:c1ce4174448540c18252bbfc5d34ead449e5fed166df536e70c34c158ff0c4d5"
+jurisdiction: Aislada — Ceguera Lógica. Reclama pending y fractal vía EventManagerPort. Side-channel latidos en .SddIA/daemons/state/heartbeats/ sin fila ECST. No abre el ECST en el claim.
 name: event-watcher
 source_sha256: sha256:352dfe21c082b938edaecccc66adb587ac262aaa09ff0a285ad7ffe3847c55fd
 telemetry_provided: true
@@ -23,4 +23,4 @@ version: 1.2.1
 
 # event-watcher
 
-Centinela EDA. En `filesystem` drena `.events/pending/`. En `dual` o `redb` reclama entregas pending y familia fractal desde `events.redb` y delega route-* con path lógico sin exigir fichero. El tick dispara `daemon-heartbeat-audit` (`sweep`) y `system-vitality-probe`. Binario Rust en `SddIA/target/{release|debug}/event-watcher`; launcher `SddIA/daemons/event-watcher.sh`. Side-channel de latido cada 30s (no fila ECST en store).
+Centinela EDA. En modo puerto (`EventManagerPort`) reclama entregas pending y familia fractal desde `events.redb` y delega route-* con path lógico sin exigir fichero. El tick dispara `daemon-heartbeat-audit` (`sweep`) y `system-vitality-probe`. Binario Rust en `SddIA/target/{release|debug}/event-watcher`; launcher `SddIA/daemons/event-watcher.sh`. Side-channel de latido cada 30s (no fila ECST en store).

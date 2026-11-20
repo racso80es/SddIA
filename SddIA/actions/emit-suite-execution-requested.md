@@ -1,76 +1,19 @@
 ---
 uuid: "d5e6f7a8-b9c0-4d1e-8f2a-3b4c5d6e7f8a"
 name: "emit-suite-execution-requested"
-version: "2.0.0"
+version: "2.0.1"
 contract: "actions-contract v1.2.0"
-context: "chaos-engineering"
+context: "ecosystem-evolution"
 capabilities:
   - "suite-execution-requested-emission"
   - "event-bus-domain-write"
   - "delegate-crypto-broker"
   - "delegate-filesystem-manager"
-inputs:
-  - "suite_id": "string; identificador kebab-case de la Suite (required)"
-  - "asset_id": "string; UUID de la ED Suite (optional)"
-  - "execution_strategy": "string; override fail_fast | run_all (optional)"
-  - "correlation_id": "string; UUID v4 de correlación (optional)"
-outputs:
-  - "success": "boolean"
-  - "event_id": "string; UUID v4 del evento minteado"
-  - "event_uri": "Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})"
-hash_signature: "sha256:72d02c30bda4eb3e18d97b1db48d8fcb774dd31de9f9152db4407aa547729461"
+inputs: []
+outputs: []
+hash_signature: "sha256:a8243acb9de3ffe6fa1505b7aa1d36c51a0bed40a50ae03dc09a831e77f22929"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
 
-# Acción: emit-suite-execution-requested
-
-## 1. Propósito
-
-Emitir la instancia ECST **Suite_Execution_Requested** en el bus fractal **domain** (`./.events/domain/`). No ejecuta `execute-suite` ni enruta el bus; solo mintea `event_id` y persiste el JSON.
-
-## 2. Orquestación
-
-Gate **Cerbero** previo por `context`. Rutas vía `cumulo.paths.json`.
-
-### Paso 1 — Validación
-
-- `suite_id` obligatorio (string no vacío).
-- La Suite debe existir bajo `directories.suites`.
-
-### Paso 2 — Identidad (`action:crypto-broker`)
-
-```json
-{ "operation": "GENERATE_UUID", "target_type": "STRING", "target_payload": "" }
-```
-
-### Paso 3 — Cápsula de evento
-
-```json
-{
-  "event_id": "<event_id>",
-  "event_type": "Suite_Execution_Requested",
-  "event_family": "domain",
-  "timestamp": "<ISO-8601 UTC>",
-  "emitter_agent": "emit-suite-execution-requested",
-  "payload": {
-    "suite_id": "<suite_id>",
-    "asset_id": "<asset_id si aplica>",
-    "execution_strategy": "<strategy si aplica>"
-  },
-  "delivery_state": {}
-}
-```
-
-### Paso 4 — Persistencia
-
-Escribir `{eda_fractal.domain}/<event_id>.json` vía `write_fractal_event`.
-
-### Paso 5 — Cierre (stdout)
-
-Envelope `actions-contract` con `success`, `event_id`, `event_uri`.
-
-## 3. Límites
-
-* Sin invocación directa de `execute-suite` ni `route-domain-event` en esta acción.
-* Sin sellado IOTA.
+Acción emit-suite-execution-requested

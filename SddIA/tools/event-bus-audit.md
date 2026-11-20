@@ -15,7 +15,7 @@ outputs:
   - "success": "boolean"
   - "exitCode": "integer"
   - "error": "string; diagnóstico si aplica"
-hash_signature: "sha256:db32483193eeb0ec20c8f80f2bc5b1fa5c1a901ad811efa5b902447307f0c918"
+hash_signature: "sha256:aaac9d073c2e3c5a39a561f322b8645fade507e790ac9226ea98ee5c3a34aa83"
 implementation_path_ref: "SddIA/tools/event-bus-audit"
 ---
 
@@ -25,7 +25,7 @@ Auditoría empírica del bus EDA: escaneo .events, validación ECST, informe y e
 
 `needs_kaizen = circuit_alert || actionable_stale_pending_count > 0`. No dispara por volumen histórico de dead-letter, dumps no-ECST (`github-bridge` / `FALLBACK_LOCAL_SIGNATURE`), testigos huérfanos ni pending `System_Fracture_Detected` (ya materializados). Flag `emit_kaizen_alert` (default `true`) no se duplica.
 
-Emisión `Kaizen_Alert_Required`: `stamp_published_event` + `record_ecst` cuando `writes_store`; JSON en `.events/pending/` solo si `writes_filesystem` (`dual` | `filesystem`). En `redb` puro, `target_path` lógico sin fichero residual.
+Emisión `Kaizen_Alert_Required`: `stamp_published_event` + `record_ecst` cuando `writes_store`; publicación exclusiva vía `EventManagerPort` (`eda://domain/<event_id>`), sin ficheros residuales en disco.
 
 Cubre además el cruce catálogo `SddIA/events/{family}/` ↔ registros Cúmulo (`EMPTY_SUBSCRIBERS`, `FAMILY_MISMATCH`, `ORPHAN_REGISTRY_KEY`, `PURGE_BLACKHOLE`). Umbral orchestration/blackhole → `Kaizen_Alert_Required` sin fallar el audit (`success` se mantiene).
 

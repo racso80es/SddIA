@@ -316,7 +316,7 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending","subscriptions":"SddIA/core/event-subscriptions.json"}}"#,
+            r#"{"eda_bus":{"pending":"pending","subscriptions":"SddIA/core/event-subscriptions.json"}}"#,
         )
         .unwrap();
         fs::write(repo.join("SddIA/core/event-subscriptions.json"), "{}\n").unwrap();

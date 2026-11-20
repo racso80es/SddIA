@@ -289,7 +289,7 @@ mod tests {
     "bindings": "SddIA/core/capability-bindings.md"
   },
   "event_bus": "./.events",
-  "eda_bus": { "dead_letter": "./.events/dead-letter" }
+  "eda_bus": { "dead_letter": "dead-letter" }
 }"#,
         );
         write_file(

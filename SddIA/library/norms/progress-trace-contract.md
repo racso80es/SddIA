@@ -18,7 +18,7 @@ Norma táctica para **Progress Trace Capsule (PTC)** — canal efímero de obser
 ## Directriz Core
 
 1. PTC es schema **no-ECST**: prohibidos en raíz `event_type`, `emitter_agent`, `payload`, `delivery_state`, `event_family`.
-2. Hoja Cúmulo: `eda_fractal.progress` → `./.events/progress` (sin `*_subscriptions`).
+2. Hoja Cúmulo: `eda_fractal.progress` en `EventManagerPort` (sin `*_subscriptions` ni directorio en disco).
 3. Join key saga Kalma2: `correlation_id` (= `event_id` de `Kalma2_Process_Requested`).
 4. Emisión solo si `process_inputs.correlation_id` no vacío; best-effort (IO fallido no tumba `execute-process`).
 5. Bridge **solo lee** la hoja; proyección SSE `GET /api/progress/stream?correlation_id=<uuid>` complementa (no sustituye) `GET /api/status`.

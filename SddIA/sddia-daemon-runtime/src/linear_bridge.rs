@@ -1,6 +1,7 @@
 //! Sensor Linear → `Tracker_Issue_Changed` (HU-B 02). Sin apply markdown.
 
-use crate::eda_bus::{ensure_event_bus_topology, write_json_atomic};
+use crate::eda_bus::ensure_event_bus_topology;
+use crate::write_json_atomic;
 use crate::record_ecst_productive;
 use chrono::{DateTime, Utc};
 use sddia_core::ports::event_manager::{EventFamily, EventUri};

@@ -5,7 +5,7 @@ alwaysApply: true
 
 # DA-5 — Fire-and-Forget
 
-Tras `./sddia-run.sh` / `execute-process` y JSON de acuse: prohibido `sleep`, `wait`, bucles de polling sobre `./.events/` o status, y llamadas extra (`AwaitShell`, `manage_task`, `schedule`) para vigilar centinelas.
+Tras `./sddia-run.sh` / `execute-process` y JSON de acuse: prohibido `sleep`, `wait`, bucles de polling sobre `EventManagerPort` / `event_uri` o status, y llamadas extra (`AwaitShell`, `manage_task`, `schedule`) para vigilar centinelas.
 
 Éxito = inyección acusada (`data.detached: true` en procesos largos). Siguiente estímulo = Racso o Kalma2.
 

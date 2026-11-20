@@ -648,7 +648,6 @@ mod tests {
         cleanup_test_pbis(repo);
         let dir = repo.join("docs/todos/pending");
         fs::create_dir_all(&dir).unwrap();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         let path = dir.join(format!("PBI-TEST-{}.md", Uuid::new_v4()));
         let content = format!(
             "---\ndocument_id: PBI-TEST\ntracker_ref: \"{tracker_ref}\"\ntitle: \"Old\"\nstatus: pending\n{extra_fm}---\n\n# Body\n\nOriginal.\n"
@@ -780,7 +779,7 @@ mod tests {
             fs::create_dir_all(repo.join("SddIA/core")).unwrap();
             fs::write(
                 repo.join("SddIA/core/cumulo.paths.json"),
-                r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending","subscriptions":"SddIA/core/event-subscriptions.json"}}"#,
+                r#"{"eda_bus":{"pending":"pending","subscriptions":"SddIA/core/event-subscriptions.json"}}"#,
             )
             .unwrap();
             fs::write(repo.join("SddIA/core/event-subscriptions.json"), "{}\n").unwrap();

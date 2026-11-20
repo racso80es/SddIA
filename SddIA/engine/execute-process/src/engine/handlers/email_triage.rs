@@ -971,7 +971,7 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_fractal":{"domain":".events/domain","orchestration":".events/orchestration","telemetry":".events/telemetry","dead_letter":".events/dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+            r#"{"eda_fractal":{"domain":"domain","orchestration":"orchestration","telemetry":"telemetry","dead_letter":"dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
         )
         .unwrap();
         let src = json!({
@@ -1148,16 +1148,16 @@ mod tests {
 
     fn setup_triage_repo(repo: &Path) {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
-        fs::create_dir_all(repo.join(".events/domain")).unwrap();
+        fs::create_dir_all(repo.join("domain")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"paths":{"userPreferencesStore":".SddIA/vector_store/user_preferences"},"eda_fractal":{"domain":".events/domain","orchestration":".events/orchestration","telemetry":".events/telemetry","dead_letter":".events/dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+            r#"{"paths":{"userPreferencesStore":".SddIA/vector_store/user_preferences"},"eda_fractal":{"domain":"domain","orchestration":"orchestration","telemetry":"telemetry","dead_letter":"dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
         )
         .unwrap();
     }
 
     fn write_received(repo: &Path, name: &str, payload: Value) -> PathBuf {
-        let path = repo.join(".events/domain").join(format!("{name}.json"));
+        let path = repo.join("domain").join(format!("{name}.json"));
         crate::engine::eda_port::test_lab::seed_domain_ecst(
             repo,
             name,

@@ -1273,13 +1273,13 @@ mod tests {
 }"#,
         )
         .unwrap();
-        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
+        fs::create_dir_all(repo.join("telemetry")).unwrap();
         fs::create_dir_all(repo.join(".SddIA/radamanto")).unwrap();
         td
     }
 
     fn write_ci_job_failed(repo: &Path, event_id: &str, check_run_id: i64, job_name: &str) -> String {
-        let rel = format!(".events/telemetry/{event_id}.json");
+        let rel = format!("telemetry/{event_id}.json");
         let event = json!({
             "event_id": event_id,
             "event_type": "CI_Job_Failed",

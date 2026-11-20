@@ -444,9 +444,6 @@ mod tests {
     fn emit_work_initiated_writes_pending_without_provider_fields() {
         let _guard = port_harness();
         let repo = find_repo_root().unwrap();
-        let pending = repo.join(".events/pending");
-        fs::create_dir_all(&pending).ok();
-        let before = fs::read_dir(&pending).map(|d| d.count()).unwrap_or(0);
         let out = emit_work_initiated(
             &repo,
             &json!({
@@ -458,8 +455,6 @@ mod tests {
         )
         .expect("emit");
         assert_eq!(out.get("event_type"), Some(&json!("Work_Initiated")));
-        let after = fs::read_dir(&pending).map(|d| d.count()).unwrap_or(0);
-        assert!(after >= before);
         let event_id = out.get("event_id").and_then(|v| v.as_str()).unwrap();
         let raw = emitted_body(&repo, event_id);
         assert!(!raw.contains("team_key"));
@@ -470,8 +465,6 @@ mod tests {
     fn emit_validation_started_writes_pending() {
         let _guard = port_harness();
         let repo = find_repo_root().unwrap();
-        let pending = repo.join(".events/pending");
-        fs::create_dir_all(&pending).ok();
         let out = emit_validation_started(
             &repo,
             &json!({
@@ -503,8 +496,6 @@ mod tests {
     fn pr_emits_carry_tracker_ref_when_provided() {
         let _guard = port_harness();
         let repo = find_repo_root().unwrap();
-        let pending = repo.join(".events/pending");
-        fs::create_dir_all(&pending).ok();
         let presented = emit_pr_presented(
             &repo,
             &json!({
@@ -537,8 +528,6 @@ mod tests {
     fn emit_resealed_links_presented_event_id() {
         let _guard = port_harness();
         let repo = find_repo_root().unwrap();
-        let pending = repo.join(".events/pending");
-        fs::create_dir_all(&pending).ok();
         let presented = emit_pr_presented(
             &repo,
             &json!({
@@ -628,7 +617,7 @@ mod tests {
         fs::create_dir_all(path.join("SddIA/core")).unwrap();
         fs::write(
             path.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"pending":"pending"}}"#,
         )
         .unwrap();
         path
@@ -649,7 +638,7 @@ mod tests {
         )
         .expect("merged");
         let id = merged.get("event_id").and_then(|v| v.as_str()).unwrap();
-        assert!(!repo.join(".events/pending").join(format!("{id}.json")).is_file());
+        assert!(!repo.join("pending").join(format!("{id}.json")).is_file());
         use sddia_core::ports::event_manager::GetEventRequest;
         let row = crate::engine::eda_port::with_event_port(&repo, "test_merged_get", |port| {
             port.get_event(GetEventRequest {
