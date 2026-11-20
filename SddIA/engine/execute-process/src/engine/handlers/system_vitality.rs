@@ -477,14 +477,14 @@ mod tests {
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
-  "event_bus": ".SddIA/runtime/events.redb",
+  "event_bus": ".SddIA/runtime/eda-store.redb",
   "eda_bus": {
-    "store": ".SddIA/runtime/events.redb",
+    "store": ".SddIA/runtime/eda-store.redb",
     "events": "events",
     "subscriptions": "SddIA/core/event-domain-subscriptions.json"
   },
   "eda_fractal": {
-    "store": ".SddIA/runtime/events.redb",
+    "store": ".SddIA/runtime/eda-store.redb",
     "events": "events",
     "telemetry_subscriptions": "SddIA/core/event-telemetry-subscriptions.json",
     "orchestration_subscriptions": "SddIA/core/event-orchestration-subscriptions.json",
@@ -498,12 +498,13 @@ mod tests {
         let _redb = crate::engine::eda_port::test_lab::redb_eda_for(repo);
         let r = probe_bus_topology(repo);
         assert!(r.ok, "{}", r.cause);
-        assert!(!repo.join(".events/telemetry").exists());
-        assert!(!repo.join(".events/domain").exists());
-        assert!(repo.join(".SddIA/runtime/events.redb").is_file());
+        assert!(!repo.join("lab-bus/telemetry").exists());
+        assert!(!repo.join("lab-bus/domain").exists());
+        let db = sddia_event_manager_host::resolved_redb_path(repo).unwrap();
+        assert!(db.is_file(), "store Redb ausente tras seed");
     }
 
-    /// REDB-CA4: modo redb — emisiones de vitalidad/fractura no crean JSON en `.events/`.
+    /// REDB-CA4: modo redb — emisiones de vitalidad/fractura no crean JSON en `lab-bus/`.
     #[test]
     fn redb_ca4_vitality_and_fracture_go_to_store() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -511,7 +512,7 @@ mod tests {
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"store":".SddIA/runtime/eda-store.redb","pending":"lab-bus/pending"}}"#,
         )
         .unwrap();
         std::fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
@@ -523,12 +524,12 @@ mod tests {
         }];
         let event_id = emit_vitality_event(repo, &probes, "degraded").expect("vitality");
         let seal = emit_probe_fracture(repo, &probes[0]).expect("fracture");
-        assert!(!repo.join(".events/telemetry").exists());
-        assert!(!repo.join(".events/pending").exists());
-        assert!(!repo.join(".events/domain").exists());
+        assert!(!repo.join("lab-bus/telemetry").exists());
+        assert!(!repo.join("lab-bus/pending").exists());
+        assert!(!repo.join("lab-bus/domain").exists());
         crate::engine::eda_port::clear_port();
         let tele_syn = repo
-            .join(".events/telemetry")
+            .join("lab-bus/telemetry")
             .join(format!("{event_id}.json"));
         assert!(
             crate::engine::eda_port::load_dispatched(repo, &event_id, &tele_syn)
@@ -538,7 +539,7 @@ mod tests {
         );
         let fracture_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
         let domain_syn = repo
-            .join(".events/domain")
+            .join("lab-bus/domain")
             .join(format!("{fracture_id}.json"));
         assert!(
             crate::engine::eda_port::load_dispatched(repo, fracture_id, &domain_syn)
@@ -565,7 +566,7 @@ mod tests {
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
   "eda_bus": {
-    "store": ".SddIA/runtime/events.redb",
+    "store": ".SddIA/runtime/eda-store.redb",
     "subscriptions": "SddIA/core/event-domain-subscriptions.json"
   },
   "eda_fractal": {
@@ -583,7 +584,7 @@ mod tests {
         }
         crate::engine::eda_port::clear_port();
         let db = sddia_event_manager_host::resolved_redb_path(repo).unwrap();
-        assert!(db.is_file(), "falta events.redb tras seed");
+        assert!(db.is_file(), "store Redb ausente tras seed");
         let ready = db.with_extension("ready");
         let mut holder = std::process::Command::new("python3")
             .arg("-c")

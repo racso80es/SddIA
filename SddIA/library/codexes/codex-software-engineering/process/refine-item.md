@@ -38,4 +38,4 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # refine-item
 
-Refinamiento unificado de ítems de backlog: preparación YAML, Mayeuta, DoR, sellado tracker_ref desde issue leído (sin alta remota), sellado y evento PBI_Refined/HU_Refined. Salida `event_path`: ruta lógica pending o store según `SDDIA_EVENT_STORE` (`events-contract.md` §4).
+Refinamiento unificado de ítems de backlog: preparación YAML, Mayeuta, DoR, sellado tracker_ref desde issue leído (sin alta remota), sellado y evento PBI_Refined/HU_Refined. Salida: `event_uri` / sello vía `EventManagerPort` (`events-contract.md` §4).

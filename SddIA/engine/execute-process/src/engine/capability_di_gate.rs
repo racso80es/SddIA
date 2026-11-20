@@ -2,7 +2,7 @@
 
 use crate::core::parser::parse_frontmatter;
 use super::capability_di_resolver::{contract_schema_file, load_binding_rows};
-use super::eda_bus_topology::load_event_bus_topology;
+use super::eda_bus_topology::publish_dead_letter_via_port;
 use super::workspace::load_paths_config;
 use chrono::Utc;
 use serde_json::{json, Value};
@@ -255,13 +255,7 @@ fn schema_required_keys(schema_path: &Path) -> Result<Vec<String>, String> {
 }
 
 pub fn write_di_dead_letter(repo: &Path, err: &DiGateError, phase_name: &str, process_name: &str) {
-    let Ok(topo) = load_event_bus_topology(repo) else {
-        return;
-    };
-    let dir = repo.join(&topo.dead_letter);
-    let _ = fs::create_dir_all(&dir);
     let id = Uuid::new_v4();
-    let path = dir.join(format!("{id}.capability-di-gate.json"));
     let payload = json!({
         "event_id": id.to_string(),
         "event_type": "Capability_Di_Gate_Failed",
@@ -273,7 +267,7 @@ pub fn write_di_dead_letter(repo: &Path, err: &DiGateError, phase_name: &str, pr
         "emitted_at": Utc::now().to_rfc3339(),
         "emitter": "capability_di_gate",
     });
-    let _ = fs::write(path, serde_json::to_string_pretty(&payload).unwrap_or_default());
+    let _ = publish_dead_letter_via_port(repo, &payload, err.message.as_str());
 }
 
 /// Valida `requires_capability` de la fase antes de ignición.

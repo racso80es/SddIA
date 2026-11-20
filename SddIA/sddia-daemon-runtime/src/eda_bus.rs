@@ -25,6 +25,19 @@ fn normalize_rel(path: &str) -> String {
     }
 }
 
+fn bus_defaults_empty() -> EdBusPaths {
+    EdBusPaths {
+        pending: PathBuf::new(),
+        processing: PathBuf::new(),
+        processing_subscribers: PathBuf::new(),
+        processed: PathBuf::new(),
+        processed_subscribers: PathBuf::new(),
+        dead_letter: PathBuf::new(),
+        dead_letter_subscribers: PathBuf::new(),
+        subscriptions: PathBuf::from("SddIA/core/event-domain-subscriptions.json"),
+    }
+}
+
 fn bus_defaults_from_root(event_bus: &str) -> EdBusPaths {
     let root = normalize_rel(event_bus.trim_end_matches('/'));
     EdBusPaths {
@@ -55,7 +68,7 @@ pub fn load_eda_bus(repo: &Path) -> EdBusPaths {
         String::new()
     };
     let mut paths = if env_bus.is_empty() {
-        bus_defaults_from_root(".events")
+        bus_defaults_empty()
     } else {
         bus_defaults_from_root(&env_bus)
     };

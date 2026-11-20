@@ -70,6 +70,7 @@ mod tests {
             "domain",
             "dead-letter",
             "progress",
+            ".events",
         ] {
             let p = repo.join(name);
             if p.is_dir() {
@@ -322,6 +323,14 @@ mod tests {
     /// Excepciones explícitas para literales `.events/...` en código productivo (E-2 e higiene/retención).
     const VIRTUAL_PATH_ALLOW: &[(&str, &str)] = &[
         (
+            "SddIA/engine/execute-process/src/engine/fractal_bus.rs",
+            "detección de raíz legacy al stamp delivery fractal",
+        ),
+        (
+            "SddIA/engine/execute-process/src/engine/handlers/instance_creator.rs",
+            "scaffolding de instancia — topología legacy pendiente de purga operativa",
+        ),
+        (
             "SddIA/tools/event-bus-audit/src/main.rs",
             "herramienta de auditoría/higiene del bus de eventos",
         ),
@@ -339,7 +348,15 @@ mod tests {
         ),
     ];
 
-    const VIRTUAL_EVENT_SUBDIRS: &[&str] = &[".events/"];
+    // Literales de ruta (no campo Rust `.events`): comillas y/o barra.
+    const VIRTUAL_EVENT_SUBDIRS: &[&str] = &[
+        "\".events/\"",
+        "\".events\"",
+        "'.events/'",
+        "'.events'",
+        ".events/",
+        ".events\\",
+    ];
 
     fn collect_workspace_rs(dir: &Path, out: &mut Vec<PathBuf>) {
         let Ok(read) = fs::read_dir(dir) else {

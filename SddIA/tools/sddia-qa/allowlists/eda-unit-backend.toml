@@ -30,11 +30,7 @@ path_prefixes = [
 
 # Integration-in-src (T3 reclasificados; aún viven bajo #[cfg(test)] en engine).
 # Meta: preferir mover a execute-process/tests/** en ciclos posteriores.
-integration_src = [
-  "SddIA/engine/execute-process/src/engine/route_domain_core.rs",
-  "SddIA/engine/execute-process/src/engine/handlers/system_vitality.rs",
-  "SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs",
-]
+integration_src = []
 
 # E2E / tools con tests bajo src (T3)
 integration_tools_prefixes = [

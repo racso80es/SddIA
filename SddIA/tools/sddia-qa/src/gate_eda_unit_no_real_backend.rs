@@ -61,11 +61,7 @@ fn path_allowlisted(rel: &str) -> bool {
         return true;
     }
     // Integration-in-src (T3) — ver allowlists/eda-unit-backend.toml
-    const INTEGRATION_SRC: &[&str] = &[
-        "SddIA/engine/execute-process/src/engine/route_domain_core.rs",
-        "SddIA/engine/execute-process/src/engine/handlers/system_vitality.rs",
-        "SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs",
-    ];
+    const INTEGRATION_SRC: &[&str] = &[];
     if INTEGRATION_SRC.contains(&rel) {
         return true;
     }
