@@ -1,5 +1,4 @@
 ---
-
 feature_name: man-44-rechazar-apto-incoherente
 created: 2026-11-20
 updated: 2026-11-20T13:35:00Z
@@ -115,8 +114,13 @@ situational_notes:
 - WSPACE_MATERIALIZED NO_APTO — workspace PPR a9098555… solo detached.log (no bloquea)
 - accept_pr_handoff pending — L-HANDOFF-F5; MERGE/pr_url ausentes
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/; cierre Linear fuera de Veredicto
-execution_id: "a9098555-c861-40cc-8b13-c6871caf57e9"
+execution_id: a9098555-c861-40cc-8b13-c6871caf57e9
+validated_base_sha: b1376f215188352fc74b3db31fb6cf52e85eb29f
+validated_head_sha: 07a9cfe4d47d73d96e0591f0dcfb0f0095a867fd
+validated_tree_sha: ee001c857f29f8d1011cb020628fcc14f7501693
+diff_digest: sha256:c0a53bff57d2f24041610772c408dacb336c086c8259bccf90b0d849e42997fb
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
