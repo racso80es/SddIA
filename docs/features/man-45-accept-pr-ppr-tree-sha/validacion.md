@@ -1,7 +1,7 @@
 ---
 feature_name: man-45-accept-pr-ppr-tree-sha
-created: "2026-11-20"
-updated: "2026-11-20"
+created: 2026-11-20
+updated: 2026-11-20
 process: feature
 branch_name: feat/man-45-accept-pr-ppr-tree-sha
 persist_ref: docs/features/man-45-accept-pr-ppr-tree-sha
@@ -9,14 +9,18 @@ pbi_ref: MAN-45
 parent_ref: MAN-43
 document_id: PBI-75d12fd0
 phase: verificacion
-status: APTO
+agent: argos
 global: APTO
 verdict: aprobado
 approval_status: aprobado
 norm_ref: features-documentation-pattern@1.3.2
-execution_id: "73910788-b7e7-4a61-9ac2-72fedd024b2a"
-agent: argos
+execution_id: 73910788-b7e7-4a61-9ac2-72fedd024b2a
+validated_base_sha: bc7255e83c7ab7adb34e3d1369c4d6d7bb59265c
+validated_head_sha: 7d1af9b28338ee45fdbd09887b456497917e2623
+validated_tree_sha: b2bd8dfcb9e6b5954ee68e992496e11650a602a1
+diff_digest: sha256:86ed5861788dc7f2fc417874d66111641be0945fcf890fd8af309ec46ffae007
 ---
+
 # Validación — man-45-accept-pr-ppr-tree-sha
 
 ## global
