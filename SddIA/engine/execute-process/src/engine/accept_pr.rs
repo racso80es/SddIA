@@ -248,6 +248,9 @@ pub fn execute_accept_pr_phase(
                 &target_branch,
                 persist.as_deref(),
             ) {
+                if e.contains("apto_coherence_") {
+                    return Some(Err(e));
+                }
                 return Some(Err(format!("diff_seal_mismatch: {e}")));
             }
             if let Err(e) = invoke_git_manager(

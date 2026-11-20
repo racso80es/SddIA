@@ -1,13 +1,13 @@
 ---
 uuid: "4c448c82-de41-460f-b24f-82a84fa5ed69"
 name: "features-documentation-pattern"
-version: "1.3.1"
+version: "1.3.2"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
 category: "workflow"
 dependencies: []
-hash_signature: "sha256:a28d9e1e5f64f3a42aca060c2cedca892c8caa4d65d3aa3ceb0c542b1b62dde7"
+hash_signature: "sha256:7a177423613152896a065822e4163b86421c756700ece6e082a93792a2680d7b"
 ---
 
 ## Directriz Core
@@ -73,6 +73,16 @@ Los artefactos históricos con `merged_pr` / `merge_commit` en `validacion.md` p
 
 - Número de PR y OID de merge: GitHub API, `gh pr view`, o commit de merge en `main`.
 - No duplicar en `validacion.md` salvo necesidad de auditoría explícita del operador.
+
+## Resoluciones y elevación de `global: APTO` (MAN-44 / KZ-1)
+
+Tokens de **hito** o **diferimiento** **no** son canónicos para elevar `global` a `APTO` ni para sostener el sello/fusión del epílogo. En particular:
+
+- `resolution` ∈ denylist: `PASS_H1_MILESTONE` y cualquier `PASS_*_MILESTONE`
+- `milestone` elevador: `H*-only` (p. ej. `H1-only`)
+- flags `*_deferred: true` sobre hijos/fases del plan (p. ej. `h2_h6_deferred: true`)
+
+La aduana de coherencia (`apto_coherence`) invalida `global: APTO` si detecta estas señales, o si `execution` está blocked/parcial, o si quedan fases de `plan.md` sin evidencia de cierre. El rechazo es fricción accionable; no emite `System_Fracture_Detected`.
 
 ## Restricciones Duras (Aduana de Fricción)
 

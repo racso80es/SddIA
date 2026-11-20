@@ -4,7 +4,7 @@ context:
 - source-control
 - filesystem-ops
 contract: process-contract v1.4.0
-hash_signature: "sha256:f7a6ef21856490f3ac9b69133f948dcf54066d3a05fa7c5dc1019fdd3a289938"
+hash_signature: "sha256:465dba5c7ccb24c150a0c36c0836084de4230a9d6ea4906fa06ecb1cbddd5d76"
 inputs:
 - source_branch: Rama feature a fusionar hacia main (validada por git-operations antes de invocar)
 - author: Autor del merge para el evento PullRequest_Merged
@@ -26,7 +26,7 @@ phases:
   name: Auditoría Genómica
 - delegates_to:
   - skill:git-manager
-  intent: Hacer checkout a la rama main y ejecutar el merge de la rama origen.
+  intent: Validar sello diff + coherencia APTO (apto_coherence) antes del checkout/merge soberano; abortar sin merge si falla.
   name: Fusión Soberana
   requires_capability:
   - contract: proc.git_sync
@@ -100,6 +100,8 @@ Invocar **`action:emit-pr-merged-event`** con:
 Merge y push exitosos con higiene fallida: proceso `verdict: aprobado`, `status_code: 0`, con `hygiene_failure` explícito.
 
 ## Notas
+
+* **Pre-fusión coherencia (MAN-44):** `validate_for_accept_pr_merge` invoca `apto_coherence::validate_apto_coherence` antes de verificar el digest. Fallo → error `apto_coherence_*` / aborto sin merge; **sin** `System_Fracture_Detected`. Lab: `SDDIA_LAB_SKIP_APTO_COHERENCE`.
 
 * **Store SSOT:** identidad vía `EventUri` / `EventManagerPort` (`SddIA/events/events-contract.md` §4). ADU-CA7: `scan_presented_for_branch` consulta el puerto.
 * `context: pr-lifecycle` debe registrarse en `execution-contexts.md` y políticas del invocante.

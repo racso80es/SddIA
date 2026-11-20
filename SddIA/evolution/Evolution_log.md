@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `28c4eb5b-b61c-4024-b890-ba7a5f3bffa2` | 2026-11-20 | MAN-44 (KZ-1): aduana de coherencia documental APTO en delivery-close-cycle y accept-pr | CANONICO | `SddIA/evolution/28c4eb5b-b61c-4024-b890-ba7a5f3bffa2.md` |
 | `d9dce4a4-50d0-4f9f-9af0-2224a6856b3f` | 2026-11-20 | MAN-50: cierre definitivo MAN-43/MAN-49 (B-01 dead-letter vía puerto, B-02 higiene .events/, B-03a integration_src=[] y B-03b docs) | CANONICO | `SddIA/evolution/d9dce4a4-50d0-4f9f-9af0-2224a6856b3f.md` |
 | `dcb149cd-c795-4737-8446-e03ab907fe1d` | 2026-11-20 | MAN-49: remediación post-merge MAN-43 (R-01..R-04: cero mkdir raíz, watcher/sweep puerto, gates y genoma) | CANONICO | `SddIA/evolution/dcb149cd-c795-4737-8446-e03ab907fe1d.md` |
 | `33bf81d5-4d59-4eb6-b40d-f2664494463f` | 2026-11-17 | MAN-43 CI fix: excluir sddia-workspace-server de WASI y limpiar .events/ en unitarios | CANONICO | `SddIA/evolution/33bf81d5-4d59-4eb6-b40d-f2664494463f.md` |
