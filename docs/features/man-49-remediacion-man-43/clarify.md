@@ -1,4 +1,6 @@
 ---
+
+
 feature_name: man-49-remediacion-man-43
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -21,8 +23,8 @@ refine_workspace: ".SddIA/workspaces/refine-item/2e407038-fe9a-4bc6-8fd4-ca4cc19
 audit_ref: docs/audits/man-43-post-merge-audit-20261117.md
 parent_commit: ea20bd5bfc313a58168df213cadf02ba4e918320
 parent_pr: 454
-execution_id: "f01f024a-812e-4de3-a80a-6b6f3f2e0635"
 agents: mayeuta
+execution_id: "4c3af8a6-1acd-48d3-8a21-10959beb08e8"
 ---
 # Clarificación — man-49-remediacion-man-43
 

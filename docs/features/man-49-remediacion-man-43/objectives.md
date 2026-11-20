@@ -1,4 +1,6 @@
 ---
+
+
 feature_name: man-49-remediacion-man-43
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -22,8 +24,8 @@ parent_pr: 454
 norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-49.jsonl"
 refine_workspace: ".SddIA/workspaces/refine-item/2e407038-fe9a-4bc6-8fd4-ca4cc19355f2"
-execution_id: "f01f024a-812e-4de3-a80a-6b6f3f2e0635"
 agents: mayeuta
+execution_id: "4c3af8a6-1acd-48d3-8a21-10959beb08e8"
 ---
 # Objetivos — man-49-remediacion-man-43
 
