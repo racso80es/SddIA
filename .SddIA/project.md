@@ -33,6 +33,16 @@ docs_layout:
   fixes: docs/fixes
   todos_pending: docs/todos/pending
   todos_done: docs/todos/done
+mcp:
+  allowed_executables:
+    - cargo
+    - rustc
+    - ./sddia-run.sh
+    - sddia-run.sh
+    - rm
+    - ls
+    - test
+    - git
 ---
 
 # Manifiesto Core-self

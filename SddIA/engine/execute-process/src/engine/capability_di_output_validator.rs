@@ -1,7 +1,7 @@
 //! Validación JSON Schema del payload real post-cápsula (PBI-042 Hito 3 — R8).
 
 use super::capability_di_resolver::ResolvedBinding;
-use super::eda_bus_topology::{load_event_bus_topology, write_json_atomic};
+use super::eda_bus_topology::publish_dead_letter_via_port;
 use chrono::Utc;
 use jsonschema::Validator;
 use serde_json::{json, Value};
@@ -72,13 +72,7 @@ pub fn write_output_dead_letter(
     process_name: &str,
     contract: &str,
 ) {
-    let Ok(topo) = load_event_bus_topology(repo) else {
-        return;
-    };
-    let dir = repo.join(&topo.dead_letter);
-    let _ = fs::create_dir_all(&dir);
     let id = Uuid::new_v4();
-    let path = dir.join(format!("{id}.capability-di-output.json"));
     let payload = json!({
         "event_id": id.to_string(),
         "event_type": "Capability_Di_Output_Schema_Failed",
@@ -91,7 +85,7 @@ pub fn write_output_dead_letter(
         "emitted_at": Utc::now().to_rfc3339(),
         "emitter": "capability_di_output_validator",
     });
-    let _ = write_json_atomic(&path, &payload);
+    let _ = publish_dead_letter_via_port(repo, &payload, err.message.as_str());
 }
 
 /// Valida `payload` contra el schema del contrato del binding.
@@ -266,14 +260,14 @@ mod tests {
 
     #[test]
     fn ac_r8_dlq_written() {
+        let _h = crate::engine::eda_port::test_harness::EventManagerTestHarness::new();
         let td = fixture_repo();
         let err = OutputValidatorError {
             code: OutputValidatorCode::SchemaMismatch,
             message: "test".into(),
         };
         write_output_dead_letter(td.path(), &err, "phase", "feature", "doc.closure");
-        let dlq = td.path().join("dead-letter");
-        let count = fs::read_dir(&dlq).unwrap().count();
-        assert!(count >= 1);
+        let ids = crate::engine::eda_port::list_dlq_event_ids(td.path(), 100).expect("list_dlq");
+        assert!(!ids.is_empty(), "DLQ vía puerto debe contener el fallo");
     }
 }

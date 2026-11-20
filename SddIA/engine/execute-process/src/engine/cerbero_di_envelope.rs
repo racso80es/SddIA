@@ -1,7 +1,7 @@
 //! Revalidación Cerbero del envelope `di_binding` empaquetado (PBI-042 Hito 4 — R9).
 
 use super::capability_di_resolver::{self, ResolvedBinding};
-use super::eda_bus_topology::{load_event_bus_topology, write_json_atomic};
+use super::eda_bus_topology::publish_dead_letter_via_port;
 use crate::core::parser::parse_frontmatter;
 use chrono::Utc;
 use jsonschema::Validator;
@@ -204,13 +204,7 @@ pub fn write_cerbero_envelope_dead_letter(
     phase_name: &str,
     process_name: &str,
 ) {
-    let Ok(topo) = load_event_bus_topology(repo) else {
-        return;
-    };
-    let dir = repo.join(&topo.dead_letter);
-    let _ = fs::create_dir_all(&dir);
     let id = Uuid::new_v4();
-    let path = dir.join(format!("{id}.cerbero-di-envelope.json"));
     let payload = json!({
         "event_id": id.to_string(),
         "event_type": "Cerbero_Di_Envelope_Failed",
@@ -222,7 +216,7 @@ pub fn write_cerbero_envelope_dead_letter(
         "emitted_at": Utc::now().to_rfc3339(),
         "emitter": "cerbero_di_envelope",
     });
-    let _ = write_json_atomic(&path, &payload);
+    let _ = publish_dead_letter_via_port(repo, &payload, err.message.as_str());
 }
 
 /// Valida objetos `di_binding` empaquetados post-gate y post-RBAC.

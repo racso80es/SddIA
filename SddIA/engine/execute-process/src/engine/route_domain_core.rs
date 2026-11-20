@@ -2181,25 +2181,16 @@ fn dispatch_cognitive_subscriber(
 }
 
 fn write_dead_letter_fallback(
-    path: &Path,
+    repo: &Path,
     event_uuid: &str,
     sid: &str,
     event_type: &str,
     error_trace: &str,
     delegation_status: &str,
 ) {
-    let _ = write_json_atomic(
-        path,
-        &json!({
-            "event_uuid": event_uuid,
-            "subscriber": sid,
-            "state": "dead-letter",
-            "started_at": super::eda_bus_topology::iso_now(),
-            "failed_at": super::eda_bus_topology::iso_now(),
-            "error_trace": error_trace,
-            "result_status": delegation_status,
-            "event_type": event_type,
-        }),
+    let reason = format!("{delegation_status}: {error_trace} ({event_type})");
+    let _ = super::eda_bus_topology::nack_subscriber_dead_letter_via_port(
+        repo, event_uuid, sid, &reason,
     );
 }
 
@@ -2274,11 +2265,8 @@ fn handle_subscriber(
     };
 
     let (sid, status) = if let Err(promote_err) = promote_result {
-        let dead = repo
-            .join(&bus.dead_letter_subscribers)
-            .join(format!("{event_uuid}.{sid}.json"));
         write_dead_letter_fallback(
-            &dead,
+            repo,
             event_uuid,
             &sid,
             event_type,
@@ -2354,7 +2342,7 @@ pub fn route_domain_event(repo: &Path, event_uri: &str, batch_mode_iota: bool) -
             "success": false,
             "exitCode": 1,
             "data": null,
-            "error": "event path must not be runtime events.redb; use pending/{event_id}.json",
+            "error": "event path must not be runtime eda-store.redb; use pending/{event_id}.json",
         });
     }
 
@@ -2507,22 +2495,12 @@ pub fn route_domain_event(repo: &Path, event_uri: &str, batch_mode_iota: bool) -
 
     let planned = plan_route_for_repo(repo, &registry, &event_type);
     if planned.dead_letter_no_subscriber {
-        let dl = repo.join(&bus.dead_letter).join(format!("{event_uuid}.json"));
-        let _ = write_json_atomic(
-            &dl,
-            &json!({
-                "event_uuid": event_uuid,
-                "event_type": event_type,
-                "state": "dead-letter",
-                "reason": "no_subscriber",
-                "parent_path": rel_event_path(repo, &event_path),
-            }),
-        );
+        let _ = super::eda_port::move_to_dlq(repo, &event_uuid, "no_subscriber");
         let mut data = Map::from_iter([
             ("success".into(), json!(true)),
             ("disposition".into(), json!("dead-letter")),
             ("reason".into(), json!("no_subscriber")),
-            ("dead_letter_path".into(), json!(rel_event_path(repo, &dl))),
+            ("dead_letter_event_id".into(), json!(event_uuid)),
         ]);
         merge_route_result_identity(
             &mut data,
@@ -2742,7 +2720,7 @@ mod blocking_tests {
         .unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending","processed":".events/processed","dead_letter":".events/dead-letter"}}"#,
+            r#"{"eda_bus":{"pending":"lab-bus/pending","processed":"lab-bus/processed","dead_letter":"lab-bus/dead-letter"}}"#,
         )
         .unwrap();
         fs::create_dir_all(repo.join("SddIA/events/domain")).unwrap();
@@ -2752,7 +2730,7 @@ mod blocking_tests {
         )
         .unwrap();
         let event_id = "a4630000-0000-4000-8000-000000000004";
-        let rel = format!(".events/pending/{event_id}.json");
+        let rel = format!("lab-bus/pending/{event_id}.json");
         let abs = repo.join(&rel);
         let mut body = json!({
             "event_id": event_id,
@@ -2884,7 +2862,7 @@ mod blocking_tests {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         let uuid = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
-        let pending = repo.join(".events/pending");
+        let pending = repo.join("lab-bus/pending");
         fs::create_dir_all(&pending).unwrap();
         let event_path = pending.join(format!("{uuid}.json"));
         fs::write(
@@ -2959,13 +2937,13 @@ mod blocking_tests {
 
     fn test_reanchor_bus() -> EventBusTopology {
         EventBusTopology {
-            pending: ".events/pending".into(),
-            processing: ".events/processing".into(),
-            processing_subscribers: ".events/processing/subscribers".into(),
-            processed: ".events/processed".into(),
-            processed_subscribers: ".events/processed/subscribers".into(),
-            dead_letter: ".events/dead-letter".into(),
-            dead_letter_subscribers: ".events/dead-letter/subscribers".into(),
+            pending: "lab-bus/pending".into(),
+            processing: "lab-bus/processing".into(),
+            processing_subscribers: "lab-bus/processing/subscribers".into(),
+            processed: "lab-bus/processed".into(),
+            processed_subscribers: "lab-bus/processed/subscribers".into(),
+            dead_letter: "lab-bus/dead-letter".into(),
+            dead_letter_subscribers: "lab-bus/dead-letter/subscribers".into(),
             subscriptions: "SddIA/core/event-domain-subscriptions.json".into(),
         }
     }
@@ -2975,7 +2953,7 @@ mod blocking_tests {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         let uuid = "aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa";
-        let pending = repo.join(".events/pending");
+        let pending = repo.join("lab-bus/pending");
         fs::create_dir_all(&pending).unwrap();
         let live = pending.join(format!("{uuid}.json"));
         fs::write(&live, "{}").unwrap();
@@ -2989,8 +2967,8 @@ mod blocking_tests {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         let uuid = "bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb";
-        let pending = repo.join(".events/pending");
-        let processed = repo.join(".events/processed");
+        let pending = repo.join("lab-bus/pending");
+        let processed = repo.join("lab-bus/processed");
         fs::create_dir_all(&pending).unwrap();
         fs::create_dir_all(&processed).unwrap();
         let ghost = pending.join(format!("{uuid}.json"));
@@ -3006,8 +2984,8 @@ mod blocking_tests {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         let uuid = "cccccccc-3333-4333-8333-cccccccccccc";
-        let pending = repo.join(".events/pending");
-        let dl = repo.join(".events/dead-letter");
+        let pending = repo.join("lab-bus/pending");
+        let dl = repo.join("lab-bus/dead-letter");
         fs::create_dir_all(&pending).unwrap();
         fs::create_dir_all(&dl).unwrap();
         let ghost = pending.join(format!("{uuid}.json"));
@@ -3023,7 +3001,7 @@ mod blocking_tests {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         let uuid = "dddddddd-4444-4444-8444-dddddddddddd";
-        let ghost = repo.join(".events/pending").join(format!("{uuid}.json"));
+        let ghost = repo.join("lab-bus/pending").join(format!("{uuid}.json"));
         let bus = test_reanchor_bus();
         assert!(resolve_reanchor_event_path(repo, &bus, uuid, &ghost).is_none());
     }
@@ -3047,7 +3025,7 @@ mod blocking_tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"pending":"lab-bus/pending"}}"#,
         )
         .unwrap();
         emit_dlt_batch_fracture(
@@ -3107,13 +3085,13 @@ mod blocking_tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending"},"eda_instance":{"dlt_reanchor":".SddIA/dlt/reanchor-queue"}}"#,
+            r#"{"eda_bus":{"pending":"lab-bus/pending"},"eda_instance":{"dlt_reanchor":".SddIA/dlt/reanchor-queue"}}"#,
         )
         .unwrap();
         let causa =
             "iota-relay-publish-error: status=500 fetch failed | cause: ENETUNREACH";
         emit_dlt_batch_fracture(repo, causa);
-        let pending = repo.join(".events/pending");
+        let pending = repo.join("lab-bus/pending");
         if pending.is_dir() {
             for ent in fs::read_dir(&pending).unwrap() {
                 let p = ent.unwrap().path();
@@ -3142,12 +3120,12 @@ mod blocking_tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"pending":"lab-bus/pending"}}"#,
         )
         .unwrap();
         let causa = "iota-relay-publish-error: status=500 Transaction execution failed due to issues with transaction inputs, please review the errors and try again:\n- Object ID 0x93e4c1ee3a81aa2815b2f23485885a37f6c97eb20d7e58458d8dcc4dce6ff880 Version 850727115 Digest 5fX2xzFeULF5XhHLu3iLNotiKiR5bu8CVwJC9j5X6GBa is not available for consumption, current version: 850727116";
         emit_dlt_batch_fracture(repo, causa);
-        let pending = repo.join(".events/pending");
+        let pending = repo.join("lab-bus/pending");
         if pending.is_dir() {
             for ent in fs::read_dir(&pending).unwrap() {
                 let p = ent.unwrap().path();
@@ -3171,12 +3149,12 @@ mod blocking_tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending"},"eda_instance":{"dlt_reanchor":".SddIA/dlt/reanchor-queue"}}"#,
+            r#"{"eda_bus":{"pending":"lab-bus/pending"},"eda_instance":{"dlt_reanchor":".SddIA/dlt/reanchor-queue"}}"#,
         )
         .unwrap();
         let causa = "merkle-batch-preseal failed: iota-relay-publish-error: status=500 Failed to sign transaction by a quorum of validators because one or more of its objects is reserved for another transaction. Other transactions locking these objects:\n- 7R6vWf14dsfmfGtQKJXAcjagG5G5phFMYwTKtvUCKfTX (stake 35.14)";
         emit_dlt_batch_fracture(repo, causa);
-        let pending = repo.join(".events/pending");
+        let pending = repo.join("lab-bus/pending");
         if pending.is_dir() {
             for ent in fs::read_dir(&pending).unwrap() {
                 let p = ent.unwrap().path();
@@ -3207,7 +3185,7 @@ mod blocking_tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"pending":"lab-bus/pending"}}"#,
         )
         .unwrap();
         emit_dlt_batch_fracture(
@@ -3230,7 +3208,7 @@ mod blocking_tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"pending":"lab-bus/pending"}}"#,
         )
         .unwrap();
         emit_dlt_batch_fracture(repo, "iota-relay-unreachable: Connection refused");
@@ -3279,7 +3257,7 @@ mod blocking_tests {
     fn witness_local_qa_a55f1d12_subscriber_exit_one() {
         let repo = repo_root();
         let path = repo.join(
-            ".events/dead-letter/subscribers/a55f1d12-003b-40d3-ae21-6e69d575c257.argos.pull-request-review.json",
+            "lab-bus/dead-letter/subscribers/a55f1d12-003b-40d3-ae21-6e69d575c257.argos.pull-request-review.json",
         );
         if !path.is_file() {
             return;
@@ -3998,7 +3976,7 @@ mod blocking_tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending","subscriptions":"SddIA/core/event-domain-subscriptions.json"}}"#,
+            r#"{"eda_bus":{"store":".SddIA/runtime/eda-store.redb","pending":"lab-bus/pending","subscriptions":"SddIA/core/event-domain-subscriptions.json"}}"#,
         )
         .unwrap();
         fs::write(repo.join("SddIA/core/event-domain-subscriptions.json"), "{}\n").unwrap();
@@ -4053,13 +4031,13 @@ mod blocking_tests {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         let bus = EventBusTopology {
-            pending: ".events/pending".into(),
-            processing: ".events/processing".into(),
-            processing_subscribers: ".events/processing/subscribers".into(),
-            processed: ".events/processed".into(),
-            processed_subscribers: ".events/processed/subscribers".into(),
-            dead_letter: ".events/dead-letter".into(),
-            dead_letter_subscribers: ".events/dead-letter/subscribers".into(),
+            pending: "lab-bus/pending".into(),
+            processing: "lab-bus/processing".into(),
+            processing_subscribers: "lab-bus/processing/subscribers".into(),
+            processed: "lab-bus/processed".into(),
+            processed_subscribers: "lab-bus/processed/subscribers".into(),
+            dead_letter: "lab-bus/dead-letter".into(),
+            dead_letter_subscribers: "lab-bus/dead-letter/subscribers".into(),
             subscriptions: "SddIA/core/event-domain-subscriptions.json".into(),
         };
         let event_uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
@@ -4080,7 +4058,7 @@ mod blocking_tests {
             &mut event,
             event_uuid,
             "Domain_Entity_Created",
-            &repo.join(".events/pending/missing.json"),
+            &repo.join("lab-bus/pending/missing.json"),
             &json!({}),
             "core",
             "sync",
@@ -4112,7 +4090,7 @@ mod blocking_tests {
     fn domain_process_catalog_inputs_include_ecst() {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
-        let path = repo.join(".events/pending/11111111-1111-4111-8111-111111111111.json");
+        let path = repo.join("lab-bus/pending/11111111-1111-4111-8111-111111111111.json");
         const KEYS: &[&str] = &[
             "pull-request-review",
             "tracker-stamp",
@@ -4411,7 +4389,7 @@ mod tier_dispatch {
             "event_type": "Domain_Probe",
             "payload": { "note": "ecst-desde-store" }
         });
-        let missing = root.join(".events/pending").join(format!("{event_id}.json"));
+        let missing = root.join("lab-bus/pending").join(format!("{event_id}.json"));
         let marker = root.join("spawned");
         let stdin_path = root.join("stdin.json");
         let none_bin = root.join("none.sh");
@@ -4486,7 +4464,7 @@ mod tier_dispatch {
                 "author": "tester"
             }
         });
-        let missing = root.join(".events/pending").join(format!("{event_id}.json"));
+        let missing = root.join("lab-bus/pending").join(format!("{event_id}.json"));
         let marker = root.join("cognitive_spawned");
         let spawn_bin = root.join("spawn.sh");
         write_exec(
@@ -4594,7 +4572,7 @@ mod aut52_route_redb {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"store":".SddIA/runtime/eda-store.redb","pending":"lab-bus/pending"}}"#,
         )
         .unwrap();
         fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
@@ -4604,7 +4582,7 @@ mod aut52_route_redb {
         assert!(is_runtime_db_event_path(repo, &db));
         assert!(!is_runtime_db_event_path(
             repo,
-            Path::new(".events/pending/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.json")
+            Path::new("lab-bus/pending/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.json")
         ));
     }
 
@@ -4615,10 +4593,10 @@ mod aut52_route_redb {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"store":".SddIA/runtime/eda-store.redb","pending":"lab-bus/pending"}}"#,
         )
         .unwrap();
-        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        fs::create_dir_all(repo.join("lab-bus/pending")).unwrap();
         fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
         let db = resolved_redb_path(repo).unwrap();
         fs::write(&db, b"").unwrap();

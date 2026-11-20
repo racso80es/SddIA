@@ -16,7 +16,7 @@ Este documento rige la familia **Event** (Clases de Evento) y el envelope **ECST
 
 ## 1. Identidad atómica de la Clase (innegociable)
 
-Toda Clase de Evento debe definirse mediante un archivo `{name}.md` bajo `directories.events/{event_family}/` con cabecera YAML obligatoria:
+Toda Clase de Evento debe definirse mediante un archivo `{name}.md` bajo ``directories.events` / `{event_family}/`` con cabecera YAML obligatoria:
 
 | Campo | Obligatorio | Descripción |
 |-------|:-----------:|-------------|
@@ -73,13 +73,11 @@ Toda instancia persistida en el bus debe ser JSON UTF-8 con la forma:
 
 ## 4. Ciclo de vida del bus (Ola C V3+)
 
-Resolución vía `event_bus` / `eda_bus` en `cumulo.paths.json`. Modo de almacenamiento: variable de entorno `SDDIA_EVENT_STORE` → `filesystem` | `dual` | **`redb`** (default si ausente o desconocido; ver `sddia-event-store/src/gate.rs`).
+Resolución operativa vía **`EventManagerPort` ^2.0.0** / `EventUri`. La configuración `event_bus` / `eda_bus` en `cumulo.paths.json` declara tablas lógicas y suscripciones; el store de instancia lo resuelve `sddia-event-manager-host` (bóveda `SDDIA_EVENT_MANAGER_*`). No hay variable de entorno de modo FS/dual como SSOT.
 
-| Modo | Padre ECST | Estado de entrega por suscriptor | Testigos FS |
-|------|------------|----------------------------------|-------------|
-| `redb` | Tabla `events` en `.SddIA/runtime/events.redb` | SSOT: tabla `subscriber_delivery` | No (salvo sidechannels) |
-| `filesystem` | JSON inmutable en `eda_bus.pending` | Testigos bajo `processing/processed/dead-letter/subscribers/` | Sí |
-| `dual` | Store + JSON pending | Store **y** testigos FS durante transición | Sí |
+| Capa | Padre ECST | Estado de entrega por suscriptor | Persistencia |
+|------|------------|----------------------------------|--------------|
+| Puerto / host | ECST en store de instancia (Redb) | SSOT: `subscriber_delivery` vía puerto | Sin cola FS legacy |
 
 ```mermaid
 flowchart TB

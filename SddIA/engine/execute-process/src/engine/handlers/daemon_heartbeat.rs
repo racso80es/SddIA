@@ -864,10 +864,10 @@ mod tests {
         let repo = dir.path();
         std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
-        std::fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        std::fs::create_dir_all(repo.join("lab-bus/pending")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./.events/pending"}}"#,
+            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./lab-bus/pending"}}"#,
         )
         .unwrap();
         std::fs::write(
@@ -902,7 +902,7 @@ mod tests {
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"store":".SddIA/runtime/events.redb","pending":"./.events/pending"}}"#,
+            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"store":".SddIA/runtime/eda-store.redb","pending":"./lab-bus/pending"}}"#,
         )
         .unwrap();
         std::fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
@@ -916,7 +916,7 @@ mod tests {
         let audit = audit_staleness(repo).unwrap();
         let eid = audit.fractures[0]["event_id"].as_str().unwrap();
         assert!(
-            !repo.join(".events/pending").join(format!("{eid}.json")).is_file(),
+            !repo.join("lab-bus/pending").join(format!("{eid}.json")).is_file(),
             "redb no deja JSON pending"
         );
         let rows = crate::engine::eda_port::load_domain_ecsts(repo, 64).unwrap();
@@ -955,10 +955,10 @@ mod tests {
         let repo = dir.path();
         std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
-        std::fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        std::fs::create_dir_all(repo.join("lab-bus/pending")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./.events/pending"}}"#,
+            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./lab-bus/pending"}}"#,
         )
         .unwrap();
         std::fs::write(
@@ -980,7 +980,7 @@ mod tests {
             "pre-boot no fractura: {:?}",
             audit.fractures
         );
-        let pending = std::fs::read_dir(repo.join(".events/pending")).unwrap().count();
+        let pending = std::fs::read_dir(repo.join("lab-bus/pending")).unwrap().count();
         assert_eq!(pending, 0, "pending debe quedar vacío");
         let state: Value = serde_json::from_str(
             &std::fs::read_to_string(repo.join(".SddIA/daemons/state/heartbeat-audit.json"))
@@ -1005,7 +1005,7 @@ mod tests {
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./.events/pending"}}"#,
+            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./lab-bus/pending"}}"#,
         )
         .unwrap();
         let hb = repo.join(".SddIA/daemons/state/heartbeats");
@@ -1027,6 +1027,6 @@ mod tests {
         )
         .unwrap();
         assert!(state["daemons"]["event-watcher"]["last_heartbeat_at"].is_string());
-        assert!(!repo.join(".events/telemetry").exists());
+        assert!(!repo.join("lab-bus/telemetry").exists());
     }
 }

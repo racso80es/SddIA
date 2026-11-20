@@ -70,7 +70,7 @@ Proceso V5 **Aduana de Fricción** reactiva al estímulo **`PullRequest_Presente
 
 ## Disparo EDA
 
-1. `delivery-close-cycle` emite **`PullRequest_Presented`** vía gate store/FS según `SDDIA_EVENT_STORE` (ruta lógica `eda_bus.pending`).
+1. `delivery-close-cycle` emite **`PullRequest_Presented`** vía `EventManagerPort` (familia pending / `EventUri`).
 2. Proceso **`route-domain-event`** / watcher despacha suscriptor **`pull-request-review`** (agente **Argos**).
 3. La aduana evalúa; **`delivery_state: failed`** bloquea materialización downstream.
 

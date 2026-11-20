@@ -60,6 +60,21 @@ fn normalize_rel(path: &str) -> String {
     }
 }
 
+
+/// Topología vacía (sin raíz FS legacy). Fallo cerrado si alguien resuelve paths vacíos.
+fn bus_defaults_empty() -> EventBusTopology {
+    EventBusTopology {
+        pending: String::new(),
+        processing: String::new(),
+        processing_subscribers: String::new(),
+        processed: String::new(),
+        processed_subscribers: String::new(),
+        dead_letter: String::new(),
+        dead_letter_subscribers: String::new(),
+        subscriptions: "SddIA/core/event-domain-subscriptions.json".to_string(),
+    }
+}
+
 fn bus_defaults_from_root(event_bus: &str) -> EventBusTopology {
     let event_bus = normalize_rel(event_bus.trim_end_matches('/'));
     EventBusTopology {
@@ -82,7 +97,7 @@ pub fn load_event_bus_topology(repo: &Path) -> Result<EventBusTopology, String> 
         String::new()
     };
     let mut defaults = if env_bus.is_empty() {
-        bus_defaults_from_root(".events")
+        bus_defaults_empty()
     } else {
         bus_defaults_from_root(&env_bus)
     };
@@ -201,6 +216,33 @@ pub fn subscriber_id(subscriber: &Value) -> String {
 
 pub fn iso_now() -> String {
     Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string()
+}
+
+
+/// Publica ECST de fallo y lo mueve a DLQ vía `EventManagerPort` (sin I/O FS).
+pub fn publish_dead_letter_via_port(
+    repo: &Path,
+    event: &Value,
+    reason: &str,
+) -> Result<(), String> {
+    let event_id = event
+        .get("event_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| "publish_dead_letter_via_port: falta event_id".to_string())?;
+    let _ = eda_port::record_ecst(repo, "domain", event);
+    eda_port::move_to_dlq(repo, event_id, reason)
+}
+
+/// Nack de suscriptor + DLQ del evento padre (sin I/O FS).
+pub fn nack_subscriber_dead_letter_via_port(
+    repo: &Path,
+    event_id: &str,
+    subscriber_id: &str,
+    reason: &str,
+) -> Result<(), String> {
+    let _ = eda_port::record_delivery_nack(repo, event_id, subscriber_id);
+    eda_port::move_to_dlq(repo, event_id, reason)
 }
 
 pub fn write_json_atomic(path: &Path, payload: &Value) -> Result<(), String> {
