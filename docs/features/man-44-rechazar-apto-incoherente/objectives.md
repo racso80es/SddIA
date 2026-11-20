@@ -1,4 +1,6 @@
 ---
+
+
 feature_name: man-44-rechazar-apto-incoherente
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -19,7 +21,7 @@ norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-44.jsonl"
 refine_workspace: ".SddIA/workspaces/refine-item/41124dbc-febe-4ad8-a955-4e58560423f5"
 agents: mayeuta
-execution_id: "e049f4db-4e0e-41d0-b651-e9b9de645f71"
+execution_id: "a9098555-c861-40cc-8b13-c6871caf57e9"
 ---
 # Objetivos — man-44-rechazar-apto-incoherente
 

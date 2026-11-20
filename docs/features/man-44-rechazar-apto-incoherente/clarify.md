@@ -1,4 +1,6 @@
 ---
+
+
 feature_name: man-44-rechazar-apto-incoherente
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -18,7 +20,7 @@ refine_workspace: ".SddIA/workspaces/refine-item/41124dbc-febe-4ad8-a955-4e58560
 audit_ref: docs/audits/man-43-h1-milestone-razonamiento-20261111.md
 kaizen_ref: KZ-1
 agents: mayeuta
-execution_id: "e049f4db-4e0e-41d0-b651-e9b9de645f71"
+execution_id: "a9098555-c861-40cc-8b13-c6871caf57e9"
 ---
 # Clarificación — man-44-rechazar-apto-incoherente
 

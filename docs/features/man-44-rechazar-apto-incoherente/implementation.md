@@ -1,4 +1,6 @@
 ---
+
+
 feature_name: man-44-rechazar-apto-incoherente
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -14,7 +16,7 @@ agent: tekton
 phase: ejecucion
 status: complete
 norm_ref: features-documentation-pattern@1.3.1
-execution_id: "e049f4db-4e0e-41d0-b651-e9b9de645f71"
+execution_id: "a9098555-c861-40cc-8b13-c6871caf57e9"
 ---
 # Implementación — man-44-rechazar-apto-incoherente
 

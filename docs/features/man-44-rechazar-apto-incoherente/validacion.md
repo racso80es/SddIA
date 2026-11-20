@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-44-rechazar-apto-incoherente
 created: 2026-11-20
 updated: 2026-11-20T13:35:00Z
@@ -18,11 +19,11 @@ document_id: PBI-8205539f
 tracker_provider: linear
 tracker_ref: MAN-44
 tracker_channel: .SddIA/state/tracker-outbound/MAN-44.jsonl
-correlation_id: 9428ba36-692a-404c-937c-e71841b61edb
-pr_presented_event_id: 9428ba36-692a-404c-937c-e71841b61edb
-audit_event_reference: 9428ba36-692a-404c-937c-e71841b61edb
-workspace_path_injected: .SddIA/workspaces/pull-request-review/9296c415-c644-49a9-a764-484ef844d24b/
-workspace_materialized: absent
+correlation_id: 67bc08f9-9c2f-4e9c-9d32-68fb494efeeb
+pr_presented_event_id: 67bc08f9-9c2f-4e9c-9d32-68fb494efeeb
+audit_event_reference: 67bc08f9-9c2f-4e9c-9d32-68fb494efeeb
+workspace_path_injected: .SddIA/workspaces/pull-request-review/a9098555-c861-40cc-8b13-c6871caf57e9/
+workspace_materialized: partial
 norm_ref: features-documentation-pattern@1.3.1
 global: APTO
 pbi_archived: false
@@ -37,12 +38,12 @@ git_manager_invoked: false
 git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw
 git_evidence_source: evidence-bridge-session-native_state+handoff-machine
 formal_execute_process: true
-formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-20T12:29:24Z TECH/GIT APTO notes=idempotent-hit; prior prosthesis_subprocess @ 2026-11-20T12:27:48Z formal_evidence_detail=verify-process-integrity: OK'
+formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-20T12:33:13Z TECH/GIT APTO notes=idempotent-hit; prior prosthesis_subprocess @ 2026-11-20T12:27:48Z formal_evidence_detail=verify-process-integrity: OK'
 handoff_machine_file: present
 handoff_evidence_block_pre: present
-evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit + machine native_state @ 2026-11-20T12:29:24Z); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado
-shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 9428ba36… · exec 9296c415…
-scope: PPR Veredicto y bloqueo — PullRequest_Presented rama feat/man-44-rechazar-apto-incoherente (CID 9428ba36… · exec 9296c415…)
+evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit + machine native_state @ 2026-11-20T12:33:13Z); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado
+shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 67bc08f9… · exec a9098555…
+scope: PPR Veredicto y bloqueo — PullRequest_Presented rama feat/man-44-rechazar-apto-incoherente (CID 67bc08f9… · exec a9098555…)
 checks:
   global: APTO
   branch: APTO
@@ -101,26 +102,21 @@ non_blocking_findings:
 - MERGE_ALREADY_OBSERVED
 - ACCEPT_PR_HANDOFF
 situational_notes:
-- Fase Veredicto y bloqueo · CID 9428ba36-692a-404c-937c-e71841b61edb · exec 9296c415-c644-49a9-a764-484ef844d24b
+- Fase Veredicto y bloqueo · CID 67bc08f9-9c2f-4e9c-9d32-68fb494efeeb · exec a9098555-c861-40cc-8b13-c6871caf57e9
 - 'Evidence Bridge session: source=native_state · TECH/GIT APTO · notes=idempotent-hit'
-- 'Evidence Bridge machine: source=native_state @ 2026-11-20T12:29:24Z · TECH/GIT APTO · notes=idempotent-hit (copia; sin stdout inventado)'
+- 'Evidence Bridge machine: source=native_state @ 2026-11-20T12:33:13Z · TECH/GIT APTO · notes=idempotent-hit (copia; sin stdout inventado)'
 - 'Prior prosthesis_subprocess @ 2026-11-20T12:27:48Z · formal_evidence_detail=verify-process-integrity: OK'
 - F2 heredado PASS_F2_DOC APTO (mismo CID Triaje documental)
-- F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md H0–H5/tests OK)
+- F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md gates OK)
 - F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked/permanent
 - Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS + evolution.relacionado + implementation touchpoints
 - Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO; pending/ vacío; tracker.provider=linear
 - 'CODE_TOUCHPOINT: apto_coherence.rs + puertas DCC/diff_seal/accept_pr + norma/process + fixtures ka-close-{1,2,3}'
-- WSPACE_MATERIALIZED NO_APTO — workspace PPR 9296c415… ausente/vacío en FS (no bloquea)
+- WSPACE_MATERIALIZED NO_APTO — workspace PPR a9098555… solo detached.log (no bloquea)
 - accept_pr_handoff pending — L-HANDOFF-F5; MERGE/pr_url ausentes
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/; cierre Linear fuera de Veredicto
-execution_id: 9296c415-c644-49a9-a764-484ef844d24b
-validated_base_sha: b1376f215188352fc74b3db31fb6cf52e85eb29f
-validated_head_sha: dd4be50854075e2201e14871d8f99099dabe2a9d
-validated_tree_sha: 910ec8e384ae228f7b8debe6e020794d19a90578
-diff_digest: sha256:f4f623d277d7a3be8bbfd85dea2d4122b473f04bbadc9e190c0628fa8f92ff46
+execution_id: "a9098555-c861-40cc-8b13-c6871caf57e9"
 ---
-
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
@@ -142,7 +138,7 @@ Copia literal machine/session — **no** stdout Shell inventado:
 |-------|-------|
 | `schema` | `kalma2-agent-runtime-evidence/v1` |
 | `source` (session) | `native_state` |
-| `source` (machine handoff) | `native_state` @ `2026-11-20T12:29:24Z` |
+| `source` (machine handoff) | `native_state` @ `2026-11-20T12:33:13Z` |
 | `notes` (session/machine) | `idempotent-hit` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
@@ -151,7 +147,7 @@ Copia literal machine/session — **no** stdout Shell inventado:
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — Shell Rejected; sin `gitStdout` físico |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**`; `pending/` vacío |
 
-Fuente: prompt Runtime evidence (session) + `docs/features/man-44-rechazar-apto-incoherente/_agent_handoff.md` § Runtime evidence (machine) @ `2026-11-20T12:29:24Z`.
+Fuente: prompt Runtime evidence (session) + `docs/features/man-44-rechazar-apto-incoherente/_agent_handoff.md` § Runtime evidence (machine) @ `2026-11-20T12:33:13Z`.
 
 ## Ingesta
 
@@ -159,10 +155,10 @@ Fuente: prompt Runtime evidence (session) + `docs/features/man-44-rechazar-apto-
 |-------|------------|
 | `persist_ref` | `docs/features/man-44-rechazar-apto-incoherente` |
 | `pbi_ref` (inyectado) | vacío → resuelto `MAN-44` / `document_id: PBI-8205539f` (Linear) |
-| `correlation_id` / Presented | `9428ba36-692a-404c-937c-e71841b61edb` |
+| `correlation_id` / Presented | `67bc08f9-9c2f-4e9c-9d32-68fb494efeeb` |
 | `branch_name` (runtime) | `feat/man-44-rechazar-apto-incoherente` |
 | Worktree HEAD (FS) | `.git/HEAD` → `refs/heads/feat/man-44-rechazar-apto-incoherente` |
-| `workspace_path` | `.SddIA/workspaces/pull-request-review/9296c415…/` — **ausente/vacío** en FS |
+| `workspace_path` | `.SddIA/workspaces/pull-request-review/a9098555…/` — solo `detached.log` |
 | Evento Merged (este CID) | **ausente** |
 | `tracker.provider` | `linear` → sin fichero nuevo en `docs/todos/pending\|done/` |
 
@@ -171,32 +167,31 @@ Fuente: prompt Runtime evidence (session) + `docs/features/man-44-rechazar-apto-
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
 | `F2_DOC_GATE` | **APTO** | cascada objectives→clarify→spec→plan→implementation→execution + YAML 1.3.1 + evolution `28c4eb5b-…` |
-| `F3_TECH_GATE` | **NO_APTO** | Triaje técnico no materializado este CID; **no bloquea** (R1 TECH_FORMAL APTO + `execution.md` H0–H5/tests OK) |
+| `F3_TECH_GATE` | **NO_APTO** | Triaje técnico no materializado este CID; **no bloquea** (R1 TECH_FORMAL APTO + `execution.md` gates OK) |
 | `F4_RBAC_GATE` / `F4_RBAC_CERBERO` | **APTO** | `CERBERO_PPR_NOT_REVOKED` — PPR ∉ revoked/permanent |
-| `CODE_TOUCHPOINT_PRESENT` | **APTO** | `apto_coherence.rs` + puertas DCC/`diff_seal`/`accept_pr` |
+| `CODE_TOUCHPOINT_PRESENT` | **APTO** | `apto_coherence.rs` + puertas DCC/`diff_seal`/`accept_pr` + norma/process + fixtures |
 | `FIXTURES_KA_CLOSE` | **APTO** | `_fixtures/ka-close-{1,2,3}/` presentes |
-| `DOC_EVOLUTION` | **APTO** | `28c4eb5b-b61c-4024-b890-ba7a5f3bffa2` + fila `Evolution_log` |
 | `F5_VERDICT` / `F5_VERDICT_GATE` | **APTO** | `blocking_findings=[]` |
 
-## global / checks / git_changes / branch
+## branch / git_changes
 
-| Sección | Estado | Evidencia |
-|---------|--------|-----------|
-| `global` | **APTO** | R1+R2+R3 APTO; F2/F4 APTO; `blocking_findings=[]` |
-| `checks` | **APTO** (agregado) | TECH/GIT/KM + F2/F4/F5; F3 residual no bloqueante |
-| `branch` | **APTO** | inject = worktree FS `.git/HEAD` → `feat/man-44-rechazar-apto-incoherente` |
-| `git_changes` | **APTO** | path-assert FS (no `gitStdout` cápsula esta sesión) |
+| Check | Estado | Evidencia |
+|-------|--------|-----------|
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Evidence Bridge `native_state` (copia) |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** | Shell Rejected; sin `gitStdout` |
-| `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin `PullRequest_Merged` para `9428ba36…` |
+| `BRANCH_RUNTIME_INJECT` | **APTO** | `feat/man-44-rechazar-apto-incoherente` |
+| `BRANCH_WORKTREE_SYNC` | **APTO** | `.git/HEAD` → `refs/heads/feat/man-44-rechazar-apto-incoherente` (FS; **no** stdout git-manager) |
+| `branch` | **APTO** | worktree = inject |
+| `git_changes` | **APTO** | path-assert FS + `evolution.relacionado` + touchpoints (no `gitStdout` cápsula) |
+| `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin `PullRequest_Merged` para `67bc08f9…` |
 | `ACCEPT_PR_HANDOFF` | **NO_APTO** | `pending` (L-HANDOFF-F5) |
-| `WSPACE_MATERIALIZED` | **NO_APTO** | workspace PPR ausente/vacío (no bloquea) |
+| `WSPACE_MATERIALIZED` | **NO_APTO** | workspace PPR solo `detached.log` (no bloquea) |
 
 `git_changes` por inventario path-assert (`persist_ref` + evolution + touchpoints implementación). **No** es `gitStdout` de esta sesión.
 
 ## R3 — KM (`RBAC_AUTHORING_KM_POLICY`)
 
-**APTO** — auditoría solo autoría bajo `docs/todos/**`. `docs/todos/pending/` vacío. Sin semillas MAN-44. Argos **no** escribió TODOs. Cumulo/`Kaizen_Alert_Required` = vía legítima (no usada). Forja Core ≠ este check. Provider Linear: sin materialización local de PBI.
+**APTO** — auditoría solo autoría bajo `docs/todos/**`. `docs/todos/pending/` vacío (0 files). Sin semillas MAN-44. Argos **no** escribió TODOs. Cumulo/`Kaizen_Alert_Required` = vía legítima (no usada). Forja Core ≠ este check. Provider Linear: sin materialización local de PBI.
 
 ## Dictamen
 
@@ -215,8 +210,8 @@ Fuente: prompt Runtime evidence (session) + `docs/features/man-44-rechazar-apto-
   "branch_worktree_observed": "feat/man-44-rechazar-apto-incoherente",
   "persist_ref": "docs/features/man-44-rechazar-apto-incoherente",
   "document_id": "PBI-8205539f",
-  "correlation_id": "9428ba36-692a-404c-937c-e71841b61edb",
-  "execution_id": "9296c415-c644-49a9-a764-484ef844d24b",
+  "correlation_id": "67bc08f9-9c2f-4e9c-9d32-68fb494efeeb",
+  "execution_id": "a9098555-c861-40cc-8b13-c6871caf57e9",
   "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
   "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
   "RBAC_AUTHORING_KM_POLICY": "APTO",
@@ -230,4 +225,4 @@ Fuente: prompt Runtime evidence (session) + `docs/features/man-44-rechazar-apto-
 
 ## Alcance
 
-Veredicto y bloqueo **aprueba** peajes F2/F4. Residual no bloqueante: F3 formal diferido (proxy TECH_FORMAL + `execution.md`), workspace PPR ausente, Shell git-manager Rejected, `accept_pr_handoff` pending (L-HANDOFF-F5). Downstream: Cosecha Kaizen → Handoff (`accept-pr`; sin merge directo en aduana). Argos **no** escribe bajo `docs/todos/`.
+Veredicto **aprueba** peaje F5 (`PASS_F5_VERDICT`). Residual no bloqueante: Shell git-manager Rejected, F3 diferido, workspace PPR parcial, `accept_pr_handoff: pending` (L-HANDOFF-F5). Downstream: Cosecha Kaizen → Handoff materialización. Argos **no** escribe bajo `docs/todos/`.
