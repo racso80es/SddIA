@@ -1,7 +1,7 @@
 ---
 feature_name: man-50-cierre-man-43
-created: "2026-11-20"
-updated: "2026-11-20T09:55:00Z"
+created: 2026-11-20
+updated: 2026-11-20T09:55:00Z
 process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
@@ -15,12 +15,12 @@ pbi_ref: MAN-50
 parent_ref: MAN-43
 related_ref: MAN-49
 document_id: PBI-91b7ec84
-document_uuid: "91b7ec84-a164-48ce-ba51-40e872ef3be1"
+document_uuid: 91b7ec84-a164-48ce-ba51-40e872ef3be1
 tracker_provider: linear
 tracker_ref: MAN-50
-correlation_id: "c512fdfc-3fbc-4677-9e69-c4c6a46c96aa"
-pr_presented_event_id: "c512fdfc-3fbc-4677-9e69-c4c6a46c96aa"
-audit_event_reference: "c512fdfc-3fbc-4677-9e69-c4c6a46c96aa"
+correlation_id: c512fdfc-3fbc-4677-9e69-c4c6a46c96aa
+pr_presented_event_id: c512fdfc-3fbc-4677-9e69-c4c6a46c96aa
+audit_event_reference: c512fdfc-3fbc-4677-9e69-c4c6a46c96aa
 workspace_path_injected: .SddIA/workspaces/pull-request-review/ad89137d-966b-4076-8d75-e299e3f3b137/
 workspace_materialized: absent
 norm_ref: features-documentation-pattern@1.3.1
@@ -32,16 +32,16 @@ delivery_state: success
 resolution: PASS_F5_VERDICT
 accept_pr_handoff: false
 accept_pr_handoff_status: pending
-accept_pr_block_reason: "pr_url/MERGE ausentes este CID; L-HANDOFF-F5 — prohibido accept_pr_handoff true sin vía de merge soberano"
+accept_pr_block_reason: pr_url/MERGE ausentes este CID; L-HANDOFF-F5 — prohibido accept_pr_handoff true sin vía de merge soberano
 git_manager_invoked: false
-git_manager_error: "cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw"
+git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw
 git_evidence_source: evidence-bridge-session-native_state+handoff-machine
 formal_execute_process: true
-formal_evidence_detail: "session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-20T09:45:16Z TECH/GIT APTO notes=idempotent-hit; prior prosthesis_subprocess @ 2026-11-20T09:27:14Z formal_evidence_detail=verify-process-integrity: OK"
+formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-20T09:45:16Z TECH/GIT APTO notes=idempotent-hit; prior prosthesis_subprocess @ 2026-11-20T09:27:14Z formal_evidence_detail=verify-process-integrity: OK'
 handoff_machine_file: present
-evidence_bridge_notes: "R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit + machine native_state @ 2026-11-20T09:45:16Z); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado"
-shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID c512fdfc… · exec ad89137d…"
-scope: "PPR Veredicto y bloqueo — PullRequest_Presented rama feat/man-50-cierre-man-43 (CID c512fdfc… · exec ad89137d…)"
+evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit + machine native_state @ 2026-11-20T09:45:16Z); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado
+shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID c512fdfc… · exec ad89137d…
+scope: PPR Veredicto y bloqueo — PullRequest_Presented rama feat/man-50-cierre-man-43 (CID c512fdfc… · exec ad89137d…)
 checks:
   global: APTO
   branch: APTO
@@ -83,56 +83,61 @@ checks:
   MERGE_ALREADY_OBSERVED: NO_APTO
   ACCEPT_PR_HANDOFF: NO_APTO
 git_changes:
-  - docs/features/man-50-cierre-man-43/
-  - docs/audits/man-49-man-43-post-merge-audit-20261120.md
-  - docs/audits/man-43-o6-remediation-20261113.md
-  - .antigravity/rules/
-  - SddIA/evolution/d9dce4a4-50d0-4f9f-9af0-2224a6856b3f.md
-  - SddIA/engine/execute-process/src/engine/eda_bus_topology.rs
-  - SddIA/engine/execute-process/src/engine/eda_event_token_hygiene.rs
-  - SddIA/engine/execute-process/src/engine/capability_di_gate.rs
-  - SddIA/engine/execute-process/src/engine/capability_di_resolver.rs
-  - SddIA/engine/execute-process/src/engine/capability_di_output_validator.rs
-  - SddIA/engine/execute-process/src/engine/cerbero_di_rbac.rs
-  - SddIA/engine/execute-process/src/engine/cerbero_di_envelope.rs
-  - SddIA/engine/execute-process/src/engine/route_domain_core.rs
-  - SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs
-  - SddIA/engine/execute-process/src/engine/handlers/system_vitality.rs
-  - SddIA/sddia-daemon-runtime/src/eda_bus.rs
-  - SddIA/tools/sddia-qa/allowlists/eda-unit-backend.toml
-  - SddIA/tools/sddia-qa/src/gate_eda_unit_no_real_backend.rs
-  - SddIA/events/events-contract.md
-  - SddIA/library/codexes/codex-software-engineering/process/accept-pr.md
-  - SddIA/library/codexes/codex-software-engineering/process/delivery-close-cycle.md
-  - SddIA/library/codexes/codex-software-engineering/process/pull-request-review.md
-  - SddIA/library/codexes/codex-software-engineering/process/refine-item.md
+- docs/features/man-50-cierre-man-43/
+- docs/audits/man-49-man-43-post-merge-audit-20261120.md
+- docs/audits/man-43-o6-remediation-20261113.md
+- .antigravity/rules/
+- SddIA/evolution/d9dce4a4-50d0-4f9f-9af0-2224a6856b3f.md
+- SddIA/engine/execute-process/src/engine/eda_bus_topology.rs
+- SddIA/engine/execute-process/src/engine/eda_event_token_hygiene.rs
+- SddIA/engine/execute-process/src/engine/capability_di_gate.rs
+- SddIA/engine/execute-process/src/engine/capability_di_resolver.rs
+- SddIA/engine/execute-process/src/engine/capability_di_output_validator.rs
+- SddIA/engine/execute-process/src/engine/cerbero_di_rbac.rs
+- SddIA/engine/execute-process/src/engine/cerbero_di_envelope.rs
+- SddIA/engine/execute-process/src/engine/route_domain_core.rs
+- SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs
+- SddIA/engine/execute-process/src/engine/handlers/system_vitality.rs
+- SddIA/sddia-daemon-runtime/src/eda_bus.rs
+- SddIA/tools/sddia-qa/allowlists/eda-unit-backend.toml
+- SddIA/tools/sddia-qa/src/gate_eda_unit_no_real_backend.rs
+- SddIA/events/events-contract.md
+- SddIA/library/codexes/codex-software-engineering/process/accept-pr.md
+- SddIA/library/codexes/codex-software-engineering/process/delivery-close-cycle.md
+- SddIA/library/codexes/codex-software-engineering/process/pull-request-review.md
+- SddIA/library/codexes/codex-software-engineering/process/refine-item.md
 blocking_findings: []
 non_blocking_findings:
-  - GIT_EVIDENCE_SESSION_SHELL
-  - F3_TECH_GATE
-  - DOC_HONESTY_AC5_MATRIX
-  - WSPACE_MATERIALIZED
-  - MERGE_ALREADY_OBSERVED
-  - ACCEPT_PR_HANDOFF
+- GIT_EVIDENCE_SESSION_SHELL
+- F3_TECH_GATE
+- DOC_HONESTY_AC5_MATRIX
+- WSPACE_MATERIALIZED
+- MERGE_ALREADY_OBSERVED
+- ACCEPT_PR_HANDOFF
 situational_notes:
-  - "Fase Veredicto y bloqueo · CID c512fdfc-3fbc-4677-9e69-c4c6a46c96aa · exec ad89137d-966b-4076-8d75-e299e3f3b137"
-  - "Evidence Bridge session: source=native_state · TECH/GIT APTO · notes=idempotent-hit"
-  - "Evidence Bridge machine: source=native_state @ 2026-11-20T09:45:16Z · TECH/GIT APTO · notes=idempotent-hit (copia; sin stdout inventado)"
-  - "Prior prosthesis_subprocess @ 2026-11-20T09:27:14Z · formal_evidence_detail=verify-process-integrity: OK"
-  - "F2 heredado PASS_F2_DOC APTO (mismo CID Triaje documental)"
-  - "F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md gates/workspace tests OK)"
-  - "F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked/permanent"
-  - "Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS + evolution.relacionado + implementation touchpoints"
-  - "Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO; pending/ vacío; tracker.provider=linear"
-  - "DOC_HONESTY_AC5_MATRIX NO_APTO no bloqueante: execution.md matriz AC-5=PARCIAL vs tabla evidencia workspace tests OK"
-  - "CODE_TOUCHPOINT: bus_defaults_empty default; 6 writers → publish/nack via port; INTEGRATION_SRC=&[]; hygiene veta \".events\"; assert raíz incluye .events"
-  - "ROOT_TOPOLOGY_CLEAN APTO — Glob 0 bajo .events/; sin orchestration/ ni telemetry/ en raíz"
-  - "AC4_DOC_TOKENS_ABSENT APTO — 0 hits .events/|SDDIA_EVENT_STORE en rules + events-contract + códex process ×4"
-  - "WSPACE_MATERIALIZED NO_APTO — workspace PPR ad89137d… ausente/vacío en FS (no bloquea)"
-  - "accept_pr_handoff pending — L-HANDOFF-F5; MERGE/pr_url ausentes"
-  - "pbi_archived false — provider linear; sin fichero nuevo pending/done/; cierre Linear fuera de Veredicto"
-execution_id: "ad89137d-966b-4076-8d75-e299e3f3b137"
+- Fase Veredicto y bloqueo · CID c512fdfc-3fbc-4677-9e69-c4c6a46c96aa · exec ad89137d-966b-4076-8d75-e299e3f3b137
+- 'Evidence Bridge session: source=native_state · TECH/GIT APTO · notes=idempotent-hit'
+- 'Evidence Bridge machine: source=native_state @ 2026-11-20T09:45:16Z · TECH/GIT APTO · notes=idempotent-hit (copia; sin stdout inventado)'
+- 'Prior prosthesis_subprocess @ 2026-11-20T09:27:14Z · formal_evidence_detail=verify-process-integrity: OK'
+- F2 heredado PASS_F2_DOC APTO (mismo CID Triaje documental)
+- F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md gates/workspace tests OK)
+- F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked/permanent
+- Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS + evolution.relacionado + implementation touchpoints
+- Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO; pending/ vacío; tracker.provider=linear
+- 'DOC_HONESTY_AC5_MATRIX NO_APTO no bloqueante: execution.md matriz AC-5=PARCIAL vs tabla evidencia workspace tests OK'
+- 'CODE_TOUCHPOINT: bus_defaults_empty default; 6 writers → publish/nack via port; INTEGRATION_SRC=&[]; hygiene veta ".events"; assert raíz incluye .events'
+- ROOT_TOPOLOGY_CLEAN APTO — Glob 0 bajo .events/; sin orchestration/ ni telemetry/ en raíz
+- AC4_DOC_TOKENS_ABSENT APTO — 0 hits .events/|SDDIA_EVENT_STORE en rules + events-contract + códex process ×4
+- WSPACE_MATERIALIZED NO_APTO — workspace PPR ad89137d… ausente/vacío en FS (no bloquea)
+- accept_pr_handoff pending — L-HANDOFF-F5; MERGE/pr_url ausentes
+- pbi_archived false — provider linear; sin fichero nuevo pending/done/; cierre Linear fuera de Veredicto
+execution_id: ad89137d-966b-4076-8d75-e299e3f3b137
+validated_base_sha: ee17d9537a1b567505049bb1a2bf3245c7560d39
+validated_head_sha: 50aa374f491b7bd9f030952cc21562546f566168
+validated_tree_sha: 6b4ddae7c6d56c6d7662d0434eeedb6bf89ba7d3
+diff_digest: sha256:43ba3c0d088b62a8cacc8583ac964072c9393041fc4d82f38bc1c677041d54ef
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
