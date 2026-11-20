@@ -3,6 +3,7 @@
 use crate::core::parser::{load_frontmatter_yaml, parse_frontmatter_from_str};
 #[cfg(test)]
 use crate::core::parser::parse_frontmatter;
+use crate::engine::apto_coherence;
 use crate::engine::item_lifecycle_frontmatter::seal_markdown;
 use crate::engine::qa_attestation::tree_sha_for_commit;
 use serde_json::{json, Value as JsonValue};
@@ -463,6 +464,8 @@ pub fn validate_for_accept_pr_merge(
             continue;
         }
         verify_diff_seal_at_head(repo, &head, target_branch, &persist)?;
+        apto_coherence::validate_apto_coherence(repo, &persist)
+            .map_err(|f| f.to_error_string())?;
     }
     Ok(())
 }
@@ -936,6 +939,11 @@ mod tests {
         fs::write(
             repo.join("docs/fixes/cycle-ap/validacion.md"),
             "---\nglobal: APTO\n---\n\n# ok\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join("docs/fixes/cycle-ap/execution.md"),
+            "---\nstatus: complete\nverdict: ok\n---\n\n# ok\n",
         )
         .unwrap();
         Command::new("git")

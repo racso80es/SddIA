@@ -1,6 +1,7 @@
 //! Proceso `delivery-close-cycle` nativo (P5 — fases skill/tool/action).
 
 use super::capsules::invoke_git_manager;
+use super::apto_coherence;
 use super::phase_capsules::{
     capsule_eda_genomic_audit_gate, capsule_evolution_audit_gate,
     capsule_index_integrity_audit_gate, execute_delivery_close_phase,
@@ -495,6 +496,17 @@ fn capsule_diff_seal_validacion(repo: &Path, inputs: &Value, state: &Value) -> V
         entry["message"] = json!(e);
         return entry;
     }
+    if !env_truthy_dcc(apto_coherence::LAB_SKIP_ENV) {
+        if let Err(fault) = apto_coherence::validate_apto_coherence(repo, &persist_ref) {
+            entry["status"] = json!("blocked");
+            entry["friction_id"] = json!(fault.friction_id);
+            entry["message"] = json!(fault.message);
+            entry["operator_hint"] = json!(fault.operator_hint());
+            entry["persist_ref"] = json!(persist_ref);
+            entry["reasons"] = json!(fault.reasons);
+            return entry;
+        }
+    }
     let target_branch = str_field_dcc(inputs, "target_branch").unwrap_or_else(|| "main".into());
     let seal = match diff_seal::compute_diff_seal(repo, &branch, &target_branch, &persist_ref) {
         Ok(s) => s,
@@ -617,6 +629,9 @@ fn dcc_pre_pr_qa_block_suppresses_fracture(report: &Value) -> bool {
             | Some("worktree_not_closed")
             | Some("validacion_not_apto")
             | Some("diff_seal_commit_failed")
+            | Some("apto_coherence_execution_blocked")
+            | Some("apto_coherence_open_phases")
+            | Some("apto_coherence_resolution")
     )
 }
 
@@ -1088,6 +1103,20 @@ mod tests {
             "phase_name": "Sello diff validacion",
             "status": "blocked",
             "friction_id": "validacion_not_apto",
+        })];
+        emit_dcc_phase_fractures(repo, &reports);
+        assert_eq!(pending_fracture_count(repo), 0);
+    }
+
+    #[test]
+    fn dcc_fracture_suppressed_on_apto_coherence_block() {
+        let _fs = lab_filesystem_eda();
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let reports = vec![json!({
+            "phase_name": "Sello diff validacion",
+            "status": "blocked",
+            "friction_id": "apto_coherence_execution_blocked",
         })];
         emit_dcc_phase_fractures(repo, &reports);
         assert_eq!(pending_fracture_count(repo), 0);

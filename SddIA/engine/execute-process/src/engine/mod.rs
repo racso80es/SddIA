@@ -10,6 +10,7 @@ pub mod capsule_paths;
 pub mod capsules;
 pub mod git_porcelain;
 pub mod daemons;
+pub mod apto_coherence;
 pub mod accept_pr;
 pub mod runtime_recycle;
 pub mod validacion_runtime_parity;
