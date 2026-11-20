@@ -1,7 +1,7 @@
 ---
 feature_name: man-44-rechazar-apto-incoherente
-created: "2026-11-20"
-updated: "2026-11-20"
+created: 2026-11-20
+updated: 2026-11-20
 process: feature
 branch_name: feat/man-44-rechazar-apto-incoherente
 persist_ref: docs/features/man-44-rechazar-apto-incoherente
@@ -9,12 +9,16 @@ pbi_ref: MAN-44
 parent_ref: MAN-43
 document_id: PBI-8205539f
 phase: verificacion
-status: APTO
+agent: argos
 global: APTO
 norm_ref: features-documentation-pattern@1.3.1
-execution_id: "e049f4db-4e0e-41d0-b651-e9b9de645f71"
-agent: argos
+execution_id: e049f4db-4e0e-41d0-b651-e9b9de645f71
+validated_base_sha: b1376f215188352fc74b3db31fb6cf52e85eb29f
+validated_head_sha: c0f3f1129b4c5c474e908076c2ef5623807cee2d
+validated_tree_sha: 7c542764a5ac47d2a152b1248fcea17525f82fea
+diff_digest: sha256:fe98f372df0bc50a013e27e220b9193eaf9ca64cb30ee8437b7080678191ddbe
 ---
+
 # Validación — man-44-rechazar-apto-incoherente
 
 ## global
