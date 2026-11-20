@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-50-cierre-man-43
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -16,7 +17,7 @@ version_plan: "1.0.0"
 status: blueprint-ready
 audit_ref: docs/audits/man-49-man-43-post-merge-audit-20261120.md
 norm_ref: features-documentation-pattern@1.3.1
-execution_id: "6793b598-8a33-43d8-87db-3c3012d5712d"
+execution_id: "ad89137d-966b-4076-8d75-e299e3f3b137"
 ---
 # Plan de ejecución — man-50-cierre-man-43
 

@@ -166,3 +166,76 @@ notes: "handoff-git-apto"
 - AC-2: **NO_APTO** — `.events/telemetry` sigue en la raíz del piloto.
 - AC-5: **NO_APTO** — no hay `cargo test --workspace`; `run_check` denegó ejecutables aquí.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-20T09:42:55Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-20T09:45:16Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `ad89137d-966b-4076-8d75-e299e3f3b137`
+- correlation_id: `c512fdfc-3fbc-4677-9e69-c4c6a46c96aa`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residual no bloqueante: honesty AC-5 matriz vs tabla; workspace PPR ausente; MERGE ausente. F3/F4/F5 fuera de fase.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO` · `delivery_state: pending_downstream_phases`)
+
+- Toqué solo `docs/features/man-50-cierre-man-43/validacion.md`.
+- Bridge R1/R2: TECH/GIT **APTO** (copia `native_state` session + machine @ 09:42:55Z); Shell `git-manager` **Rejected** → sin `gitStdout` inventado.
+- R3 KM: **APTO** — 0 writes bajo `docs/todos/**`; `pending/` vacío; Linear.
+- F2: cascada objectives→execution + evolution `d9dce4a4-…` + YAML **APTO**; branch `feat/man-50-cierre-man-43` sync.
+- Residual no bloqueante: honesty AC-5 matriz vs tabla; workspace PPR ausente; MERGE ausente. F3/F4/F5 fuera de fase.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-20T09:45:16Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-20T09:48:02Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `ad89137d-966b-4076-8d75-e299e3f3b137`
+- correlation_id: `c512fdfc-3fbc-4677-9e69-c4c6a46c96aa`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residual: honesty AC-5, workspace PPR ausente, MERGE/`accept_pr_handoff` pending (L-HANDOFF-F5).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success`)
+
+- Toqué solo `docs/features/man-50-cierre-man-43/validacion.md`.
+- Bridge R1/R2: TECH/GIT **APTO** (copia `native_state` session + machine @ 09:45:16Z); Shell `git-manager` **Rejected** → sin `gitStdout` inventado.
+- R3 KM: **APTO** — 0 writes `docs/todos/**`; `pending/` vacío; Linear.
+- F2/F4 **APTO**; F3 **NO_APTO** no bloqueante (proxy TECH_FORMAL + `execution.md`); F5 **APTO**.
+- Residual: honesty AC-5, workspace PPR ausente, MERGE/`accept_pr_handoff` pending (L-HANDOFF-F5).
+```

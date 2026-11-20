@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-50-cierre-man-43
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -11,8 +12,8 @@ document_id: PBI-91b7ec84
 phase: ejecucion
 status: executed
 norm_ref: features-documentation-pattern@1.3.1
-execution_id: "6793b598-8a33-43d8-87db-3c3012d5712d"
 agent: tekton
+execution_id: "ad89137d-966b-4076-8d75-e299e3f3b137"
 ---
 # Registro de Ejecución — man-50-cierre-man-43
 

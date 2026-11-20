@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-50-cierre-man-43
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -24,7 +25,7 @@ parent_commit: ee17d9537a1b567505049bb1a2bf3245c7560d39
 related_pr: 455
 norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-50.jsonl"
-execution_id: "6793b598-8a33-43d8-87db-3c3012d5712d"
+execution_id: "ad89137d-966b-4076-8d75-e299e3f3b137"
 ---
 # Especificación técnica — man-50-cierre-man-43
 
