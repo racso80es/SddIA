@@ -116,9 +116,9 @@ situational_notes:
 - accept_pr_handoff pending — L-HANDOFF-F5; MERGE/pr_url ausentes
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/; cierre Linear fuera de Veredicto
 validated_base_sha: f102e89b6d8339a938d50e6c4e35a9783be9b005
-validated_head_sha: 1868fab09268d17569119beda4e3cdf3d46ce535
-validated_tree_sha: ebc6f6a7a4ad74b751598845d1f8f40f8e534747
-diff_digest: sha256:2820b273f34aba3817cd7e5672acf84d6f237df4ce5662b4e789f3499f9f08bd
+validated_head_sha: 2faf7acc25dc9f2f40073f76871637aafede566f
+validated_tree_sha: 6e06744c08e9d12d1a405408d5b987ce9bfecfb0
+diff_digest: sha256:8c93d901fffc84201ca9796520bbd5833d3c0bb303a1448ccf2fdcc2a1591304
 execution_id: 6db0b201-9b34-4fe7-9b7c-ca7757e8e84f
 ---
 
