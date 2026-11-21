@@ -1,0 +1,13 @@
+{
+  "schema": "qa-attestation/1.0",
+  "branch": "feat/ka-ppr-3",
+  "head_sha": "PLACEHOLDER_HEAD",
+  "tree_sha": "deadbeef_diverged_from_branch",
+  "verdict": "aprobado",
+  "qa_profile": "full",
+  "issued_at": "2026-11-20T12:00:00Z",
+  "ttl_secs": 86400,
+  "correlation_id": "fixture-ka-ppr-3",
+  "execution_id": "fixture-ka-ppr-3",
+  "issuer_process": "pull-request-review"
+}

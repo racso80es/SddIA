@@ -1,0 +1,13 @@
+{
+  "schema": "qa-attestation/1.0",
+  "branch": "feat/ka-ppr-2",
+  "head_sha": "PLACEHOLDER_HEAD",
+  "tree_sha": "PLACEHOLDER_TREE",
+  "verdict": "aprobado",
+  "qa_profile": "docs-only",
+  "issued_at": "2026-11-20T12:00:00Z",
+  "ttl_secs": 86400,
+  "correlation_id": "fixture-ka-ppr-2",
+  "execution_id": "fixture-ka-ppr-2-docs",
+  "issuer_process": "pull-request-review"
+}

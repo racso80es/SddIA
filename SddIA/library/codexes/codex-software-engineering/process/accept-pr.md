@@ -4,7 +4,7 @@ context:
 - source-control
 - filesystem-ops
 contract: process-contract v1.4.0
-hash_signature: "sha256:465dba5c7ccb24c150a0c36c0836084de4230a9d6ea4906fa06ecb1cbddd5d76"
+hash_signature: "sha256:44223712567a5b3913ec52388224131d6ee22b292f5367ffe7ffd6c700785dde"
 inputs:
 - source_branch: Rama feature a fusionar hacia main (validada por git-operations antes de invocar)
 - author: Autor del merge para el evento PullRequest_Merged
@@ -22,7 +22,7 @@ outputs:
 phases:
 - delegates_to:
   - agent:argos
-  intent: Argos evalúa la rama origen. Si detecta fricción letal o vulnerabilidad, aborta el proceso.
+  intent: Argos evalúa la rama origen y la aduana exige qa-attestation/1.0 PPR del mismo tree_sha. Si detecta fricción letal, atestación inválida o vulnerabilidad, aborta el proceso.
   name: Auditoría Genómica
 - delegates_to:
   - skill:git-manager
@@ -53,6 +53,8 @@ Proceso de **aceptación local soberana** de Pull Requests: auditoría Argos, me
 ## Fase 1 — Auditoría Genómica
 
 Tekton presenta a **Argos** la rama `source_branch`, diff y normas activas (`pr-acceptance-protocol`, `git-operations`). Si el veredicto es rechazo o fricción letal, `verdict: abortado` y `status_code: 1` sin mutar `main`.
+
+**Aduana PPR (MAN-45 / KZ-2):** antes de «Fusión Soberana», el motor exige atestación `qa-attestation/1.0` con `verdict: aprobado`, `issuer_process: pull-request-review` (emitida por `try_write_from_ppr`), `tree_sha` igual al de `source_branch` (pre-merge) y `qa_profile: full` cuando `delta_class` es `active`. `PullRequest_Presented` es solo trazabilidad/`orphan_merge` y **no** habilita fusión. `skipped-ppr-dedupe` **no** cuenta como aprobación. Fallo → `abortado` con `friction_id` (`qa_attestation_required` | `qa_attestation_tree_mismatch` | `qa_attestation_profile_blocked` | `qa_attestation_issuer_invalid` | `qa_attestation_dedupe_not_approval`); **sin** `System_Fracture_Detected`. Lab: `SDDIA_LAB_SKIP_PPR_ATTESTATION_ACCEPT`.
 
 ## Fase 2 — Fusión Soberana
 
@@ -102,6 +104,8 @@ Merge y push exitosos con higiene fallida: proceso `verdict: aprobado`, `status_
 ## Notas
 
 * **Pre-fusión coherencia (MAN-44):** `validate_for_accept_pr_merge` invoca `apto_coherence::validate_apto_coherence` antes de verificar el digest. Fallo → error `apto_coherence_*` / aborto sin merge; **sin** `System_Fracture_Detected`. Lab: `SDDIA_LAB_SKIP_APTO_COHERENCE`.
+
+* **Pre-fusión atestación PPR (MAN-45):** ver Fase 1. Lab: `SDDIA_LAB_SKIP_PPR_ATTESTATION_ACCEPT`.
 
 * **Store SSOT:** identidad vía `EventUri` / `EventManagerPort` (`SddIA/events/events-contract.md` §4). ADU-CA7: `scan_presented_for_branch` consulta el puerto.
 * `context: pr-lifecycle` debe registrarse en `execution-contexts.md` y políticas del invocante.
