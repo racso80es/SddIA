@@ -62,3 +62,77 @@ execution_id: "cbf032fc-8bbf-452e-b124-a5266b7d3fc4"
 - backend: `cli`
 - status: `failed`
 - message: timeout 600s
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-21T06:16:10Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```
+
+## 2026-11-21T06:17:57Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `c680c700-3963-432f-9b34-71c9ea8cc226`
+- correlation_id: `584f687a-de32-4f95-ad06-6b88dd6328e2`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Downstream F3/F4/Veredicto pendientes · `delivery_state: pending_downstream_phases`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Archivo: `docs/features/man-46-hito-no-cierra-padre/validacion.md` (Triaje documental Argos / PPR).
+- R1/R2: copia Evidence Bridge `prosthesis_subprocess` — `TECH_FORMAL`/`GIT_EVIDENCE` **APTO** (session + handoff @ `06:16:10Z`).
+- F2: cascada objectives→execution + YAML + evolution `74f9be57-…` + touchpoints `parental_close_gate` → **APTO**.
+- R3 KM: `pending/` vacío; Argos 0 writes `docs/todos/**` → `RBAC_AUTHORING_KM_POLICY` **APTO**.
+- Shell `git-manager` Rejected → sin `gitStdout`; `git_changes` por path-assert FS; `diff_digest` null (no inventado).
+- Downstream F3/F4/Veredicto pendientes · `delivery_state: pending_downstream_phases`.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-21T06:17:57Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-21T06:19:07Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `c680c700-3963-432f-9b34-71c9ea8cc226`
+- correlation_id: `584f687a-de32-4f95-ad06-6b88dd6328e2`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Downstream: Cosecha → Handoff `accept-pr`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success`)
+
+- Archivo: `docs/features/man-46-hito-no-cierra-padre/validacion.md` (fase Veredicto y bloqueo).
+- R1/R2: copia Evidence Bridge `native_state` — TECH/GIT **APTO** (`idempotent-hit`; prior prosthesis `verify-process-integrity: OK`).
+- F2 heredado APTO; F4 Cerbero APTO (PPR ∉ revoked); F3 NO_APTO no bloqueante (proxy TECH_FORMAL + `execution.md`).
+- R3 KM: `pending/` vacío; 0 writes `docs/todos/**` → `RBAC_AUTHORING_KM_POLICY` **APTO**.
+- Shell git-manager Rejected → sin `gitStdout`; `diff_digest`/`tree_sha` null; `accept_pr_handoff: pending` (L-HANDOFF-F5).
+- Downstream: Cosecha → Handoff `accept-pr`.
+```

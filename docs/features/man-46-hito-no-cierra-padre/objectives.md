@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-46-hito-no-cierra-padre
 created: "2026-11-21"
 updated: "2026-11-21"
@@ -19,7 +20,7 @@ norm_ref: features-documentation-pattern@1.3.2
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-46.jsonl"
 refine_workspace: ".SddIA/workspaces/refine-item/0fbe6552-7538-4827-b3d4-ffcba4d702f0"
 agents: mayeuta
-execution_id: "cbf032fc-8bbf-452e-b124-a5266b7d3fc4"
+execution_id: "c680c700-3963-432f-9b34-71c9ea8cc226"
 ---
 # Objetivos — man-46-hito-no-cierra-padre
 

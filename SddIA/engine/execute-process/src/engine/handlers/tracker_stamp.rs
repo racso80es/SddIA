@@ -495,12 +495,14 @@ fn maybe_complete_hu_when_children_done(
         return Ok(());
     }
     if any_done {
-        crate::engine::parental_close_gate::assert_parental_close_allowed(
-            repo,
-            hu_ref,
-            &crate::engine::parental_close_gate::ParentalCloseEvidence::rollup(None),
-        )
-        .map_err(|f| f.to_error_string())?;
+        if crate::engine::parental_close_gate::resolve_persist_ref(repo, hu_ref).is_some() {
+            crate::engine::parental_close_gate::assert_parental_close_allowed(
+                repo,
+                hu_ref,
+                &crate::engine::parental_close_gate::ParentalCloseEvidence::rollup(None),
+            )
+            .map_err(|f| f.to_error_string())?;
+        }
         tool_update_state(repo, tc, hu_ref, "done", "tracker-stamp")?;
     }
     Ok(())
