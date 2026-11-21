@@ -523,8 +523,11 @@ mod tests {
         p
     }
 
+    static LAB_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[test]
     fn ka_mile_1_rollup_denied_when_parent_acs_open() {
+        let _guard = LAB_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         let persist = parent_persist(repo);
@@ -537,6 +540,7 @@ mod tests {
 
     #[test]
     fn ka_mile_2_narrative_denied_with_milestone_tokens() {
+        let _guard = LAB_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         let persist = parent_persist(repo);
@@ -552,6 +556,7 @@ mod tests {
 
     #[test]
     fn ka_mile_3_prior_refine_allows_success() {
+        let _guard = LAB_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         let persist = parent_persist(repo);
@@ -571,6 +576,7 @@ mod tests {
 
     #[test]
     fn ka_mile_3_same_pass_rewrite_denied() {
+        let _guard = LAB_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         let persist = parent_persist(repo);
@@ -590,6 +596,7 @@ mod tests {
 
     #[test]
     fn parental_close_lab_skip() {
+        let _guard = LAB_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         let persist = parent_persist(repo);
@@ -602,6 +609,7 @@ mod tests {
 
     #[test]
     fn resolve_persist_by_pbi_ref() {
+        let _guard = LAB_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         let persist = parent_persist(repo);

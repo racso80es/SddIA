@@ -954,7 +954,7 @@ mod tests {
         .unwrap();
         fs::write(
             repo.join("docs/fixes/cycle-ap/objectives.md"),
-            "---\nfeature_name: cycle-ap\n---\n\n- [x] AC-1\n",
+            "---\nfeature_name: cycle-ap\n---\n\n# cycle-ap\n",
         )
         .unwrap();
         Command::new("git")
