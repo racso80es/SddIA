@@ -1,10 +1,12 @@
 ---
+
 feature_name: man-45-accept-pr-ppr-tree-sha
 document: ka-ppr-5-counterfactual
 pbi_ref: MAN-45
 kaizen_ref: KZ-2
 audit_ref: docs/audits/man-43-h1-milestone-razonamiento-20261111.md
 created: "2026-11-20"
+execution_id: "52da40f9-4dde-44a6-88d6-ce6efb0a1ec8"
 ---
 # KA-PPR-5 — Contrafactual KZ-2 (AC-5)
 

@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-45-accept-pr-ppr-tree-sha
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -21,7 +22,7 @@ norm_ref: features-documentation-pattern@1.3.2
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-45.jsonl"
 refine_workspace: ".SddIA/workspaces/refine-item/2f723b31-7289-4392-a8e7-43348c05e83c"
 mayeuta_verdict: ok
-execution_id: "73910788-b7e7-4a61-9ac2-72fedd024b2a"
+execution_id: "52da40f9-4dde-44a6-88d6-ce6efb0a1ec8"
 ---
 # Especificación técnica — man-45-accept-pr-ppr-tree-sha
 

@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-45-accept-pr-ppr-tree-sha
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -15,7 +16,7 @@ phase: ejecucion
 status: forged
 norm_ref: features-documentation-pattern@1.3.2
 kaizen_ref: KZ-2
-execution_id: "73910788-b7e7-4a61-9ac2-72fedd024b2a"
+execution_id: "52da40f9-4dde-44a6-88d6-ce6efb0a1ec8"
 ---
 # Implementación — man-45-accept-pr-ppr-tree-sha
 

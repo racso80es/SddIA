@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-45-accept-pr-ppr-tree-sha
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -18,7 +19,7 @@ refine_workspace: ".SddIA/workspaces/refine-item/2f723b31-7289-4392-a8e7-43348c0
 audit_ref: docs/audits/man-43-h1-milestone-razonamiento-20261111.md
 kaizen_ref: KZ-2
 agents: mayeuta
-execution_id: "73910788-b7e7-4a61-9ac2-72fedd024b2a"
+execution_id: "52da40f9-4dde-44a6-88d6-ce6efb0a1ec8"
 ---
 # Clarificación — man-45-accept-pr-ppr-tree-sha
 
