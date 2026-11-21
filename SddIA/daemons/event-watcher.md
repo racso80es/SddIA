@@ -8,10 +8,10 @@ execution:
   entrypoint: SddIA/daemons/event-watcher.sh
   heartbeat_interval_seconds: 30
   runtime: native-rust
-hash_signature: "sha256:c1ce4174448540c18252bbfc5d34ead449e5fed166df536e70c34c158ff0c4d5"
+hash_signature: sha256:c1ce4174448540c18252bbfc5d34ead449e5fed166df536e70c34c158ff0c4d5
 jurisdiction: Aislada — Ceguera Lógica. Reclama pending y fractal vía EventManagerPort. Side-channel latidos en .SddIA/daemons/state/heartbeats/ sin fila ECST. No abre el ECST en el claim.
 name: event-watcher
-source_sha256: sha256:352dfe21c082b938edaecccc66adb587ac262aaa09ff0a285ad7ffe3847c55fd
+source_sha256: sha256:2c5d89976b9227cfcc73501788c6daeb0adb220e4099d8ae1d47ccae2f8783f4
 telemetry_provided: true
 telemetry_schema:
 - uptime_seconds

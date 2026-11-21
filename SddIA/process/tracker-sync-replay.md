@@ -2,7 +2,7 @@
 context:
 - tracker-operations
 contract: process-contract v1.4.0
-hash_signature: sha256:dc2f0deb23f5714b9996ec8d441012f58494d760f64a63c0ffa33124fca2781e
+hash_signature: sha256:f290918d2ca12ad50a2287c52b05d729541a3576365a99ad5a7271fc1028a3b6
 inputs:
 - 'event_uri: Token lógico EventUri (eda://pending/{event_id})'
 - 'issue_ref: Identificador opaco de tracker:lifecycle (payload)'
@@ -17,6 +17,7 @@ outputs:
 phases:
 - intent: Replay de sincronización. Un fetch_issue y reaplicación si el ciclo avanza, vía tracker:lifecycle.
   name: Replay de sincronización
+  id: replay_de_sincronizacion
 porcentaje_de_exito: null
 uuid: e1f2a3b4-c5d6-4789-a012-3456789abc01
 version: 2.0.0

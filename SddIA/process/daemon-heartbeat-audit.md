@@ -3,7 +3,7 @@ context:
 - quality-assurance
 - event-routing
 contract: process-contract v1.4.0
-hash_signature: "sha256:75a0939297864a7eb48dff64507c855ab1476bcfb697aca89ff5d7d5136e120b"
+hash_signature: sha256:e9fc279907f07d3f38e4c7e0088444ae3b0749ef1472c226b96b457b38364f94
 inputs:
 - event_uri: Opcional; URI canónica eda://telemetry/<event_id> de Daemon_Heartbeat
 - sweep: Opcional boolean; si true y sin event_uri, audita staleness de todos los Centinelas con lock vivo
@@ -25,18 +25,22 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: ingesta_heartbeat
 - delegates_to:
   - agent:argos
   intent: Cruzar locks vs last_heartbeat; puerta btime (/proc/stat) antes de lock huérfano; discriminación suspend/crash vía skew wall/mono; missed_cycles desde SSOT.
   name: Auditoría staleness
+  id: auditoria_staleness
 - delegates_to:
   - skill:bus-operator
   intent: Emitir System_Fracture_Detected si missed_cycles >= umbral y no host_suspend, o lock huérfano con started_at >= btime. Prohibido emitir si lock predates boot (host_reboot_stale_lock).
   name: Emisión fractura
+  id: emision_fractura
 - delegates_to:
   - agent:argos
   intent: Tras sweep sano, ledger fagocitosis; apply solo con SDDIA_PHAGOCYTE_APPLY=1.
   name: Fagocitosis residual
+  id: fagocitosis_residual
 porcentaje_de_exito: null
 uuid: f45bda9d-40d9-471e-82a1-b9404b5a0dfd
 version: 2.0.0

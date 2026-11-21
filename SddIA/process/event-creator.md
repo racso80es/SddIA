@@ -1,84 +1,89 @@
 ---
-uuid: "b28194d9-62a8-4cbc-9cbd-237e51e44333"
-name: "event-creator"
-version: "1.3.0"
-contract: "process-contract v1.4.0"
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
-context: "ecosystem-evolution"
-hash_signature: sha256:41c8c335618a7c89ce8f7d5e0907135456d3f723fbc014ad2217118eb08234a5
+uuid: b28194d9-62a8-4cbc-9cbd-237e51e44333
+name: event-creator
+version: 1.3.0
+contract: process-contract v1.4.0
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
+context: ecosystem-evolution
+hash_signature: sha256:548da4566d0c3bcd6381b0f150125a2951684932dc94209c8c949fe5f30952c3
 inputs:
-  - "event_name": "Identificador kebab-case de la Clase (`{name}` del archivo `{name}.md` en `cumulo.directories.events`)"
-  - "event_type": "Identificador ECST PascalCase_Snake (p. ej. PullRequest_Merged); único en catálogo"
-  - "event_family": "Familia Trinidad obligatoria: telemetry | orchestration | domain (sin fallback)"
-  - "event_context": "Contexto RBAC Cerbero válido según `execution-contexts.md`"
-  - "event_description": "Descripción operativa y propósito de la Clase de Evento"
-  - "payload_required": "Array de nombres de campos obligatorios en `payload` de instancia ECST"
-  - "payload_optional": "Array de campos opcionales en `payload`"
-  - "payload_forbidden": "Array de campos prohibidos en `payload` (p. ej. hash_signature en eventos Git)"
-  - "emitter_agents": "Array de identificadores de acciones/procesos autorizados a emitir instancias"
-  - "event_version": "SemVer de la Clase (ej. 1.0.0)"
-  - "events_contract_version": "Versión del contrato events a materializar (ej. 1.1.0 según `events-contract.md`)"
+- event_name: Identificador kebab-case de la Clase (`{name}` del archivo `{name}.md` en `cumulo.directories.events`)
+- event_type: Identificador ECST PascalCase_Snake (p. ej. PullRequest_Merged); único en catálogo
+- event_family: 'Familia Trinidad obligatoria: telemetry | orchestration | domain (sin fallback)'
+- event_context: Contexto RBAC Cerbero válido según `execution-contexts.md`
+- event_description: Descripción operativa y propósito de la Clase de Evento
+- payload_required: Array de nombres de campos obligatorios en `payload` de instancia ECST
+- payload_optional: Array de campos opcionales en `payload`
+- payload_forbidden: Array de campos prohibidos en `payload` (p. ej. hash_signature en eventos Git)
+- emitter_agents: Array de identificadores de acciones/procesos autorizados a emitir instancias
+- event_version: SemVer de la Clase (ej. 1.0.0)
+- events_contract_version: Versión del contrato events a materializar (ej. 1.1.0 según `events-contract.md`)
 outputs:
-  - "artifact_event_md": "Archivo `{paths.directories.events}/{effective_event_family}/{event_name}.md`"
-  - "artifact_events_index": "`{paths.directories.events}/{effective_event_family}/index.md` actualizado con fila sincronizada a la cabecera YAML"
-  - "handoff_entity_uuid": "UUID v4 de la Clase forjada; consumido por `entity-manager`"
-  - "handoff_hash_signature_new": "Sello `sha256:` + hex canónico post-forja; consumido por `entity-manager`"
-  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
-  - "handoff_version": "SemVer resultante (`event_version`)"
+- artifact_event_md: Archivo `{paths.directories.events}/{effective_event_family}/{event_name}.md`
+- artifact_events_index: '`{paths.directories.events}/{effective_event_family}/index.md` actualizado con fila sincronizada a la cabecera YAML'
+- handoff_entity_uuid: UUID v4 de la Clase forjada; consumido por `entity-manager`
+- handoff_hash_signature_new: Sello `sha256:` + hex canónico post-forja; consumido por `entity-manager`
+- handoff_hash_signature_old: Sello previo en update; `null` en create
+- handoff_version: SemVer resultante (`event_version`)
 phases:
-  - name: "Validación de Arquitectura"
-    intent: "Exigir event_family explícito; validar enum Trinidad; event_context en execution-contexts; unicidad de event_type; kebab-case; coherencia payload events-contract v1.1.0; telemetry sin emisores ED no-CLI."
-    delegates_to:
-      - "agent:cumulo"
-      - "agent:cerbero"
-  - name: "Forja del Artefacto"
-    intent: "Generar uuid v4 y hash_signature de integridad; YAML (contract, context, event_type, event_family, capabilities) y cuerpo con Payload ECST REQUIRED/OPTIONAL/FORBIDDEN, emisores y suscripciones; rutas solo vía cumulo."
-    requires_capability:
-      - id: "fs:persist"
-        contract: "fs.persist"
-        version: ">=1.0.0"
-    delegates_to:
-      - "action:crypto-broker"
-  - name: "Gobernanza de Índice"
-    intent: "Auditar events/{effective_event_family}/index.md (columna Capabilities obligatoria) e insertar fila idéntica a la cabecera de la Clase creada."
-    requires_capability:
-      - id: "fs:persist"
-        contract: "fs.persist"
-        version: ">=1.0.0"
-    delegates_to:
-      - "agent:cumulo"
+- name: Validación de Arquitectura
+  intent: Exigir event_family explícito; validar enum Trinidad; event_context en execution-contexts; unicidad de event_type; kebab-case; coherencia payload events-contract v1.1.0; telemetry sin emisores ED no-CLI.
+  delegates_to:
+  - agent:cumulo
+  - agent:cerbero
+  id: validacion_de_arquitectura
+- name: Forja del Artefacto
+  intent: Generar uuid v4 y hash_signature de integridad; YAML (contract, context, event_type, event_family, capabilities) y cuerpo con Payload ECST REQUIRED/OPTIONAL/FORBIDDEN, emisores y suscripciones; rutas solo vía cumulo.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+  delegates_to:
+  - action:crypto-broker
+  id: forja_del_artefacto
+- name: Gobernanza de Índice
+  intent: Auditar events/{effective_event_family}/index.md (columna Capabilities obligatoria) e insertar fila idéntica a la cabecera de la Clase creada.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+  delegates_to:
+  - agent:cumulo
+  id: gobernanza_de_indice
 phase_invocations:
-  - phase_name: "Forja del Artefacto"
-    invocations:
-      - capsule: "action:crypto-broker"
-        stdin_json:
-          operation: "GENERATE_UUID"
-          target_payload: null
-        bind:
-          "data.result": "child_event_uuid"
-        on_error: abort
-      - capsule: "action:crypto-broker"
-        stdin_spec:
-          operation: "GENERATE_SHA256"
-          target_type: "STRING"
-          target_payload:
-            type: "canonical_json_utf8"
-            from_process_inputs:
-              - "event_name"
-              - "event_type"
-              - "event_family"
-              - "event_version"
-              - "event_context"
-              - "payload_required"
-              - "payload_optional"
-              - "payload_forbidden"
-            json_dumps:
-              sort_keys: true
-              separators: [",", ":"]
-              ensure_ascii: false
-        bind:
-          "data.result": "child_event_integrity_hex"
-        on_error: abort
+- phase_name: Forja del Artefacto
+  invocations:
+  - capsule: action:crypto-broker
+    stdin_json:
+      operation: GENERATE_UUID
+      target_payload: null
+    bind:
+      data.result: child_event_uuid
+    on_error: abort
+  - capsule: action:crypto-broker
+    stdin_spec:
+      operation: GENERATE_SHA256
+      target_type: STRING
+      target_payload:
+        type: canonical_json_utf8
+        from_process_inputs:
+        - event_name
+        - event_type
+        - event_family
+        - event_version
+        - event_context
+        - payload_required
+        - payload_optional
+        - payload_forbidden
+        json_dumps:
+          sort_keys: true
+          separators:
+          - ','
+          - ':'
+          ensure_ascii: false
+    bind:
+      data.result: child_event_integrity_hex
+    on_error: abort
 minteo_maximo: null
 porcentaje_de_exito: null
 ---

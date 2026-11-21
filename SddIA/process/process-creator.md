@@ -1,75 +1,80 @@
 ---
-uuid: "7c2d9e41-88a3-4f6b-9c12-4def01a2b3c4"
-name: "process-creator"
-version: "1.2.0"
-contract: "process-contract v1.4.0"
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
-context: "ecosystem-evolution"
-hash_signature: sha256:0fb74ad8b5b561f18292ce2648aa03f98aa969e64a94ea47caf1379b810b911b
+uuid: 7c2d9e41-88a3-4f6b-9c12-4def01a2b3c4
+name: process-creator
+version: 1.2.0
+contract: process-contract v1.4.0
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
+context: ecosystem-evolution
+hash_signature: sha256:e08ffd43a1d7a01e3d58f7d12cc777c5cf76a52cf1ba54b2c04f191667160248
 inputs:
-  - "process_name": "Identificador kebab-case del proceso (`{name}` del archivo `{name}.md`)"
-  - "process_description": "Descripción operativa del propósito del proceso"
-  - "process_context": "Contexto de ejecución válido según `execution-contexts.md`"
-  - "process_phases": "Listado inmutable de fases (orden, id y criterio de salida por fase)"
-  - "process_contract_version": "Versión del contrato process a materializar (ej. 1.0.0)"
-  - "process_aliases": "Opcional; array de strings kebab-case — aliases de identidad adicionales (v1.3.0); vacío si no aplica"
-  - "process_jurisdiction": "Opcional; `domain` | `core`. Si ausente: name ∈ process_membership códice software-engineering → domain; else core. Alta domain nueva (nombre no packing) exige `domain`."
-  - "process_domain_root": "Opcional; relpath ∈ directories.process_domain_roots fusionado; solo si jurisdiction=domain y multi-root (>1). Default [0]."
+- process_name: Identificador kebab-case del proceso (`{name}` del archivo `{name}.md`)
+- process_description: Descripción operativa del propósito del proceso
+- process_context: Contexto de ejecución válido según `execution-contexts.md`
+- process_phases: Listado inmutable de fases (orden, id y criterio de salida por fase)
+- process_contract_version: Versión del contrato process a materializar (ej. 1.0.0)
+- process_aliases: Opcional; array de strings kebab-case — aliases de identidad adicionales (v1.3.0); vacío si no aplica
+- process_jurisdiction: 'Opcional; `domain` | `core`. Si ausente: name ∈ process_membership códice software-engineering → domain; else core. Alta domain nueva (nombre no packing) exige `domain`.'
+- process_domain_root: Opcional; relpath ∈ directories.process_domain_roots fusionado; solo si jurisdiction=domain y multi-root (>1). Default [0].
 outputs:
-  - "artifact_process_md": "Archivo `{resolved_process_root}/{process_name}.md` (Core o domain root; no asumir solo directories.process)"
-  - "artifact_process_index": "`{resolved_process_root}/index.md` actualizado; nunca fila fantasma en índice de otro root"
-  - "resolved_process_root": "Relpath canónico del root usado (directories.process o elemento de process_domain_roots)"
-  - "process_jurisdiction_applied": "`domain` | `core` efectivamente aplicado"
-  - "handoff_entity_uuid": "UUID v4 del proceso forjado; consumido por `entity-manager`"
-  - "handoff_hash_signature_new": "Sello `sha256:` post-forja; consumido por `entity-manager`"
-  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
-  - "handoff_version": "SemVer resultante"
+- artifact_process_md: Archivo `{resolved_process_root}/{process_name}.md` (Core o domain root; no asumir solo directories.process)
+- artifact_process_index: '`{resolved_process_root}/index.md` actualizado; nunca fila fantasma en índice de otro root'
+- resolved_process_root: Relpath canónico del root usado (directories.process o elemento de process_domain_roots)
+- process_jurisdiction_applied: '`domain` | `core` efectivamente aplicado'
+- handoff_entity_uuid: UUID v4 del proceso forjado; consumido por `entity-manager`
+- handoff_hash_signature_new: Sello `sha256:` post-forja; consumido por `entity-manager`
+- handoff_hash_signature_old: Sello previo en update; `null` en create
+- handoff_version: SemVer resultante
 phases:
-  - name: "Validación de inputs"
-    intent: "Comprobar unicidad multi-root (Core ∪ process_domain_roots), kebab-case, process_context, SemVer, jurisdicción y exhaustividad de inputs/phases/outputs."
-    delegates_to:
-      - "agent:cumulo"
-      - "agent:cerbero"
-  - name: "Forja del archivo"
-    intent: "Resolver destino vía load_paths_config + process_jurisdiction/membership; generar uuid/hash; persistir bajo resolved_process_root (L-INDEX-TARGET)."
-    requires_capability:
-      - id: "fs:persist"
-        contract: "fs.persist"
-        version: ">=1.0.0"
-    delegates_to:
-      - "action:crypto-broker"
-  - name: "Auditoría y actualización del índice"
-    intent: "Actualizar solo `{resolved_process_root}/index.md`; verificar cero fila nueva en índices de roots no destino."
-    requires_capability:
-      - id: "fs:persist"
-        contract: "fs.persist"
-        version: ">=1.0.0"
-    delegates_to:
-      - "agent:cumulo"
+- name: Validación de inputs
+  intent: Comprobar unicidad multi-root (Core ∪ process_domain_roots), kebab-case, process_context, SemVer, jurisdicción y exhaustividad de inputs/phases/outputs.
+  delegates_to:
+  - agent:cumulo
+  - agent:cerbero
+  id: validacion_de_inputs
+- name: Forja del archivo
+  intent: Resolver destino vía load_paths_config + process_jurisdiction/membership; generar uuid/hash; persistir bajo resolved_process_root (L-INDEX-TARGET).
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+  delegates_to:
+  - action:crypto-broker
+  id: forja_del_archivo
+- name: Auditoría y actualización del índice
+  intent: Actualizar solo `{resolved_process_root}/index.md`; verificar cero fila nueva en índices de roots no destino.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+  delegates_to:
+  - agent:cumulo
+  id: auditoria_y_actualizacion_del_indice
 phase_invocations:
-  - phase_name: "Forja del archivo"
-    invocations:
-      - capsule: "action:crypto-broker"
-        stdin_json:
-          operation: "GENERATE_UUID"
-          target_payload: null
-        bind:
-          "data.result": "child_process_uuid"
-        on_error: abort
-      - capsule: "action:crypto-broker"
-        stdin_spec:
-          operation: "GENERATE_SHA256"
-          target_type: "STRING"
-          target_payload:
-            type: "canonical_json_utf8"
-            from_process_input: "process_phases"
-            json_dumps:
-              sort_keys: true
-              separators: [",", ":"]
-              ensure_ascii: false
-        bind:
-          "data.result": "child_phases_sha256_hex"
-        on_error: abort
+- phase_name: Forja del archivo
+  invocations:
+  - capsule: action:crypto-broker
+    stdin_json:
+      operation: GENERATE_UUID
+      target_payload: null
+    bind:
+      data.result: child_process_uuid
+    on_error: abort
+  - capsule: action:crypto-broker
+    stdin_spec:
+      operation: GENERATE_SHA256
+      target_type: STRING
+      target_payload:
+        type: canonical_json_utf8
+        from_process_input: process_phases
+        json_dumps:
+          sort_keys: true
+          separators:
+          - ','
+          - ':'
+          ensure_ascii: false
+    bind:
+      data.result: child_phases_sha256_hex
+    on_error: abort
 minteo_maximo: null
 porcentaje_de_exito: null
 ---

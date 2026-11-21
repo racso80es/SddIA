@@ -1,46 +1,30 @@
 {
   "audit_log": [
-    "comment:MAN-101:nota",
-    "comment:LAB-PBI-OK:PBI cancelado: descartado",
-    "comment:LAB-PBI-MERGE-LAST:Delivery commit: `deadbeef`",
-    "comment:LAB-PBI-FIXONLY:Delivery commit: `deadbeef`",
-    "comment:LAB-PBI-FIXONLY:Delivery commit: `deadbeef`",
-    "comment:LAB-PBI-BADPARENT:Delivery commit: `deadbeef`",
-    "comment:LAB-PBI-BADLABEL:Delivery commit: `deadbeef`",
-    "comment:LAB-PBI-MERGE-LAST:Delivery commit: `deadbeef`",
-    "comment:LAB-PBI-OK:PBI cancelado: descartado",
-    "comment:LAB-PBI-FIXONLY:Delivery commit: `deadbeef`",
-    "comment:LAB-PBI-FIXONLY:Delivery commit: `deadbeef`",
-    "comment:LAB-PBI-BADPARENT:Delivery commit: `deadbeef`",
-    "comment:LAB-PBI-BADLABEL:Delivery commit: `deadbeef`"
+    "create:OSC-101:HU raíz de prueba AUT-50",
+    "comment:OSC-101:HU forjada: HU-OSC-101"
   ],
   "comments": {
-    "LAB-PBI-BADLABEL": [
-      "Delivery commit: `deadbeef`",
-      "Delivery commit: `deadbeef`"
-    ],
-    "LAB-PBI-BADPARENT": [
-      "Delivery commit: `deadbeef`",
-      "Delivery commit: `deadbeef`"
-    ],
-    "LAB-PBI-FIXONLY": [
-      "Delivery commit: `deadbeef`",
-      "Delivery commit: `deadbeef`",
-      "Delivery commit: `deadbeef`",
-      "Delivery commit: `deadbeef`"
-    ],
-    "LAB-PBI-MERGE-LAST": [
-      "Delivery commit: `deadbeef`",
-      "Delivery commit: `deadbeef`"
-    ],
-    "LAB-PBI-OK": [
-      "PBI cancelado: descartado",
-      "PBI cancelado: descartado"
-    ],
-    "MAN-101": [
-      "nota"
+    "OSC-101": [
+      "HU forjada: HU-OSC-101"
     ]
   },
-  "issues": {},
-  "next_id": 100
+  "issues": {
+    "OSC-101": {
+      "children": [],
+      "description": "---\nprocess: feature\ntype: hu\ncreated: \"2026-11-21\"\nproject_slug: forge-hu-ca5\n---\n\n# HU raíz de prueba AUT-50\n\nHU raíz de prueba AUT-50",
+      "id": "issue-uuid-OSC-101",
+      "identifier": "OSC-101",
+      "labels": [
+        "hu"
+      ],
+      "parent": null,
+      "priority": 0,
+      "project_id": null,
+      "state": "Backlog",
+      "title": "HU raíz de prueba AUT-50",
+      "updated_at": "2026-10-04T00:00:00Z",
+      "url": "https://linear.app/issue/OSC-101"
+    }
+  },
+  "next_id": 101
 }

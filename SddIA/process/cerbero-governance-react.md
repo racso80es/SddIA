@@ -3,7 +3,7 @@ context:
 - event-routing
 - knowledge-management
 contract: process-contract v1.4.0
-hash_signature: "sha256:4dc3cde6bd2635814d445f22d30316bf700ea1f3fb4dbc2f96e0bb22022d9bb6"
+hash_signature: sha256:592f7604bbc1402061e80f4f84373a6c4debd8875de72ada103fb5fcaed5b23b
 inputs:
 - event_uri: URI canónica eda://domain/<event_id> (vía EventManagerPort)
 - event_type: Tipo ECST (Domain_Entity_Degraded, Domain_Entity_Restored, Domain_Entity_Deprecated)
@@ -20,6 +20,7 @@ phases:
   - contract: gov.rbac
     id: gov:rbac
     version: '>=1.0.0'
+  id: reaccion_rbac_gobernanza
 porcentaje_de_exito: null
 uuid: 3b4c5d6e-7f8a-4b9c-0d1e-2f3a4b5c6d7e
 version: 2.0.0

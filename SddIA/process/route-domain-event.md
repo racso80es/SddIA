@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:4950244f3dd72ccabdf8deb8a72c77fb2535a6b9ef4d9369133bfe85a3f054c0
+hash_signature: sha256:6449d3d6dec643ccf07f37ead2cbac3d824139ce8e5e3a9c7899552d2de834de
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 - 'event_uris: Lista de tokens lógicos (batch); el ECST se carga por puerto'
@@ -18,19 +18,24 @@ outputs:
 phases:
 - intent: Resolver el ECST por EventManagerPort (token event_uri); validar frente a la Clase; Nack/DLQ en el puerto si falla el gate.
   name: Lectura y validación ECST
+  id: lectura_y_validacion_ecst
 - delegates_to:
   - agent:cumulo
   intent: Cargar event-subscriptions.json; filtrar por applies_to_origin_topology.
   name: Resolución suscripciones
+  id: resolucion_suscripciones
 - intent: Marcar el evento en processing y abrir entregas de suscriptor vía record_delivery en el puerto; sin copia de cabecera ni JSON en subscribers/.
   name: Materialización processing
+  id: materializacion_processing
 - delegates_to:
   - action:execute-process
   - action:execute-action
   intent: Despachar process/action/tool por suscriptor; async por defecto (sync con SDDIA_LAB_ROUTE_SYNC=1).
   name: Fan-out suscriptores
+  id: fan_out_suscriptores
 - intent: Cerrar entregas en processed o dead-letter del puerto (list_deliveries / record_delivery) cuando los suscriptores aplicables están terminales; sin mover JSON en disco.
   name: Promoción testigos
+  id: promocion_testigos
 porcentaje_de_exito: null
 uuid: c8e91f2a-4b6d-4e1a-9f03-2d7e5a684b10
 version: 2.0.0

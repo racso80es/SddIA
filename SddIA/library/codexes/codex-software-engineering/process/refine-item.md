@@ -4,7 +4,7 @@ context:
 - filesystem-ops
 - tracker-operations
 contract: process-contract v1.4.0
-hash_signature: "sha256:3c0fd28bb21e6e4fdd6908f452cf3ad694a86e9abca2121235c1bfb20a5c0e34"
+hash_signature: sha256:39b03aef55a3c7c1c17a9e0f75a56d02c4b6743ce28c5ba60eafe8d0b1758ee4
 inputs:
 - item_ref: Referencia opaca del ítem en el gestor activo
 - project_slug: Slug registrado
@@ -19,18 +19,23 @@ outputs:
 phases:
 - intent: fetch_issue, ensure_canonical_markdown, brief.json en workspace.
   name: Preparación
+  id: preparacion
 - intent: invoke_agent_phase; verdict.json e item.refined.md.
   name: Refinamiento Mayeuta
+  id: refinamiento_mayeuta
 - intent: dor.rs por item_type antes de sellado.
   name: Validación DoR
+  id: validacion_dor
 - intent: 'Sustrato remoto: tracker_ref desde snap.identifier si falta en frontmatter; status conflict si FM diverge. Sin create_issue.'
   name: Registro en Tracker
   requires_capability:
   - contract: tracker.lifecycle
     id: tracker:lifecycle
     version: '>=1.0.0'
+  id: registro_en_tracker
 - intent: update_issue_description, refinement refined, emite PBI_Refined o HU_Refined con source_process refine-item.
   name: Sellado Argos
+  id: sellado_argos
 uuid: bb8e8704-80fa-4523-9cec-043a63fe0499
 version: 1.1.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/

@@ -3,7 +3,7 @@ context:
 - quality-assurance
 - event-routing
 contract: process-contract v1.4.0
-hash_signature: "sha256:f5cb7744f3bf4d32c6013f8fd2376b1c9fbb1841d18a90578c40783018188a3b"
+hash_signature: sha256:d2f4930746c53c974afbe3fc2ca354703434517e49dc262a5fee95aafc0d311d
 inputs: []
 minteo_maximo: null
 name: event-bus-audit
@@ -21,6 +21,7 @@ phases:
   - contract: qa.probe
     id: qa:probe
     version: '>=1.0.0'
+  id: auditoria_empirica_del_bus
 porcentaje_de_exito: null
 uuid: 8d577a50-055a-40b9-b7e2-93e2d2415796
 version: 1.0.2

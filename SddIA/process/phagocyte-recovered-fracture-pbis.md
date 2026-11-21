@@ -3,7 +3,7 @@ context:
 - quality-assurance
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:173309c4b6710ab22401ca3f652c8650d7691c6f886da90c3f28e6bb8454e7e0"
+hash_signature: sha256:c7e0c6f2955662f6f5eb2fa794afb86d4af60c3a23ea3c8283f181741297e73d
 inputs:
 - sweep: Opcional boolean; reservado para paridad con audit (default true)
 - apply: Opcional boolean; si true mueve PBIs pending→done (default false; env SDDIA_PHAGOCYTE_APPLY=1)
@@ -18,14 +18,17 @@ phases:
   - agent:argos
   intent: Escanear paths.todos.pending; predicado trace_before_lock vs lock.started_at vigente.
   name: Predicado documental
+  id: predicado_documental
 - delegates_to:
   - agent:argos
   intent: Registrar ledger phagocytosed-fractures.json bajo daemons_instance.state.
   name: Ledger instancia
+  id: ledger_instancia
 - delegates_to:
   - skill:filesystem-manager
   intent: Si apply, mover pending→done, ola B y manifest (sin delivery-close-cycle).
   name: Aplicar documental
+  id: aplicar_documental
 porcentaje_de_exito: null
 uuid: e8f2a1b3-5c4d-4e6f-9a0b-1c2d3e4f5a7b
 version: 1.0.0

@@ -3,6 +3,11 @@
 use super::execution_workspace_report;
 use super::thermodynamic;
 use super::workspace::bootstrap_workspace;
+use super::execution_registry::{
+    active_execution_entry, design_artifacts_ready, load_phase_reports, phase_id_of,
+    persist_phase_reports_atomic, resume_requested, stop_after_from_inputs,
+    upsert_active_execution,
+};
 use super::workspace_init::{
     is_workspace_init_phase, maybe_emit_validation_started_after_tekton_agent,
     maybe_emit_work_initiated_on_tekton_entry, merge_work_initiated_workspace_success,
@@ -11,7 +16,6 @@ use super::workspace_init::{
 use crate::core::resolver::{validate_process_inputs, ProcessDef};
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
-use std::fs;
 use std::path::Path;
 use std::time::Instant;
 use uuid::Uuid;
@@ -157,10 +161,12 @@ fn skipped_barrier_entry_reason(phase: &Value, prior_status: &str, reason: &str)
 fn barrier_from_phase_entry(
     entry: &Value,
     agent_only: bool,
-    phase_name: &str,
+    phase: &Value,
+    _phase_name: &str,
     process_name: &str,
     repo: &Path,
     inputs: &Value,
+    stop_after: &[String],
 ) -> Option<(String, &'static str)> {
     let status = entry.get("status").and_then(|v| v.as_str()).unwrap_or("");
     if entry.get("handler").and_then(|v| v.as_str()) == Some("workspace-init") && status == "failed"
@@ -178,8 +184,12 @@ fn barrier_from_phase_entry(
     if agent_phase_blocks_downstream(status) {
         return Some((status.to_string(), "prior_agent_phase_not_executed"));
     }
-    if stop_after_design() && is_dedalo_design_phase(phase_name) && status == "executed" {
-        return Some(("executed".to_string(), "stop_after"));
+    if status == "executed" {
+        if let Some(pid) = phase_id_of(phase) {
+            if stop_after.iter().any(|s| s == pid) {
+                return Some(("executed".to_string(), "stop_after"));
+            }
+        }
     }
     if simulated_relay_blocks_close(process_name, status, repo, inputs) {
         return Some((
@@ -190,29 +200,142 @@ fn barrier_from_phase_entry(
     None
 }
 
-fn stop_after_design() -> bool {
-    std::env::var("SDDIA_TQM_STOP_AFTER")
-        .map(|s| s.trim().eq_ignore_ascii_case("design"))
-        .unwrap_or(false)
-}
-
-fn is_dedalo_design_phase(name: &str) -> bool {
-    matches!(
-        name,
-        "Diseño del fix" | "Diseño de Blueprint" | "Diseño de refactor"
-    )
-}
-
-fn persist_phase_reports_json(workspace_path: &str, reports: &[Value]) -> Result<(), String> {
-    let ws = workspace_path.trim();
-    if ws.is_empty() {
-        return Ok(());
+fn flush_reports(workspace_path: Option<&str>, reports: &[Value]) {
+    if let Some(ws) = workspace_path {
+        if let Err(e) = persist_phase_reports_atomic(ws, reports) {
+            eprintln!("phase_reports.json: {e}");
+        }
     }
-    let dir = Path::new(ws);
-    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    let path = dir.join("phase_reports.json");
-    let body = serde_json::to_vec_pretty(reports).map_err(|e| e.to_string())?;
-    fs::write(&path, body).map_err(|e| e.to_string())
+}
+
+fn flush_active(
+    repo: &Path,
+    process_name: &str,
+    execution_id: Option<&str>,
+    workspace_path: Option<&str>,
+    inputs: &Value,
+    status: &str,
+    stop_after: &[String],
+) {
+    let Some(eid) = execution_id.map(str::trim).filter(|s| !s.is_empty()) else {
+        return;
+    };
+    let Some(ws) = workspace_path.map(str::trim).filter(|s| !s.is_empty()) else {
+        return;
+    };
+    let pref = inputs.get("persist_ref").and_then(|v| v.as_str());
+    let entry = active_execution_entry(process_name, ws, pref, status, stop_after);
+    if let Err(e) = upsert_active_execution(repo, eid, entry) {
+        eprintln!("active-executions.json: {e}");
+    }
+}
+
+fn prior_report_for_phase<'a>(prior: &'a [Value], phase: &Value) -> Option<&'a Value> {
+    let pid = phase_id_of(phase);
+    let pname = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
+    prior.iter().find(|r| {
+        if let Some(id) = pid {
+            if r.get("phase_id").and_then(|v| v.as_str()) == Some(id) {
+                return true;
+            }
+        }
+        r.get("phase_name").and_then(|v| v.as_str()) == Some(pname)
+    })
+}
+
+fn stop_after_frontier_consumed(prior: &[Value], stop_after: &[String]) -> bool {
+    if stop_after.is_empty() {
+        return false;
+    }
+    prior.iter().any(|r| {
+        let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        let reason = r.get("reason").and_then(|v| v.as_str()).unwrap_or("");
+        if status == "skipped" && reason == "stop_after" {
+            return true;
+        }
+        if status == "executed" {
+            if let Some(pid) = r.get("phase_id").and_then(|v| v.as_str()) {
+                if stop_after.iter().any(|s| s == pid) {
+                    return true;
+                }
+            }
+        }
+        false
+    })
+}
+
+fn attach_phase_id(entry: &mut Value, phase: &Value) {
+    if let Some(id) = phase_id_of(phase) {
+        entry["phase_id"] = json!(id);
+    }
+}
+
+fn skeleton_report(phase: &Value) -> Value {
+    let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
+    let mut entry = json!({
+        "phase_name": phase_name,
+        "delegates_to": phase.get("delegates_to").cloned().unwrap_or(json!([])),
+        "status": "pending",
+    });
+    attach_phase_id(&mut entry, phase);
+    entry
+}
+
+fn require_plan_for_process(process_name: &str) -> bool {
+    matches!(process_name, "feature" | "refactorization")
+}
+
+fn resume_skip_or_block(
+    repo: &Path,
+    process_name: &str,
+    phase: &Value,
+    prior: &Value,
+    inputs: &Value,
+) -> Result<Option<Value>, Value> {
+    let status = prior.get("status").and_then(|v| v.as_str()).unwrap_or("");
+    if status == "executed" {
+        let pid = phase_id_of(phase).unwrap_or("");
+        if pid == "design"
+            || prior
+                .get("phase_id")
+                .and_then(|v| v.as_str())
+                == Some("design")
+        {
+            // artifact gate applies when later resuming into execution; checked at execution entry
+        }
+        let mut skipped = prior.clone();
+        skipped["status"] = json!("executed");
+        skipped["skipped"] = json!(true);
+        skipped["reason"] = json!("resume_already_executed");
+        skipped["handler"] = json!("execution-resume");
+        attach_phase_id(&mut skipped, phase);
+        return Ok(Some(skipped));
+    }
+    if matches!(status, "skipped") {
+        let reason = prior.get("reason").and_then(|v| v.as_str()).unwrap_or("");
+        if reason == "stop_after" {
+            // Barrera consumida: relanzar fase pendiente en resume.
+            return Ok(None);
+        }
+        let mut kept = prior.clone();
+        attach_phase_id(&mut kept, phase);
+        return Ok(Some(kept));
+    }
+    if matches!(status, "in_progress" | "failed" | "blocked") {
+        let pid = phase_id_of(phase).unwrap_or("");
+        if pid == "execution" || phase.get("name").and_then(|v| v.as_str()) == Some("Ejecución") {
+            if !design_artifacts_ready(repo, inputs, require_plan_for_process(process_name)) {
+                return Err(json!({
+                    "status": "blocked",
+                    "friction_id": "resume_design_artifacts_missing",
+                    "message": "resume tras design executed sin spec.md (y plan.md si aplica)",
+                    "operator_hint": "Materializar artefactos de diseño bajo persist_ref o no usar resume",
+                }));
+            }
+        }
+        return Ok(None); // relaunch
+    }
+    Ok(None)
 }
 
 fn workspace_template(process_def: &ProcessDef) -> Result<String, String> {
@@ -672,7 +795,41 @@ pub fn run_generic(
     let mut inputs_mut = process_inputs.clone();
     bootstrap_workspace(repo, process_name, &template, &mut inputs_mut, &mut state)?;
 
-    let mut phase_reports: Vec<Value> = Vec::new();
+    let stop_after = stop_after_from_inputs(&inputs_mut)?;
+    let do_resume = resume_requested(&inputs_mut);
+    let workspace_path_str = state
+        .get("workspace_path")
+        .or_else(|| state.get("workspace").and_then(|w| w.get("workspace_path")))
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
+    let execution_id_str = state
+        .get("execution_id")
+        .or_else(|| inputs_mut.get("execution_id"))
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
+
+    let prior_reports: Vec<Value> = if do_resume {
+        match workspace_path_str.as_deref() {
+            Some(ws) => load_phase_reports(ws)?.unwrap_or_default(),
+            None => Vec::new(),
+        }
+    } else {
+        Vec::new()
+    };
+    let frontier_consumed = do_resume && stop_after_frontier_consumed(&prior_reports, &stop_after);
+
+    let mut phase_reports: Vec<Value> = phases.iter().map(skeleton_report).collect();
+    flush_reports(workspace_path_str.as_deref(), &phase_reports);
+    flush_active(
+        repo,
+        process_name,
+        execution_id_str.as_deref(),
+        workspace_path_str.as_deref(),
+        &inputs_mut,
+        "running",
+        &stop_after,
+    );
+
     let mut barrier_prior: Option<String> = None;
     let mut barrier_reason: &'static str = "prior_agent_phase_not_executed";
     let correlation_id = inputs_mut
@@ -680,7 +837,7 @@ pub fn run_generic(
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty());
-    for phase in phases {
+    for (idx, phase) in phases.iter().enumerate() {
         let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
         let agent_only = delegates_are_only_agents(&phase_delegates(phase));
         if let Some(prior) = barrier_prior.as_deref() {
@@ -693,14 +850,65 @@ pub fn run_generic(
                 is_verify_or_close_phase(phase_name)
             };
             if skip {
-                phase_reports.push(skipped_barrier_entry_reason(
-                    phase,
-                    prior,
-                    barrier_reason,
-                ));
+                let mut skipped = skipped_barrier_entry_reason(phase, prior, barrier_reason);
+                attach_phase_id(&mut skipped, phase);
+                phase_reports[idx] = skipped;
+                flush_reports(workspace_path_str.as_deref(), &phase_reports);
                 continue;
             }
         }
+
+        if do_resume {
+            if let Some(prev) = prior_report_for_phase(&prior_reports, phase) {
+                match resume_skip_or_block(repo, process_name, phase, prev, &inputs_mut) {
+                    Ok(Some(skipped)) => {
+                        phase_reports[idx] = skipped;
+                        flush_reports(workspace_path_str.as_deref(), &phase_reports);
+                        continue;
+                    }
+                    Ok(None) => {}
+                    Err(block) => {
+                        phase_reports[idx] = block.clone();
+                        flush_reports(workspace_path_str.as_deref(), &phase_reports);
+                        flush_active(
+                            repo,
+                            process_name,
+                            execution_id_str.as_deref(),
+                            workspace_path_str.as_deref(),
+                            &inputs_mut,
+                            "failed",
+                            &stop_after,
+                        );
+                        state["phase_reports"] = json!(phase_reports);
+                        return Ok(OrchestratorEnvelope {
+                            success: false,
+                            status_code: 1,
+                            data: Some(json!({
+                                "process_name": process_name,
+                                "friction_id": "resume_design_artifacts_missing",
+                                "blocked": block,
+                            })),
+                            error: Some("resume_design_artifacts_missing".into()),
+                            execution_report: Some(json!({
+                                "process_name": process_name,
+                                "phases": phase_reports,
+                            })),
+                            exit_code: 1,
+                        });
+                    }
+                }
+            }
+        }
+
+        // pre-fase write-ahead
+        {
+            let mut pending = phase_reports[idx].clone();
+            pending["status"] = json!("in_progress");
+            attach_phase_id(&mut pending, phase);
+            phase_reports[idx] = pending;
+            flush_reports(workspace_path_str.as_deref(), &phase_reports);
+        }
+
         let delegates = phase_delegates(phase);
         if let Some(cid) = correlation_id {
             super::progress_trace::emit_progress_trace(
@@ -715,7 +923,7 @@ pub fn run_generic(
             );
         }
         let phase_t0 = Instant::now();
-        let entry = execution_workspace_report::inject_elapsed_ms(
+        let mut entry = execution_workspace_report::inject_elapsed_ms(
             execute_phase(
                 repo,
                 phase,
@@ -726,6 +934,7 @@ pub fn run_generic(
             ),
             phase_t0.elapsed().as_millis() as i64,
         );
+        attach_phase_id(&mut entry, phase);
         if let Some(cid) = correlation_id {
             let status = entry.get("status").and_then(|v| v.as_str());
             let verdict =
@@ -741,30 +950,59 @@ pub fn run_generic(
                 verdict.as_deref(),
             );
         }
-        if let Some((prior, reason)) = barrier_from_phase_entry(
-            &entry,
-            agent_only,
-            phase_name,
-            process_name,
-            repo,
-            &inputs_mut,
-        ) {
-            barrier_prior = Some(prior);
-            barrier_reason = reason;
+        let apply_stop = !(frontier_consumed
+            && phase_id_of(phase).map(|id| stop_after.iter().any(|s| s == id)).unwrap_or(false));
+        if apply_stop {
+            if let Some((prior, reason)) = barrier_from_phase_entry(
+                &entry,
+                agent_only,
+                phase,
+                phase_name,
+                process_name,
+                repo,
+                &inputs_mut,
+                &stop_after,
+            ) {
+                barrier_prior = Some(prior);
+                barrier_reason = reason;
+            }
         }
-        phase_reports.push(entry);
+        phase_reports[idx] = entry;
+        flush_reports(workspace_path_str.as_deref(), &phase_reports);
+        let idx_status = if barrier_reason == "stop_after" && barrier_prior.is_some() {
+            "awaiting_agents"
+        } else {
+            "running"
+        };
+        flush_active(
+            repo,
+            process_name,
+            execution_id_str.as_deref(),
+            workspace_path_str.as_deref(),
+            &inputs_mut,
+            idx_status,
+            &stop_after,
+        );
     }
     state["phase_reports"] = json!(phase_reports);
 
-    if let Some(ws) = state
-        .get("workspace_path")
-        .or_else(|| state.get("workspace").and_then(|w| w.get("workspace_path")))
-        .and_then(|v| v.as_str())
-    {
-        if let Err(e) = persist_phase_reports_json(ws, &phase_reports) {
-            eprintln!("phase_reports.json: {e}");
-        }
-    }
+    let final_status = if phase_reports.iter().any(|r| {
+        r.get("reason").and_then(|v| v.as_str()) == Some("stop_after")
+    }) {
+        "awaiting_agents"
+    } else {
+        "completed"
+    };
+    flush_reports(workspace_path_str.as_deref(), &phase_reports);
+    flush_active(
+        repo,
+        process_name,
+        execution_id_str.as_deref(),
+        workspace_path_str.as_deref(),
+        &inputs_mut,
+        final_status,
+        &stop_after,
+    );
 
     let mut data = json!({
         "process_name": process_name,
@@ -846,6 +1084,7 @@ pub fn run_generic(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     fn agent_phase(name: &str, agent: &str) -> Value {
         json!({
@@ -1083,13 +1322,16 @@ mod tests {
                 .and_then(|v| v.as_str())
                 .unwrap_or("");
             out.push((phase.name, status));
+            let phase_val = json!({"name": phase.name, "id": "x"});
             if let Some((prior, reason)) = barrier_from_phase_entry(
                 &phase.entry,
                 phase.agent,
+                &phase_val,
                 phase.name,
                 "bug-fix",
                 Path::new("/tmp"),
                 &json!({}),
+                &[],
             ) {
                 assert_eq!(reason, "workspace_init_failed");
                 barrier = Some(prior);
@@ -1117,57 +1359,50 @@ mod tests {
         assert!(barrier_from_phase_entry(
             &entry,
             true,
+            &json!({"name": "Ejecución", "id": "execution"}),
             "Ejecución",
             "feature",
             Path::new("/tmp"),
             &json!({}),
+            &[],
         )
         .is_none());
     }
 
     #[test]
-    fn is_dedalo_design_phase_names() {
-        assert!(is_dedalo_design_phase("Diseño del fix"));
-        assert!(is_dedalo_design_phase("Diseño de Blueprint"));
-        assert!(is_dedalo_design_phase("Diseño de refactor"));
-        assert!(!is_dedalo_design_phase("Ejecución"));
-        assert!(!is_dedalo_design_phase("Estabilización de Requisitos"));
+    fn stop_after_by_phase_id_triggers_barrier() {
+        let phase = json!({"name": "Diseño de Blueprint", "id": "design", "delegates_to": ["agent:dedalo"]});
+        let entry = json!({"status": "executed"});
+        let stop = vec!["design".to_string()];
+        let hit = barrier_from_phase_entry(
+            &entry,
+            true,
+            &phase,
+            "Diseño de Blueprint",
+            "feature",
+            Path::new("/tmp"),
+            &json!({}),
+            &stop,
+        );
+        assert_eq!(hit.unwrap().1, "stop_after");
     }
 
     #[test]
-    fn barrier_sequence_stop_after_design_skips_tekton() {
+    fn barrier_sequence_stop_after_phase_id_skips_tekton() {
         struct Fake {
             name: &'static str,
+            id: &'static str,
             agent: bool,
             voc: bool,
             status: &'static str,
         }
         let phases = [
-            Fake {
-                name: "Inicialización",
-                agent: false,
-                voc: false,
-                status: "executed",
-            },
-            Fake {
-                name: "Diseño del fix",
-                agent: true,
-                voc: false,
-                status: "executed",
-            },
-            Fake {
-                name: "Ejecución",
-                agent: true,
-                voc: false,
-                status: "would-tekton",
-            },
-            Fake {
-                name: "Verificación",
-                agent: true,
-                voc: true,
-                status: "would-argos",
-            },
+            Fake { name: "Inicialización", id: "workspace_init", agent: false, voc: false, status: "executed" },
+            Fake { name: "Diseño del fix", id: "design", agent: true, voc: false, status: "executed" },
+            Fake { name: "Ejecución", id: "execution", agent: true, voc: false, status: "would-tekton" },
+            Fake { name: "Verificación", id: "verification", agent: true, voc: true, status: "would-argos" },
         ];
+        let stop_after = ["design"];
         let mut barrier: Option<&str> = None;
         let mut reason = "prior_agent_phase_not_executed";
         let mut out: Vec<(&str, &str, &str)> = Vec::new();
@@ -1181,7 +1416,7 @@ mod tests {
                 if agent_phase_blocks_downstream(p.status) {
                     barrier = Some(p.status);
                     reason = "prior_agent_phase_not_executed";
-                } else if is_dedalo_design_phase(p.name) && p.status == "executed" {
+                } else if stop_after.contains(&p.id) && p.status == "executed" {
                     barrier = Some("executed");
                     reason = "stop_after";
                 }
@@ -1199,12 +1434,22 @@ mod tests {
     }
 
     #[test]
-    fn persist_phase_reports_json_writes_file() {
+    fn persist_phase_reports_atomic_writes_file() {
         let dir = std::env::temp_dir().join(format!("sddia-pr-{}", Uuid::new_v4()));
-        let reports = vec![json!({"phase_name": "Diseño del fix", "status": "executed"})];
-        persist_phase_reports_json(dir.to_str().unwrap(), &reports).expect("write");
+        let reports = vec![json!({"phase_name": "Diseño del fix", "phase_id": "design", "status": "executed"})];
+        persist_phase_reports_atomic(dir.to_str().unwrap(), &reports).expect("write");
         let raw = fs::read_to_string(dir.join("phase_reports.json")).expect("read");
-        assert!(raw.contains("Diseño del fix"));
+        assert!(raw.contains("design"));
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn normalize_stop_after_legacy_string_via_registry() {
+        use super::super::execution_registry::normalize_stop_after;
+        assert_eq!(normalize_stop_after(&json!("design")).unwrap(), vec!["design".to_string()]);
+        assert_eq!(
+            normalize_stop_after(&json!(["design", "execution"])).unwrap(),
+            vec!["design".to_string(), "execution".to_string()]
+        );
     }
 }

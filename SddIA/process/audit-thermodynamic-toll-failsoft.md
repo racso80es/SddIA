@@ -3,7 +3,7 @@ context:
 - chaos-engineering
 - quality-assurance
 contract: process-contract v1.4.0
-hash_signature: sha256:c180bcf53a5767f0856170d65a4c0aa57c16648a4ae4df202260161849125282
+hash_signature: sha256:ddd89de1319444375cd69464c3e121a58391f8e5656911f8f2e466ec47e5d6ac
 inputs: []
 minteo_maximo: null
 name: audit-thermodynamic-toll-failsoft
@@ -28,10 +28,12 @@ phases:
   - contract: qa.probe
     id: qa:probe
     version: '>=1.0.0'
+  id: estimulo_asfixia_e_s
 - delegates_to:
   - agent:argos
   intent: Verificar exit 0 y bandera fail-soft en thermodynamic_toll.
   name: Certificación Argos
+  id: certificacion_argos
 porcentaje_de_exito: null
 uuid: 2e8cd8cd-e0cd-4b0e-ae78-09150ab9c266
 version: 1.0.1

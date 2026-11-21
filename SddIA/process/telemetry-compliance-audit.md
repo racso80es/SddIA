@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:87881548d653d0fe182faecf5481c0e622fdbc981c9c8af617857a4cfc449c11
+hash_signature: sha256:3992bbfd29f26e35be28e8fdd4e514ebf59e22f5cc30011866a7902de69154bf
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
@@ -17,6 +17,7 @@ phases:
   - contract: audit.compliance
     id: audit:compliance
     version: '>=1.0.0'
+  id: auditoria_cumplimiento_termodinamico
 porcentaje_de_exito: null
 uuid: b3c4d5e6-f7a8-4901-b2c3-d4e5f6a7b8c9
 version: 2.0.0

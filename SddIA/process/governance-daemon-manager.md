@@ -3,7 +3,7 @@ context:
 - system-operations
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:5c1e999195271bc637127214c91d65f91e7c283ddab6a82ca67175da91190d54"
+hash_signature: sha256:8505e5137c4eeac92c5fb3900ed4bc4a9d5a4dd1d992b591025a2333b1cbf0dc
 inputs:
 - operation: 'Enum estricto: `start` | `status` | `kill` — directriz física OS a ejecutar'
 - daemon_id: Identificador kebab-case del Centinela (`name` en `{daemon_id}.md`; debe existir en `SddIA/daemons/index.md`)
@@ -37,10 +37,12 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: resolucion_ssot
 - delegates_to:
   - agent:cerbero
   intent: 'Validar `operation` ∈ {start, status, kill}; RBAC Cerbero sobre contexto del Centinela; abortar si daemon_id ausente del índice o entrypoint/runtime inválidos. Ceguera lógica: no evaluar necesidad de arranque/parada.'
   name: Validación operativa
+  id: validacion_operativa
 - delegates_to:
   - skill:shell-executor
   intent: 'Ejecutar directriz física sobre el SO mediante `skill:shell-executor`: spawn (start), lectura lock/PID (status), SIGTERM→SIGKILL (kill). Sin escalada root/sudo.'
@@ -49,11 +51,13 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: actuacion_os
 - delegates_to:
   - action:crypto-broker
   - skill:bus-operator
   intent: Emitir instancia ECST `Process_Execution_Completed` en `eda_fractal.orchestration` con payload extendido incluyendo `os_result`, `operation`, `daemon_id`, `daemon_uuid`, `operation_status`.
   name: Sello orchestration
+  id: sello_orchestration
 porcentaje_de_exito: null
 uuid: 5a89793a-ba98-4b4f-9287-43c087e312df
 version: 2.0.0

@@ -2,7 +2,7 @@
 context:
 - quality-assurance
 contract: process-contract v1.4.0
-hash_signature: sha256:df75997f31e0b80ecbbae3c66f9c273a85859c6d8bb6b66e8f23b3101091ce8c
+hash_signature: sha256:2450e36cabfe73ebd61ba86f8b7971da9e1d921d212a08eb6d822fd06568ac4b
 inputs: []
 minteo_maximo: null
 name: workspace-smoke
@@ -15,6 +15,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: verificacion_de_workspace
 porcentaje_de_exito: null
 uuid: c4e8a1b2-3f5d-4a9c-8e7b-2d1f0a9b6c3e
 version: 1.0.1

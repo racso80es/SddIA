@@ -1,75 +1,79 @@
 ---
-uuid: "c4355159-b6ea-4201-973a-a08db5ce8156"
-name: "tool-creator"
-version: "1.2.0"
-contract: "process-contract v1.4.0"
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
-context: "ecosystem-evolution"
-hash_signature: sha256:ba34c500193e98855a9bfc864759c2a53e92e13483c9d18a107609b61f377a35
+uuid: c4355159-b6ea-4201-973a-a08db5ce8156
+name: tool-creator
+version: 1.2.0
+contract: process-contract v1.4.0
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
+context: ecosystem-evolution
+hash_signature: sha256:65a9efd67ab2c9e781eff098f15769e8d980d5727b478b08b6b4d9eb70c8cd47
 inputs:
-  - "scope": "Enum estricto obligatorio: `core` | `local`. Resuelve el SSOT de definición e índice (simetría fractal)."
-  - "tool_name": "Identificador kebab-case canónico de la tool (`{name}` del archivo `{tool_name}.md` bajo la raíz resuelta por `scope`)"
-  - "tool_id": "Alias estricto de `tool_name` para compatibilidad con `interaction-triggers` (`intent.create_tool`). Si `tool_name` está ausente y `tool_id` está presente, resolver `tool_name := tool_id` (kebab-case) antes de Fase 1. Prohibido divergir si ambos están presentes."
-  - "domain_origin": "Proyecto o contexto de dominio al que pertenece la tool (alineado a `domain_origin` del contrato de tools)"
-  - "tool_context": "Contexto RBAC Cerbero (debe existir en `execution-contexts.md`)"
-  - "required_secrets": "Variables de entorno requeridas; lista o mapa auditable para cruce con el Vértice Biológico"
-  - "dependencies": "Librerías externas necesarias para la ejecución de la cápsula"
-  - "tool_outputs": "Definición de salidas esperadas (logs, códigos, artefactos) interpretables por acciones"
-  - "execution_logic": "Especificación de la lógica ejecutable (cuerpo de script, puntos de entrada y contrato de invocación)"
+- scope: 'Enum estricto obligatorio: `core` | `local`. Resuelve el SSOT de definición e índice (simetría fractal).'
+- tool_name: Identificador kebab-case canónico de la tool (`{name}` del archivo `{tool_name}.md` bajo la raíz resuelta por `scope`)
+- tool_id: Alias estricto de `tool_name` para compatibilidad con `interaction-triggers` (`intent.create_tool`). Si `tool_name` está ausente y `tool_id` está presente, resolver `tool_name := tool_id` (kebab-case) antes de Fase 1. Prohibido divergir si ambos están presentes.
+- domain_origin: Proyecto o contexto de dominio al que pertenece la tool (alineado a `domain_origin` del contrato de tools)
+- tool_context: Contexto RBAC Cerbero (debe existir en `execution-contexts.md`)
+- required_secrets: Variables de entorno requeridas; lista o mapa auditable para cruce con el Vértice Biológico
+- dependencies: Librerías externas necesarias para la ejecución de la cápsula
+- tool_outputs: Definición de salidas esperadas (logs, códigos, artefactos) interpretables por acciones
+- execution_logic: Especificación de la lógica ejecutable (cuerpo de script, puntos de entrada y contrato de invocación)
 outputs:
-  - "artifact_tool_md": "Si `scope=core`: `{paths.directories.tools}/{tool_name}.md`. Si `scope=local`: `.SddIA/tools/{tool_name}.md`. Cabecera YAML conforme a `paths.contracts.tools`."
-  - "artifact_tool_script": "Script físico bajo `{paths.execution_capsules.tools}` cuando `execution_logic` exija cápsula ejecutable"
-  - "artifact_tools_index": "Si `scope=core`: `{paths.directories.tools}/index.md`. Si `scope=local`: `.SddIA/tools/index.md`. Fila de catálogo con columna **Capabilities** obligatoria."
-  - "handoff_entity_uuid": "UUID v4 de la tool forjada; consumido por `entity-manager`"
-  - "handoff_hash_signature_new": "Sello `sha256:` post-forja; consumido por `entity-manager`"
-  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
-  - "handoff_version": "SemVer resultante"
+- artifact_tool_md: 'Si `scope=core`: `{paths.directories.tools}/{tool_name}.md`. Si `scope=local`: `.SddIA/tools/{tool_name}.md`. Cabecera YAML conforme a `paths.contracts.tools`.'
+- artifact_tool_script: Script físico bajo `{paths.execution_capsules.tools}` cuando `execution_logic` exija cápsula ejecutable
+- artifact_tools_index: 'Si `scope=core`: `{paths.directories.tools}/index.md`. Si `scope=local`: `.SddIA/tools/index.md`. Fila de catálogo con columna **Capabilities** obligatoria.'
+- handoff_entity_uuid: UUID v4 de la tool forjada; consumido por `entity-manager`
+- handoff_hash_signature_new: Sello `sha256:` post-forja; consumido por `entity-manager`
+- handoff_hash_signature_old: Sello previo en update; `null` en create
+- handoff_version: SemVer resultante
 scope_topology:
   core:
-    definitions_root: "SddIA/tools/"
-    index_path: "SddIA/tools/index.md"
+    definitions_root: SddIA/tools/
+    index_path: SddIA/tools/index.md
   local:
-    definitions_root: ".SddIA/tools/"
-    index_path: ".SddIA/tools/index.md"
+    definitions_root: .SddIA/tools/
+    index_path: .SddIA/tools/index.md
 phases:
-  - name: "Validación de Dominio y Secretos"
-    intent: "Cúmulo: unicidad y topología según `scope` antes de forja. Cerbero + policy-validator + shell-executor para contexto, dominio y secretos."
-    delegates_to:
-      - "agent:cumulo"
-      - "agent:cerbero"
-      - "action:policy-validator"
-      - "skill:shell-executor"
-  - name: "Resolución de Dependencias"
-    intent: "Inventariar `dependencies` frente al árbol de `domain_origin` mediante comprobaciones autorizadas por Cerbero y ejecutadas con shell-executor."
-    delegates_to:
-      - "agent:cerbero"
-      - "skill:shell-executor"
-  - name: "Forja del Contrato y Cápsula"
-    intent: "Generar el Markdown bajo contrato tools y la cápsula física en la topología resuelta por `scope`."
-    requires_capability:
-      - id: "fs:persist"
-        contract: "fs.persist"
-        version: ">=1.0.0"
-    delegates_to:
-      - "action:crypto-broker"
-  - name: "Indexación"
-    intent: "Cúmulo valida metadatos atómicos; solo tras autorización se escribe la fila en el `index.md` del ámbito `scope`."
-    requires_capability:
-      - id: "fs:persist"
-        contract: "fs.persist"
-        version: ">=1.0.0"
-    delegates_to:
-      - "agent:cumulo"
+- name: Validación de Dominio y Secretos
+  intent: 'Cúmulo: unicidad y topología según `scope` antes de forja. Cerbero + policy-validator + shell-executor para contexto, dominio y secretos.'
+  delegates_to:
+  - agent:cumulo
+  - agent:cerbero
+  - action:policy-validator
+  - skill:shell-executor
+  id: validacion_de_dominio_y_secretos
+- name: Resolución de Dependencias
+  intent: Inventariar `dependencies` frente al árbol de `domain_origin` mediante comprobaciones autorizadas por Cerbero y ejecutadas con shell-executor.
+  delegates_to:
+  - agent:cerbero
+  - skill:shell-executor
+  id: resolucion_de_dependencias
+- name: Forja del Contrato y Cápsula
+  intent: Generar el Markdown bajo contrato tools y la cápsula física en la topología resuelta por `scope`.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+  delegates_to:
+  - action:crypto-broker
+  id: forja_del_contrato_y_capsula
+- name: Indexación
+  intent: Cúmulo valida metadatos atómicos; solo tras autorización se escribe la fila en el `index.md` del ámbito `scope`.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+  delegates_to:
+  - agent:cumulo
+  id: indexacion
 phase_invocations:
-  - phase_name: "Forja del Contrato y Cápsula"
-    invocations:
-      - capsule: "action:crypto-broker"
-        stdin_json:
-          operation: "GENERATE_UUID"
-          target_payload: null
-        bind:
-          "data.result": "child_tool_uuid"
-        on_error: abort
+- phase_name: Forja del Contrato y Cápsula
+  invocations:
+  - capsule: action:crypto-broker
+    stdin_json:
+      operation: GENERATE_UUID
+      target_payload: null
+    bind:
+      data.result: child_tool_uuid
+    on_error: abort
 minteo_maximo: null
 porcentaje_de_exito: null
 ---

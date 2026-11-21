@@ -4,7 +4,7 @@ context:
 - filesystem-ops
 - quality-assurance
 contract: process-contract v1.4.0
-hash_signature: sha256:0fb2e83c3658bd1e3d03dbf40fff2847f5048eca5f053fb2e45d802710ad829f
+hash_signature: sha256:59b2cfffffb07b14c15af68db2f2571996472aaae7f436ccaa327d38d3215346
 inputs:
 - 'event_uri: Token lógico EventUri (eda://domain/{event_id})'
 - 'target_entity_id: Entidad degradada'
@@ -20,10 +20,12 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: preparacion_sandbox
 - delegates_to:
   - agent:argos
   intent: Argos valida estructura del fix; persiste structure_valid sin emitir Status_Restored.
   name: Verificación estructural Argos
+  id: verificacion_estructural_argos
 porcentaje_de_exito: null
 uuid: 4c5d6e7f-8a9b-4c0d-1e2f-3a4b5c6d7e8f
 version: 2.0.0

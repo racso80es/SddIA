@@ -3,12 +3,12 @@ uuid: 1b4fa69f-4299-47ca-b2ed-380f2263239c
 name: feature
 version: 1.3.4
 contract: process-contract v1.4.0
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: "sha256:b32aa15b89a6b2d003090aa1276c93e6b86135dcf5a4d963a491839d645a9837"
+hash_signature: sha256:b1714ab5b1814257a8223a7751cb8880be754c9367b04ae6c67082b2e28bf3bb
 inputs:
 - feature_name: Nombre kebab-case o etiqueta humana de la feature
 - refined_requirements: Requisitos crudos o semi-refinados de entrada
@@ -28,32 +28,39 @@ phases:
   - id: proc:git-sync
     contract: proc.git_sync
     version: '>=1.0.0'
+  id: workspace_init
 - name: Estabilización de Requisitos
   intent: Mayeuta debe mapear sus salidas lógicas a la norma features-documentation-pattern del active_norm_pack. El transcript se persiste como clarify.md y el requisito termodinámico como objectives.md (con frontmatter obligatorio) bajo persist_ref.
   delegates_to:
   - agent:mayeuta
+  id: stabilization
 - name: Diseño de Blueprint
   intent: 'Dedalo consumirá el cuerpo de objectives.md como refined_requirements. Sus salidas se mapearán a la norma: la especificación técnica será spec.md y el blueprint de proceso será plan.md bajo persist_ref.'
   delegates_to:
   - agent:dedalo
+  id: design
 - name: Ejecución
-  intent: 'Tekton materializa los cambios. Un commit por tarea del plan.md vía git-manager. Cada commit anota la tarea y el identificador en execution.md y marca la tarea como forjada en el PBI de trabajo. Debe generar obligatoriamente implementation.md y execution.md con frontmatter válido según el patrón documental activo en persist_ref.'
+  intent: Tekton materializa los cambios. Un commit por tarea del plan.md vía git-manager. Cada commit anota la tarea y el identificador en execution.md y marca la tarea como forjada en el PBI de trabajo. Debe generar obligatoriamente implementation.md y execution.md con frontmatter válido según el patrón documental activo en persist_ref.
   delegates_to:
   - agent:tekton
+  id: execution
 - name: Verificación
-  intent: 'Argos audita la entrega. Su output (audit_report_md) se mapea unívocamente a validacion.md en persist_ref, inyectando el frontmatter exigido (branch, global, checks, git_changes).'
+  intent: Argos audita la entrega. Su output (audit_report_md) se mapea unívocamente a validacion.md en persist_ref, inyectando el frontmatter exigido (branch, global, checks, git_changes).
   delegates_to:
   - agent:argos
+  id: verification
 - name: Cierre documental en rama
   intent: 'Antes del merge: cierre según tracker.provider y features-documentation-pattern v1.3.1 — provider file: mover PBI a docs/todos/done/ y validacion.md con pbi_archived true; provider linear: issue en state_map.done y validacion APTO, sin ficheros nuevos en docs/todos/pending ni done/. Prohibido merged_pr obligatorio ni segundo PR documental.'
   requires_capability:
   - id: doc:closure
     contract: doc.closure
     version: '>=1.0.0'
+  id: doc_closure
 - name: Cierre de entrega
   intent: Consolidación final, impacto SddIA y apertura de PR. Se delega en action:execute-process inyectando el process_name canónico delivery-close-cycle junto con source_process, persist_ref y branch_name.
   delegates_to:
   - action:execute-process
+  id: delivery_close
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -71,7 +78,7 @@ Todos los artefactos `.md` generados bajo esta directriz deberán incluir obliga
 ## Handoff en Runtime y Reglas de Orquestación
 
 1. **Inicialización Git:** El orquestador inyectará incondicionalmente la variable `repository_path` (ruta absoluta resuelta por Cúmulo) en el `stdin` de `skill:git-manager` para asegurar el cumplimiento de su contrato congelado.
-2. **Ignición tracker (AUT-65 / AUT-75):** Tras Fase 1 exitosa, `workspace-init` aplica `lifecycle_phase_action` (`forge_started` → In Progress). Puede emitirse `Work_Initiated` fail-soft para el bus; **no** mueve columna — el writer es la acción de fase.
+2. **Ignición tracker (AUT-65 / AUT-75 / MAN-34):** Tras Fase 1 exitosa, `workspace-init` aplica `lifecycle_phase_action` (`forge_started` → In Progress). `Work_Initiated` (fail-soft para el bus; **no** mueve columna) se emite una sola vez al entrar en la primera fase efectiva `agent:tekton` (`execution`), de modo que una parada en `design` no emite `Work_Initiated`.
 3. **Forja → In Validation (AUT-75):** Al entrar en Verificación, si `persist_ref` contiene `implementation.md` y `execution.md`, el motor aplica `forge_closed` (`forge_date`, `forge_by`), aunque Ejecución haya quedado `simulated` o `skipped`. No se emite `Validation_Started` tras Tekton.
 4. **Argos y PR (AUT-75):** `validacion.md` con `global: APTO` → **Validated**; otro global → In Progress (`validated_status: no apto`). DCC (sello presentación) → In Review (`pr_opened`). `accept-pr` → Done (`review_ci_green`); handoff PPR no aprobado → In Progress (`review_ci_red`). Metadatos en frontmatter del issue. Requiere estado **Validated** en workflow Linear (instancia).
 5. **Precedencia de Entrada:** El input `refined_requirements` (semilla cruda) es consumido exclusivamente en la fase de Estabilización.
