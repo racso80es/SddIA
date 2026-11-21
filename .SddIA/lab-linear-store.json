@@ -1,8 +1,42 @@
 {
   "audit_log": [
-    "comment:MAN-101:nota"
+    "comment:MAN-101:nota",
+    "comment:LAB-PBI-OK:PBI cancelado: descartado",
+    "comment:LAB-PBI-MERGE-LAST:Delivery commit: `deadbeef`",
+    "comment:LAB-PBI-FIXONLY:Delivery commit: `deadbeef`",
+    "comment:LAB-PBI-FIXONLY:Delivery commit: `deadbeef`",
+    "comment:LAB-PBI-BADPARENT:Delivery commit: `deadbeef`",
+    "comment:LAB-PBI-BADLABEL:Delivery commit: `deadbeef`",
+    "comment:LAB-PBI-MERGE-LAST:Delivery commit: `deadbeef`",
+    "comment:LAB-PBI-OK:PBI cancelado: descartado",
+    "comment:LAB-PBI-FIXONLY:Delivery commit: `deadbeef`",
+    "comment:LAB-PBI-FIXONLY:Delivery commit: `deadbeef`",
+    "comment:LAB-PBI-BADPARENT:Delivery commit: `deadbeef`",
+    "comment:LAB-PBI-BADLABEL:Delivery commit: `deadbeef`"
   ],
   "comments": {
+    "LAB-PBI-BADLABEL": [
+      "Delivery commit: `deadbeef`",
+      "Delivery commit: `deadbeef`"
+    ],
+    "LAB-PBI-BADPARENT": [
+      "Delivery commit: `deadbeef`",
+      "Delivery commit: `deadbeef`"
+    ],
+    "LAB-PBI-FIXONLY": [
+      "Delivery commit: `deadbeef`",
+      "Delivery commit: `deadbeef`",
+      "Delivery commit: `deadbeef`",
+      "Delivery commit: `deadbeef`"
+    ],
+    "LAB-PBI-MERGE-LAST": [
+      "Delivery commit: `deadbeef`",
+      "Delivery commit: `deadbeef`"
+    ],
+    "LAB-PBI-OK": [
+      "PBI cancelado: descartado",
+      "PBI cancelado: descartado"
+    ],
     "MAN-101": [
       "nota"
     ]

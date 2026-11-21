@@ -507,6 +507,21 @@ fn capsule_diff_seal_validacion(repo: &Path, inputs: &Value, state: &Value) -> V
             return entry;
         }
     }
+    if !env_truthy_dcc(super::parental_close_gate::LAB_SKIP_ENV) {
+        if let Err(fault) = super::parental_close_gate::assert_parental_close_allowed(
+            repo,
+            &persist_ref,
+            &super::parental_close_gate::ParentalCloseEvidence::success_seal(),
+        ) {
+            entry["status"] = json!("blocked");
+            entry["friction_id"] = json!(fault.friction_id);
+            entry["message"] = json!(fault.message);
+            entry["operator_hint"] = json!(fault.operator_hint());
+            entry["persist_ref"] = json!(persist_ref);
+            entry["reasons"] = json!(fault.reasons);
+            return entry;
+        }
+    }
     let target_branch = str_field_dcc(inputs, "target_branch").unwrap_or_else(|| "main".into());
     let seal = match diff_seal::compute_diff_seal(repo, &branch, &target_branch, &persist_ref) {
         Ok(s) => s,
@@ -632,6 +647,10 @@ fn dcc_pre_pr_qa_block_suppresses_fracture(report: &Value) -> bool {
             | Some("apto_coherence_execution_blocked")
             | Some("apto_coherence_open_phases")
             | Some("apto_coherence_resolution")
+            | Some("parental_close_rollup_denied")
+            | Some("parental_close_success_denied")
+            | Some("parental_close_narrative_denied")
+            | Some("parental_close_scope_cut_denied")
     )
 }
 

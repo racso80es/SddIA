@@ -11,6 +11,7 @@ pub mod capsules;
 pub mod git_porcelain;
 pub mod daemons;
 pub mod apto_coherence;
+pub mod parental_close_gate;
 pub mod accept_pr;
 pub mod runtime_recycle;
 pub mod validacion_runtime_parity;
