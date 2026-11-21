@@ -1,7 +1,7 @@
 ---
 context: quality-assurance
 contract: process-contract v1.4.0
-hash_signature: "sha256:fd21214a556d46319d7ad02a422522469e7f9296b818ad7f996af17f3e6a4b8c"
+hash_signature: sha256:53c6fcafebe88740a46c870aa8d97a5ce26e7059a8c25b385131e4c19b524564
 inputs:
 - description: Boolean; default true — escribe ecosystem-health.json.
   name: persist
@@ -22,6 +22,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: fusionar_salud
 uuid: 2b337302-e794-46b8-ad4e-f65bafd21c94
 version: 1.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/

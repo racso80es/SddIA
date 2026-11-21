@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:97074887f6db705427ce07758c47b8be06dc92c97df7bd8b5f6f44eeac4a8b70
+hash_signature: sha256:233e78c453256af436ebb5d72be1e63876899ef9e1cc45502dbe13f75cf0e8b4
 inputs:
 - entity_class: 'string; enum: process | agent | skill | tool | action | norm | codex | event | suite | daemon | capability-contract'
 - entity_name: string; identificador kebab-case de la entidad
@@ -22,16 +22,19 @@ phases:
   - action:execute-process
   intent: 'En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto S+: las 11 clases (skill, event, process, agent, tool, action, norm, codex, suite, daemon y capability-contract, esta última por forja nativa sin creator).'
   name: Delegación al creator
+  id: delegacion_al_creator
 - intent: 'Solo en delete: READ_FILE del artefacto para extraer uuid/version/hash_signature; DELETE_FILE del .md bajo directories.*.'
   name: Delete físico
   requires_capability:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: delete_fisico
 - delegates_to:
   - action:emit-domain-mutation
   intent: Invocar action:emit-domain-mutation con emitter_agent entity-manager y handoff del creator o metadatos de delete.
   name: Sello universal
+  id: sello_universal
 porcentaje_de_exito: null
 uuid: 62f08bbd-e9ce-479d-8d1b-792684e1bd26
 version: 2.0.0

@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:c7e0a688ed06442289d38341078dc0c127341f13dd8d15dce04181f7f0dc1441
+hash_signature: sha256:e722e71b953da7d1c0c5461d58524bfdeffa24d1234b4106c0fc8c84439c4619
 inputs:
 - daemon_name: Identificador kebab-case del Centinela (`{name}` del archivo `{name}.md` en `cumulo.directories.daemons`)
 - daemon_context: Contexto RBAC Cerbero (debe existir en `execution-contexts.md`)
@@ -57,6 +57,7 @@ phases:
   - agent:cerbero
   intent: Verificar daemon_context en execution-contexts; unicidad y kebab-case de daemon_name bajo directories.daemons; SemVer; bloque execution completo y heartbeat_interval_seconds ≥ 5.
   name: Validación RBAC y topología
+  id: validacion_rbac_y_topologia
 - delegates_to:
   - action:crypto-broker
   intent: Generar uuid v4 y hash_signature de integridad según canon §7 daemons-contract; YAML (contract, context, capabilities, execution, jurisdiction) y cuerpo conforme a contracts.daemons; rutas solo vía cumulo.
@@ -65,6 +66,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: forja_del_markdown
 - delegates_to:
   - agent:cumulo
   intent: Auditar daemons/index.md (columna heartbeat_interval_seconds obligatoria) e insertar fila idéntica a la cabecera del Centinela creado.
@@ -73,6 +75,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: indexacion
 porcentaje_de_exito: null
 uuid: c172f130-532f-4714-be4e-fcd80b84a5dc
 version: 1.0.1

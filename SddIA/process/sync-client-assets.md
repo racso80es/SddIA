@@ -1,41 +1,45 @@
 ---
-uuid: "0f6bf2ff-a067-46fb-9175-ee97e6a5dcd8"
+uuid: 0f6bf2ff-a067-46fb-9175-ee97e6a5dcd8
 id: sync-client-assets
 name: sync-client-assets
-version: "1.0.0"
+version: 1.0.0
 type: process
 contract: process-contract v1.4.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 context:
-  - ecosystem-evolution
-  - knowledge-management
-hash_signature: "sha256:9b4b98de9941a7d9469dfe2716086790a6f07185bb38a02b00e837a98b879b91"
+- ecosystem-evolution
+- knowledge-management
+hash_signature: sha256:017fa6b4e7e959dcef92687acca75cb8ff08a8bddbfa04a790dc96e6c8bbac30
 inputs:
-  - asset_id: UUID del activo solicitado
-  - asset_family: library_codexes | library_norms
+- asset_id: UUID del activo solicitado
+- asset_family: library_codexes | library_norms
 outputs:
-  - synced: true si el activo local fue actualizado
-  - local_version: Versión resultante en la instancia
-  - hash_verified: Resultado de la validación de integridad
+- synced: true si el activo local fue actualizado
+- local_version: Versión resultante en la instancia
+- hash_verified: Resultado de la validación de integridad
 phases:
-  - name: Manifiesto-Local
-    intent: Leer versión y hash del activo presente en la instancia.
-    requires_capability:
-      - id: fs:persist
-        contract: fs.persist
-        version: ">=1.0.0"
-  - name: Reclamacion
-    intent: Obtener el activo vigente del repositorio maestro (origen opaco).
-    delegates_to:
-      - action:download-remote-asset
-  - name: Aduana-Integridad
-    intent: Comparar sha256(content) contra declared_hash; discordancia aborta sin escribir.
-  - name: Inyeccion
-    intent: Sobrescribir activo en {instancia}/.SddIA/library/ resolviendo ruta por motor.
-    requires_capability:
-      - id: fs:persist
-        contract: fs.persist
-        version: ">=1.0.0"
+- name: Manifiesto-Local
+  intent: Leer versión y hash del activo presente en la instancia.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+  id: manifiesto_local
+- name: Reclamacion
+  intent: Obtener el activo vigente del repositorio maestro (origen opaco).
+  delegates_to:
+  - action:download-remote-asset
+  id: reclamacion
+- name: Aduana-Integridad
+  intent: Comparar sha256(content) contra declared_hash; discordancia aborta sin escribir.
+  id: aduana_integridad
+- name: Inyeccion
+  intent: Sobrescribir activo en {instancia}/.SddIA/library/ resolviendo ruta por motor.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+  id: inyeccion
 minteo_maximo: null
 porcentaje_de_exito: null
 ---

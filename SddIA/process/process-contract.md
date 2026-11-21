@@ -1,5 +1,5 @@
 ---
-contract_version: "1.4.0"
+contract_version: "1.5.0"
 entity_type: "process"
 jurisdiction: "Core SddIA"
 capabilities:
@@ -35,11 +35,13 @@ Los procesos dictan el camino, no el destino físico.
 ## 3. Interfaz de Interacción y Fases
 La comunicación debe ser paramétrica. El `{name}.md` debe declarar:
 * **`inputs`**: Datos de inicio (ej. el spec de una nueva feature). Los procesos forja que operan en más de un SSOT físico (p. ej. `tool-creator`) deben declarar un input discriminador con **enum estricto** documentado en su `{name}.md` (p. ej. `scope`: `core` | `local`) y tabular las rutas resueltas; prohibido inferir el ámbito sin ese input.
+  * **Inputs base universales (v1.5.0+):** todo proceso acepta opcionalmente `stop_after: list<string>` (default `[]`; admite string único legacy normalizado a lista de un elemento) para detener la ejecución tras completar un `phase.id` con `status: executed` (`cycle_phase: awaiting_agents`, `reason: stop_after`), `resume: bool` (default `false`) para reanudar desde el registro incremental (`phase_reports.json` / `.SddIA/state/active-executions.json`) saltando fases `executed` y relanzando fases no completadas, y `execution_id: string` para apuntar a una ejecución previa.
 * **`phases`**: Array inmutable de objetos; cada elemento define una fase declarativa y el enrutamiento por capacidades (sin deducción libre del LLM). Estructura estricta:
 
 ```yaml
 phases:
-  - name: "Nombre de fase"
+  - id: "phase_id_snake_case"               # obligatorio v1.5.0+: slug snake_case único e inmutable
+    name: "Nombre de fase"
     intent: "Descripción de lo que se busca"
     delegates_to: ["tipo:nombre-de-capsula"]  # ej. ["action:crypto-broker", "skill:filesystem-manager"]
 ```

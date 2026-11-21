@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:d5ce011bde908549238a4ac0ec883faf647c37125f6cf6cab814b567f9aafd81"
+hash_signature: sha256:6f360c40d9973b96de1f565e535b7fa41dd75b69451def18ea1707ecebef41bb
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
@@ -18,6 +18,7 @@ phases:
   - contract: bus.route
     id: bus:route
     version: '>=1.0.0'
+  id: fan_out_dominio_fractal
 porcentaje_de_exito: null
 uuid: d4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0
 version: 2.0.0

@@ -4,7 +4,7 @@ context:
 - source-control
 - filesystem-ops
 contract: process-contract v1.4.0
-hash_signature: "sha256:44223712567a5b3913ec52388224131d6ee22b292f5367ffe7ffd6c700785dde"
+hash_signature: "sha256:0706128202e013ba6adf2a965a6fbcfc05ffbae2e2f369e3e22469541f148622"
 inputs:
 - source_branch: Rama feature a fusionar hacia main (validada por git-operations antes de invocar)
 - author: Autor del merge para el evento PullRequest_Merged
@@ -24,6 +24,7 @@ phases:
   - agent:argos
   intent: Argos evalúa la rama origen y la aduana exige qa-attestation/1.0 PPR del mismo tree_sha. Si detecta fricción letal, atestación inválida o vulnerabilidad, aborta el proceso.
   name: Auditoría Genómica
+  id: auditoria_genomica
 - delegates_to:
   - skill:git-manager
   intent: Validar sello diff + coherencia APTO (apto_coherence) antes del checkout/merge soberano; abortar sin merge si falla.
@@ -32,14 +33,17 @@ phases:
   - contract: proc.git_sync
     id: proc:git-sync
     version: '>=1.0.0'
+  id: fusion_soberana
 - delegates_to:
   - action:emit-pr-merged-event
   intent: Emitir el evento inmutable PullRequest_Merged en el bus local.
   name: Sello Criptográfico de Fusión
+  id: sello_criptografico_de_fusion
 - delegates_to:
   - skill:git-manager
   intent: Hacer push de main al repositorio remoto y eliminar la rama de origen tanto en local como en remoto.
   name: Sincronización y Limpieza
+  id: sincronizacion_y_limpieza
 porcentaje_de_exito: null
 uuid: bd81c878-5e1c-4fe5-b204-85c9136d8bc7
 version: 2.0.0

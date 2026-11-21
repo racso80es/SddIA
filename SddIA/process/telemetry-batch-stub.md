@@ -2,7 +2,7 @@
 context: ecosystem-evolution
 contract: process-contract v1.4.0
 deprecated: true
-hash_signature: sha256:7f7cc081acf3327b99382eca446625f04a7137fc784ce38e31ee085283e4a0bc
+hash_signature: sha256:06b1f613e7707cb33e4f9cfebf1ff726767b4944a255990d6c83f413d19f39bd
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
@@ -16,6 +16,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: consumo_batch_stub
 porcentaje_de_exito: null
 superseded_by: radamanto-batch
 uuid: f1e2d3c4-b5a6-4789-8c0d-1e2f3a4b5c6d

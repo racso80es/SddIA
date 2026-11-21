@@ -3,7 +3,7 @@ context:
 - system-operations
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:08c4c7d6316441f36fdcdc1a87a136820b69c8c312d063bfd6d02e498b1056bf
+hash_signature: sha256:92b010e9d1dd3217c7e26a7fc041645f8a0c0e4643c484bca53329263c36969e
 inputs:
 - kill_grace_seconds: Opcional; segundos SIGTERM→SIGKILL por Centinela (default `10`)
 - cumulo_topology: Topología SSOT inyectada
@@ -25,20 +25,24 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: enumeracion_indice
 - delegates_to:
   - action:execute-process
   intent: 'Por cada Centinela con lock/PID vivo: delegar kill en governance-daemon-manager (SIGTERM→SIGKILL).'
   name: Purga iterativa
+  id: purga_iterativa
 - intent: Eliminar locks stale; verificar ausencia de PIDs zombie bajo daemons_instance.status.
   name: Verificación huérfanos
   requires_capability:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: verificacion_huerfanos
 - delegates_to:
   - skill:bus-operator
   intent: Emitir Process_Execution_Completed con purge_report y stale_locks_removed.
   name: Sello orchestration
+  id: sello_orchestration
 porcentaje_de_exito: null
 uuid: b0de6585-11fc-4b3c-8b19-ad6b727d820e
 version: 2.0.0

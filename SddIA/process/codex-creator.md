@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - knowledge-management
 contract: process-contract v1.4.0
-hash_signature: sha256:265e42fa9a88287d58a64095a19d00f0d920430e2b5fb737fda1c15068aec66f
+hash_signature: sha256:912b6c16ebdd1c00eb6ecb6a82c60c23798a52abf614ebc30063a27500e89637
 inputs:
 - domain_codex_slug: Identificador kebab-case del archivo (`{slug}.md` bajo `directories.library_codexes`)
 - domain_codex_name: Nombre estratégico del paquete (campo `name` del frontmatter según `codex-contract.md`)
@@ -38,16 +38,19 @@ phases:
   - agent:cerbero
   intent: Recibir tactical_norm_inventory y target_environment; verificar bajo directories.library_norms que cada norma existe y es válida bajo norms-contract.
   name: Selección y Triaje (Inventario)
+  id: seleccion_y_triaje_inventario
 - delegates_to:
   - action:crypto-broker
   - agent:cumulo
   intent: Emitir UUID v4 del códice; fijar versión inicial y certification_grade por defecto Pendiente hasta auditoría Argos.
   name: Inyección de Identidad
+  id: inyeccion_de_identidad
 - delegates_to:
   - agent:dedalo
   - agent:argos
   intent: 'Redactar cuerpo Markdown: Estrategia de Dominio e Instrucciones de Prioridad ante matices contradictorios entre normas.'
   name: Forja de Estrategia (El Vibe)
+  id: forja_de_estrategia_el_vibe
 - delegates_to:
   - agent:cumulo
   intent: Ensamblar YAML (composition con paths de normas) y Markdown en un solo flujo; nombre de archivo kebab-case; persistir en directories.library_codexes.
@@ -56,6 +59,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: materializacion_transmutacion_a_activo_fisico
 - delegates_to:
   - agent:cumulo
   intent: Verificar library_codexes/index.md e insertar o actualizar fila Archivo fuente|uuid|name|version|target_environment|certification_grade alineada al YAML fuente.
@@ -64,6 +68,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: indexacion
 porcentaje_de_exito: null
 uuid: dd9e13b2-fc07-40d2-95f5-b50ebd535a9e
 version: 1.1.1

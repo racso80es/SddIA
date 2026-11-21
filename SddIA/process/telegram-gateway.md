@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - external-ingest
 contract: process-contract v1.4.0
-hash_signature: "sha256:08f46818616eb8f3efc05564f888423d08cf1368fa64712233eb31141c88f0e0"
+hash_signature: sha256:59cfd7bd2cdab434720bdc30ca79a74f08991dbbd5310b4c509307ed187f5681
 inputs:
 - 'text: Texto plano (XOR con callback_data)'
 - 'callback_data: Payload de botón inline ≤ 64 bytes (XOR con text)'
@@ -24,6 +24,7 @@ phases:
   - contract: channel.ingest
     id: channel:ingest
     version: '>=1.0.0'
+  id: transmutacion_e_inyeccion
 porcentaje_de_exito: null
 uuid: f5a6b7c8-d9e0-4f1a-b2c3-d4e5f6a7b8c9
 version: 1.0.2

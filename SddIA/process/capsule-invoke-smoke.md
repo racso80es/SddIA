@@ -2,7 +2,7 @@
 context:
 - quality-assurance
 contract: process-contract v1.4.0
-hash_signature: sha256:76456a7a5d4030da2b773344000285d42bbb64a30e07b5cc645966e0b4a8cc23
+hash_signature: sha256:6b61755dd588327bfcec63cc567ce2d68082c6e80b264a0f85d8a6dff819d6f3
 inputs: []
 minteo_maximo: null
 name: capsule-invoke-smoke
@@ -17,6 +17,7 @@ phases:
   - contract: qa.probe
     id: qa:probe
     version: '>=1.0.0'
+  id: invocacion_io_choke
 porcentaje_de_exito: null
 uuid: f3a8c2d1-9e4b-4a7c-b6d5-1e0f9a8b7c6d
 version: 1.0.1

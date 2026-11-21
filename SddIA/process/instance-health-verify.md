@@ -1,7 +1,7 @@
 ---
 context: quality-assurance
 contract: process-contract v1.4.0
-hash_signature: "sha256:314f1414b86745c6c71e5d491264db9e0b009c73676c57c4d073d388679a5f92"
+hash_signature: sha256:08a2b9fd1dbc9ed362666268ee6e01f35c1d760b8c8f2db0c918973957343498
 inputs:
 - instance_root: Ruta absoluta de la instancia desplegada
 name: instance-health-verify
@@ -11,6 +11,7 @@ outputs:
 phases:
 - intent: 'Handler nativo: systemctl, HTTP GET /api/system-health (WUI), acta instance-deploy-{ESC}-{ts}.md con verdict APTO|NO-APTO.'
   name: Verificar instancia
+  id: verificar_instancia
 uuid: 44f1b64c-8a88-4d1e-a8f5-6280b4a44ce2
 version: 1.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/

@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - knowledge-management
 contract: process-contract v1.4.0
-hash_signature: sha256:d340ad0c9e467d4e2d66c15a978fa70d5bea5aae1053c9b166b64fdf86fab6bf
+hash_signature: sha256:1237c62f8cdf5db36d5775a1a8ea38715eb413614467dec485dbe0af556dd06b
 inputs:
 - tactical_norm_name: Identificador kebab-case del archivo (`{name}.md` bajo `directories.library_norms`)
 - tactical_norm_version: SemVer de la norma (p. ej. 1.0.0)
@@ -36,17 +36,20 @@ phases:
   - agent:cerbero
   intent: Recibir tactical_norm_friction; abortar si viola el Principio de Atomicidad (dominios contradictorios o multi-vector no atomizable).
   name: Triaje de Entrada (Aduana Lógica)
+  id: triaje_de_entrada_aduana_logica
 - delegates_to:
   - action:crypto-broker
   - agent:dedalo
   - agent:cumulo
   intent: Deducir scope y category según enums de norms-contract; validar tactical_norm_dependencies; emitir UUID v4 para cabecera vía crypto-broker.
   name: Clasificación Semántica
+  id: clasificacion_semantica
 - delegates_to:
   - agent:dedalo
   - agent:argos
   intent: Separar conocimiento en Directriz Core (aséptica) y Restricciones Duras (prohibiciones explícitas para Filtro A).
   name: Destilación Rúnica
+  id: destilacion_runica
 - delegates_to:
   - agent:cumulo
   intent: Ensamblar YAML y Markdown conforme a contracts.library_norms; persistir en directories.library_norms con nombre kebab-case.
@@ -55,6 +58,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: materializacion
 - delegates_to:
   - agent:cumulo
   intent: Verificar library_norms/index.md e insertar o actualizar fila Archivo fuente|uuid|name|version|scope|category alineada al YAML fuente.
@@ -63,6 +67,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: indexacion
 porcentaje_de_exito: null
 uuid: a132a6fc-52c8-4795-8c68-a2897d456588
 version: 1.2.1

@@ -20,7 +20,7 @@ provides:
 - contract: channel.ingest
   id: channel:ingest
   version: 1.0.0
-source_sha256: sha256:05d076da461e95ca2ba1e52084a4a66464ddc17e2b49832dd3f5e316d0bc92c5
+source_sha256: sha256:a87567a55d0f6a1676c4049d338220f91ba21ad0455323ce08a3f811659b19e2
 uuid: a23dda8f-b5d5-4091-a21c-f408159d3a3e
 version: 1.0.0
 ---

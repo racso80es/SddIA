@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:794696a90e36910a64bc35863695b77ad8a54f0381b552dc4a0333b571a35366
+hash_signature: sha256:f5ea8a75fcf48a7053a3487ef77cd9a42bf0d8063f2af32945ba12d46ae60ad1
 inputs:
 - 'event_uri: Ruta de la instancia ECST Email_Received'
 name: email-triage-gateway
@@ -18,22 +18,27 @@ phases:
   - contract: memory.pref_query
     id: memory:pref-query
     version: '>=1.0.0'
+  id: triaje_p
 - intent: Reglas deterministas de email-triage-matrix; salida temprana en noise sin gasto de inferencia. Omitido si P-EXEMPT-C.
   name: Triaje-C
+  id: triaje_c
 - intent: Clasificacion semantica solo para correo no resuelto por Triaje-C ni mute P. Prompt + user_preference_context si hay habitos parciales.
   name: Clasificacion
   requires_capability:
   - contract: llm.interact
     id: llm:interact
     version: '>=1.0.0'
+  id: clasificacion
 - intent: Extraccion estructurada y asiento local; solo via actionable.
   name: Asiento-Agenda
   requires_capability:
   - contract: agenda.persist
     id: agenda:persist
     version: '>=1.0.0'
+  id: asiento_agenda
 - intent: Escritura de Email_Triaged en eda_fractal.domain con veredicto y coste.
   name: Emision
+  id: emision
 uuid: 9cb9a63a-bb86-4b97-8a75-4dac2f2cb5ce
 version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
