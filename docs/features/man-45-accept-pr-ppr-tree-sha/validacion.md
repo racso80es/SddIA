@@ -115,10 +115,11 @@ situational_notes:
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/; cierre Linear fuera de Veredicto
 execution_id: 52da40f9-4dde-44a6-88d6-ce6efb0a1ec8
 validated_base_sha: bc7255e83c7ab7adb34e3d1369c4d6d7bb59265c
-validated_head_sha: 9c04828633ad56eebf5dcd80254d8ea2b3933a21
-validated_tree_sha: null
-diff_digest: null
+validated_head_sha: 0b0279ae48ccc2bb9645741060ecfc6d791f39e6
+validated_tree_sha: 502c499d37b2fd1cc48640f06aecfe648fe15b1d
+diff_digest: sha256:5b4a14bc6be55bfd44a0fd4d0ce1b01acedff34b7218a87cf694d316c53da222
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
