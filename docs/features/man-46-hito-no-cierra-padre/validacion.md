@@ -1,7 +1,7 @@
 ---
 feature_name: man-46-hito-no-cierra-padre
-created: "2026-11-21"
-updated: "2026-11-21"
+created: 2026-11-21
+updated: 2026-11-21
 process: feature
 branch_name: feat/man-46-hito-no-cierra-padre
 persist_ref: docs/features/man-46-hito-no-cierra-padre
@@ -9,14 +9,18 @@ pbi_ref: MAN-46
 parent_ref: MAN-43
 document_id: PBI-74cd5db0
 phase: verificacion
-status: APTO
+agent: argos
 global: APTO
 verdict: aprobado
 approval_status: aprobado
 norm_ref: features-documentation-pattern@1.3.2
-execution_id: "cbf032fc-8bbf-452e-b124-a5266b7d3fc4"
-agent: argos
+execution_id: cbf032fc-8bbf-452e-b124-a5266b7d3fc4
+validated_base_sha: f102e89b6d8339a938d50e6c4e35a9783be9b005
+validated_head_sha: 8db4b01984472470286a6720a9d95b16b63c68da
+validated_tree_sha: 5efce7b40a3bfb7ce9d0c5d55ad177aa4f7a6569
+diff_digest: sha256:e63c26738925cf77493cade8df62b6d9f72753141549e3c2c74b95a5cefb0316
 ---
+
 # Validación — man-46-hito-no-cierra-padre
 
 ## global
