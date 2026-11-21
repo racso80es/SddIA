@@ -466,6 +466,12 @@ pub fn validate_for_accept_pr_merge(
         verify_diff_seal_at_head(repo, &head, target_branch, &persist)?;
         apto_coherence::validate_apto_coherence(repo, &persist)
             .map_err(|f| f.to_error_string())?;
+        super::parental_close_gate::assert_parental_close_allowed(
+            repo,
+            &persist,
+            &super::parental_close_gate::ParentalCloseEvidence::success_seal(),
+        )
+        .map_err(|f| f.to_error_string())?;
     }
     Ok(())
 }
@@ -944,6 +950,11 @@ mod tests {
         fs::write(
             repo.join("docs/fixes/cycle-ap/execution.md"),
             "---\nstatus: complete\nverdict: ok\n---\n\n# ok\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join("docs/fixes/cycle-ap/objectives.md"),
+            "---\nfeature_name: cycle-ap\n---\n\n- [x] AC-1\n",
         )
         .unwrap();
         Command::new("git")

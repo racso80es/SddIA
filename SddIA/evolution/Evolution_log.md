@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `74f9be57-c585-443e-8593-897abafa3322` | 2026-11-21 | MAN-46 (KZ-3): aduana parental_close_gate (hito no cierra PBI padre ni tracker sin AC cerrados o refine previo) | CANONICO | `SddIA/evolution/74f9be57-c585-443e-8593-897abafa3322.md` |
 | `a2e2fe0c-24ee-4fac-b946-4dfbde523f4d` | 2026-11-20 | MAN-45 (KZ-2): accept-pr exige atestación qa-attestation/1.0 aprobado del mismo tree_sha emitida por pull-request-review | CANONICO | `SddIA/evolution/a2e2fe0c-24ee-4fac-b946-4dfbde523f4d.md` |
 | `28c4eb5b-b61c-4024-b890-ba7a5f3bffa2` | 2026-11-20 | MAN-44 (KZ-1): aduana de coherencia documental APTO en delivery-close-cycle y accept-pr | CANONICO | `SddIA/evolution/28c4eb5b-b61c-4024-b890-ba7a5f3bffa2.md` |
 | `d9dce4a4-50d0-4f9f-9af0-2224a6856b3f` | 2026-11-20 | MAN-50: cierre definitivo MAN-43/MAN-49 (B-01 dead-letter vía puerto, B-02 higiene .events/, B-03a integration_src=[] y B-03b docs) | CANONICO | `SddIA/evolution/d9dce4a4-50d0-4f9f-9af0-2224a6856b3f.md` |

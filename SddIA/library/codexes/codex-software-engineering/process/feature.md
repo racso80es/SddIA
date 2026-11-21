@@ -88,6 +88,8 @@ La última fase invoca la acción `execute-process` apuntando al `process_name` 
 
 Misma regla que `bug-fix` § Cierre documental en rama: ramificar por `tracker.provider` según `features-documentation-pattern` v1.3.1 (file → move + `pbi_archived`; linear → `state_map.done` + proofs, sin nuevos `docs/todos/`). Un único PR; sin segundo PR documental a `main`.
 
+**Hito ≠ Done del padre (MAN-46 / KZ-3):** un hito de plan se entrega como ítem hijo; el merge del hijo no mueve el padre a `state_map.done`. `delivery_state: success` del feature padre exige AC de `objectives.md` cerrados o `refine` sellado de reducción de alcance previo al merge; prohibido narrar «ciclo cerrado» en `validacion.md` con AC abiertos.
+
 ## Perfil laboratorio vs runtime IDE
 
 | Aspecto | Laboratorio (`execute-process` nativo) | Runtime IDE completo |
