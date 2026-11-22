@@ -213,11 +213,33 @@ mod tests {
         let _ = fs::remove_dir_all(core.join(format!("_forge_hu_{slug}")));
     }
 
+    struct LabProjectGuard {
+        core: std::path::PathBuf,
+        slug: String,
+    }
+
+    impl LabProjectGuard {
+        fn new(core: &Path, slug: &str) -> Self {
+            cleanup(core, slug);
+            Self {
+                core: core.to_path_buf(),
+                slug: slug.to_string(),
+            }
+        }
+    }
+
+    impl Drop for LabProjectGuard {
+        fn drop(&mut self) {
+            cleanup(&self.core, &self.slug);
+        }
+    }
+
     #[test]
     fn aut50_ca5_forge_hu_returns_tracker_ref() {
         with_lab(|| {
             let core = find_repo_root().expect("repo");
             let slug = "forge-hu-ca5";
+            let _guard = LabProjectGuard::new(&core, slug);
             register_lab_project(&core, slug, true);
             let out = run(
                 &core,
@@ -235,7 +257,6 @@ mod tests {
                 .and_then(|v| v.as_str())
                 .expect("tracker_ref");
             assert!(tr.starts_with("OSC-"));
-            cleanup(&core, slug);
         });
     }
 }
