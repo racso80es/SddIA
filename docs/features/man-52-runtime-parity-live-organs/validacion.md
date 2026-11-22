@@ -1,11 +1,11 @@
 ---
 feature_name: man-52-runtime-parity-live-organs
-created: "2026-11-22"
+created: 2026-11-22
 process: feature
 branch: feat/man-52-runtime-parity-live-organs
 persist_ref: docs/features/man-52-runtime-parity-live-organs
 tracker_ref: MAN-52
-execution_id: "07a7307e-caf6-4a8c-b263-ad64910f48ea"
+execution_id: 07a7307e-caf6-4a8c-b263-ad64910f48ea
 global: APTO
 checks:
   sddia_runtime_parity_tests: APTO
@@ -15,16 +15,20 @@ checks:
   verify_compiled_capsules_live: APTO
   gate_evolution: APTO
 git_changes:
-  - SddIA/Cargo.lock
-  - SddIA/sddia-runtime-parity/src/lib.rs
-  - SddIA/engine/execute-process/src/engine/validacion_runtime_parity.rs
-  - SddIA/engine/execute-process/src/engine/capsule_seal.rs
-  - SddIA/engine/execute-process/src/engine/runtime_recycle.rs
-  - SddIA/tools/sddia-qa/Cargo.toml
-  - SddIA/tools/sddia-qa/src/verify_compiled_capsules.rs
-  - SddIA/scripts/sync-live-organs.sh
-  - SddIA/evolution/Evolution_log.md
-  - SddIA/evolution/8e47108c-1d40-423c-9985-d80d64d5c1c2.md
+- SddIA/Cargo.lock
+- SddIA/sddia-runtime-parity/src/lib.rs
+- SddIA/engine/execute-process/src/engine/validacion_runtime_parity.rs
+- SddIA/engine/execute-process/src/engine/capsule_seal.rs
+- SddIA/engine/execute-process/src/engine/runtime_recycle.rs
+- SddIA/tools/sddia-qa/Cargo.toml
+- SddIA/tools/sddia-qa/src/verify_compiled_capsules.rs
+- SddIA/scripts/sync-live-organs.sh
+- SddIA/evolution/Evolution_log.md
+- SddIA/evolution/8e47108c-1d40-423c-9985-d80d64d5c1c2.md
+validated_base_sha: e7da0d289d9952fb75a8ba08599ee277aceba2b1
+validated_head_sha: 61858ba1a27e58768f78232d864e97a680a6adbd
+validated_tree_sha: bf5b9ef1206a3a833d6c813ba757168efe0cba1d
+diff_digest: sha256:5ebe436e540043ff56362e26ca1350e22ef58e974464b4199b39c0d08cb44024
 ---
 
 # Validación — man-52-runtime-parity-live-organs
