@@ -275,6 +275,25 @@ fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
         }));
     }
 
+    if let Some(persist) = str_field(inputs, "persist_ref").or_else(|| str_field(state, "persist_ref")) {
+        if let Err(fault) = super::apto_coherence::validate_apto_coherence(repo, &persist) {
+            if let Some(obj) = state.as_object_mut() {
+                obj.insert("verdict".into(), json!("rechazado"));
+                obj.insert("accept_pr_handoff".into(), json!(false));
+                obj.insert("accept_pr_handoff_status".into(), json!("blocked"));
+                obj.insert("accept_pr_block_reason".into(), json!(fault.to_error_string()));
+            }
+            return Ok(json!({
+                "status": "executed",
+                "handler": "ppr-handoff-accept-pr",
+                "accept_pr_handoff": false,
+                "accept_pr_handoff_status": "blocked",
+                "friction_id": fault.friction_id,
+                "block_reason": fault.to_error_string(),
+            }));
+        }
+    }
+
     let verdict_ok = state
         .get("verdict")
         .and_then(|v| v.as_str())
@@ -455,5 +474,32 @@ mod tests {
         assert!(!is_ppr_fail_soft_friction(
             "Triaje técnico formal: verify-process-integrity falló"
         ));
+    }
+
+    #[test]
+    fn ka_gate_trunk_2_handoff_blocks_on_f3_no_apto() {
+        let dir = std::env::temp_dir().join(format!("sddia-ppr-trunk-{}", uuid::Uuid::new_v4()));
+        let persist = dir.join("docs/features/f-trunk");
+        std::fs::create_dir_all(&persist).unwrap();
+        std::fs::write(
+            persist.join("validacion.md"),
+            "---\nglobal: APTO\nchecks:\n  F3_TECH_GATE: NO_APTO\n---\n\n# v\n",
+        )
+        .unwrap();
+        std::fs::write(
+            persist.join("execution.md"),
+            "---\nverdict: ok\nstatus: complete\n---\n\n# e\n",
+        )
+        .unwrap();
+        let mut state = json!({ "verdict": "aprobado" });
+        let inputs = json!({
+            "pr_branch": "feat/f-trunk",
+            "persist_ref": "docs/features/f-trunk"
+        });
+        let out = handoff_accept_pr(&dir, &inputs, &mut state).unwrap();
+        assert_eq!(out["accept_pr_handoff"], false);
+        assert_eq!(out["accept_pr_handoff_status"], "blocked");
+        assert_eq!(out["friction_id"], "apto_coherence_trunk_gate");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

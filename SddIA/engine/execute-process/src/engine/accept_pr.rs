@@ -161,6 +161,13 @@ pub fn execute_accept_pr_phase(
 ) -> Option<Result<Value, String>> {
     match phase_name {
         "Auditoría Genómica" => {
+            let root_dirs = qa_attestation::root_ephemeral_dir_violations(repo);
+            if !root_dirs.is_empty() {
+                return Some(Err(format!(
+                    "root_topology_dirty: raíz contaminada con directorios efímeros (incluso vacíos): {}",
+                    root_dirs.join(", ")
+                )));
+            }
             let Some(source) = str_field(inputs, "source_branch") else {
                 return Some(Err("source_branch es obligatorio para accept-pr".into()));
             };
@@ -993,5 +1000,22 @@ mod tests {
             err.contains("qa_attestation_required"),
             "friction esperada, got: {err}"
         );
+    }
+
+    #[test]
+    fn ka_root_phys_3_genomic_audit_aborts_on_empty_ephemeral_dir() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("orchestration")).unwrap();
+        let mut state = json!({});
+        let inputs = json!({
+            "source_branch": "feat/ka-root-phys",
+            "delta_class": "active"
+        });
+        let err = execute_accept_pr_phase(repo, "Auditoría Genómica", &inputs, &mut state)
+            .expect("fase")
+            .expect_err("must abort on empty orchestration/");
+        assert!(err.contains("root_topology_dirty"), "got: {err}");
+        assert!(err.contains("orchestration/"), "got: {err}");
     }
 }

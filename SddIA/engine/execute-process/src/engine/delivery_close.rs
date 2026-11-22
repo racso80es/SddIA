@@ -436,6 +436,17 @@ fn capsule_gate_pre_pr_qa(repo: &Path, inputs: &Value, state: &Value) -> Value {
             return entry;
         }
     }
+    let root_dirs = qa_attestation::root_ephemeral_dir_violations(repo);
+    if !root_dirs.is_empty() {
+        entry["status"] = json!("blocked");
+        entry["friction_id"] = json!("root_topology_dirty");
+        entry["message"] = json!(format!(
+            "raíz contaminada: directorios efímeros presentes (incluso vacíos): {}",
+            root_dirs.join(", ")
+        ));
+        entry["dirty_root_dirs"] = json!(root_dirs);
+        return entry;
+    }
     match qa_attestation::validate_attestation_for_branch_head(repo, &branch) {
         Ok(hit) => {
             entry["status"] = json!("executed");
@@ -642,11 +653,14 @@ fn dcc_pre_pr_qa_block_suppresses_fracture(report: &Value) -> bool {
         report.get("friction_id").and_then(|v| v.as_str()),
         Some("qa_attestation_required")
             | Some("worktree_not_closed")
+            | Some("root_topology_dirty")
             | Some("validacion_not_apto")
             | Some("diff_seal_commit_failed")
             | Some("apto_coherence_execution_blocked")
             | Some("apto_coherence_open_phases")
             | Some("apto_coherence_resolution")
+            | Some("apto_coherence_ac_partial")
+            | Some("apto_coherence_trunk_gate")
             | Some("parental_close_rollup_denied")
             | Some("parental_close_success_denied")
             | Some("parental_close_narrative_denied")
@@ -1138,6 +1152,55 @@ mod tests {
             "friction_id": "apto_coherence_execution_blocked",
         })];
         emit_dcc_phase_fractures(repo, &reports);
+        assert_eq!(pending_fracture_count(repo), 0);
+    }
+
+    #[test]
+    fn ka_root_phys_3_dcc_gate_blocks_empty_ephemeral_dir_without_fracture() {
+        let _fs = lab_filesystem_eda();
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        std::process::Command::new("git")
+            .args(["init", "-q"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        std::process::Command::new("git")
+            .args(["config", "user.email", "t@t"])
+            .current_dir(repo)
+            .status()
+            .ok();
+        std::process::Command::new("git")
+            .args(["config", "user.name", "t"])
+            .current_dir(repo)
+            .status()
+            .ok();
+        std::fs::write(repo.join("README.md"), "seed\n").unwrap();
+        std::process::Command::new("git")
+            .args(["add", "README.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        std::process::Command::new("git")
+            .args(["commit", "-qm", "seed"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        // Directorio efímero vacío: git status --porcelain limpio, pero presente físicamente.
+        std::fs::create_dir_all(repo.join("orchestration")).unwrap();
+        let inputs = json!({
+            "branch_name": "main",
+            "persist_ref": "docs/features/x",
+        });
+        let state = json!({});
+        let entry = capsule_gate_pre_pr_qa(repo, &inputs, &state);
+        assert_eq!(entry["status"], json!("blocked"));
+        assert_eq!(entry["friction_id"], json!("root_topology_dirty"));
+        assert!(entry["dirty_root_dirs"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("orchestration/")));
+        emit_dcc_phase_fractures(repo, &[entry]);
         assert_eq!(pending_fracture_count(repo), 0);
     }
 
