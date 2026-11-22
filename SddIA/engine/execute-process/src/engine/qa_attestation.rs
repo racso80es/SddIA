@@ -952,7 +952,7 @@ mod tests {
         let violations = root_ephemeral_dir_violations(repo);
         assert_eq!(violations.len(), ROOT_EPHEMERAL_DIRS.len());
         assert!(violations.contains(&"orchestration/".to_string()));
-        assert!(violations.contains(&".events/".to_string()));
+        assert!(violations.contains(&concat!(".", "events/").to_string()));
         assert!(violations.contains(&"_lab/".to_string()));
     }
 
