@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-53-apto-coherence-root-clean
 created: "2026-11-22"
 process: feature
@@ -6,6 +7,7 @@ branch_name: feat/man-53-apto-coherence-root-clean
 persist_ref: docs/features/man-53-apto-coherence-root-clean
 tracker_ref: MAN-53
 purpose: "Clarificaciones y decisiones de diseño para H-NEW-06 / KZ-EST-04 (MAN-53)"
+execution_id: "a3971880-ee8b-49c3-97d4-40f61477aa47"
 ---
 # Clarificaciones — man-53-apto-coherence-root-clean
 

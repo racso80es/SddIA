@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-53-apto-coherence-root-clean
 created: 2026-11-22
 process: feature
@@ -30,8 +31,8 @@ validated_base_sha: 22ad1ba493ade3545ecaa5aeb221ba927ade4654
 validated_head_sha: de5e31dee2a6eaefffe4d5287c8804559f3c590b
 validated_tree_sha: b208c2cbfdbe8e3596996fe96efac3ae072a69aa
 diff_digest: sha256:243cc494644d7369f172a7dfccebbd632d9ab13cc25b71f8c065d097c9d3df5b
+execution_id: "a3971880-ee8b-49c3-97d4-40f61477aa47"
 ---
-
 # Validación — man-53-apto-coherence-root-clean
 
 ## Veredicto

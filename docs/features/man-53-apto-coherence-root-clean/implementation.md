@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-53-apto-coherence-root-clean
 created: "2026-11-22"
 process: feature
@@ -12,6 +13,7 @@ items:
   - "SddIA/engine/execute-process/src/engine/residual_runner.rs"
   - "SddIA/engine/execute-process/src/engine/delivery_close.rs"
   - "SddIA/engine/execute-process/src/engine/accept_pr.rs"
+execution_id: "a3971880-ee8b-49c3-97d4-40f61477aa47"
 ---
 # Implementación — man-53-apto-coherence-root-clean
 

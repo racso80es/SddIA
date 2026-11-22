@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-53-apto-coherence-root-clean
 created: "2026-11-22"
 process: feature
@@ -7,6 +8,7 @@ persist_ref: docs/features/man-53-apto-coherence-root-clean
 tracker_ref: MAN-53
 parent_ref: MAN-43
 document_id: PBI-90403a29
+execution_id: "a3971880-ee8b-49c3-97d4-40f61477aa47"
 ---
 # Objetivos — man-53-apto-coherence-root-clean
 
