@@ -1,5 +1,4 @@
 ---
-
 feature_name: kaizen-sddia-qa-stdin-tty-guard
 created: 2026-11-22
 updated: 2026-11-22
@@ -31,11 +30,12 @@ checks:
   ROOT_TOPOLOGY_CLEAN: APTO
 blocking_findings: []
 validated_base_sha: 9851890ca336bd9132dbd81c3b1f48aa9e3c9ea8
-validated_head_sha: d62c7a40edf061c372a9951146514349531d7e35
-validated_tree_sha: 322677e058f1e5a8005d6fc5576a0deb7a6fcfbf
-diff_digest: sha256:1d5cb258d828b2de76fb1fc685e9f4a07c7c917a6db064236c7bc23d58aff4e8
-execution_id: "c1910c23-3ebf-456b-a60b-9c3aa30884a5"
+validated_head_sha: dceadb5beaa1e67fc6c780a97c7693b66abe7f89
+validated_tree_sha: 27d712a4a3b082bdd4db25308eff379eaeefc6f3
+diff_digest: sha256:a696f02b2f8bd9e928a9e0f39c6645f5f8d5249b4a42cb11cf0feaf7ab92c1ee
+execution_id: c1910c23-3ebf-456b-a60b-9c3aa30884a5
 ---
+
 # Validación — Veredicto Argos (`AUT-99`)
 
 **`APTO`** — `resolution: PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `blocking_findings: []`.
