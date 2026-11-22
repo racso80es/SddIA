@@ -1,19 +1,19 @@
 ---
+
 feature_name: man-52-runtime-parity-live-organs
 created: "2026-11-22"
 process: feature
 branch_name: feat/man-52-runtime-parity-live-organs
 persist_ref: docs/features/man-52-runtime-parity-live-organs
 tracker_ref: MAN-52
-execution_id: "07a7307e-caf6-4a8c-b263-ad64910f48ea"
 items_applied:
-  - T1
-  - T2
-  - T3
-  - T4
-  - T5
+  - sddia-runtime-parity-9-organs-and-systemd-pid
+  - validacion-runtime-parity-git-diff-trigger
+  - sddia-qa-verify-compiled-capsules-freshness
+  - sync-live-organs-script-and-runtime-recycle
+  - release-sync-evolution-and-dcc
+execution_id: "c53a6925-d8ba-4279-8fcf-21483944b642"
 ---
-
 # Ejecución — man-52-runtime-parity-live-organs
 
 ## Tareas aplicadas
