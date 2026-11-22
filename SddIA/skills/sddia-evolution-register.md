@@ -35,4 +35,10 @@ Cápsula **WASI** (`wasm32-wasip1`) de dominio evolution.
 - `rehash`: re-ancla `hash_integrity` in situ vía `canonical_hash`; no regenera el cuerpo.
 - `alta` / `modificacion` / `baja`: calcula detalle canónico v1.1.1 + índice. El CLI nativo (`sddia-qa`) persiste.
 
-Sustrato: `compiled_capsules.wasm_root`. Invocación: envelope `capsule-json-io` v2.0 por stdin.
+Sustrato: `compiled_capsules.wasm_root`. Invocación: envelope `capsule-json-io` v2.0 (`--request-file <ruta>`, `SDDIA_CAPSULE_REQUEST` o `stdin` no-TTY con Fail-Fast TTY).
+
+Ejemplo mínimo CLI (`sddia-qa`):
+
+```bash
+sddia-qa evolution-register --json --dry-run --request-file request.json
+```

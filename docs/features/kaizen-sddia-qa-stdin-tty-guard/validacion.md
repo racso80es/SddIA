@@ -1,0 +1,38 @@
+---
+feature_name: kaizen-sddia-qa-stdin-tty-guard
+created: "2026-11-22"
+updated: "2026-11-22"
+process: pull-request-review
+phase: Veredicto y bloqueo
+agent: argos
+agents: argos
+branch: feat/kaizen-sddia-qa-stdin-tty-guard
+branch_name: feat/kaizen-sddia-qa-stdin-tty-guard
+persist_ref: docs/features/kaizen-sddia-qa-stdin-tty-guard
+pbi_ref: AUT-99
+document_id: PBI-KAIZEN-SDDIA-QA-EVOLUTION-REGISTER-TTY-HANG
+document_uuid: "94c98f11-20d4-485b-af06-6d9e66b7e162"
+tracker_provider: linear
+tracker_ref: AUT-99
+norm_ref: features-documentation-pattern@1.3.1
+global: APTO
+pbi_archived: false
+approval_status: aprobado
+verdict: aprobado
+delivery_state: success
+resolution: PASS_F5_VERDICT
+execution_id: "9d9d5478-f1d0-4396-a0a8-d2d0d47f71ff"
+checks:
+  global: APTO
+  F2_DOC_GATE: APTO
+  F3_TECH_GATE: APTO
+  F4_RBAC_GATE: APTO
+  F5_VERDICT_GATE: APTO
+  ROOT_TOPOLOGY_CLEAN: APTO
+blocking_findings: []
+---
+# Validación — Veredicto Argos (`AUT-99`)
+
+**`APTO`** — `resolution: PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `blocking_findings: []`.
+
+Todas las métricas `K-TTY` (`6.7 ms` en PTY), `K-FILE`, `K-ENV`, `K-PIPE` (incluyendo `wasm32-wasip1`), `K-SDDIA-IO` (`6/6`), `K-HELP` y `K-DOC` quedan verificadas en verde.
