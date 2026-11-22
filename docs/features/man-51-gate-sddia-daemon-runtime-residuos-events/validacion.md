@@ -14,7 +14,7 @@ persist_ref: docs/features/man-51-gate-sddia-daemon-runtime-residuos-events
 pbi_ref: MAN-51
 parent_ref: MAN-43
 document_id: PBI-1377d0ec
-document_uuid: "c3aff1f0-495b-40ab-a042-4420dd241400"
+document_uuid: c3aff1f0-495b-40ab-a042-4420dd241400
 tracker_provider: linear
 tracker_ref: MAN-51
 correlation_id: e8cd02b1-e76c-4a3c-a44c-1cef29bc4704
@@ -135,10 +135,10 @@ situational_notes:
 - accept_pr_handoff pending — L-HANDOFF-F5; handoff materialización fuera de Veredicto
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/; cierre Linear fuera de Veredicto
 execution_id: acbb527e-4d9c-4e3d-954c-91a9d8c7d1b6
-validated_base_sha: null
-validated_head_sha: null
-validated_tree_sha: null
-diff_digest: null
+validated_base_sha: 6f99d638b90ab0b6155fbb8899d817aa335e1d97
+validated_head_sha: 359b31e57826f023678aa69e4febf2963d901492
+validated_tree_sha: bd440213d6e2ab59931076b964b754bba66a05a4
+diff_digest: sha256:3a22dec78a7a7e59a2975e03f50771384f740f0405698c0e8feebff6c47fc748
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
