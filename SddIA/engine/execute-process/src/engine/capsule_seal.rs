@@ -42,8 +42,8 @@ pub fn inventory_indexed_capsules(repo: &Path) -> Vec<CapsuleInventoryEntry> {
             names.push(stem.to_string());
         }
     }
-    for name in ["execute-process", "kalma2-bridge"] {
-        names.push(name.to_string());
+    for name in sddia_runtime_parity::LIVE_ORGANS {
+        names.push((*name).to_string());
     }
     names.sort();
     names.dedup();
