@@ -5401,6 +5401,7 @@ dependencies = [
  "sddia-event-manager-host",
  "sddia-evolution-register",
  "sddia-io",
+ "sddia-runtime-parity",
  "serde",
  "serde_json",
  "serde_yaml",

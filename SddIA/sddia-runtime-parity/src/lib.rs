@@ -1,4 +1,4 @@
-//! Paridad binario/fuente para `execute-process` y `kalma2-bridge` (MAN-25 / KZ-CA2–CA3).
+//! Paridad binario/fuente y proceso vivo para los 9 órganos SddIA (MAN-25 / MAN-52).
 
 use regex::Regex;
 use serde_json::{json, Value};
@@ -7,8 +7,29 @@ use std::collections::HashSet;
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
-pub const LIVE_ORGANS: &[&str] = &["execute-process", "kalma2-bridge"];
+pub const LIVE_ORGANS: &[&str] = &[
+    "execute-process",
+    "kalma2-bridge",
+    "event-watcher",
+    "github-bridge-watcher",
+    "email-watcher",
+    "telegram-watcher",
+    "iota-publish-relay",
+    "sddia-workspace-server",
+    "sddia-qa",
+];
+
+pub const SYSTEMD_DAEMON_ORGANS: &[&str] = &[
+    "kalma2-bridge",
+    "event-watcher",
+    "github-bridge-watcher",
+    "email-watcher",
+    "telegram-watcher",
+    "iota-publish-relay",
+    "sddia-workspace-server",
+];
 
 pub fn allow_stale_runtime() -> bool {
     std::env::var("SDDIA_ALLOW_STALE_RUNTIME")
@@ -65,16 +86,22 @@ fn file_sha256_hex(path: &Path) -> Result<String, String> {
 }
 
 pub fn resolve_organ_crate_dir(repo: &Path, name: &str) -> Option<PathBuf> {
-    if name == "execute-process" {
-        let p = repo.join("SddIA/engine/execute-process");
-        return p.join("Cargo.toml").is_file().then_some(p);
-    }
-    if name == "kalma2-bridge" {
-        for rel in ["SddIA/interfaces/kalma2-bridge", "SddIA/engine/kalma2-bridge"] {
-            let p = repo.join(rel);
-            if p.join("Cargo.toml").is_file() {
-                return Some(p);
-            }
+    let candidates: &[&str] = match name {
+        "execute-process" => &["SddIA/engine/execute-process"],
+        "kalma2-bridge" => &["SddIA/interfaces/kalma2-bridge", "SddIA/engine/kalma2-bridge"],
+        "event-watcher" => &["SddIA/daemons/event-watcher"],
+        "github-bridge-watcher" => &["SddIA/daemons/github-bridge-watcher"],
+        "email-watcher" => &["SddIA/daemons/email-watcher"],
+        "telegram-watcher" => &["SddIA/daemons/telegram-watcher"],
+        "iota-publish-relay" => &["SddIA/daemons/iota-publish-relay"],
+        "sddia-workspace-server" => &["SddIA/tools/sddia-workspace-server"],
+        "sddia-qa" => &["SddIA/tools/sddia-qa"],
+        _ => return None,
+    };
+    for rel in candidates {
+        let p = repo.join(rel);
+        if p.join("Cargo.toml").is_file() {
+            return Some(p);
         }
     }
     None
@@ -171,6 +198,12 @@ fn collect_bundle_source_files(repo: &Path, crate_dir: &Path) -> Result<Vec<Path
     Ok(files)
 }
 
+pub fn collect_organ_source_files(repo: &Path, name: &str) -> Result<Vec<PathBuf>, String> {
+    let crate_dir = resolve_organ_crate_dir(repo, name)
+        .ok_or_else(|| format!("crate no localizable: {name}"))?;
+    collect_bundle_source_files(repo, &crate_dir)
+}
+
 fn digest_from_file_list(repo: &Path, files: &mut [PathBuf]) -> Result<String, String> {
     files.sort();
     let mut lines = Vec::with_capacity(files.len());
@@ -191,10 +224,76 @@ fn digest_from_file_list(repo: &Path, files: &mut [PathBuf]) -> Result<String, S
 }
 
 pub fn compute_organ_source_digest(repo: &Path, name: &str) -> Result<String, String> {
-    let crate_dir = resolve_organ_crate_dir(repo, name)
-        .ok_or_else(|| format!("crate no localizable: {name}"))?;
-    let mut files = collect_bundle_source_files(repo, &crate_dir)?;
+    let mut files = collect_organ_source_files(repo, name)?;
     digest_from_file_list(repo, &mut files)
+}
+
+pub fn escape_systemd_path(repo: &Path) -> String {
+    let raw = repo.to_string_lossy().to_string();
+    if let Ok(out) = Command::new("systemd-escape").args(["-p", &raw]).output() {
+        if out.status.success() {
+            let esc = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            if !esc.is_empty() {
+                return esc;
+            }
+        }
+    }
+    raw.trim_start_matches('/').replace('/', "-")
+}
+
+pub fn parse_systemd_show_active_pid(stdout: &str) -> Option<u32> {
+    let mut lines = stdout.lines().map(str::trim);
+    let active_state = lines.next()?;
+    let pid_str = lines.next()?;
+    if active_state != "active" {
+        return None;
+    }
+    let pid: u32 = pid_str.parse().ok()?;
+    (pid > 0).then_some(pid)
+}
+
+fn active_systemd_main_pid(repo: &Path, organ: &str) -> Option<u32> {
+    if !SYSTEMD_DAEMON_ORGANS.contains(&organ) {
+        return None;
+    }
+    let esc = escape_systemd_path(repo);
+    let unit = format!("sddia-{organ}@{esc}.service");
+    let out = Command::new("systemctl")
+        .args([
+            "--user",
+            "show",
+            &unit,
+            "-p",
+            "ActiveState",
+            "-p",
+            "MainPID",
+            "--value",
+        ])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    parse_systemd_show_active_pid(&String::from_utf8_lossy(&out.stdout))
+}
+
+pub fn check_live_exe_against_witness(
+    name: &str,
+    pid: u32,
+    witness_elf_sha256: &str,
+    exe_path: &Path,
+) -> Option<String> {
+    let exe_str = exe_path.to_string_lossy();
+    if exe_str.ends_with(" (deleted)") || !exe_path.is_file() {
+        return Some(format!("{name}:systemd_live_deleted:pid={pid}"));
+    }
+    match sha256_file_hex(exe_path) {
+        Ok(live_hash) if live_hash != witness_elf_sha256 => {
+            Some(format!("{name}:systemd_live_drift:pid={pid}"))
+        }
+        Err(_) => Some(format!("{name}:systemd_live_unreadable:pid={pid}")),
+        Ok(_) => None,
+    }
 }
 
 fn check_organ(
@@ -230,6 +329,16 @@ fn check_organ(
             }
         }
     }
+    if let Some(pid) = active_systemd_main_pid(repo, name) {
+        let proc_exe = PathBuf::from(format!("/proc/{pid}/exe"));
+        if let Ok(resolved) = fs::read_link(&proc_exe) {
+            if let Some(reason) =
+                check_live_exe_against_witness(name, pid, &witness.elf_sha256, &resolved)
+            {
+                reasons.push(reason);
+            }
+        }
+    }
     Ok(reasons)
 }
 
@@ -240,10 +349,12 @@ pub fn assess_runtime_binary_parity(
     live_execute: Option<&Path>,
 ) -> Result<Value, String> {
     let mut stale: Vec<String> = Vec::new();
-    for (name, live) in [
-        ("execute-process", live_execute),
-        ("kalma2-bridge", live_bridge),
-    ] {
+    for &name in LIVE_ORGANS {
+        let live = match name {
+            "execute-process" => live_execute,
+            "kalma2-bridge" => live_bridge,
+            _ => None,
+        };
         stale.extend(check_organ(repo, name, live)?);
     }
     let ok = stale.is_empty();
@@ -262,7 +373,19 @@ pub fn merge_touches_live_organs(changed_paths: &[String]) -> bool {
         n.starts_with("SddIA/engine/execute-process/")
             || n.starts_with("SddIA/interfaces/kalma2-bridge/")
             || n.starts_with("SddIA/engine/kalma2-bridge/")
+            || n.starts_with("SddIA/daemons/event-watcher/")
+            || n.starts_with("SddIA/daemons/github-bridge-watcher/")
+            || n.starts_with("SddIA/daemons/email-watcher/")
+            || n.starts_with("SddIA/daemons/telegram-watcher/")
+            || n.starts_with("SddIA/daemons/iota-publish-relay/")
+            || n.starts_with("SddIA/tools/sddia-workspace-server/")
+            || n.starts_with("SddIA/tools/sddia-qa/")
             || n.starts_with("SddIA/sddia-")
+            || n.starts_with("SddIA/ecosystem-health/")
+            || n.starts_with("SddIA/core/memory/")
+            || n.starts_with("SddIA/user-preference-core/")
+            || n == "SddIA/Cargo.toml"
+            || n == "SddIA/Cargo.lock"
     })
 }
 
@@ -271,10 +394,72 @@ mod tests {
     use super::*;
 
     #[test]
-    fn merge_touch_detects_organ_paths() {
-        assert!(merge_touches_live_organs(&[
-            "SddIA/engine/execute-process/src/main.rs".into()
-        ]));
+    fn live_organs_covers_all_nine_organs() {
+        assert_eq!(LIVE_ORGANS.len(), 9);
+        for expected in [
+            "execute-process",
+            "kalma2-bridge",
+            "event-watcher",
+            "github-bridge-watcher",
+            "email-watcher",
+            "telegram-watcher",
+            "iota-publish-relay",
+            "sddia-workspace-server",
+            "sddia-qa",
+        ] {
+            assert!(LIVE_ORGANS.contains(&expected), "falta {expected}");
+        }
+    }
+
+    #[test]
+    fn merge_touch_detects_all_organ_paths() {
+        for path in [
+            "SddIA/engine/execute-process/src/main.rs",
+            "SddIA/interfaces/kalma2-bridge/src/main.rs",
+            "SddIA/daemons/event-watcher/src/main.rs",
+            "SddIA/daemons/github-bridge-watcher/src/main.rs",
+            "SddIA/daemons/email-watcher/src/main.rs",
+            "SddIA/daemons/telegram-watcher/src/main.rs",
+            "SddIA/daemons/iota-publish-relay/src/main.rs",
+            "SddIA/tools/sddia-workspace-server/src/main.rs",
+            "SddIA/tools/sddia-qa/src/main.rs",
+            "SddIA/sddia-runtime-parity/src/lib.rs",
+        ] {
+            assert!(merge_touches_live_organs(&[path.into()]), "no detectó {path}");
+        }
         assert!(!merge_touches_live_organs(&["README.md".into()]));
+        assert!(!merge_touches_live_organs(&["docs/features/man-52/spec.md".into()]));
+    }
+
+    #[test]
+    fn parse_systemd_show_active_pid_handles_active_and_inactive() {
+        assert_eq!(parse_systemd_show_active_pid("active\n12345\n"), Some(12345));
+        assert_eq!(parse_systemd_show_active_pid("inactive\n0\n"), None);
+        assert_eq!(parse_systemd_show_active_pid("active\n0\n"), None);
+        assert_eq!(parse_systemd_show_active_pid(""), None);
+    }
+
+    #[test]
+    fn check_live_exe_detects_deleted_and_drift() {
+        let td = tempfile::tempdir().unwrap();
+        let elf_a = td.path().join("bin_a");
+        let elf_b = td.path().join("bin_b");
+        fs::write(&elf_a, b"elf-a").unwrap();
+        fs::write(&elf_b, b"elf-b").unwrap();
+        let hash_a = sha256_file_hex(&elf_a).unwrap();
+
+        assert_eq!(
+            check_live_exe_against_witness("event-watcher", 99, &hash_a, &elf_a),
+            None
+        );
+        assert_eq!(
+            check_live_exe_against_witness("event-watcher", 99, &hash_a, &elf_b).as_deref(),
+            Some("event-watcher:systemd_live_drift:pid=99")
+        );
+        let deleted = td.path().join("bin_a (deleted)");
+        assert_eq!(
+            check_live_exe_against_witness("event-watcher", 99, &hash_a, &deleted).as_deref(),
+            Some("event-watcher:systemd_live_deleted:pid=99")
+        );
     }
 }

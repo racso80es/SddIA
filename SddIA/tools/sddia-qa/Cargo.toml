@@ -11,6 +11,7 @@ path = "src/main.rs"
 [dependencies]
 execute-process = { path = "../../engine/execute-process" }
 sddia-core = { path = "../../sddia-core" }
+sddia-runtime-parity = { path = "../../sddia-runtime-parity" }
 sddia-event-manager-host = { path = "../../sddia-event-manager-host" }
 sddia-eda-catalog = { path = "../../sddia-eda-catalog" }
 sddia-evolution-register = { path = "../../skills/sddia-evolution-register" }

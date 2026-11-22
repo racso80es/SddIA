@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `8e47108c-1d40-423c-9985-d80d64d5c1c2` | 2026-11-22 | MAN-52: ampliar sddia-runtime-parity a 9 órganos vivos, paridad MainPID systemd, disparo por diff git en validacion_runtime_parity, frescura en verify-compiled-capsules y script sync-live-organs.sh | CANONICO | `SddIA/evolution/8e47108c-1d40-423c-9985-d80d64d5c1c2.md` |
 | `8a78b9a1-e54b-4749-a2ca-0efb262d3caf` | 2026-11-22 | AUT-99: guarda Fail-Fast TTY, --request-file y paridad capsule-json-io v2.0 en sddia-io, sddia-qa y sddia-evolution-register | CANONICO | `SddIA/evolution/8a78b9a1-e54b-4749-a2ca-0efb262d3caf.md` |
 | `f8418993-fc83-430b-bb6d-6b51c3c277c9` | 2026-11-22 | MAN-51: cerrar punto ciego de gate-event-manager-port sobre sddia-daemon-runtime y erradicar residuos .events | CANONICO | `SddIA/evolution/f8418993-fc83-430b-bb6d-6b51c3c277c9.md` |
 | `ab3365ad-8352-4cef-9e76-7f39b1c41907` | 2026-11-22 | AUT-97: eximir prefijos lab _forge_hu_ y _linear_e2e_ en project_binding::core_nested_index_exempt, guard RAII en forge_hu y .gitignore | CANONICO | `SddIA/evolution/ab3365ad-8352-4cef-9e76-7f39b1c41907.md` |

@@ -1,4 +1,4 @@
-//! Reciclado post-merge de órganos vivos (MAN-25 KZ-CA4).
+//! Reciclado post-merge de órganos vivos (MAN-25 KZ-CA4 / MAN-52).
 
 use super::capsule_seal;
 use serde_json::{json, Value};
@@ -27,15 +27,13 @@ pub fn maybe_recycle_after_merge(repo: &Path, merge_commit: &str) -> Result<Valu
     }
 
     let target_dir = repo.join("SddIA/target");
+    let mut args: Vec<&str> = vec!["build", "--release"];
+    for &organ in sddia_runtime_parity::LIVE_ORGANS {
+        args.push("-p");
+        args.push(organ);
+    }
     let build = Command::new("cargo")
-        .args([
-            "build",
-            "--release",
-            "-p",
-            "execute-process",
-            "-p",
-            "kalma2-bridge",
-        ])
+        .args(&args)
         .current_dir(repo.join("SddIA"))
         .env("CARGO_TARGET_DIR", &target_dir)
         .output()
@@ -52,17 +50,18 @@ pub fn maybe_recycle_after_merge(repo: &Path, merge_commit: &str) -> Result<Valu
         return Err("runtime-recycle: execute-process release ausente tras build".into());
     }
 
+    let names: Vec<&str> = sddia_runtime_parity::LIVE_ORGANS.to_vec();
     let seal = capsule_seal::run_batch(
         repo,
         &json!({
             "profile": "release",
             "write_genome": false,
             "write_witness": true,
-            "names": ["execute-process", "kalma2-bridge"],
+            "names": names,
         }),
     )?;
 
-    let restart = restart_live_daemons();
+    let restart = restart_live_daemons(repo);
 
     Ok(json!({
         "recycled": true,
@@ -101,12 +100,13 @@ fn changed_paths_in_merge(repo: &Path, merge_commit: &str) -> Result<Vec<String>
         .collect())
 }
 
-fn restart_live_daemons() -> serde_json::Value {
-    let units = ["sddia-kalma2-bridge", "sddia-event-watcher"];
+fn restart_live_daemons(repo: &Path) -> serde_json::Value {
+    let esc = sddia_runtime_parity::escape_systemd_path(repo);
     let mut rows = Vec::new();
-    for unit in units {
+    for &organ in sddia_runtime_parity::SYSTEMD_DAEMON_ORGANS {
+        let unit = format!("sddia-{organ}@{esc}.service");
         let attempt = Command::new("systemctl")
-            .args(["--user", "try-restart", &format!("{unit}@")])
+            .args(["--user", "try-restart", &unit])
             .output();
         rows.push(match attempt {
             Ok(o) => json!({

@@ -1,4 +1,4 @@
-//! Verifica coherencia SSOT: crates con `src/main.rs` ↔ binarios en `compiled_capsules`.
+//! Verifica coherencia SSOT: crates con `src/main.rs` ↔ binarios en `compiled_capsules` y frescura (H-NEW-07 / MAN-52).
 
 use execute_process::engine::capsule_paths::load_compiled_capsule_roots;
 use serde_json::{json, Value};
@@ -57,7 +57,10 @@ fn discover_crates(repo: &Path) -> BTreeMap<String, PathBuf> {
             let Some(name) = read_package_name(&cargo) else {
                 continue;
             };
-            out.insert(name, crate_dir.strip_prefix(repo).unwrap_or(&crate_dir).to_path_buf());
+            out.insert(
+                name,
+                crate_dir.strip_prefix(repo).unwrap_or(&crate_dir).to_path_buf(),
+            );
         }
     }
     out
@@ -78,6 +81,50 @@ fn mandatory_bins() -> BTreeSet<&'static str> {
     BTreeSet::from(["execute-process", "sddia-qa"])
 }
 
+pub fn check_binary_freshness(repo: &Path, name: &str, bin: &Path) -> Option<String> {
+    if !sddia_runtime_parity::LIVE_ORGANS.contains(&name) {
+        return None;
+    }
+    let wit_path = PathBuf::from(format!("{}.sha256", bin.display()));
+
+    if wit_path.is_file() {
+        let witness = match sddia_runtime_parity::read_capsule_witness(bin) {
+            Ok(w) => w,
+            Err(e) => return Some(format!("{name}:witness_invalid:{e}")),
+        };
+        match sddia_runtime_parity::sha256_file_hex(bin) {
+            Ok(elf_hex) if elf_hex != witness.elf_sha256 => {
+                return Some(format!("{name}:elf_drift"));
+            }
+            Err(e) => return Some(format!("{name}:elf_read_error:{e}")),
+            _ => {}
+        }
+        match sddia_runtime_parity::compute_organ_source_digest(repo, name) {
+            Ok(src_hex) if src_hex != witness.source_sha256 => {
+                return Some(format!("{name}:source_drift"));
+            }
+            Err(e) => return Some(format!("{name}:source_digest_error:{e}")),
+            _ => {}
+        }
+        return None;
+    }
+
+    let bin_mtime = fs::metadata(bin).ok()?.modified().ok()?;
+    if let Ok(src_files) = sddia_runtime_parity::collect_organ_source_files(repo, name) {
+        for f in src_files {
+            if let Ok(meta) = fs::metadata(&f) {
+                if let Ok(src_mtime) = meta.modified() {
+                    if src_mtime > bin_mtime {
+                        return Some(format!("{name}:source_newer_than_binary"));
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
 pub fn run(repo: &Path, json_out: bool) -> i32 {
     let profiles = load_compiled_capsule_roots(repo)
         .map(|r| r.profiles)
@@ -86,17 +133,28 @@ pub fn run(repo: &Path, json_out: bool) -> i32 {
     let crates = discover_crates(repo);
     let mandatory = mandatory_bins();
     let mut missing: Vec<Value> = Vec::new();
+    let mut stale: Vec<Value> = Vec::new();
     let mut found: Vec<Value> = Vec::new();
     let mut orphan_profiles: Vec<String> = Vec::new();
 
     for (name, crate_rel) in &crates {
         match resolve_native_bin(repo, name, &profiles) {
             Some(bin) => {
-                found.push(json!({
-                    "name": name,
-                    "crate_path": crate_rel.to_string_lossy(),
-                    "binary": bin.strip_prefix(repo).unwrap_or(&bin).to_string_lossy(),
-                }));
+                let bin_rel = bin.strip_prefix(repo).unwrap_or(&bin).to_string_lossy().to_string();
+                if let Some(reason) = check_binary_freshness(repo, name, &bin) {
+                    stale.push(json!({
+                        "name": name,
+                        "crate_path": crate_rel.to_string_lossy(),
+                        "binary": bin_rel,
+                        "reason": reason,
+                    }));
+                } else {
+                    found.push(json!({
+                        "name": name,
+                        "crate_path": crate_rel.to_string_lossy(),
+                        "binary": bin_rel,
+                    }));
+                }
             }
             None => {
                 missing.push(json!({
@@ -132,15 +190,17 @@ pub fn run(repo: &Path, json_out: bool) -> i32 {
         }
     }
 
-    let ok = missing.is_empty();
+    let ok = missing.is_empty() && stale.is_empty();
     let report = json!({
         "success": ok,
         "crate_count": crates.len(),
         "binary_count": found.len(),
         "missing_count": missing.len(),
+        "stale_count": stale.len(),
         "profiles_checked": profiles,
         "found": found,
         "missing": missing,
+        "stale": stale,
         "orphan_profile_hints": orphan_profiles,
         "build_hint": "cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo build --workspace",
     });
@@ -149,18 +209,19 @@ pub fn run(repo: &Path, json_out: bool) -> i32 {
         println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());
     } else if ok {
         println!(
-            "verify-compiled-capsules: OK — {}/{} binarios nativos presentes",
+            "verify-compiled-capsules: OK — {}/{} binarios nativos presentes y frescos",
             found.len(),
             crates.len()
         );
     } else {
         eprintln!(
-            "verify-compiled-capsules: FAIL — {} binario(s) ausente(s)",
-            missing.len()
+            "verify-compiled-capsules: FAIL — {} ausente(s), {} stale",
+            missing.len(),
+            stale.len()
         );
         for item in &missing {
             eprintln!(
-                "  - {} ({})",
+                "  - [missing] {} ({})",
                 item.get("name").and_then(|v| v.as_str()).unwrap_or("?"),
                 item.get("expected_under")
                     .or_else(|| item.get("error"))
@@ -168,7 +229,14 @@ pub fn run(repo: &Path, json_out: bool) -> i32 {
                     .unwrap_or("?")
             );
         }
-        eprintln!("hint: cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo build --workspace");
+        for item in &stale {
+            eprintln!(
+                "  - [stale] {} ({})",
+                item.get("name").and_then(|v| v.as_str()).unwrap_or("?"),
+                item.get("reason").and_then(|v| v.as_str()).unwrap_or("?")
+            );
+        }
+        eprintln!("hint: ./SddIA/scripts/sync-live-organs.sh");
     }
 
     if ok { 0 } else { 1 }
@@ -178,6 +246,8 @@ pub fn run(repo: &Path, json_out: bool) -> i32 {
 mod tests {
     use super::*;
     use execute_process::core::repo::find_repo_root;
+    use std::thread;
+    use std::time::Duration;
 
     #[test]
     fn discovers_execute_process_and_sddia_qa() {
@@ -186,5 +256,55 @@ mod tests {
         assert!(crates.contains_key("execute-process"));
         assert!(crates.contains_key("sddia-qa"));
         assert!(crates.len() >= 20);
+    }
+
+    #[test]
+    fn check_binary_freshness_detects_stale_witness_and_newer_source() {
+        let td = tempfile::tempdir().unwrap();
+        let r = td.path();
+        fs::create_dir_all(r.join("SddIA/tools/sddia-qa/src")).unwrap();
+        fs::write(
+            r.join("SddIA/tools/sddia-qa/Cargo.toml"),
+            "[package]\nname = \"sddia-qa\"\nversion = \"0.1.0\"\n",
+        )
+        .unwrap();
+        fs::write(r.join("SddIA/tools/sddia-qa/src/main.rs"), "fn main() {}\n").unwrap();
+
+        let bin_dir = r.join("SddIA/target/release");
+        fs::create_dir_all(&bin_dir).unwrap();
+        let bin = bin_dir.join("sddia-qa");
+        fs::write(&bin, b"fake-elf").unwrap();
+
+        let elf_hex = sddia_runtime_parity::sha256_file_hex(&bin).unwrap();
+        let src_hex = sddia_runtime_parity::compute_organ_source_digest(r, "sddia-qa").unwrap();
+        let wit = bin_dir.join("sddia-qa.sha256");
+
+        // Testigo válido → None
+        fs::write(&wit, format!("source_sha256: {src_hex}\nelf_sha256: {elf_hex}\n")).unwrap();
+        assert_eq!(check_binary_freshness(r, "sddia-qa", &bin), None);
+
+        // Testigo con source_sha256 obsoleto → source_drift
+        fs::write(
+            &wit,
+            format!("source_sha256: sha256:0000\nelf_sha256: {elf_hex}\n"),
+        )
+        .unwrap();
+        assert_eq!(
+            check_binary_freshness(r, "sddia-qa", &bin).as_deref(),
+            Some("sddia-qa:source_drift")
+        );
+
+        // Sin testigo, fuente modificada después del binario → source_newer_than_binary
+        fs::remove_file(&wit).unwrap();
+        thread::sleep(Duration::from_millis(20));
+        fs::write(
+            r.join("SddIA/tools/sddia-qa/src/main.rs"),
+            "fn main() { println!(\"new\"); }\n",
+        )
+        .unwrap();
+        assert_eq!(
+            check_binary_freshness(r, "sddia-qa", &bin).as_deref(),
+            Some("sddia-qa:source_newer_than_binary")
+        );
     }
 }
