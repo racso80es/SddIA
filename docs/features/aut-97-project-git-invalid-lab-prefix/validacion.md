@@ -1,7 +1,7 @@
 ---
 feature_name: aut-97-project-git-invalid-lab-prefix
-created: "2026-11-22"
-updated: "2026-11-22T14:15:30Z"
+created: 2026-11-22
+updated: 2026-11-22T14:15:30Z
 process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
@@ -15,7 +15,7 @@ tracker_provider: linear
 tracker_ref: AUT-97
 correlation_id: 2232c895-15ab-4340-83e7-015a30da61a6
 pr_presented_event_id: 2232c895-15ab-4340-83e7-015a30da61a6
-execution_id: "cb6b60ee-cc70-49ea-a4e2-55d7d0ca15c7"
+execution_id: cb6b60ee-cc70-49ea-a4e2-55d7d0ca15c7
 norm_ref: features-documentation-pattern@1.3.1
 global: APTO
 pbi_archived: false
@@ -49,6 +49,10 @@ git_changes:
   - docs/audits/AUT-97.md
   - docs/features/aut-97-project-git-invalid-lab-prefix/
 blocking_findings: []
+validated_base_sha: b288999719a805414810e74e5ef36df512bc5967
+validated_head_sha: ba52975c415223913f85be2749554d6451f83ea1
+validated_tree_sha: d38f85b73f5b892d8f06f5bbe6dbda7b14f1170a
+diff_digest: sha256:bf64f4a18557d5f7d1da588920606481b70655ff8c90f62d147dc5e0c9cc08f3
 ---
 
 # Validación — aut-97-project-git-invalid-lab-prefix (Argos · pull-request-review)
