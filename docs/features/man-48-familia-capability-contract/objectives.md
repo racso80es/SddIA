@@ -1,6 +1,7 @@
 ---
 
 
+
 feature_name: man-48-familia-capability-contract
 created: "2026-11-22"
 updated: "2026-11-22"
@@ -11,7 +12,7 @@ persist_ref: docs/features/man-48-familia-capability-contract
 pbi_ref: MAN-48
 document_id: PBI-FAMILIA-CAPABILITY-CONTRACT-POLIMORFISMO
 status: requisitos-estabilizados
-execution_id: "55587030-6308-4c5a-a20c-f9a701099031"
+execution_id: "9745b97a-4bcd-4993-bc32-200cf79cbc3a"
 ---
 # Objetivos — man-48-familia-capability-contract
 
