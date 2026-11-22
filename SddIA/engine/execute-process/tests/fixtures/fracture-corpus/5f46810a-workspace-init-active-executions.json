@@ -1,0 +1,11 @@
+{
+  "label": "5f46810a-workspace-init-active-executions",
+  "fracture_family": "unclassified",
+  "trace_hash": "5f46810af5ec",
+  "process_name": "feature",
+  "attempted_action": "feature workspace-init (MAN-48)",
+  "agent_emitter": "tekton",
+  "error_trace": "dirty-worktree: cambios fuera de persist_ref/pbi_ref/tracker peaje: .SddIA/state/active-executions.json",
+  "expected_signature": "unclassified",
+  "note": "Incidente AUT-98: executor flush_active escribe .SddIA/state/active-executions.json antes de workspace-init."
+}
