@@ -135,8 +135,8 @@ situational_notes:
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_* / diff_digest = null — sin gitStdout esta sesión
 validated_base_sha: 6f99d638b90ab0b6155fbb8899d817aa335e1d97
-validated_head_sha: 7da401b2e90a036433e5f2f4af05e714c2596be6
-validated_tree_sha: 0373304d628b425639d13f3ab2a46dc5685fcb09
+validated_head_sha: 2a55a47adc8c514fcb5a0393b3a551ddd9df143b
+validated_tree_sha: 36578e13bee3f2b8b28ce8e00c0d7d9528162476
 diff_digest: sha256:18757b4d4238a51726878321dedd3e539651a3ce3b242f6fc2ecb9120c67a369
 execution_id: d577eabc-9947-4781-b087-7d0475963e29
 ---
