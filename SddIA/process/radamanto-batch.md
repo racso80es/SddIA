@@ -4,7 +4,7 @@ context:
 - quality-assurance
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:018ec936627329a3e963461009b23fb892bd32ba39f54d51d6cfc6d9dc58ed7f"
+hash_signature: sha256:406fa957a63d9797eb6fe0c8101014ea50615c184fc402223072dbb50e0433b9
 inputs:
 - event_uri: URI canónica eda://telemetry/<event_id> (vía EventManagerPort)
 minteo_maximo: null
@@ -20,6 +20,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: consumo_batch_radamanto
 porcentaje_de_exito: null
 uuid: 2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b5c6d
 version: 2.0.0

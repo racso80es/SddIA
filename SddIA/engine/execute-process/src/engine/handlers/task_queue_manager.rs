@@ -4,6 +4,7 @@ use super::super::fractal::{load_fractal_dirs, write_fractal_event};
 use super::super::invoke_orchestrator::invoke_process_full_with_env;
 use super::super::persist_pec_correlation_proof;
 use super::super::residual_runner;
+use super::super::execution_registry::stop_after_from_inputs;
 use super::super::thermodynamic;
 use super::super::workspace::{
     load_paths_config, resolve_documentation_features_path, resolve_documentation_fixes_path,
@@ -749,7 +750,6 @@ fn build_child_inputs(
 
 fn child_env_for_kalma2(
     correlation_id: Option<&str>,
-    stop_after: Option<&str>,
 ) -> (Vec<(String, String)>, bool) {
     let mut env = Vec::new();
     let l2_skip = correlation_id.map(|s| !s.is_empty()).unwrap_or(false)
@@ -762,11 +762,6 @@ fn child_env_for_kalma2(
             if std::env::var(key).is_err() {
                 env.push((key.to_string(), "1".into()));
             }
-        }
-    }
-    if let Some(sa) = stop_after.map(str::trim).filter(|s| !s.is_empty()) {
-        if std::env::var("SDDIA_TQM_STOP_AFTER").is_err() {
-            env.push(("SDDIA_TQM_STOP_AFTER".into(), sa.to_string()));
         }
     }
     (env, l2_skip)
@@ -849,21 +844,14 @@ fn dispatch_child(
     } else {
         None
     };
-    let extra_env = {
-        let stop_after: Option<String> = inputs
-            .get("stop_after")
-            .and_then(|v| v.as_str())
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .map(|s| s.to_string())
-            .or_else(|| {
-                std::env::var("SDDIA_TQM_STOP_AFTER")
-                    .ok()
-                    .map(|s| s.trim().to_string())
-                    .filter(|s| !s.is_empty())
-            });
-        child_env_for_kalma2(correlation_id, stop_after.as_deref())
-    };
+    // stop_after contractual via inputs (lista o string legacy normalizado).
+    let stop_after_list = stop_after_from_inputs(inputs).unwrap_or_default();
+    if !stop_after_list.is_empty() {
+        if let Some(obj) = child_inputs.as_object_mut() {
+            obj.insert("stop_after".into(), json!(stop_after_list));
+        }
+    }
+    let extra_env = { child_env_for_kalma2(correlation_id) };
     let (extra_env, l2_skip) = extra_env;
     let env_refs: Vec<(&str, &str)> = extra_env
         .iter()
@@ -1323,30 +1311,27 @@ mod tests {
         let prev_full = std::env::var("SDDIA_TQM_FULL_CYCLE").ok();
         let prev_a = std::env::var("SDDIA_LAB_SKIP_PBI_ARCHIVE").ok();
         let prev_d = std::env::var("SDDIA_LAB_SKIP_DELIVERY_CLOSE").ok();
-        let prev_sa = std::env::var("SDDIA_TQM_STOP_AFTER").ok();
         std::env::remove_var("SDDIA_TQM_FULL_CYCLE");
         std::env::remove_var("SDDIA_LAB_SKIP_PBI_ARCHIVE");
         std::env::remove_var("SDDIA_LAB_SKIP_DELIVERY_CLOSE");
-        std::env::remove_var("SDDIA_TQM_STOP_AFTER");
-        let (vars, l2) = child_env_for_kalma2(Some("cid-1"), Some("design"));
+        let (vars, l2) = child_env_for_kalma2(Some("cid-1"));
         assert!(l2);
         assert!(vars
             .iter()
             .any(|(k, v)| k == "SDDIA_LAB_SKIP_DELIVERY_CLOSE" && v == "1"));
-        assert!(vars
-            .iter()
-            .any(|(k, v)| k == "SDDIA_TQM_STOP_AFTER" && v == "design"));
+        // stop_after viaja por inputs del hijo, no por env.
+        let norm = crate::engine::execution_registry::normalize_stop_after(&json!("design")).unwrap();
+        assert_eq!(norm, vec!["design".to_string()]);
         restore_env("SDDIA_TQM_FULL_CYCLE", prev_full);
         restore_env("SDDIA_LAB_SKIP_PBI_ARCHIVE", prev_a);
         restore_env("SDDIA_LAB_SKIP_DELIVERY_CLOSE", prev_d);
-        restore_env("SDDIA_TQM_STOP_AFTER", prev_sa);
     }
 
     #[test]
     fn child_env_full_cycle_no_l2() {
         let prev_full = std::env::var("SDDIA_TQM_FULL_CYCLE").ok();
         std::env::set_var("SDDIA_TQM_FULL_CYCLE", "1");
-        let (vars, l2) = child_env_for_kalma2(Some("cid-1"), None);
+        let (vars, l2) = child_env_for_kalma2(Some("cid-1"));
         assert!(!l2);
         assert!(!vars.iter().any(|(k, _)| k == "SDDIA_LAB_SKIP_DELIVERY_CLOSE"));
         restore_env("SDDIA_TQM_FULL_CYCLE", prev_full);
@@ -1358,7 +1343,7 @@ mod tests {
         assert!(text.contains("PR"));
         let prev_full = std::env::var("SDDIA_TQM_FULL_CYCLE").ok();
         std::env::remove_var("SDDIA_TQM_FULL_CYCLE");
-        let (_, l2) = child_env_for_kalma2(Some("cid"), None);
+        let (_, l2) = child_env_for_kalma2(Some("cid"));
         assert!(l2, "mencionar PR no deroga L2");
         restore_env("SDDIA_TQM_FULL_CYCLE", prev_full);
     }

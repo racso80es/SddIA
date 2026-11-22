@@ -2448,8 +2448,8 @@ NOTA_BACKFILL
         std::env::remove_var("SDDIA_FORGE_LAB_SHA256");
 
         let phases = json!([
-            {"name": "Validación de inputs", "intent": "comprobar contrato"},
-            {"name": "Forja del archivo", "intent": "persistir fases"}
+            {"id": "validacion_inputs", "name": "Validación de inputs", "intent": "comprobar contrato"},
+            {"id": "forja_archivo", "name": "Forja del archivo", "intent": "persistir fases"}
         ]);
         let out = run_process_forge(
             repo,
@@ -2514,21 +2514,25 @@ NOTA_BACKFILL
 
         let phases = json!([
             {
+                "id": "inventario_normalizado",
                 "name": "Inventario normalizado",
                 "intent": "Resolver evolution_root_ref vía Cúmulo",
                 "delegates_to": ["agent:cumulo", "agent:argos"]
             },
             {
+                "id": "clasificacion_relevancia",
                 "name": "Clasificación de relevancia",
                 "intent": "Asignar R1-R5",
                 "delegates_to": ["agent:argos"]
             },
             {
+                "id": "validacion_material",
                 "name": "Validación material",
                 "intent": "Contrastar evidencia vigente",
                 "delegates_to": ["agent:argos"]
             },
             {
+                "id": "persistencia_oficial",
                 "name": "Persistencia oficial",
                 "intent": "Persistir informe",
                 "requires_capability": [{
@@ -2538,6 +2542,7 @@ NOTA_BACKFILL
                 }]
             },
             {
+                "id": "protocolo_acero",
                 "name": "Protocolo de Acero",
                 "intent": "Revisar contradicciones",
                 "delegates_to": ["agent:argos"]

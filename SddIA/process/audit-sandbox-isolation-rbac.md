@@ -3,7 +3,7 @@ context:
 - chaos-engineering
 - quality-assurance
 contract: process-contract v1.4.0
-hash_signature: sha256:b2044c8aa539b2c6e13a7fe2adba8697ddb6b079e6da302792fa25ee9102d0bf
+hash_signature: sha256:ec6e7a26f1255006c6881b23e0e889fd878b2aefcb6aba32422ffa02e9249934
 inputs: []
 minteo_maximo: null
 name: audit-sandbox-isolation-rbac
@@ -28,10 +28,12 @@ phases:
   - contract: qa.probe
     id: qa:probe
     version: '>=1.0.0'
+  id: estimulo_intento_de_fuga
 - delegates_to:
   - agent:argos
   intent: Confirmar envelope error y ausencia de archivo fuera del workspace.
   name: Certificación Argos
+  id: certificacion_argos
 porcentaje_de_exito: null
 uuid: 242d937d-a0da-4d36-ab89-c0fbbc18c868
 version: 1.0.1

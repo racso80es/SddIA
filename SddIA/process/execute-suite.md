@@ -4,7 +4,7 @@ context:
 - quality-assurance
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:401b43cd1efc847636666bd8401855d114240baf9c4e7bf5e74dd2889cedc406
+hash_signature: sha256:b02d2b43a9cbd77235f66224edf660362ce5ccdb7a34f279838bf27038b355f2
 inputs:
 - suite_id: Identificador kebab-case de la Suite (required)
 - execution_strategy: Override opcional fail_fast | run_all
@@ -22,19 +22,23 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: resolucion_suite
 - delegates_to:
   - agent:tekton
   - action:execute-process
   intent: Por cada atomic_node, subproceso execute-process aislado.
   name: Orquestación nodos
+  id: orquestacion_nodos
 - delegates_to:
   - agent:argos
   intent: Argos escribe survival-manifest.md en workspace orquestador.
   name: Compilación manifiesto
+  id: compilacion_manifiesto
 - delegates_to:
   - agent:radamanto
   intent: Tras éxito global y manifiesto, emitir System_Immunity_Certified en bus domain.
   name: Certificación inmunidad
+  id: certificacion_inmunidad
 porcentaje_de_exito: null
 uuid: a1b2c3d4-e5f6-4789-a012-3456789abcde
 version: 1.0.1

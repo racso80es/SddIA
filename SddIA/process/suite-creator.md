@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:f40de771b5d499861e05771cdc26935447c11133e71234f8d072618e60beb17d
+hash_signature: sha256:d0cfef5fa1e775233e61298b755234207f9bf6c92d817682d216a7be3154151d
 inputs:
 - suite_name: Identificador kebab-case de la Suite (`{name}.md` bajo `directories.suites`)
 - suite_context: Contexto RBAC (default `chaos-engineering`)
@@ -34,11 +34,13 @@ phases:
   - agent:cerbero
   intent: 'Cúmulo + Cerbero: unicidad bajo directories.suites; atomic_nodes no vacío; process_name existentes.'
   name: Validación de Dominio
+  id: validacion_de_dominio
 - delegates_to:
   - action:crypto-broker
   - agent:cumulo
   intent: Validar execution_strategy; emitir UUID v4 vía crypto-broker.
   name: Clasificación Semántica
+  id: clasificacion_semantica
 - delegates_to:
   - agent:cumulo
   intent: Generar Markdown conforme a suites-contract en directories.suites.
@@ -47,6 +49,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: materializacion
 - delegates_to:
   - agent:cumulo
   intent: Insertar o actualizar fila en suites/index.md.
@@ -55,6 +58,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: indexacion
 porcentaje_de_exito: null
 uuid: f3a1b2c3-d4e5-46f7-8901-234567890abc
 version: 1.0.1

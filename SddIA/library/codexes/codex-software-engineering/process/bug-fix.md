@@ -3,12 +3,12 @@ uuid: ac8d078c-9785-490b-9f43-ad310fe9df9d
 name: bug-fix
 version: 1.4.4
 contract: process-contract v1.4.0
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: "sha256:4534b16788f800b747c57c6cde22171e716e69b8a889c564fb19125843bf2d26"
+hash_signature: sha256:8c6b8e3a6815e4660add4a8baecaf9da74f3d6e1e13c6767015c5ae8904f2c37
 inputs:
 - bug_summary: Semilla o reporte del defecto detectado
 - cumulo_topology: Topología SSOT inyectada (paths, contratos, directorios)
@@ -22,33 +22,39 @@ outputs:
 - pr_url: URL de PR tras cierre (propagado vía delivery-close-cycle)
 phases:
 - name: Inicialización de Espacio de Trabajo
-  intent: 'Sincronización determinista (fetch), checkout a base_branch y creación/aislamiento de la nueva rama branch_name.'
+  intent: Sincronización determinista (fetch), checkout a base_branch y creación/aislamiento de la nueva rama branch_name.
   requires_capability:
   - id: proc:git-sync
     contract: proc.git_sync
     version: '>=1.0.0'
+  id: workspace_init
 - name: Diseño del fix
-  intent: 'Dedalo consumirá el cuerpo del bug_summary para emitir sus salidas lógicas bajo persist_ref. Se mapeará obligatoriamente a spec.md (y plan.md de ser emitido un blueprint de proceso).'
+  intent: Dedalo consumirá el cuerpo del bug_summary para emitir sus salidas lógicas bajo persist_ref. Se mapeará obligatoriamente a spec.md (y plan.md de ser emitido un blueprint de proceso).
   delegates_to:
   - agent:dedalo
+  id: design
 - name: Ejecución
-  intent: 'Tekton materializa las correcciones. Un commit por tarea del plan.md vía git-manager. Cada commit anota la tarea y el identificador en execution.md y marca la tarea como forjada en el PBI de trabajo. Debe generar obligatoriamente implementation.md y execution.md con frontmatter válido según el patrón documental activo en persist_ref.'
+  intent: Tekton materializa las correcciones. Un commit por tarea del plan.md vía git-manager. Cada commit anota la tarea y el identificador en execution.md y marca la tarea como forjada en el PBI de trabajo. Debe generar obligatoriamente implementation.md y execution.md con frontmatter válido según el patrón documental activo en persist_ref.
   delegates_to:
   - agent:tekton
+  id: execution
 - name: Verificación
-  intent: 'Argos audita el fix. Su output (audit_report_md) se mapea unívocamente a validacion.md en persist_ref, inyectando el frontmatter exigido (branch, global, checks, git_changes).'
+  intent: Argos audita el fix. Su output (audit_report_md) se mapea unívocamente a validacion.md en persist_ref, inyectando el frontmatter exigido (branch, global, checks, git_changes).
   delegates_to:
   - agent:argos
+  id: verification
 - name: Cierre documental en rama
   intent: 'Antes del merge: cierre según tracker.provider y features-documentation-pattern v1.3.1 — provider file: mover PBI a docs/todos/done/ y validacion.md con pbi_archived true; provider linear: issue en state_map.done y validacion APTO, sin ficheros nuevos en docs/todos/pending ni done/. Prohibido merged_pr obligatorio ni segundo PR documental.'
   requires_capability:
   - id: doc:closure
     contract: doc.closure
     version: '>=1.0.0'
+  id: doc_closure
 - name: Cierre de entrega
-  intent: 'Consolidación final, impacto SddIA y apertura de PR. Se delega en action:execute-process inyectando el process_name canónico delivery-close-cycle junto con source_process (bug-fix), persist_ref y branch_name.'
+  intent: Consolidación final, impacto SddIA y apertura de PR. Se delega en action:execute-process inyectando el process_name canónico delivery-close-cycle junto con source_process (bug-fix), persist_ref y branch_name.
   delegates_to:
   - action:execute-process
+  id: delivery_close
 minteo_maximo: null
 porcentaje_de_exito: null
 ---

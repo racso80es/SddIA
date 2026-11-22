@@ -1,57 +1,60 @@
 ---
-uuid: "e7d5087c-6d47-4890-9602-34962496b3bb"
-name: "agent-creator"
-version: "1.1.0"
-contract: "process-contract v1.4.0"
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
-context: "ecosystem-evolution"
-hash_signature: sha256:ca0b758b4c1393db76e5bf934de3c09e3f5470833593c73e7bdb2419166d7057
+uuid: e7d5087c-6d47-4890-9602-34962496b3bb
+name: agent-creator
+version: 1.1.0
+contract: process-contract v1.4.0
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
+context: ecosystem-evolution
+hash_signature: sha256:ad0d0b5d970a2801607627ae96441f598cefd154d21a1f84710c19a4e0769e22
 inputs:
-  - "agent_name": "Identificador kebab-case del agente (`{name}` del archivo de definición bajo `cumulo.directories.agents`)"
-  - "allowed_policies": "Array de contextos S+ Grade (identificadores de `execution-contexts.md`) que el agente puede solicitar ante Cerbero"
-  - "agent_inputs": "Definición estandarizada de datos requeridos para iniciar el ciclo operativo del agente"
-  - "agent_outputs": "Artefactos o estructuras esperadas al cierre (p. ej. Markdown, JSON, delegación a cápsulas)"
-  - "agent_purpose": "Lógica operativa, jurisdicción y límites de la identidad (prosa normativa y flujo)"
+- agent_name: Identificador kebab-case del agente (`{name}` del archivo de definición bajo `cumulo.directories.agents`)
+- allowed_policies: Array de contextos S+ Grade (identificadores de `execution-contexts.md`) que el agente puede solicitar ante Cerbero
+- agent_inputs: Definición estandarizada de datos requeridos para iniciar el ciclo operativo del agente
+- agent_outputs: Artefactos o estructuras esperadas al cierre (p. ej. Markdown, JSON, delegación a cápsulas)
+- agent_purpose: Lógica operativa, jurisdicción y límites de la identidad (prosa normativa y flujo)
 outputs:
-  - "artifact_agent_md": "Archivo `{paths.directories.agents}/{agent_name}.md` con cabecera YAML conforme a `paths.contracts.agents` (incl. `allowed_policies`)"
-  - "artifact_agents_index": "`{paths.directories.agents}/index.md` creado o actualizado con fila que expone `allowed_policies` para lectura rápida de Cerbero"
-  - "handoff_entity_uuid": "UUID v4 del agente forjado; consumido por `entity-manager`"
-  - "handoff_hash_signature_new": "Sello post-forja; consumido por `entity-manager`"
-  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
-  - "handoff_version": "SemVer resultante"
+- artifact_agent_md: Archivo `{paths.directories.agents}/{agent_name}.md` con cabecera YAML conforme a `paths.contracts.agents` (incl. `allowed_policies`)
+- artifact_agents_index: '`{paths.directories.agents}/index.md` creado o actualizado con fila que expone `allowed_policies` para lectura rápida de Cerbero'
+- handoff_entity_uuid: UUID v4 del agente forjado; consumido por `entity-manager`
+- handoff_hash_signature_new: Sello post-forja; consumido por `entity-manager`
+- handoff_hash_signature_old: Sello previo en update; `null` en create
+- handoff_version: SemVer resultante
 phases:
-  - name: "Auditoría de Gobernanza"
-    intent: "Validar estrictamente que todas las políticas solicitadas en allowed_policies existen en la normativa vigente dictada por Cerbero."
-    delegates_to:
-      - "agent:cumulo"
-      - "agent:cerbero"
-      - "action:policy-validator"
-  - name: "Forja de Identidad"
-    intent: "Generar uuid v4 y cabecera YAML (contract, allowed_policies, inputs, outputs, hash_signature si aplica) según agents-contract v1.0.0; cuerpo con agent_purpose bajo directories.agents; rutas solo vía cumulo."
-    requires_capability:
-      - id: "fs:persist"
-        contract: "fs.persist"
-        version: ">=1.0.0"
-    delegates_to:
-      - "action:crypto-broker"
-  - name: "Indexación de Soberanía"
-    intent: "Actualizar el catálogo de Agentes exponiendo explícitamente sus allowed_policies para lectura rápida de Cerbero."
-    requires_capability:
-      - id: "fs:persist"
-        contract: "fs.persist"
-        version: ">=1.0.0"
-    delegates_to:
-      - "agent:cumulo"
+- name: Auditoría de Gobernanza
+  intent: Validar estrictamente que todas las políticas solicitadas en allowed_policies existen en la normativa vigente dictada por Cerbero.
+  delegates_to:
+  - agent:cumulo
+  - agent:cerbero
+  - action:policy-validator
+  id: auditoria_de_gobernanza
+- name: Forja de Identidad
+  intent: Generar uuid v4 y cabecera YAML (contract, allowed_policies, inputs, outputs, hash_signature si aplica) según agents-contract v1.0.0; cuerpo con agent_purpose bajo directories.agents; rutas solo vía cumulo.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+  delegates_to:
+  - action:crypto-broker
+  id: forja_de_identidad
+- name: Indexación de Soberanía
+  intent: Actualizar el catálogo de Agentes exponiendo explícitamente sus allowed_policies para lectura rápida de Cerbero.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+  delegates_to:
+  - agent:cumulo
+  id: indexacion_de_soberania
 phase_invocations:
-  - phase_name: "Forja de Identidad"
-    invocations:
-      - capsule: "action:crypto-broker"
-        stdin_json:
-          operation: "GENERATE_UUID"
-          target_payload: null
-        bind:
-          "data.result": "child_agent_uuid"
-        on_error: abort
+- phase_name: Forja de Identidad
+  invocations:
+  - capsule: action:crypto-broker
+    stdin_json:
+      operation: GENERATE_UUID
+      target_payload: null
+    bind:
+      data.result: child_agent_uuid
+    on_error: abort
 minteo_maximo: null
 porcentaje_de_exito: null
 ---

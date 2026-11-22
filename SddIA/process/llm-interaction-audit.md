@@ -1,7 +1,7 @@
 ---
 context: quality-assurance, filesystem-ops, tracker-operations
 contract: process-contract v1.4.0
-hash_signature: "sha256:f92eb79325fe2096806819444e900287bf0319e712d8df3f0093c67e24a559bc"
+hash_signature: sha256:4df227e26344287e48689c9e153c938817c7d133044e23fde7380824c3d56db0
 inputs:
 - tracker_ref: Identificador opaco AUT-n
 - operation: record_interaction | record_friction | probe_active
@@ -16,6 +16,7 @@ outputs:
 phases:
 - intent: 'Handler nativo: record_interaction, record_friction, probe_active. No escribe si llm_audit inactive.'
   name: Registro
+  id: registro
 uuid: 21d1c95c-e4e3-41cf-b225-c323459b58ca
 version: 1.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/

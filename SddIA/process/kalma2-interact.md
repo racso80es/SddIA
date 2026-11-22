@@ -2,7 +2,7 @@
 context:
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:bd3d7326c2eccd70b5df392ec96dc87180aa7fd58af338626e22a45d986d5c4b
+hash_signature: sha256:0267edbbdc4ce322115cbf1b4935cd92635202cb22a37e398e78f8d4af03de72
 inputs:
 - prompt: Texto del operador desde el cliente Kalma2
 - project_slug: (Opcional) Slug del proyecto registrado en `instance.projects`; ausente → Core-self
@@ -16,6 +16,7 @@ phases:
   - agent:mayeuta
   intent: 'Filtrar comandos reservados (/ ! TODO: IDEA:) antes de LLM.'
   name: Triaje-C
+  id: triaje_c
 - delegates_to:
   - skill:mayeuta-llm
   intent: CLASSIFY_INTENT vía skill mayeuta-llm (CLI Cursor o heurística).
@@ -24,10 +25,12 @@ phases:
   - contract: llm.interact
     id: llm:interact
     version: '>=1.0.0'
+  id: clasificacion
 - delegates_to:
   - agent:mayeuta
   intent: Procesos allowlisted → evento Kalma2_Process_Requested (asíncrono) + acuse.
   name: Enrutamiento
+  id: enrutamiento
 - delegates_to:
   - skill:mayeuta-llm
   intent: SYNTHESIZE vía mayeuta-llm con degradación a síntesis determinista.
@@ -36,6 +39,7 @@ phases:
   - contract: llm.interact
     id: llm:interact
     version: '>=1.0.0'
+  id: sintesis
 porcentaje_de_exito: null
 uuid: acdb6c88-f0d9-4e10-9d2f-7e4b5401a892
 version: 1.1.2

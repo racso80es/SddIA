@@ -4,7 +4,7 @@ context:
 - quality-assurance
 - event-routing
 contract: process-contract v1.4.0
-hash_signature: sha256:47340da08b76667d17302cf6a5bb979d86ead8d3c78d7b9e144002cfa764df74
+hash_signature: sha256:3908d05da912dc3386c96f23e15f38fc63319e79123da563ff1f8bd813a08b70
 inputs: []
 minteo_maximo: null
 name: audit-telemetry-compliance-breach
@@ -27,10 +27,12 @@ phases:
   - contract: qa.probe
     id: qa:probe
     version: '>=1.0.0'
+  id: estimulo_alucinacion_recibo
 - delegates_to:
   - agent:argos
   intent: Verificar Telemetry_Compliance_Breached por EventUri en EventManagerPort.
   name: Certificación Argos
+  id: certificacion_argos
 porcentaje_de_exito: null
 uuid: fd2f075c-5d01-4b54-8b26-67678417e22b
 version: 2.0.0

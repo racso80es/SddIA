@@ -3,12 +3,12 @@ uuid: ae01e3ff-af68-4b94-90b3-97e5c03d75ee
 name: refactorization
 version: 1.2.4
 contract: process-contract v1.4.0
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: "sha256:2937419479f9dd7cb020137ef0a0025759f234f7e4e8e7bbf50f69311ee39e13"
+hash_signature: sha256:3c7c76158e5ae4d9e31a4e15402ea8057ab7a9e9123d318ee017dc14a13945a1
 inputs:
 - refactor_goal: Propósito central de la refactorización
 - refined_constraints: Restricciones de alcance complementarias y límites
@@ -23,37 +23,44 @@ outputs:
 - pr_url: URL de PR tras cierre (propagado vía delivery-close-cycle)
 phases:
 - name: Inicialización de Espacio de Trabajo
-  intent: 'Sincronización determinista (fetch), checkout a base_branch y creación/aislamiento de la nueva rama branch_name.'
+  intent: Sincronización determinista (fetch), checkout a base_branch y creación/aislamiento de la nueva rama branch_name.
   requires_capability:
   - id: proc:git-sync
     contract: proc.git_sync
     version: '>=1.0.0'
+  id: workspace_init
 - name: Estabilización de alcance
-  intent: 'Mayeuta debe mapear sus salidas lógicas a la norma features-documentation-pattern del active_norm_pack. El transcript se persiste como clarify.md y el requisito termodinámico como objectives.md (con frontmatter obligatorio) bajo persist_ref.'
+  intent: Mayeuta debe mapear sus salidas lógicas a la norma features-documentation-pattern del active_norm_pack. El transcript se persiste como clarify.md y el requisito termodinámico como objectives.md (con frontmatter obligatorio) bajo persist_ref.
   delegates_to:
   - agent:mayeuta
+  id: stabilization
 - name: Diseño de refactor
   intent: 'Dedalo consumirá el cuerpo de objectives.md como refined_requirements. Sus salidas se mapearán a la norma: la especificación técnica será spec.md y el blueprint de proceso será plan.md bajo persist_ref.'
   delegates_to:
   - agent:dedalo
+  id: design
 - name: Ejecución
-  intent: 'Tekton materializa los cambios. Un commit por tarea del plan.md vía git-manager. Cada commit anota la tarea y el identificador en execution.md y marca la tarea como forjada en el PBI de trabajo. Debe generar obligatoriamente implementation.md y execution.md con frontmatter válido según el patrón documental activo en persist_ref.'
+  intent: Tekton materializa los cambios. Un commit por tarea del plan.md vía git-manager. Cada commit anota la tarea y el identificador en execution.md y marca la tarea como forjada en el PBI de trabajo. Debe generar obligatoriamente implementation.md y execution.md con frontmatter válido según el patrón documental activo en persist_ref.
   delegates_to:
   - agent:tekton
+  id: execution
 - name: Verificación
-  intent: 'Argos audita la entrega. Su output (audit_report_md) se mapea unívocamente a validacion.md en persist_ref, inyectando el frontmatter exigido (branch, global, checks, git_changes).'
+  intent: Argos audita la entrega. Su output (audit_report_md) se mapea unívocamente a validacion.md en persist_ref, inyectando el frontmatter exigido (branch, global, checks, git_changes).
   delegates_to:
   - agent:argos
+  id: verification
 - name: Cierre documental en rama
   intent: 'Antes del merge: cierre según tracker.provider y features-documentation-pattern v1.3.1 — provider file: mover PBI a docs/todos/done/ y validacion.md con pbi_archived true; provider linear: issue en state_map.done y validacion APTO, sin ficheros nuevos en docs/todos/pending ni done/. Prohibido merged_pr obligatorio ni segundo PR documental.'
   requires_capability:
   - id: doc:closure
     contract: doc.closure
     version: '>=1.0.0'
+  id: doc_closure
 - name: Cierre de entrega
-  intent: 'Consolidación final, impacto SddIA y apertura de PR. Se delega en action:execute-process inyectando el process_name canónico delivery-close-cycle junto con source_process (refactorization), persist_ref y branch_name.'
+  intent: Consolidación final, impacto SddIA y apertura de PR. Se delega en action:execute-process inyectando el process_name canónico delivery-close-cycle junto con source_process (refactorization), persist_ref y branch_name.
   delegates_to:
   - action:execute-process
+  id: delivery_close
 minteo_maximo: null
 porcentaje_de_exito: null
 ---

@@ -75,7 +75,19 @@ pub fn verify(repo: &Path) -> Result<(), Vec<String>> {
         };
 
         if let Some(arr) = phases.as_array() {
+            let mut seen_ids: Vec<String> = Vec::new();
             for (i, ph) in arr.iter().enumerate() {
+                let fname = md.file_name().unwrap_or_default().to_string_lossy();
+                let pid = ph.get("id").and_then(|v| v.as_str()).map(str::trim).unwrap_or("");
+                if pid.is_empty() {
+                    errors.push(format!("{fname}: phase {i} missing required id (snake_case)"));
+                } else if !crate::engine::execution_registry::is_valid_phase_id(pid) {
+                    errors.push(format!("{fname}: phase {i} id {pid:?} must be snake_case"));
+                } else if seen_ids.iter().any(|s| s == pid) {
+                    errors.push(format!("{fname}: duplicate phase id {pid:?}"));
+                } else {
+                    seen_ids.push(pid.to_string());
+                }
                 let delegates = ph
                     .get("delegates_to")
                     .and_then(|v| v.as_array())
@@ -87,8 +99,7 @@ pub fn verify(repo: &Path) -> Result<(), Vec<String>> {
                     .unwrap_or_default();
                 if delegates.contains(&"skill:cryptography-manager") {
                     errors.push(format!(
-                        "{}: phase {i} declares skill:cryptography-manager; use action:crypto-broker per process-contract v1.2.0+",
-                        md.file_name().unwrap_or_default().to_string_lossy()
+                        "{fname}: phase {i} declares skill:cryptography-manager; use action:crypto-broker per process-contract v1.2.0+",
                     ));
                 }
             }
@@ -188,5 +199,33 @@ mod tests {
         )
         .unwrap();
         assert!(verify(repo).is_ok());
+    }
+
+    #[test]
+    fn verify_requires_unique_snake_phase_ids() {
+        let tmp = TempDir::new().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/process")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"process":"SddIA/process","process_domain_roots":[]}}"#,
+        )
+        .unwrap();
+        fs::write(
+            repo.join("SddIA/process/demo.md"),
+            "---\nname: demo\nphases:\n  - name: A\n    intent: x\n---\n",
+        )
+        .unwrap();
+        let err = verify(repo).unwrap_err();
+        assert!(err.iter().any(|e| e.contains("missing required id")), "{err:?}");
+
+        fs::write(
+            repo.join("SddIA/process/demo.md"),
+            "---\nname: demo\nhash_signature: sha256:dead\nphases:\n  - id: alpha\n    name: A\n    intent: x\n  - id: alpha\n    name: B\n    intent: y\n---\n",
+        )
+        .unwrap();
+        let err2 = verify(repo).unwrap_err();
+        assert!(err2.iter().any(|e| e.contains("duplicate phase id")), "{err2:?}");
     }
 }

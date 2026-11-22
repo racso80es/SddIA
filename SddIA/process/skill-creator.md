@@ -1,77 +1,82 @@
 ---
-uuid: "b8c3d1e2-f4a5-4a6b-8c7d-0e1f2a3b4c5d"
-name: "skill-creator"
-version: "1.1.0"
-contract: "process-contract v1.4.0"
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
-context: "ecosystem-evolution"
-hash_signature: sha256:3212efbe9fa3292eb87b8cd96300b7b328f352a89313914d20b8dca1cc9c8ef2
+uuid: b8c3d1e2-f4a5-4a6b-8c7d-0e1f2a3b4c5d
+name: skill-creator
+version: 1.1.0
+contract: process-contract v1.4.0
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
+context: ecosystem-evolution
+hash_signature: sha256:c4cdcbc023ac4f865d292f062775d76736563fe3ba7a918b5d2c41af376888d4
 inputs:
-  - "skill_name": "Identificador kebab-case de la skill (`{name}` del archivo `{name}.md` en `cumulo.directories.skills`)"
-  - "skill_context": "Contexto RBAC Cerbero (debe existir en `execution-contexts.md`)"
-  - "skill_description": "Descripción operativa de la capacidad y límites de la skill"
-  - "skill_inputs_schema": "Definición de entradas esperadas (alineada a I/O JSON estricto del contrato de skills)"
-  - "skill_outputs_schema": "Definición de salidas esperadas (`success`, `exitCode`, `data` o `error` según contrato)"
-  - "skill_version": "SemVer de la nueva skill (ej. 1.0.0)"
-  - "skills_contract_version": "Versión del contrato skills a materializar (ej. 1.0.0 según `skills-contract.md`)"
+- skill_name: Identificador kebab-case de la skill (`{name}` del archivo `{name}.md` en `cumulo.directories.skills`)
+- skill_context: Contexto RBAC Cerbero (debe existir en `execution-contexts.md`)
+- skill_description: Descripción operativa de la capacidad y límites de la skill
+- skill_inputs_schema: Definición de entradas esperadas (alineada a I/O JSON estricto del contrato de skills)
+- skill_outputs_schema: Definición de salidas esperadas (`success`, `exitCode`, `data` o `error` según contrato)
+- skill_version: SemVer de la nueva skill (ej. 1.0.0)
+- skills_contract_version: Versión del contrato skills a materializar (ej. 1.0.0 según `skills-contract.md`)
 outputs:
-  - "artifact_skill_md": "Archivo `{paths.directories.skills}/{skill_name}.md` con cabecera YAML conforme a `paths.contracts.skills`"
-  - "artifact_skills_index": "`{paths.directories.skills}/index.md` actualizado con fila sincronizada a la cabecera YAML de la skill"
-  - "handoff_entity_uuid": "UUID v4 de la skill forjada (`child_skill_uuid`); consumido por `entity-manager`"
-  - "handoff_hash_signature_new": "Sello `sha256:` + hex canónico post-forja; consumido por `entity-manager`"
-  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
-  - "handoff_version": "SemVer resultante (`skill_version`)"
+- artifact_skill_md: Archivo `{paths.directories.skills}/{skill_name}.md` con cabecera YAML conforme a `paths.contracts.skills`
+- artifact_skills_index: '`{paths.directories.skills}/index.md` actualizado con fila sincronizada a la cabecera YAML de la skill'
+- handoff_entity_uuid: UUID v4 de la skill forjada (`child_skill_uuid`); consumido por `entity-manager`
+- handoff_hash_signature_new: Sello `sha256:` + hex canónico post-forja; consumido por `entity-manager`
+- handoff_hash_signature_old: Sello previo en update; `null` en create
+- handoff_version: SemVer resultante (`skill_version`)
 phases:
-  - name: "Validación RBAC y topología"
-    intent: "Verificar skill_context en execution-contexts; unicidad y kebab-case de skill_name bajo directories.skills; SemVer y esquemas I/O."
-    delegates_to:
-      - "agent:cumulo"
-      - "agent:cerbero"
-  - name: "Forja del Markdown"
-    intent: "Generar uuid v4 y hash_signature de integridad según política de skills; YAML (contract, context, capabilities, inputs, outputs) y cuerpo conforme a contracts.skills; rutas solo vía cumulo."
-    requires_capability:
-      - id: "fs:persist"
-        contract: "fs.persist"
-        version: ">=1.0.0"
-    delegates_to:
-      - "action:crypto-broker"
-  - name: "Indexación"
-    intent: "Auditar skills/index.md (columna Capabilities obligatoria) e insertar fila idéntica a la cabecera de la skill creada."
-    requires_capability:
-      - id: "fs:persist"
-        contract: "fs.persist"
-        version: ">=1.0.0"
-    delegates_to:
-      - "agent:cumulo"
+- name: Validación RBAC y topología
+  intent: Verificar skill_context en execution-contexts; unicidad y kebab-case de skill_name bajo directories.skills; SemVer y esquemas I/O.
+  delegates_to:
+  - agent:cumulo
+  - agent:cerbero
+  id: validacion_rbac_y_topologia
+- name: Forja del Markdown
+  intent: Generar uuid v4 y hash_signature de integridad según política de skills; YAML (contract, context, capabilities, inputs, outputs) y cuerpo conforme a contracts.skills; rutas solo vía cumulo.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+  delegates_to:
+  - action:crypto-broker
+  id: forja_del_markdown
+- name: Indexación
+  intent: Auditar skills/index.md (columna Capabilities obligatoria) e insertar fila idéntica a la cabecera de la skill creada.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+  delegates_to:
+  - agent:cumulo
+  id: indexacion
 phase_invocations:
-  - phase_name: "Forja del Markdown"
-    invocations:
-      - capsule: "action:crypto-broker"
-        stdin_json:
-          operation: "GENERATE_UUID"
-          target_payload: null
-        bind:
-          "data.result": "child_skill_uuid"
-        on_error: abort
-      - capsule: "action:crypto-broker"
-        stdin_spec:
-          operation: "GENERATE_SHA256"
-          target_type: "STRING"
-          target_payload:
-            type: "canonical_json_utf8"
-            from_process_inputs:
-              - "skill_name"
-              - "skill_version"
-              - "skill_context"
-              - "skill_inputs_schema"
-              - "skill_outputs_schema"
-            json_dumps:
-              sort_keys: true
-              separators: [",", ":"]
-              ensure_ascii: false
-        bind:
-          "data.result": "child_skill_integrity_hex"
-        on_error: abort
+- phase_name: Forja del Markdown
+  invocations:
+  - capsule: action:crypto-broker
+    stdin_json:
+      operation: GENERATE_UUID
+      target_payload: null
+    bind:
+      data.result: child_skill_uuid
+    on_error: abort
+  - capsule: action:crypto-broker
+    stdin_spec:
+      operation: GENERATE_SHA256
+      target_type: STRING
+      target_payload:
+        type: canonical_json_utf8
+        from_process_inputs:
+        - skill_name
+        - skill_version
+        - skill_context
+        - skill_inputs_schema
+        - skill_outputs_schema
+        json_dumps:
+          sort_keys: true
+          separators:
+          - ','
+          - ':'
+          ensure_ascii: false
+    bind:
+      data.result: child_skill_integrity_hex
+    on_error: abort
 minteo_maximo: null
 porcentaje_de_exito: null
 ---

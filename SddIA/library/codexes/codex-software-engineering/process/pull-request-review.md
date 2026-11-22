@@ -3,12 +3,12 @@ uuid: 6d59f23b-df29-4be5-9bb9-29cede3474b9
 name: pull-request-review
 version: 2.3.0
 contract: process-contract v1.4.0
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 context:
 - quality-assurance
 - source-control
 - pr-lifecycle
-hash_signature: "sha256:4b00ee00bd61afd10725b139c07902033d83256441d841ca4a4c573b98b2688f"
+hash_signature: sha256:c568c83066df0e1b12b5832695308f64ee03717520ac54389f7df95b3cf13b2d
 inputs:
 - pr_id_or_path: Identificador o ruta lógica del PR
 - pr_branch: Rama asociada al PR
@@ -36,30 +36,37 @@ phases:
     version: '>=1.0.0'
   delegates_to:
   - skill:git-manager
+  id: preparacion_de_rama
 - name: Triaje documental
   intent: Validar frontmatter YAML y presencia de spec.md, plan.md, implementation.md y objectives.md en persist_ref.
   delegates_to:
   - agent:argos
+  id: triaje_documental
 - name: Triaje técnico
   intent: Ejecutar tests, auditoría estática y sensor DIA (audit-doc-parity) vía cápsulas autorizadas; alerta documental no bloqueante; respeto de capsule-json-io.
   delegates_to:
   - action:execute-process
+  id: triaje_tecnico
 - name: Certificación RBAC
   intent: Cerbero certifica permisos del firmante sobre el área del genoma afectada.
   delegates_to:
   - agent:cerbero
+  id: certificacion_rbac
 - name: Veredicto y bloqueo
   intent: Argos sintetiza dictamen; aborta con delivery_state failed ante violación F2–F4.
   delegates_to:
   - agent:argos
+  id: veredicto_y_bloqueo
 - name: Cosecha Kaizen
   intent: Cúmulo persiste deuda Kaizen genérica no documental en docs/todos/; la deuda DIA viaja exclusivamente por evento Kaizen_Alert_Required (EDA v2).
   delegates_to:
   - agent:cumulo
+  id: cosecha_kaizen
 - name: Handoff materialización
   intent: Si verdict aprobado, delegar fusión soberana en accept-pr (sin merge directo en aduana).
   delegates_to:
   - action:execute-process
+  id: handoff_materializacion
 minteo_maximo: null
 porcentaje_de_exito: null
 ---

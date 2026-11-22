@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:f57433fd1b2bb8f32b3af9239b64911ecbf75a7fff33988e3d8853d68ca6b249"
+hash_signature: "sha256:7778755b77c68da59ece78afce97c829fbef740f157135ef87e6312c9024a2b6"
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo
@@ -22,26 +22,33 @@ phases:
   - skill:git-manager
   intent: Consolidar commit final del trabajo antes del cierre remoto.
   name: Snapshot final
+  id: snapshot_final
 - delegates_to:
   - agent:argos
   intent: Evaluar mutaciones bajo SddIA/ para feature, bug-fix y refactorization; propagar sddia_paths.
   name: Impacto SddIA condicional
+  id: impacto_sddia_condicional
 - delegates_to:
   - agent:argos
   intent: Invocar sddia-qa gate-evolution --json --range --sync-base; bloquear si material sin registro evolution.
   name: Aduana evolution
+  id: aduana_evolution
 - delegates_to:
   - agent:argos
   intent: Invocar sddia-qa audit-eda-coverage --scan --json; si orphan_count > 0, Argos registra Ruido de Sistema (block) salvo excepción documentada de backfill Fase C en curso.
   name: Aduana EDA genómica
+  id: aduana_eda_genomica
 - delegates_to:
   - agent:argos
   intent: Invocar sddia-qa verify-process-integrity y verify-tools-index; bloquear si alguno falla.
   name: Aduana integridad índices
+  id: aduana_integridad_indices
 - intent: Exigir atestación QA aprobada para el tree_sha de HEAD y árbol cerrado (salvo validacion.md en persist_ref) antes del push.
   name: Gate pre-PR QA
+  id: gate_pre_pr_qa
 - intent: Tras global APTO, contrastar coherencia apto_coherence (execution/plan) y sellar validated_*_sha + diff_digest (excl. validacion.md); fricción apto_coherence_* sin System_Fracture; lab SDDIA_LAB_SKIP_APTO_COHERENCE.
   name: Sello diff validacion
+  id: sello_diff_validacion
 - delegates_to:
   - skill:git-manager
   intent: Publicar la rama de trabajo en origin antes de abrir el PR.
@@ -50,18 +57,22 @@ phases:
   - contract: proc.git_sync
     id: proc:git-sync
     version: '>=1.0.0'
+  id: publicacion_remota
 - delegates_to:
   - skill:shell-executor
   intent: Crear o resolver el PR en GitHub vía gh (shell-executor); capturar pr_url.
   name: Apertura en forja
+  id: apertura_en_forja
 - delegates_to:
   - action:emit-pr-presented-event
   intent: Emitir PullRequest_Presented en eda_bus.pending para anclaje posterior vía watcher.
   name: Sello Presentación ECST
+  id: sello_presentacion_ecst
 - delegates_to:
   - skill:git-manager
   intent: 'Cerrar ciclo local (close-cycle): limpieza de ramas temporales y estado de repo consistente.'
   name: Higiene local
+  id: higiene_local
 porcentaje_de_exito: null
 uuid: 5417c92c-da7f-4d46-b245-55cf1b17961a
 version: 2.0.0

@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:0aa0ee978b64c34f55d8384eb70476a6f734f7220cbcf0b936c238493f6f5e75"
+hash_signature: sha256:91e1248c355fadc7fadd8e26c47fd75422a98ba44425c46b6cec116bf6e4355f
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
@@ -17,6 +17,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: ingesta_evolution
 porcentaje_de_exito: null
 uuid: eb50d05d-c8d8-4cb7-a7ed-4d296971cbe2
 version: 2.0.0

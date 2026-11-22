@@ -48,6 +48,7 @@ pub mod event_store_query;
 pub mod eda_coverage;
 pub mod ecst_validation;
 pub mod execution_workspace_report;
+pub mod execution_registry;
 pub mod executor;
 pub mod fractal;
     pub mod enrich_fracture_pbi_kaizen;

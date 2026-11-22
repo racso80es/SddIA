@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:e00473f267780ea7726ae5a90f4678fa090e5925541f5656c86ae71d8903fc7a"
+hash_signature: sha256:d25cb92a290e77a4d264ca2d78e53ca9741eac0aa50fbf2e34162d0c67ad1c44
 inputs:
 - description: Opcional; reservado para recompilación explícita.
   name: force
@@ -20,6 +20,7 @@ phases:
   - contract: fs.persist
     id: fs:persist
     version: '>=1.0.0'
+  id: compilar_mapa
 uuid: e7f09165-c445-49ae-965d-41abb4738679
 version: 1.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
