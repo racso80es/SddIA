@@ -125,9 +125,9 @@ situational_notes:
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs); valores heredados residuales de artefacto previo
 validated_base_sha: b6516a0026b10aa649ea18a2643443dc116d92d5
-validated_head_sha: 40f3c35f1012da64a8322291f7e3b3f5ae3030f3
-validated_tree_sha: 91197c422da8470253196ab33d5eeedfe8eb8352
-diff_digest: sha256:bcadbc21b35699b0744feb1a7a9fe32e79ae16a88ea44695ea47ff7a188b48ab
+validated_head_sha: 69fee1b6d6eabe9af10271a5130e955f6c21e4b7
+validated_tree_sha: 88a87cdda0bbecbc24d4c7e578ca6312e43250f0
+diff_digest: sha256:03ee78a7e49e578a4fac044ee5ff485003475f3348ba9d48516d05f604c13f4c
 execution_id: cfd0a522-c6ca-401b-a817-679f9389c6b0
 ---
 
