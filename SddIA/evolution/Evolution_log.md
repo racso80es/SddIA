@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `7966d58f-b59b-4f56-8957-8ab35abdc919` | 2026-11-22 | MAN-48: consolidación de la familia capability-contract (contrato legal, índice, motor y aduanas QA) | CANONICO | `SddIA/evolution/7966d58f-b59b-4f56-8957-8ab35abdc919.md` |
 | `040df37a-4efe-4453-bbe1-0a5eccafd5fa` | 2026-11-22 | AUT-98: eximir .SddIA/state/active-executions.json en workspace_init::path_in_scope y .gitignore | CANONICO | `SddIA/evolution/040df37a-4efe-4453-bbe1-0a5eccafd5fa.md` |
 | `03d4d828-2cb8-424c-b6e4-c029dbe70a72` | 2026-11-22 | MAN-34: control contractual stop_after por phase_id, registro incremental write-ahead y resume | CANONICO | `SddIA/evolution/03d4d828-2cb8-424c-b6e4-c029dbe70a72.md` |
 | `74f9be57-c585-443e-8593-897abafa3322` | 2026-11-21 | MAN-46 (KZ-3): aduana parental_close_gate (hito no cierra PBI padre ni tracker sin AC cerrados o refine previo) | CANONICO | `SddIA/evolution/74f9be57-c585-443e-8593-897abafa3322.md` |

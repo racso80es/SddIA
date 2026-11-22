@@ -1,5 +1,6 @@
 ---
 
+
 feature_name: man-48-familia-capability-contract
 created: "2026-11-22"
 updated: "2026-11-22"
@@ -10,7 +11,7 @@ persist_ref: docs/features/man-48-familia-capability-contract
 pbi_ref: MAN-48
 document_id: PBI-FAMILIA-CAPABILITY-CONTRACT-POLIMORFISMO
 status: ejecutado
-execution_id: "6a6c425a-eeab-4bee-8024-5cd9a4ab37f7"
+execution_id: "55587030-6308-4c5a-a20c-f9a701099031"
 ---
 # Ejecución — man-48-familia-capability-contract
 

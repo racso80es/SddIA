@@ -77,3 +77,76 @@ notes: "idempotent-hit"
 - F2 heredado **APTO**; F4 Cerbero **APTO** (PPR ∉ revoked); F3 **NO_APTO** no bloqueante (workspace ausente)
 - Residual: `DOC_EVOLUTION` NO_APTO; `accept_pr_handoff: pending`
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-22T11:59:32Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-22T12:00:47Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `55587030-6308-4c5a-a20c-f9a701099031`
+- correlation_id: `e7e42319-4e4d-4013-ab5f-ea01116df553`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Downstream: F3 técnico / F4 Cerbero / Veredicto — fuera de esta fase
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Archivo tocado: `docs/features/man-48-familia-capability-contract/validacion.md`
+- R1/R2: copia Evidence Bridge `native_state` → TECH/GIT **APTO** (Shell git-manager Rejected; sin stdout inventado)
+- R3 KM: **APTO** — 0 writes bajo `docs/todos/**`; `pending/` vacío; Linear
+- F2: cascada objectives→execution + YAML **APTO**; rama inject ≡ HEAD
+- Residual no bloqueante: `DOC_EVOLUTION` NO_APTO (sin hito evolution MAN-48)
+- Downstream: F3 técnico / F4 Cerbero / Veredicto — fuera de esta fase
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-22T12:00:47Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-22T12:01:52Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `55587030-6308-4c5a-a20c-f9a701099031`
+- correlation_id: `e7e42319-4e4d-4013-ab5f-ea01116df553`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residual: `DOC_EVOLUTION` NO_APTO; `accept_pr_handoff: pending`
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success`)
+
+- Archivo tocado: `docs/features/man-48-familia-capability-contract/validacion.md`
+- R1/R2: copia Evidence Bridge `native_state` (idempotent-hit) → TECH/GIT **APTO**; Shell git-manager Rejected; sin stdout inventado
+- R3 KM: **APTO** — 0 writes bajo `docs/todos/**`; `pending/` vacío; Linear
+- F2 heredado **APTO**; F4 Cerbero **APTO** (PPR ∉ revoked); F3 **NO_APTO** no bloqueante (workspace ausente)
+- Residual: `DOC_EVOLUTION` NO_APTO; `accept_pr_handoff: pending`
+```
