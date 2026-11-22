@@ -1083,9 +1083,9 @@ fn run_generic(
     }
     state["phase_reports"] = json!(phase_reports);
 
-    let verdict =
+    let mut verdict =
         crate::engine::phase_terminal::aggregate_execution_terminal(&phase_reports, &state);
-    let status_code = verdict.status_code;
+    let mut status_code = verdict.status_code;
     let duration_ms = toll_start
         .map(|t| t.elapsed().as_millis() as i64)
         .unwrap_or(0);
@@ -1137,6 +1137,27 @@ fn run_generic(
         duration_ms,
         &phase_reports,
     );
+
+    if process_name == "pull-request-review" && verdict.success {
+        if let Some(persist) = inputs_mut
+            .get("persist_ref")
+            .or_else(|| state.get("persist_ref"))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            if let Err(fault) = super::apto_coherence::validate_apto_coherence(repo, persist) {
+                verdict.success = false;
+                verdict.error = Some(fault.to_error_string());
+                status_code = 1;
+                if let Some(obj) = data.as_object_mut() {
+                    obj.insert("verdict".into(), json!("rechazado"));
+                    obj.insert("friction_id".into(), json!(fault.friction_id));
+                    obj.insert("reasons".into(), json!(fault.reasons));
+                }
+            }
+        }
+    }
 
     if process_name == "pull-request-review" && verdict.success {
         if let Some(obj) = state.as_object_mut() {

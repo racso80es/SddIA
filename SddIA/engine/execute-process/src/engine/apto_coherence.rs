@@ -12,6 +12,8 @@ pub const LAB_SKIP_ENV: &str = "SDDIA_LAB_SKIP_APTO_COHERENCE";
 pub const FRICTION_EXECUTION_BLOCKED: &str = "apto_coherence_execution_blocked";
 pub const FRICTION_OPEN_PHASES: &str = "apto_coherence_open_phases";
 pub const FRICTION_RESOLUTION: &str = "apto_coherence_resolution";
+pub const FRICTION_AC_PARTIAL: &str = "apto_coherence_ac_partial";
+pub const FRICTION_TRUNK_GATE: &str = "apto_coherence_trunk_gate";
 
 const OPERATOR_HINT: &str =
     "Corregir execution/plan o bajar global a NO_APTO antes del sello/fusión";
@@ -123,6 +125,18 @@ pub fn validate_apto_coherence(repo: &Path, persist_ref: &str) -> Result<(), Coh
 
     // C4 — resolución no canónica (frontmatter de validacion + execution)
     if let Some(fault) = check_c4_resolution(repo, persist, &validacion_fm) {
+        reasons.extend(fault.reasons.iter().cloned());
+        first.get_or_insert(fault);
+    }
+
+    // C5 — matriz de ACs/CAs parcial, fallida o pendiente
+    if let Some(fault) = check_c5_ac_matrix(repo, persist) {
+        reasons.extend(fault.reasons.iter().cloned());
+        first.get_or_insert(fault);
+    }
+
+    // Checks troncales no degradables en validacion.md checks:
+    if let Some(fault) = check_trunk_gates(&validacion_fm) {
         reasons.extend(fault.reasons.iter().cloned());
         first.get_or_insert(fault);
     }
@@ -569,6 +583,150 @@ fn check_c4_resolution(
     None
 }
 
+fn strip_md_token(s: &str) -> String {
+    s.trim()
+        .trim_matches(|c: char| matches!(c, '*' | '_' | '`' | ' ' | '\t'))
+        .to_string()
+}
+
+fn is_ac_or_ca_id(raw: &str) -> Option<String> {
+    let clean = strip_md_token(raw);
+    let upper = clean.to_ascii_uppercase();
+    let rest = if let Some(r) = upper.strip_prefix("AC") {
+        r
+    } else {
+        upper.strip_prefix("CA")?
+    };
+    let rest_trim = rest.trim_start_matches(['-', '_']);
+    let digits: String = rest_trim.chars().take_while(|c| c.is_ascii_digit()).collect();
+    if digits.is_empty() {
+        return None;
+    }
+    // Asegurar que el identificador no sea una palabra común como "ACTO" o "ACTUAL"
+    let after_digits = &rest_trim[digits.len()..];
+    if !after_digits.is_empty()
+        && !after_digits.starts_with(|c: char| c.is_whitespace() || matches!(c, ':' | '-' | '—' | '–' | ')' | ']'))
+    {
+        return None;
+    }
+    let prefix = if upper.starts_with("AC") { "AC" } else { "CA" };
+    Some(format!("{prefix}-{digits}"))
+}
+
+fn forbidden_ac_status_token(cell: &str) -> Option<&'static str> {
+    let clean = strip_md_token(cell);
+    if clean.is_empty() {
+        return None;
+    }
+    // Primer token de la celda (antes de espacio, guion largo, paréntesis, etc.)
+    let first_tok = clean
+        .split(|c: char| c.is_whitespace() || matches!(c, '—' | '–' | ':' | ',' | ';' | '(' | '/'))
+        .map(strip_md_token)
+        .find(|t| !t.is_empty())?;
+    let up = first_tok.to_ascii_uppercase();
+    ["PARCIAL", "FAIL", "NO_APTO", "ABIERTO", "PENDIENTE"]
+        .into_iter()
+        .find(|&bad| up == bad || (bad == "PENDIENTE" && up.starts_with("PENDIENTE-")))
+}
+
+fn scan_ac_matrix_body(body: &str, source: &str, reasons: &mut Vec<String>) {
+    for line in body.lines() {
+        let t = line.trim();
+        if t.starts_with('|') {
+            let cells: Vec<&str> = t.trim_matches('|').split('|').collect();
+            if cells.len() < 2 {
+                continue;
+            }
+            if let Some(ac_id) = is_ac_or_ca_id(cells[0]) {
+                for cell in &cells[1..] {
+                    if let Some(bad) = forbidden_ac_status_token(cell) {
+                        reasons.push(format!("{source}_{ac_id}={bad}"));
+                        break;
+                    }
+                }
+            }
+            continue;
+        }
+        // Ítems de lista: `- **AC-5:** PARCIAL ...` o `* CA-1: NO_APTO`
+        if let Some(rest) = t.strip_prefix("- ").or_else(|| t.strip_prefix("* ")) {
+            if let Some((head, tail)) = rest.split_once(':') {
+                if let Some(ac_id) = is_ac_or_ca_id(head) {
+                    if let Some(bad) = forbidden_ac_status_token(tail) {
+                        reasons.push(format!("{source}_{ac_id}={bad}"));
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn check_c5_ac_matrix(repo: &Path, persist: &str) -> Option<CoherenceFault> {
+    let mut reasons = Vec::new();
+    for file in ["execution.md", "validacion.md"] {
+        let path = persist_join(repo, persist, file);
+        if !path.is_file() {
+            continue;
+        }
+        if let Ok(raw) = fs::read_to_string(&path) {
+            let body = strip_frontmatter(&raw);
+            let source = file.trim_end_matches(".md");
+            scan_ac_matrix_body(&body, source, &mut reasons);
+        }
+    }
+    if reasons.is_empty() {
+        return None;
+    }
+    Some(CoherenceFault {
+        friction_id: FRICTION_AC_PARTIAL.into(),
+        message: format!(
+            "global APTO incoherente con matriz AC/CA no cerrada: {}",
+            reasons.join(", ")
+        ),
+        reasons,
+    })
+}
+
+fn is_trunk_gate_key(key: &str) -> bool {
+    let up = key.trim().to_ascii_uppercase();
+    matches!(
+        up.as_str(),
+        "F2_DOC_GATE" | "F3_TECH_GATE" | "F4_RBAC_GATE" | "ROOT_TOPOLOGY_CLEAN"
+    ) || up.starts_with("DOC_HONESTY_")
+}
+
+fn check_trunk_gates(
+    validacion_fm: &std::collections::HashMap<String, YamlValue>,
+) -> Option<CoherenceFault> {
+    let Some(YamlValue::Mapping(checks)) = validacion_fm.get("checks") else {
+        return None;
+    };
+    let mut reasons = Vec::new();
+    for (k, v) in checks {
+        let Some(key_str) = yaml_str(k) else {
+            continue;
+        };
+        if !is_trunk_gate_key(&key_str) {
+            continue;
+        }
+        if let Some(val_str) = yaml_str(v) {
+            if ci_eq(&val_str, "NO_APTO") {
+                reasons.push(format!("trunk_gate_{key_str}={val_str}"));
+            }
+        }
+    }
+    if reasons.is_empty() {
+        return None;
+    }
+    Some(CoherenceFault {
+        friction_id: FRICTION_TRUNK_GATE.into(),
+        message: format!(
+            "global APTO rechazado: check troncal en NO_APTO ({})",
+            reasons.join(", ")
+        ),
+        reasons,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -739,5 +897,108 @@ mod tests {
         );
         let rel = "docs/features/_fixture-ka-close";
         validate_apto_coherence(repo, rel).expect("coherent");
+    }
+
+    #[test]
+    fn ka_ac_partial_1_matrix_rejects_apto() {
+        for bad_state in ["PARCIAL", "FAIL", "NO_APTO", "ABIERTO", "PENDIENTE"] {
+            let tmp = tempfile::tempdir().expect("tempdir");
+            let repo = tmp.path();
+            let persist = persist_dir(repo);
+            write_md(
+                &persist,
+                "validacion.md",
+                "---\nglobal: APTO\n---\n\n# ok\n",
+            );
+            write_md(
+                &persist,
+                "execution.md",
+                &format!(
+                    "---\nverdict: ok\nstatus: complete\nphases_closed: [H0]\n---\n\n# exec\n\n| AC | Estado |\n|---|---|\n| AC-1 | **PASS** — sin pendientes |\n| AC-5 | **{bad_state}** — pendiente |\n"
+                ),
+            );
+            write_md(&persist, "plan.md", "---\nphases: [H0]\n---\n\n# H0\n");
+
+            let rel = "docs/features/_fixture-ka-close";
+            let err = validate_apto_coherence(repo, rel).expect_err("must block AC partial");
+            assert_eq!(err.friction_id, FRICTION_AC_PARTIAL);
+            assert!(err.reasons.iter().any(|r| r.contains("AC-5")));
+        }
+    }
+
+    #[test]
+    fn ka_ac_partial_1_passing_matrix_with_notes_passes() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let persist = persist_dir(repo);
+        write_md(
+            &persist,
+            "validacion.md",
+            "---\nglobal: APTO\nchecks:\n  F2_DOC_GATE: APTO\n  F3_TECH_GATE: APTO\n  F4_RBAC_GATE: APTO\n  ROOT_TOPOLOGY_CLEAN: APTO\n---\n\n| AC | Estado |\n|---|---|\n| AC-1 | **APTO** — sin pendientes |\n",
+        );
+        write_md(
+            &persist,
+            "execution.md",
+            "---\nverdict: ok\nstatus: complete\nphases_closed: [H0]\n---\n\n| AC | Estado |\n|---|---|\n| AC-1 | **PASS** — sin fail ni abiertos |\n",
+        );
+        write_md(&persist, "plan.md", "---\nphases: [H0]\n---\n\n# H0\n");
+        let rel = "docs/features/_fixture-ka-close";
+        validate_apto_coherence(repo, rel).expect("passing matrix");
+    }
+
+    #[test]
+    fn ka_gate_trunk_2_no_apto_rejects_apto() {
+        for gate in [
+            "F2_DOC_GATE",
+            "F3_TECH_GATE",
+            "F4_RBAC_GATE",
+            "ROOT_TOPOLOGY_CLEAN",
+            "DOC_HONESTY_AC5_MATRIX",
+        ] {
+            let tmp = tempfile::tempdir().expect("tempdir");
+            let repo = tmp.path();
+            let persist = persist_dir(repo);
+            write_md(
+                &persist,
+                "validacion.md",
+                &format!(
+                    "---\nglobal: APTO\nchecks:\n  {gate}: NO_APTO\nnon_blocking_findings:\n  - {gate}\n---\n\n# v\n"
+                ),
+            );
+            write_md(
+                &persist,
+                "execution.md",
+                "---\nverdict: ok\nstatus: complete\nphases_closed: [H0]\n---\n\n# H0 closed\n",
+            );
+            write_md(&persist, "plan.md", "---\nphases: [H0]\n---\n\n# H0\n");
+
+            let rel = "docs/features/_fixture-ka-close";
+            let err = validate_apto_coherence(repo, rel).expect_err("must block trunk gate NO_APTO");
+            assert_eq!(err.friction_id, FRICTION_TRUNK_GATE);
+            assert!(err.reasons.iter().any(|r| r.contains(gate)));
+        }
+    }
+
+    #[test]
+    fn ka_close_4_man50_counterfactual() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let persist = persist_dir(repo);
+        write_md(
+            &persist,
+            "validacion.md",
+            "---\nglobal: APTO\nchecks:\n  F2_DOC_GATE: APTO\n  F3_TECH_GATE: NO_APTO\n  F4_RBAC_GATE: APTO\n  DOC_HONESTY_AC5_MATRIX: NO_APTO\n  ROOT_TOPOLOGY_CLEAN: APTO\n---\n\n# MAN-50\n",
+        );
+        write_md(
+            &persist,
+            "execution.md",
+            "---\nverdict: ok\nstatus: executed\n---\n\n## AC matrix (Tekton)\n\n| AC | Estado Tekton |\n|---|---|\n| AC-1 | **PASS** |\n| AC-5 | **PARCIAL** — suite workspace pendiente |\n",
+        );
+        let rel = "docs/features/_fixture-ka-close";
+        let err = validate_apto_coherence(repo, rel).expect_err("MAN-50 counterfactual must block");
+        assert_eq!(err.friction_id, FRICTION_AC_PARTIAL);
+        assert!(err.reasons.iter().any(|r| r.contains("AC-5=PARCIAL")));
+        assert!(err.reasons.iter().any(|r| r.contains("F3_TECH_GATE=NO_APTO")));
+        assert!(err.reasons.iter().any(|r| r.contains("DOC_HONESTY_AC5_MATRIX=NO_APTO")));
     }
 }

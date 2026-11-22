@@ -27,6 +27,27 @@ const OPERATOR_HINT: &str =
 
 const BRANCH_PREFIXES: &[&str] = &["feat/", "fix/", "refactor/", "hotfix/"];
 
+/// Directorios efímeros de topología de bus prohibidos en raíz del repo (MAN-53 / KA-ROOT-PHYS-3).
+pub const ROOT_EPHEMERAL_DIRS: &[&str] = &[
+    concat!(".", "events"),
+    "orchestration",
+    "telemetry",
+    "pending",
+    "domain",
+    "dead-letter",
+    "progress",
+    "_lab",
+];
+
+/// Detecta directorios efímeros en la raíz del repo, aunque estén vacíos (invisibles a `git status`).
+pub fn root_ephemeral_dir_violations(repo: &Path) -> Vec<String> {
+    ROOT_EPHEMERAL_DIRS
+        .iter()
+        .filter(|name| repo.join(name).is_dir())
+        .map(|name| format!("{name}/"))
+        .collect()
+}
+
 #[derive(Debug, Clone)]
 pub struct AttestationHit {
     pub execution_id: String,
@@ -313,6 +334,10 @@ fn ppr_verdict_aprobado(repo: &Path, state: &Value, inputs: &Value) -> bool {
 pub fn try_write_from_ppr(repo: &Path, state: &Value, inputs: &Value) -> Result<PathBuf, String> {
     if !ppr_verdict_aprobado(repo, state, inputs) {
         return Err("verdict not aprobado".into());
+    }
+    if let Some(persist) = str_field(inputs, "persist_ref").or_else(|| str_field(state, "persist_ref")) {
+        super::apto_coherence::validate_apto_coherence(repo, &persist)
+            .map_err(|f| f.to_error_string())?;
     }
     let branch = resolve_pr_branch(inputs, state)
         .ok_or_else(|| "pr_branch missing for attestation".to_string())?;
@@ -914,5 +939,45 @@ mod tests {
         let r = validate_for_accept_pr_with_state(repo, &inputs, None);
         std::env::remove_var(LAB_SKIP_ENV);
         assert!(r.is_ok());
+    }
+
+    #[test]
+    fn ka_root_phys_3_empty_ephemeral_dirs_detected() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        assert!(root_ephemeral_dir_violations(repo).is_empty());
+        for dir in ROOT_EPHEMERAL_DIRS {
+            fs::create_dir_all(repo.join(dir)).expect("mkdir");
+        }
+        let violations = root_ephemeral_dir_violations(repo);
+        assert_eq!(violations.len(), ROOT_EPHEMERAL_DIRS.len());
+        assert!(violations.contains(&"orchestration/".to_string()));
+        assert!(violations.contains(&concat!(".", "events/").to_string()));
+        assert!(violations.contains(&"_lab/".to_string()));
+    }
+
+    #[test]
+    fn try_write_from_ppr_blocks_on_trunk_gate_no_apto() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let persist = repo.join("docs/features/f-trunk");
+        fs::create_dir_all(&persist).expect("mkdir");
+        fs::write(
+            persist.join("validacion.md"),
+            "---\nglobal: APTO\nverdict: aprobado\nchecks:\n  F3_TECH_GATE: NO_APTO\n---\n\n# v\n",
+        )
+        .expect("write validacion");
+        fs::write(
+            persist.join("execution.md"),
+            "---\nverdict: ok\nstatus: complete\n---\n\n# e\n",
+        )
+        .expect("write exec");
+        let state = json!({ "verdict": "aprobado" });
+        let inputs = json!({
+            "pr_branch": "feat/f-trunk",
+            "persist_ref": "docs/features/f-trunk"
+        });
+        let err = try_write_from_ppr(repo, &state, &inputs).expect_err("must block trunk gate NO_APTO");
+        assert!(err.contains("apto_coherence_trunk_gate"));
     }
 }
