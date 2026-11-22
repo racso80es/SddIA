@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-48-familia-capability-contract
 created: "2026-11-22"
 updated: "2026-11-22"
@@ -9,8 +10,8 @@ persist_ref: docs/features/man-48-familia-capability-contract
 pbi_ref: MAN-48
 document_id: PBI-FAMILIA-CAPABILITY-CONTRACT-POLIMORFISMO
 status: diseno-aprobado
+execution_id: "6a6c425a-eeab-4bee-8024-5cd9a4ab37f7"
 ---
-
 # Especificación Técnica — man-48-familia-capability-contract
 
 ## 1. Alineamiento Normativo (`SddIA/norms/entidades-dominio-ecosistema-sddia.md`)
