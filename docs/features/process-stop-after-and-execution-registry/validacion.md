@@ -1,7 +1,7 @@
 ---
 feature_name: process-stop-after-and-execution-registry
-created: "2026-11-21"
-updated: "2026-11-22T05:50:00Z"
+created: 2026-11-21
+updated: 2026-11-22T05:50:00Z
 process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
@@ -103,12 +103,13 @@ situational_notes:
 - git_changes = filtro gitStdout MCP git_status (git-manager) sobre persist_ref; no inventado
 - Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO; pending/ vacío; tracker.provider=linear
 - delivery_state success · accept_pr_handoff pending — handoff a accept-pr aguas abajo
-validated_base_sha: null
-validated_head_sha: null
-validated_tree_sha: null
-diff_digest: null
-execution_id: "d7301123-c49f-4627-90f1-ff1fe78bcc66"
+validated_base_sha: 2307d0b3233c9a3cbec769cb676f2b56603ac22a
+validated_head_sha: a7dcd0ba6c1a0f45e6e423c947f28cf9ec3a2ad2
+validated_tree_sha: 1bf44bbd883ae922739441d29d34ca746f8064b1
+diff_digest: sha256:9bb17f57bdcfeb5d5e0c7db29b27e7931699f557c173be4194e602e92f8b7545
+execution_id: d7301123-c49f-4627-90f1-ff1fe78bcc66
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
