@@ -1,7 +1,7 @@
 ---
 feature_name: man-51-gate-sddia-daemon-runtime-residuos-events
 created: 2026-11-22
-updated: 2026-11-22T17:30:00Z
+updated: 2026-11-22T17:40:00Z
 process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
@@ -17,11 +17,11 @@ document_id: PBI-1377d0ec
 document_uuid: c3aff1f0-495b-40ab-a042-4420dd241400
 tracker_provider: linear
 tracker_ref: MAN-51
-correlation_id: e8cd02b1-e76c-4a3c-a44c-1cef29bc4704
-pr_presented_event_id: e8cd02b1-e76c-4a3c-a44c-1cef29bc4704
-audit_event_reference: e8cd02b1-e76c-4a3c-a44c-1cef29bc4704
-workspace_path_injected: .SddIA/workspaces/pull-request-review/acbb527e-4d9c-4e3d-954c-91a9d8c7d1b6/
-workspace_materialized: minimal
+correlation_id: dd7c2cf0-edd8-471d-bd6c-41a9381fabb3
+pr_presented_event_id: dd7c2cf0-edd8-471d-bd6c-41a9381fabb3
+audit_event_reference: dd7c2cf0-edd8-471d-bd6c-41a9381fabb3
+workspace_path_injected: .SddIA/workspaces/pull-request-review/d577eabc-9947-4781-b087-7d0475963e29/
+workspace_materialized: absent
 norm_ref: features-documentation-pattern@1.3.1
 global: APTO
 pbi_archived: false
@@ -31,17 +31,17 @@ delivery_state: success
 resolution: PASS_F5_VERDICT
 accept_pr_handoff: false
 accept_pr_handoff_status: pending
-accept_pr_block_reason: L-HANDOFF-F5 — accept_pr_handoff true solo tras merge soberano / invoke accept-pr Ok; fuera de jurisdicción Veredicto
+accept_pr_block_reason: pr_url/MERGE ausentes este CID; L-HANDOFF-F5 — prohibido accept_pr_handoff true sin vía de merge soberano
 git_manager_invoked: false
-git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; git_changes = path-assert FS (sin inventar gitStdout)
+git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre inspección/git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; git_changes = path-assert FS (sin inventar gitStdout)
 git_evidence_source: evidence-bridge-session-native_state+handoff-machine+path-assert-fs
 formal_execute_process: true
-formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-22T17:26:21Z TECH/GIT APTO notes=idempotent-hit; prior prosthesis_subprocess @ 2026-11-22T17:24:45Z formal_evidence_detail=verify-process-integrity: OK'
+formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-22T17:30:42Z TECH/GIT APTO notes=idempotent-hit; prior prosthesis_subprocess @ 2026-11-22T17:24:45Z formal_evidence_detail=verify-process-integrity: OK'
 handoff_machine_file: present
 handoff_evidence_block_pre: present
-evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit + machine native_state @ 2026-11-22T17:26:21Z); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado
-shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID e8cd02b1… · exec acbb527e…
-scope: PPR Veredicto y bloqueo — F5 + Evidence Bridge R1/R2/R3 (CID e8cd02b1… · exec acbb527e…)
+evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit + machine native_state @ 2026-11-22T17:30:42Z); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell Rejected esta sesión Argos Veredicto — sin stdout inventado
+shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID dd7c2cf0… · exec d577eabc…
+scope: PPR Veredicto y bloqueo — F5 + Evidence Bridge R1/R2/R3 + gates F2/F3/F4 heredados (CID dd7c2cf0… · exec d577eabc…)
 checks:
   AC-1: APTO
   AC-2: APTO
@@ -53,7 +53,7 @@ checks:
   F2_DOC_GATE: APTO
   F3_TECH_GATE: NO_APTO
   F4_RBAC_GATE: APTO
-  F4_CERBERO: APTO
+  F4_CERBERO_RBAC: APTO
   F5_VERDICT: APTO
   F5_VERDICT_GATE: APTO
   DOC_OBJECTIVES: APTO
@@ -117,42 +117,42 @@ non_blocking_findings:
 - MERGE_ALREADY_OBSERVED
 - ACCEPT_PR_HANDOFF
 situational_notes:
-- Fase Veredicto y bloqueo · CID e8cd02b1-e76c-4a3c-a44c-1cef29bc4704 · exec acbb527e-4d9c-4e3d-954c-91a9d8c7d1b6
+- Fase Veredicto y bloqueo · CID dd7c2cf0-edd8-471d-bd6c-41a9381fabb3 · exec d577eabc-9947-4781-b087-7d0475963e29
 - 'Evidence Bridge session: source=native_state · TECH/GIT APTO · notes=idempotent-hit'
-- 'Evidence Bridge machine: source=native_state @ 2026-11-22T17:26:21Z · TECH/GIT APTO · notes=idempotent-hit (copia; sin stdout inventado)'
+- 'Evidence Bridge machine: source=native_state @ 2026-11-22T17:30:42Z · TECH/GIT APTO · notes=idempotent-hit (copia; sin stdout inventado)'
 - 'Prior prosthesis_subprocess @ 2026-11-22T17:24:45Z · formal_evidence_detail=verify-process-integrity: OK'
-- F2 heredado PASS_F2_DOC APTO (Triaje documental mismo CID/exec)
-- F3_TECH_GATE NO_APTO — Triaje técnico no materializado en workspace exec acbb527e… (solo detached.log); no bloquea (proxy TECH_FORMAL APTO + execution.md Ola 4 gates PASS)
-- F4_CERBERO / CERBERO_PPR_NOT_REVOKED APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked/permanent
-- F5_VERDICT APTO — peajes F2/F4 OK; blocking_findings=[] → PASS_F5_VERDICT · verdict=aprobado
-- Shell ./sddia-run.sh --tool git-manager → Rejected; sin gitStdout de esta sesión Argos
-- GIT_EVIDENCE_NATIVE_PPR NO_APTO — workspace exec acbb527e… solo detached.log; sin prep-branch propio
-- git_changes = path-assert FS (touchpoints + cascada + evolution); no es gitStdout sesión
-- WSPACE_MATERIALIZED NO_APTO — workspace inject acbb527e… mínimo (detached.log); no bloquea F5
+- F2 heredado Triaje documental PASS_F2_DOC — cascada objectives→execution + YAML + AC-1…AC-4 + evolution f8418993… → APTO
+- F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; residual no bloquea F5 (proxy TECH_FORMAL APTO + execution.md Ola 4 OK)
+- F4_CERBERO_RBAC APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked/permanent
+- Shell inspección/git-manager → Rejected; sin gitStdout de esta sesión Argos
+- GIT_EVIDENCE_NATIVE_PPR NO_APTO — workspace exec d577eabc… ausente/vacío; sin prep-branch propio
+- git_changes = path-assert FS (touchpoints evolution.relacionado + cascada); no es gitStdout sesión
+- WSPACE_MATERIALIZED NO_APTO — workspace inject d577eabc… sin artefactos; no bloquea F5
 - DOC_EVOLUTION APTO — hito SddIA/evolution/f8418993-fc83-430b-bb6d-6b51c3c277c9.md + fila Evolution_log MAN-51
-- AC-1…AC-4 APTO — path-assert touchpoints + execution.md matriz PASS + gates/contrato/higiene
+- AC-1…AC-4 APTO — path-assert touchpoints + execution.md matriz PASS
 - Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO; pending/ vacío; tracker.provider=linear
-- accept_pr_handoff pending — L-HANDOFF-F5; handoff materialización fuera de Veredicto
-- pbi_archived false — provider linear; sin fichero nuevo pending/done/; cierre Linear fuera de Veredicto
-execution_id: acbb527e-4d9c-4e3d-954c-91a9d8c7d1b6
+- accept_pr_handoff pending — L-HANDOFF-F5; MERGE/pr_url ausentes
+- pbi_archived false — provider linear; sin fichero nuevo pending/done/
+- validated_* / diff_digest = null — sin gitStdout esta sesión
 validated_base_sha: 6f99d638b90ab0b6155fbb8899d817aa335e1d97
-validated_head_sha: 359b31e57826f023678aa69e4febf2963d901492
-validated_tree_sha: bd440213d6e2ab59931076b964b754bba66a05a4
-diff_digest: sha256:3a22dec78a7a7e59a2975e03f50771384f740f0405698c0e8feebff6c47fc748
+validated_head_sha: 7da401b2e90a036433e5f2f4af05e714c2596be6
+validated_tree_sha: 0373304d628b425639d13f3ab2a46dc5685fcb09
+diff_digest: sha256:18757b4d4238a51726878321dedd3e539651a3ce3b242f6fc2ecb9120c67a369
+execution_id: d577eabc-9947-4781-b087-7d0475963e29
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
 
-**APTO** — `resolution: PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `accept_pr_handoff_status: pending` · `blocking_findings: []`.
+**APTO** — `resolution: PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `accept_pr_handoff: pending` · `blocking_findings: []`.
 
 | Gate | Delegado | Estado | Criterio |
 |------|----------|--------|----------|
-| F2 | Argos (doc, heredado) | **APTO** | `PASS_F2_DOC` Triaje mismo CID/exec |
-| F3 | execute-process | **NO_APTO** | Triaje técnico no materializado este exec; **no bloquea** |
-| F4 | Cerbero | **APTO** | `pull-request-review` ∉ revoked/permanent |
-| F5 | Argos (veredicto) | **APTO** | peajes F2/F4 OK → `PASS_F5_VERDICT` |
+| F2 | Argos (doc, heredado) | **APTO** | cascada + YAML + AC + evolution (`PASS_F2_DOC`) |
+| F3 | Triaje técnico | **NO_APTO** | sin peaje técnico dedicado este CID; **no bloquea** F5 |
+| F4 | Cerbero / RBAC | **APTO** | PPR ∉ revoked/permanent; R3 KM APTO |
+| F5 | Argos (veredicto) | **APTO** | R1/R2/R3 APTO · F2 APTO · F4 APTO · sin blocking_findings |
 | R1 TECH_FORMAL | Evidence Bridge | **APTO** | copia session/machine `native_state` |
 | R2 GIT_EVIDENCE | Evidence Bridge | **APTO** | copia bridge; sin stdout inventado |
 | R3 KM | Argos | **APTO** | 0 writes ilegítimos bajo `docs/todos/**` |
@@ -165,17 +165,17 @@ Copia literal machine/session — **no** stdout inventado:
 |-------|-------|
 | `schema` | `kalma2-agent-runtime-evidence/v1` |
 | `source` (session) | `native_state` |
-| `source` (machine handoff) | `native_state` @ `2026-11-22T17:26:21Z` |
+| `source` (machine handoff) | `native_state` @ `2026-11-22T17:30:42Z` |
 | `notes` (session/machine) | `idempotent-hit` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
 | `formal_execute_process` | `true` |
 | `formal_evidence_detail` (prior prosthesis) | `verify-process-integrity: OK` @ `2026-11-22T17:24:45Z` |
-| `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected |
-| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** — workspace `acbb527e…` solo `detached.log`; sin prep-branch propio |
+| `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — Shell Rejected; sin `gitStdout` |
+| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** — workspace `d577eabc…` ausente/vacío |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**`; `pending/` vacío |
 
-Fuente: prompt Runtime evidence (session) + `docs/features/man-51-gate-sddia-daemon-runtime-residuos-events/_agent_handoff.md` § Runtime evidence (machine) @ `2026-11-22T17:26:21Z`.
+Fuente: prompt Runtime evidence (session) + `docs/features/man-51-gate-sddia-daemon-runtime-residuos-events/_agent_handoff.md` § Runtime evidence (machine) @ `2026-11-22T17:30:42Z`.
 
 ## Ingesta
 
@@ -183,26 +183,38 @@ Fuente: prompt Runtime evidence (session) + `docs/features/man-51-gate-sddia-dae
 |-------|------------|
 | `persist_ref` | `docs/features/man-51-gate-sddia-daemon-runtime-residuos-events` — presente |
 | `pbi_ref` (inyectado) | vacío → resuelto `MAN-51` / `document_id: PBI-1377d0ec` / `uuid: c3aff1f0-…` |
-| `correlation_id` | `e8cd02b1-e76c-4a3c-a44c-1cef29bc4704` |
+| `correlation_id` | `dd7c2cf0-edd8-471d-bd6c-41a9381fabb3` |
 | `branch_name` (runtime) | `feat/man-51-gate-sddia-daemon-runtime-residuos-events` |
 | Worktree (FS HEAD) | `refs/heads/feat/man-51-gate-sddia-daemon-runtime-residuos-events` |
-| `workspace_path` | `.SddIA/workspaces/pull-request-review/acbb527e…/` — **mínimo** (`detached.log`) |
+| `workspace_path` | `.SddIA/workspaces/pull-request-review/d577eabc…/` — **ausente/vacío** |
+| Evento Merged (este CID) | **ausente** |
 | `tracker.provider` | `linear` → sin fichero nuevo en `docs/todos/pending\|done/` |
 | Norma | `features-documentation-pattern@1.3.1` |
 
-## Cascada peajes (F2→F5)
+## Cascada F2 (documental, heredada)
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
-| `F2_DOC_GATE` | **APTO** | heredado Triaje `PASS_F2_DOC` (objectives→execution + YAML + evolution) |
-| `DOC_EVOLUTION` | **APTO** | `SddIA/evolution/f8418993-fc83-430b-bb6d-6b51c3c277c9.md` + `Evolution_log` MAN-51 |
-| `AC-1` | **APTO** | `workspace_member_roots` + `concat!` en ambos gates; execution PASS |
-| `AC-2` | **APTO** | `instance_creator`/`fractal_bus` sin `.events`; fuera `VIRTUAL_PATH_ALLOW` |
-| `AC-3` | **APTO** | transit/hook sin defaults `.events/*`; binario `event-sweeper` ausente |
-| `AC-4` | **APTO** | `events-contract.md` §§3–4 `EventManagerPort`+`EventUri`; `BODY_FORBIDDEN` ampliado |
-| `F3_TECH_GATE` | **NO_APTO** | sin materialización Triaje técnico en workspace `acbb527e…`; **no bloquea** (R1 TECH_FORMAL + `execution.md` Ola 4) |
-| `F4_CERBERO` / `CERBERO_PPR_NOT_REVOKED` | **APTO** | PPR ∉ revoked/permanent |
-| `F5_VERDICT` / `F5_VERDICT_GATE` | **APTO** | `blocking_findings=[]` → `PASS_F5_VERDICT` · `verdict: aprobado` |
+| `DOC_OBJECTIVES` | **APTO** | `objectives.md` + AC-1…AC-4 |
+| `DOC_CLARIFY` | **APTO** | `clarify.md` L-1…L-4 |
+| `DOC_SPEC` | **APTO** | `spec.md` blueprint |
+| `DOC_PLAN` | **APTO** | `plan.md` Olas 0–4 |
+| `DOC_IMPLEMENTATION` | **APTO** | `implementation.md` status implemented |
+| `DOC_EXECUTION` | **APTO** | `execution.md` Olas closed + matriz AC PASS |
+| `DOC_FRONTMATTER_YAML` | **APTO** | frontmatter coherente en cascada |
+| `DOC_AC_CASCADE` | **APTO** | objectives AC ≡ execution matriz PASS |
+| `DOC_EVOLUTION` | **APTO** | `f8418993-fc83-430b-bb6d-6b51c3c277c9.md` + `Evolution_log` MAN-51 |
+| `AC-1`…`AC-4` | **APTO** | path-assert + `execution.md` PASS |
+| `F2_DOC_GATE` | **APTO** | heredado Triaje documental `PASS_F2_DOC` |
+
+## F3 / F4 / F5
+
+| Check | Estado | Evidencia |
+|-------|--------|-----------|
+| `F3_TECH_GATE` | **NO_APTO** | Triaje técnico no materializado este CID; residual **no bloquea** (proxy R1 TECH_FORMAL + `execution.md` Ola 4) |
+| `F4_CERBERO_RBAC` / `F4_RBAC_GATE` | **APTO** | `CERBERO_PPR_NOT_REVOKED` — PPR ∉ revoked/permanent |
+| `PPR_NOT_REVOKED` | **APTO** | proceso PPR vigente |
+| `F5_VERDICT` / `F5_VERDICT_GATE` | **APTO** | R1+R2+R3 APTO · F2 APTO · F4 APTO · `blocking_findings: []` |
 
 ## branch / git_changes
 
@@ -210,15 +222,16 @@ Fuente: prompt Runtime evidence (session) + `docs/features/man-51-gate-sddia-dae
 |-------|--------|-----------|
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Evidence Bridge `native_state` (copia) |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** | Shell Rejected; sin `gitStdout` sesión Argos |
-| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** | workspace `acbb527e…` sin prep-branch stdout |
+| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** | workspace `d577eabc…` sin prep-branch stdout |
 | `BRANCH_RUNTIME_INJECT` | **APTO** | `feat/man-51-gate-sddia-daemon-runtime-residuos-events` |
 | `BRANCH_WORKTREE_SYNC` | **APTO** | `.git/HEAD` ≡ inject (FS; **no** stdout git-manager) |
 | `branch` | **APTO** | inject ≡ HEAD |
 | `git_changes` | **APTO** | inventario path-assert FS; **no** es `gitStdout` de esta sesión |
-| `WSPACE_MATERIALIZED` | **NO_APTO** | workspace mínimo; **no bloquea** |
+| `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin `PullRequest_Merged` para `dd7c2cf0…` |
 | `ACCEPT_PR_HANDOFF` | **NO_APTO** | `pending` (L-HANDOFF-F5) |
+| `WSPACE_MATERIALIZED` | **NO_APTO** | workspace ausente/vacío; **no bloquea** F5 |
 
-`git_changes.paths` = path-assert FS (touchpoints `evolution.relacionado` + cascada). Sin bypass raw destructivo. `validated_*` / `diff_digest` = `null` (sin `gitStdout` esta sesión; sellado tree-sha queda a accept-pr).
+`git_changes.paths` = path-assert FS (touchpoints `evolution.relacionado` + cascada). Sin bypass raw destructivo. `validated_*` / `diff_digest` = `null`.
 
 ## R3 — KM (`RBAC_AUTHORING_KM_POLICY`)
 
@@ -241,14 +254,14 @@ Fuente: prompt Runtime evidence (session) + `docs/features/man-51-gate-sddia-dae
   "branch_worktree_observed": "feat/man-51-gate-sddia-daemon-runtime-residuos-events",
   "persist_ref": "docs/features/man-51-gate-sddia-daemon-runtime-residuos-events",
   "document_id": "PBI-1377d0ec",
-  "correlation_id": "e8cd02b1-e76c-4a3c-a44c-1cef29bc4704",
-  "execution_id": "acbb527e-4d9c-4e3d-954c-91a9d8c7d1b6",
+  "correlation_id": "dd7c2cf0-edd8-471d-bd6c-41a9381fabb3",
+  "execution_id": "d577eabc-9947-4781-b087-7d0475963e29",
   "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
   "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
   "RBAC_AUTHORING_KM_POLICY": "APTO",
   "F2_DOC_GATE": "APTO",
   "F3_TECH_GATE": "NO_APTO",
-  "F4_CERBERO": "APTO",
+  "F4_CERBERO_RBAC": "APTO",
   "F5_VERDICT": "APTO",
   "DOC_EVOLUTION": "APTO",
   "blocking": []
@@ -257,7 +270,7 @@ Fuente: prompt Runtime evidence (session) + `docs/features/man-51-gate-sddia-dae
 
 ## Alcance
 
-Veredicto y bloqueo **aprueba** entrega (`PASS_F5_VERDICT` · `delivery_state: success` · `verdict: aprobado`). Residuales no bloqueantes: `GIT_EVIDENCE_SESSION_SHELL`, `GIT_EVIDENCE_NATIVE_PPR`, `F3_TECH_GATE`, `WSPACE_MATERIALIZED`, `MERGE_ALREADY_OBSERVED`, `ACCEPT_PR_HANDOFF`. Downstream: Cosecha Kaizen → Handoff materialización (`accept_pr_handoff: pending`). Argos **no** escribe bajo `docs/todos/` ni reescribe `_agent_handoff.md`.
+Veredicto y bloqueo **aprueba** peaje F5 (`PASS_F5_VERDICT`). Residuales no bloqueantes: `GIT_EVIDENCE_SESSION_SHELL`, `GIT_EVIDENCE_NATIVE_PPR`, `F3_TECH_GATE`, `WSPACE_MATERIALIZED`, `ACCEPT_PR_HANDOFF`. Downstream: Cosecha Kaizen → Handoff materialización (`accept-pr`; sin merge directo en aduana). Argos **no** escribe bajo `docs/todos/` ni reescribe `_agent_handoff.md`.
 
 ## approval_status
 
