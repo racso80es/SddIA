@@ -5,6 +5,7 @@
 
 
 
+
 feature_name: man-55-prompt-invariants-oracle-ola0
 created: "2026-11-22"
 process: feature
@@ -17,7 +18,7 @@ items_applied:
   - genome-norms-agents-templates-via-entity-manager
   - cursor-rules-and-operational-norm-sync
   - release-sync-evolution-and-dcc
-execution_id: "be6ad381-b5a2-4450-b559-aedf31ec1694"
+execution_id: "cfd0a522-c6ca-401b-a817-679f9389c6b0"
 ---
 # Ejecución — man-55-prompt-invariants-oracle-ola0
 

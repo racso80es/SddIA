@@ -224,3 +224,77 @@ notes: "idempotent-hit"
 - F2 heredado + F3 proxy TECH_FORMAL/`execution.md` T1–T4 + F4 Cerbero (PPR ∉ revoked) + R3 KM (`pending/` vacío) → F5 **APTO**.
 - `branch` ≡ `feat/man-55-prompt-invariants-oracle-ola0`; `accept_pr_handoff: pending` (L-HANDOFF-F5).
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-22T19:27:21Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-22T19:34:04Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `cfd0a522-c6ca-401b-a817-679f9389c6b0`
+- correlation_id: `8c1495ea-a1fe-41c9-ad03-7d60fc611c77`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `branch` ≡ `feat/man-55-prompt-invariants-oracle-ola0`; `git_changes` = path-assert FS.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Archivo tocado: `docs/features/man-55-prompt-invariants-oracle-ola0/validacion.md` (Triaje documental Argos).
+- R1/R2: copia Evidence Bridge `native_state` @ `2026-11-22T19:27:21Z` (`handoff-formal-scan; idempotent-hit`) → TECH/GIT **APTO**; sin stdout inventado.
+- Shell `git-manager` **Rejected** → residuales `GIT_EVIDENCE_SESSION_SHELL` / `NATIVE_PPR` / `WSPACE_MATERIALIZED`.
+- F2: cascada docs + YAML + AC-1…AC-4 + evolution `9823b787…` + `oracle-red.log` → **APTO**.
+- R3 KM **APTO**: 0 writes bajo `docs/todos/**`; `pending/` vacío; Linear.
+- Downstream F3/F4/Veredicto pendiente; `approval_status: pendiente_fases_downstream`.
+- `branch` ≡ `feat/man-55-prompt-invariants-oracle-ola0`; `git_changes` = path-assert FS.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-22T19:34:04Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-22T19:35:37Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `cfd0a522-c6ca-401b-a817-679f9389c6b0`
+- correlation_id: `8c1495ea-a1fe-41c9-ad03-7d60fc611c77`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `branch` ≡ `feat/man-55-prompt-invariants-oracle-ola0`; `accept_pr_handoff: pending` (L-HANDOFF-F5).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `verdict: aprobado`)
+
+- Tocqué solo `docs/features/man-55-prompt-invariants-oracle-ola0/validacion.md`.
+- R1/R2: copia Evidence Bridge `native_state` @ `2026-11-22T19:34:04Z` (`idempotent-hit`) → TECH/GIT **APTO**; sin stdout inventado.
+- Shell `git-manager` **Rejected** → residuales `GIT_EVIDENCE_SESSION_SHELL` / `NATIVE_PPR` / `WSPACE_MATERIALIZED`.
+- F2 heredado + F3 proxy TECH_FORMAL/`execution.md` T1–T4 + F4 Cerbero (PPR ∉ revoked) + R3 KM (`pending/` vacío) → F5 **APTO**.
+- `branch` ≡ `feat/man-55-prompt-invariants-oracle-ola0`; `accept_pr_handoff: pending` (L-HANDOFF-F5).
+```

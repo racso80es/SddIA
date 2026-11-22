@@ -5,6 +5,7 @@
 
 
 
+
 feature_name: man-55-prompt-invariants-oracle-ola0
 created: "2026-11-22"
 process: feature
@@ -13,7 +14,7 @@ scope: Invariantes de prompts/handoff (KZ-PRM-01..06) y ratchet de allowlists en
 branch_name: feat/man-55-prompt-invariants-oracle-ola0
 persist_ref: docs/features/man-55-prompt-invariants-oracle-ola0
 tracker_ref: MAN-55
-execution_id: "be6ad381-b5a2-4450-b559-aedf31ec1694"
+execution_id: "cfd0a522-c6ca-401b-a817-679f9389c6b0"
 ---
 # Especificación Técnica — man-55-prompt-invariants-oracle-ola0
 
