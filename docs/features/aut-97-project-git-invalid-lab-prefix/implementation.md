@@ -1,4 +1,5 @@
 ---
+
 feature_name: aut-97-project-git-invalid-lab-prefix
 created: "2026-11-22"
 process: feature
@@ -15,7 +16,7 @@ items:
   - path: SddIA/engine/execute-process/tests/fixtures/fracture-corpus/e76035db-project-git-invalid-lab-prefix.json
     action: create
     summary: Fixture fracture-corpus para traza e76035db4846 (AUT-97)
-execution_id: "cb6b60ee-cc70-49ea-a4e2-55d7d0ca15c7"
+execution_id: "17427fd2-d7dd-423f-8b97-33548496889c"
 ---
 # Implementación — aut-97-project-git-invalid-lab-prefix
 
