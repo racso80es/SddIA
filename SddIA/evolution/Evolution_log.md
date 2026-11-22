@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 157
+universe_total: 158
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `ab3365ad-8352-4cef-9e76-7f39b1c41907` | 2026-11-22 | AUT-97: eximir prefijos lab _forge_hu_ y _linear_e2e_ en project_binding::core_nested_index_exempt, guard RAII en forge_hu y .gitignore | CANONICO | `SddIA/evolution/ab3365ad-8352-4cef-9e76-7f39b1c41907.md` |
 | `7966d58f-b59b-4f56-8957-8ab35abdc919` | 2026-11-22 | MAN-48: consolidación de la familia capability-contract (contrato legal, índice, motor y aduanas QA) | CANONICO | `SddIA/evolution/7966d58f-b59b-4f56-8957-8ab35abdc919.md` |
 | `040df37a-4efe-4453-bbe1-0a5eccafd5fa` | 2026-11-22 | AUT-98: eximir .SddIA/state/active-executions.json en workspace_init::path_in_scope y .gitignore | CANONICO | `SddIA/evolution/040df37a-4efe-4453-bbe1-0a5eccafd5fa.md` |
 | `03d4d828-2cb8-424c-b6e4-c029dbe70a72` | 2026-11-22 | MAN-34: control contractual stop_after por phase_id, registro incremental write-ahead y resume | CANONICO | `SddIA/evolution/03d4d828-2cb8-424c-b6e4-c029dbe70a72.md` |
