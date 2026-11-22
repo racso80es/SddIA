@@ -356,7 +356,6 @@ mod tests {
 
     fn tmp_repo() -> PathBuf {
         let dir = std::env::temp_dir().join(format!("linear-bridge-{}", Uuid::new_v4()));
-        fs::create_dir_all(dir.join(".events/pending")).unwrap();
         fs::create_dir_all(dir.join(OUTBOUND_DIR)).unwrap();
         fs::create_dir_all(dir.join("SddIA/core")).unwrap();
         fs::write(

@@ -23,19 +23,14 @@ fn load_eda_bus(repo: &Path) -> Result<Value, String> {
     let cumulo_path = repo.join("SddIA/core/cumulo.paths.json");
     let content = fs::read_to_string(&cumulo_path).map_err(|e| format!("Failed to read cumulo: {}", e))?;
     let cumulo: Value = serde_json::from_str(&content).map_err(|e| format!("Failed to parse cumulo: {}", e))?;
-    let mut default_bus = json!({
-        "pending": ".events/pending",
-        "processing": ".events/processing",
-        "processed": ".events/processed",
-        "dead_letter": ".events/dead_letter"
-    });
+    let mut default_bus = json!({});
     if let Some(obj) = cumulo.get("eda_bus").and_then(|v| v.as_object()) {
         for (k, v) in obj {
             default_bus.as_object_mut().unwrap().insert(k.clone(), v.clone());
         }
     }
 
-    // Check overrides
+    // Check overrides (solo laboratorio explícito; sin defaults legacy `.events/*`)
     if let Ok(p) = env::var("SDDIA_EDA_BUS_PENDING") { default_bus.as_object_mut().unwrap().insert("pending".to_string(), json!(p)); }
     if let Ok(p) = env::var("SDDIA_EDA_BUS_PROCESSING") { default_bus.as_object_mut().unwrap().insert("processing".to_string(), json!(p)); }
     if let Ok(p) = env::var("SDDIA_EDA_BUS_PROCESSED") { default_bus.as_object_mut().unwrap().insert("processed".to_string(), json!(p)); }
@@ -46,12 +41,11 @@ fn load_eda_bus(repo: &Path) -> Result<Value, String> {
 
 fn ensure_event_bus_topology(repo: &Path) -> Result<Value, String> {
     let bus = load_eda_bus(repo)?;
-    if let Some(obj) = bus.as_object() {
-        for v in obj.values() {
-            if let Some(rel) = v.as_str() {
-                let _ = fs::create_dir_all(repo.join(rel));
-            }
-        }
+    let has_fs_bucket = ["pending", "processing", "processed", "dead_letter"]
+        .iter()
+        .any(|k| bus.get(*k).and_then(|v| v.as_str()).is_some_and(|s| !s.trim().is_empty()));
+    if !has_fs_bucket {
+        return Err("transit-event-payload: bus FS legacy retirado; opere vía EventManagerPort".to_string());
     }
     Ok(bus)
 }

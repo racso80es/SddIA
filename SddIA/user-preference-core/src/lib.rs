@@ -723,10 +723,9 @@ mod tests {
 
     fn setup_repo(tmp: &Path) {
         fs::create_dir_all(tmp.join("SddIA/core")).unwrap();
-        fs::create_dir_all(tmp.join(".events/domain")).unwrap();
         fs::write(
             tmp.join("SddIA/core/cumulo.paths.json"),
-            r#"{"paths":{"userPreferencesStore":".SddIA/vector_store/user_preferences"},"eda_fractal":{"domain":".events/domain"}}"#,
+            r#"{"paths":{"userPreferencesStore":".SddIA/vector_store/user_preferences"}}"#,
         )
         .unwrap();
     }

@@ -231,7 +231,14 @@ mod tests {
 
     /// MAN-49 R-03: escaneo cuerpo completo (oráculo AC-3). Se activa cuando genoma/README estén limpios.
     fn scan_genome_and_readme_body(repo: &Path) -> Result<(), String> {
-        const BODY_FORBIDDEN: &[&str] = &[".events/", "event_file_path"];
+        const BODY_FORBIDDEN: &[&str] = &[
+            ".events/",
+            "event_file_path",
+            "EventStore::",
+            "StoreMode::",
+            "filesystem/dual",
+            "processing/subscribers",
+        ];
         let mut files = Vec::new();
         for ent in walkdir_light(&repo.join("SddIA"))? {
             if ent.extension().is_some_and(|e| e == "md") {
@@ -318,18 +325,14 @@ mod tests {
             "gate_eda_unit_no_real_backend.rs",
             "gate QA que inspecciona referencias a rutas legacy de eventos en tests",
         ),
+        (
+            "gate_event_manager_port.rs",
+            "gate QA que veta patrones legacy y evasiones concat! en código productivo",
+        ),
     ];
 
     /// Excepciones explícitas para literales `.events/...` en código productivo (E-2 e higiene/retención).
     const VIRTUAL_PATH_ALLOW: &[(&str, &str)] = &[
-        (
-            "SddIA/engine/execute-process/src/engine/fractal_bus.rs",
-            "detección de raíz legacy al stamp delivery fractal",
-        ),
-        (
-            "SddIA/engine/execute-process/src/engine/handlers/instance_creator.rs",
-            "scaffolding de instancia — topología legacy pendiente de purga operativa",
-        ),
         (
             "SddIA/tools/event-bus-audit/src/main.rs",
             "herramienta de auditoría/higiene del bus de eventos",
@@ -337,10 +340,6 @@ mod tests {
         (
             "SddIA/tools/repo-retention-purger/src/slice_events.rs",
             "purgador de retención de artefactos efímeros",
-        ),
-        (
-            "SddIA/tools/transit-event-payload/src/main.rs",
-            "herramienta de diagnóstico/tránsito de payloads",
         ),
         (
             "SddIA/tools/sddia-qa/src/eda_e2e_lab.rs",

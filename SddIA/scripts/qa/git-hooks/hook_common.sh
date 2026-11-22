@@ -309,42 +309,11 @@ resolve_persist_ref() {
   done
 }
 
-eda_bus_dirs() {
-  local key rel default
-  for key in pending processing processed; do
-    case "$key" in
-      pending) default=".events/pending" ;;
-      processing) default=".events/processing" ;;
-      processed) default=".events/processed" ;;
-    esac
-    rel="$default"
-    if [[ -f "$CUMULO_PATH" ]]; then
-      local parsed
-      parsed=$(sed -n "s/.*\"${key}\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$CUMULO_PATH" | head -1)
-      if [[ -n "$parsed" ]]; then
-        rel="${parsed#./}"
-      fi
-    fi
-    if [[ -d "$REPO/$rel" ]]; then
-      printf '%s\n' "$REPO/$rel"
-    fi
-  done
-}
-
 scan_presented_for_branch() {
   local target="$1"
-  local bus_dir path
-  while IFS= read -r bus_dir; do
-    [[ -d "$bus_dir" ]] || continue
-    for path in "$bus_dir"/*.json; do
-      [[ -f "$path" ]] || continue
-      if grep -q "\"event_type\"[[:space:]]*:[[:space:]]*\"PullRequest_Presented\"" "$path" 2>/dev/null \
-        && grep -q "\"branch\"[[:space:]]*:[[:space:]]*\"${target}\"" "$path" 2>/dev/null; then
-        return 0
-      fi
-    done
-  done < <(eda_bus_dirs)
-  return 1
+  local state
+  state=$(_gh_pr_state_for_branch "$target")
+  [[ "$state" == "OPEN" || "$state" == "MERGED" ]]
 }
 
 _gh_pr_state_for_branch() {

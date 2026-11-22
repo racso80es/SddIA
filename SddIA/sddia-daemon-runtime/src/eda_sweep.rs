@@ -596,7 +596,7 @@ mod fractal_dlq_tests {
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             format!(
-                r#"{{"eda_bus":{{"store":".SddIA/runtime/events.redb"}},"eda_fractal":{{"telemetry":"{}/telemetry","progress":"{}/progress","orchestration":"{}/orch","domain":"{}/domain","dead_letter":"{}/dl"}}}}"#,
+                r#"{{"eda_bus":{{"store":".SddIA/runtime/test-store.db"}},"eda_fractal":{{"telemetry":"{}/telemetry","progress":"{}/progress","orchestration":"{}/orch","domain":"{}/domain","dead_letter":"{}/dl"}}}}"#,
                 base.display(),
                 base.display(),
                 base.display(),

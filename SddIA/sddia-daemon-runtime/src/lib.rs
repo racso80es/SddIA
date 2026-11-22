@@ -465,7 +465,7 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"daemons_instance":{"status":".SddIA/daemons/status"},"eda_fractal":{"telemetry":".events/telemetry"}}"#,
+            r#"{"daemons_instance":{"status":".SddIA/daemons/status"},"eda_fractal":{}}"#,
         )
         .unwrap();
         fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
@@ -490,7 +490,7 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_fractal":{"telemetry":".events/telemetry"}}"#,
+            r#"{"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_fractal":{}}"#,
         )
         .unwrap();
         fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();

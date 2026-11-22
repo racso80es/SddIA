@@ -12,6 +12,8 @@ const FORBIDDEN: &[&str] = &[
     "StoreMode::Filesystem",
     "StoreMode::Dual",
     "SDDIA_EVENT_STORE",
+    "concat!('.', \"events",
+    "concat!(\".events",
 ];
 
 /// MAN-40: sello físico Redb fuera del host.
@@ -213,14 +215,65 @@ fn fs_ops_scope(rel: &str) -> bool {
                 .is_some_and(|n| n.starts_with("eda_") && n.ends_with(".rs")))
 }
 
+pub(crate) fn workspace_member_roots(repo: &Path) -> Vec<PathBuf> {
+    let sddia = repo.join("SddIA");
+    let cargo_toml = sddia.join("Cargo.toml");
+    let mut roots = Vec::new();
+    if let Ok(text) = fs::read_to_string(&cargo_toml) {
+        let mut in_members = false;
+        for line in text.lines() {
+            let trimmed = line.trim();
+            if !in_members {
+                if trimmed.starts_with("members") && trimmed.contains('[') {
+                    in_members = true;
+                }
+                continue;
+            }
+            if trimmed.starts_with(']') {
+                break;
+            }
+            let entry = trimmed.trim_matches(|c| c == ',' || c == '"' || c == '\'' || c == ' ');
+            if entry.is_empty() || entry.starts_with('#') {
+                continue;
+            }
+            if let Some(prefix) = entry.strip_suffix("/*") {
+                let p = sddia.join(prefix);
+                if p.is_dir() {
+                    roots.push(p);
+                }
+            } else {
+                let p = sddia.join(entry);
+                if p.is_dir() {
+                    roots.push(p);
+                }
+            }
+        }
+    }
+    if roots.is_empty() {
+        for fallback in [
+            "engine",
+            "interfaces",
+            "daemons",
+            "tools",
+            "infrastructure",
+            "sddia-daemon-runtime",
+            "sddia-core",
+            "sddia-runtime-parity",
+            "ecosystem-health",
+        ] {
+            let p = sddia.join(fallback);
+            if p.is_dir() {
+                roots.push(p);
+            }
+        }
+    }
+    roots.sort();
+    roots.dedup();
+    roots
+}
+
 pub fn run(repo: &Path, json: bool) -> i32 {
-    let roots = [
-        repo.join("SddIA/engine"),
-        repo.join("SddIA/interfaces"),
-        repo.join("SddIA/daemons"),
-        repo.join("SddIA/tools"),
-        repo.join("SddIA/infrastructure"),
-    ];
+    let roots = workspace_member_roots(repo);
     let mut files = Vec::new();
     for root in roots {
         if root.is_dir() {
@@ -292,5 +345,28 @@ mod tests {
         .unwrap();
         let v = scan_file(repo, &f);
         assert!(v.is_empty(), "{v:?}");
+    }
+
+    #[test]
+    fn workspace_member_roots_includes_daemon_runtime_and_core() {
+        let repo = execute_process::core::repo::find_repo_root().expect("repo");
+        let roots = workspace_member_roots(&repo);
+        let rels: Vec<String> = roots.iter().map(|p| rel(&repo, p)).collect();
+        assert!(rels.iter().any(|r| r == "SddIA/sddia-daemon-runtime"), "{rels:?}");
+        assert!(rels.iter().any(|r| r == "SddIA/sddia-core"), "{rels:?}");
+        assert!(rels.iter().any(|r| r == "SddIA/sddia-runtime-parity"), "{rels:?}");
+        assert!(rels.iter().any(|r| r == "SddIA/ecosystem-health"), "{rels:?}");
+    }
+
+    #[test]
+    fn detects_concat_evasion_in_prod() {
+        let dir = tempfile::tempdir().unwrap();
+        let repo = dir.path();
+        let engine = repo.join("SddIA/engine/demo/src");
+        fs::create_dir_all(&engine).unwrap();
+        let f = engine.join("lib.rs");
+        fs::write(&f, "fn bad() -> &'static str { concat!('.', \"events/\") }\n").unwrap();
+        let v = scan_file(repo, &f);
+        assert!(!v.is_empty());
     }
 }

@@ -15,6 +15,8 @@ const FORBIDDEN: &[&str] = &[
     "events.redb",
     ".events/",
     ".events\\",
+    "concat!('.', \"events",
+    "concat!(\".events",
 ];
 
 #[derive(Debug, Serialize)]
@@ -194,13 +196,7 @@ fn scan_file(repo: &Path, path: &Path) -> Vec<Violation> {
 }
 
 pub fn run(repo: &Path, json: bool) -> i32 {
-    let roots = [
-        repo.join("SddIA/engine"),
-        repo.join("SddIA/interfaces"),
-        repo.join("SddIA/daemons"),
-        repo.join("SddIA/tools"),
-        repo.join("SddIA/sddia-core"),
-    ];
+    let roots = crate::gate_event_manager_port::workspace_member_roots(repo);
     let mut files = Vec::new();
     for root in roots {
         if root.is_dir() {
@@ -285,5 +281,21 @@ mod tests {
         fs::create_dir_all(p.parent().unwrap()).unwrap();
         fs::write(&p, "EventStore::open();\n").unwrap();
         assert!(path_allowlisted(&rel(repo, &p)));
+    }
+
+    #[test]
+    fn detects_concat_evasion_in_unit_test() {
+        let dir = tempfile::tempdir().unwrap();
+        let repo = dir.path();
+        let engine = repo.join("SddIA/engine/demo/src");
+        fs::create_dir_all(&engine).unwrap();
+        let f = engine.join("lib.rs");
+        fs::write(
+            &f,
+            "#[cfg(test)]\nmod tests {\n    #[test]\n    fn t() { let _ = concat!('.', \"events/\"); }\n}\n",
+        )
+        .unwrap();
+        let v = scan_file(repo, &f);
+        assert!(!v.is_empty(), "{v:?}");
     }
 }
