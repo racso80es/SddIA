@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-55-prompt-invariants-oracle-ola0
 created: "2026-11-22"
 process: feature
@@ -6,10 +7,9 @@ base: main
 scope: Invariantes de prompts/handoff (KZ-PRM-01..06) y ratchet de allowlists en sddia-qa (KZ-EST-01)
 branch_name: feat/man-55-prompt-invariants-oracle-ola0
 persist_ref: docs/features/man-55-prompt-invariants-oracle-ola0
-execution_id: "6931ec92-babc-4ef7-a4d1-a28d5148d33c"
 tracker_ref: MAN-55
+execution_id: "95aafb28-50d1-4f8c-bdfa-574f696d168f"
 ---
-
 # Especificación Técnica — man-55-prompt-invariants-oracle-ola0
 
 ## 1. Oráculo primero en Ola 0 (`AC-1` / `K-ORA` / `KZ-PRM-01`)

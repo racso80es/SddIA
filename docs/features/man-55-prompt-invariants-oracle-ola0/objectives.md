@@ -1,13 +1,13 @@
 ---
+
 feature_name: man-55-prompt-invariants-oracle-ola0
 created: "2026-11-22"
 process: feature
 branch_name: feat/man-55-prompt-invariants-oracle-ola0
 persist_ref: docs/features/man-55-prompt-invariants-oracle-ola0
-execution_id: "6931ec92-babc-4ef7-a4d1-a28d5148d33c"
 tracker_ref: MAN-55
+execution_id: "95aafb28-50d1-4f8c-bdfa-574f696d168f"
 ---
-
 # Objetivos — man-55-prompt-invariants-oracle-ola0
 
 ## Misión

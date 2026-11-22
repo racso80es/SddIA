@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-55-prompt-invariants-oracle-ola0
 created: "2026-11-22"
 process: feature
@@ -11,9 +12,8 @@ items_applied:
   - genome-norms-agents-templates-via-entity-manager
   - cursor-rules-and-operational-norm-sync
   - release-sync-evolution-and-dcc
-execution_id: "6931ec92-babc-4ef7-a4d1-a28d5148d33c"
+execution_id: "95aafb28-50d1-4f8c-bdfa-574f696d168f"
 ---
-
 # Ejecución — man-55-prompt-invariants-oracle-ola0
 
 ## Baseline Ola 0 (hermético)
