@@ -1,4 +1,5 @@
 ---
+
 feature_name: aut-98-active-executions-dirty-worktree
 created: "2026-11-22"
 process: feature
@@ -6,8 +7,8 @@ items_applied:
   - T1
   - T2
   - T3
+execution_id: "bf9e18c4-3ef6-490b-852b-fdfb688d9e04"
 ---
-
 # Registro de ejecución — aut-98-active-executions-dirty-worktree
 
 - **T1:** Exención de `.SddIA/state/active-executions.json` y `.SddIA/state/active-executions.json.tmp` en `SddIA/engine/execute-process/src/engine/workspace_init.rs` (`path_in_scope`) y `.gitignore`.

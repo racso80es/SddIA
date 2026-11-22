@@ -1,4 +1,5 @@
 ---
+
 feature_name: aut-98-active-executions-dirty-worktree
 created: "2026-11-22"
 updated: "2026-11-22"
@@ -9,9 +10,8 @@ persist_ref: docs/features/aut-98-active-executions-dirty-worktree
 pbi_ref: AUT-98
 document_id: PBI-FIX-FRACTURE-5f46810af5ec
 status: requisitos-estabilizados
-execution_id: "8ba45903-9901-4089-b05b-c29e85c60e1e"
+execution_id: "bf9e18c4-3ef6-490b-852b-fdfb688d9e04"
 ---
-
 # Objetivos — aut-98-active-executions-dirty-worktree
 
 ## Misión

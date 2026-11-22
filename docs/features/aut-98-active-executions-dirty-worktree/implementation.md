@@ -1,4 +1,5 @@
 ---
+
 feature_name: aut-98-active-executions-dirty-worktree
 created: "2026-11-22"
 process: feature
@@ -12,8 +13,8 @@ items:
   - path: SddIA/engine/execute-process/tests/fixtures/fracture-corpus/5f46810a-workspace-init-active-executions.json
     action: create
     summary: Fixture fracture-corpus para traza 5f46810af5ec (AUT-98)
+execution_id: "bf9e18c4-3ef6-490b-852b-fdfb688d9e04"
 ---
-
 # Implementación — aut-98-active-executions-dirty-worktree
 
 ## Touchpoints

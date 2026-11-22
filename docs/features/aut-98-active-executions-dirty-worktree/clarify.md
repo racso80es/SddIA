@@ -1,4 +1,5 @@
 ---
+
 feature_name: aut-98-active-executions-dirty-worktree
 created: "2026-11-22"
 updated: "2026-11-22"
@@ -7,9 +8,8 @@ purpose: Clarificaciones y decisiones de diseño para el fix AUT-98 (dirty-workt
 branch_name: feat/aut-98-active-executions-dirty-worktree
 persist_ref: docs/features/aut-98-active-executions-dirty-worktree
 pbi_ref: AUT-98
-execution_id: "8ba45903-9901-4089-b05b-c29e85c60e1e"
+execution_id: "bf9e18c4-3ef6-490b-852b-fdfb688d9e04"
 ---
-
 # Clarificación — aut-98-active-executions-dirty-worktree
 
 ## Contexto de la fractura

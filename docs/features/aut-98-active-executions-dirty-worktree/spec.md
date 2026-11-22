@@ -1,11 +1,12 @@
 ---
+
 feature_name: aut-98-active-executions-dirty-worktree
 created: "2026-11-22"
 process: feature
 base: main
 scope: execute-process/workspace_init + .gitignore + fracture-corpus
+execution_id: "bf9e18c4-3ef6-490b-852b-fdfb688d9e04"
 ---
-
 # Especificación técnica — aut-98-active-executions-dirty-worktree
 
 ## 1. `SddIA/engine/execute-process/src/engine/workspace_init.rs`
