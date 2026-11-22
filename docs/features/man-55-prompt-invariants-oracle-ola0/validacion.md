@@ -30,6 +30,10 @@ git_changes:
 - SddIA/tools/sddia-qa/src/gate_allowlist_ratchet.rs
 - SddIA/tools/sddia-qa/src/gate_prompt_invariants.rs
 - SddIA/tools/sddia-qa/src/main.rs
+validated_base_sha: b6516a0026b10aa649ea18a2643443dc116d92d5
+validated_head_sha: 2e1cc46ae4637db84d35c6eb08a37b223575c309
+validated_tree_sha: ed449cbbcd59918e1001945b39d12b1a2bd2356c
+diff_digest: sha256:06aee2159e307700c5b5319a62774dcf909a32c40d82af590013dff790ce9fbf
 ---
 
 # Validación — man-55-prompt-invariants-oracle-ola0
