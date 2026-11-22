@@ -1,4 +1,5 @@
 ---
+
 feature_name: kaizen-sddia-qa-stdin-tty-guard
 created: "2026-11-22"
 updated: "2026-11-22"
@@ -12,7 +13,6 @@ status: executed
 verdict: executed
 norm_ref: features-documentation-pattern@1.3.1
 agent: tekton
-execution_id: "9d9d5478-f1d0-4396-a0a8-d2d0d47f71ff"
 items_applied:
   - Ola 0
   - Ola 1
@@ -30,6 +30,7 @@ phases:
     status: closed
   Ola 4:
     status: closed
+execution_id: "c1910c23-3ebf-456b-a60b-9c3aa30884a5"
 ---
 # Registro de Ejecución — kaizen-sddia-qa-stdin-tty-guard
 

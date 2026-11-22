@@ -1,4 +1,5 @@
 ---
+
 feature_name: kaizen-sddia-qa-stdin-tty-guard
 created: "2026-11-22"
 updated: "2026-11-22"
@@ -13,7 +14,6 @@ phase: diseno-blueprint
 version_plan: "1.0.0"
 status: blueprint-ready
 norm_ref: features-documentation-pattern@1.3.1
-execution_id: "9d9d5478-f1d0-4396-a0a8-d2d0d47f71ff"
 phases:
   - id: Ola 0
     name: Baseline y Oráculo PTY/Unit en Rojo
@@ -25,6 +25,7 @@ phases:
     name: Norma capsule-json-io.md y skill sddia-evolution-register.md (K-DOC)
   - id: Ola 4
     name: Verificación PTY real, workspace, WASI y evolution
+execution_id: "c1910c23-3ebf-456b-a60b-9c3aa30884a5"
 ---
 # Plan de ejecución — kaizen-sddia-qa-stdin-tty-guard
 
