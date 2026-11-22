@@ -1,4 +1,6 @@
 ---
+
+
 feature_name: process-stop-after-and-execution-registry
 created: "2026-11-21"
 updated: "2026-11-21"
@@ -13,9 +15,8 @@ agent: tekton
 phase: ejecucion
 status: complete
 norm_ref: features-documentation-pattern@1.3.2
-execution_id: "af40f4e7-f831-49fa-8112-6ddb0ff2d535"
+execution_id: "d7301123-c49f-4627-90f1-ff1fe78bcc66"
 ---
-
 # Implementación — process-stop-after-and-execution-registry
 
 ## Touchpoints de código y norma

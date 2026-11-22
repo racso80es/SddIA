@@ -1,4 +1,6 @@
 ---
+
+
 feature_name: process-stop-after-and-execution-registry
 created: "2026-11-21"
 updated: "2026-11-21"
@@ -21,9 +23,8 @@ phases_closed:
   - H3
   - H4
   - H5
-execution_id: "af40f4e7-f831-49fa-8112-6ddb0ff2d535"
+execution_id: "d7301123-c49f-4627-90f1-ff1fe78bcc66"
 ---
-
 # Ejecución — process-stop-after-and-execution-registry
 
 ## Estado de fases (`plan.md`)
