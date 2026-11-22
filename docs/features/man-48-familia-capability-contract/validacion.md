@@ -1,5 +1,4 @@
 ---
-
 feature_name: man-48-familia-capability-contract
 created: 2026-11-22
 updated: 2026-11-22T13:36:00Z
@@ -115,8 +114,13 @@ situational_notes:
 - CA-1…CA-5 APTO — path-assert touchpoints (contrato/índice/cumulo, norma, forja/motor, QA) + execution.md T1–T4 Forjada
 - Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO; pending/ vacío; tracker.provider=linear
 - Downstream: F3 técnico / F4 Cerbero / Veredicto — fuera de esta fase
-execution_id: "a5fba947-f8c0-406c-b61f-9118bd175466"
+execution_id: a5fba947-f8c0-406c-b61f-9118bd175466
+validated_base_sha: 66197e98a050c95dbbec5ad1910f8ce95e2a5702
+validated_head_sha: 414c7e613f02ef74315b714679f823b9bfca28a0
+validated_tree_sha: fb89afe941068eb8025fb012735d6808a2c7b3fe
+diff_digest: sha256:d0f5fe00b44b18db219d1ca7305c64239e86529d4a3483c56da1bdf16b798166
 ---
+
 # Validación — Triaje documental (Argos · pull-request-review)
 
 ## Veredicto de fase
