@@ -1,5 +1,4 @@
 ---
-
 feature_name: man-53-apto-coherence-root-clean
 created: 2026-11-22
 updated: 2026-11-22T19:39:00Z
@@ -36,7 +35,7 @@ git_manager_invoked: false
 git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; git_changes = path-assert FS (sin inventar gitStdout)
 git_evidence_source: evidence-bridge-session-native_state+handoff-machine+path-assert-fs
 formal_execute_process: true
-formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-22T18:38:33Z TECH/GIT APTO notes=idempotent-hit'
+formal_evidence_detail: session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-22T18:38:33Z TECH/GIT APTO notes=idempotent-hit
 handoff_machine_file: present
 handoff_evidence_block_pre: present
 evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit + machine native_state @ 2026-11-22T18:38:33Z); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado
@@ -125,8 +124,13 @@ situational_notes:
 - accept_pr_handoff pending — L-HANDOFF-F5; MERGE/pr_url ausentes
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs)
-execution_id: "c2474ace-b9f1-4707-819f-b76e3b717786"
+execution_id: c2474ace-b9f1-4707-819f-b76e3b717786
+validated_base_sha: 22ad1ba493ade3545ecaa5aeb221ba927ade4654
+validated_head_sha: 14aef007dba3e52c18a4f214e398adabc6a62119
+validated_tree_sha: 22414374ae76153cadcc6946dbc0715e57d3586d
+diff_digest: sha256:de6fe132288d27340a5a61acdd841b409228696e59cb29e7164311a115a37dd5
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
