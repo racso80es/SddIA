@@ -66,6 +66,7 @@ fn dir_by_class(class: &str) -> Option<&'static str> {
         "event" => Some("SddIA/events"),
         "suite" => Some("SddIA/suites"),
         "daemon" => Some("SddIA/daemons"),
+        "capability-contract" => Some("SddIA/library/norms/capability-contracts"),
         _ => None,
     }
 }

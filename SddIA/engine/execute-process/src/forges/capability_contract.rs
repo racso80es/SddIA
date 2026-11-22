@@ -256,14 +256,101 @@ pub fn run_capability_contract_forge(repo: &Path, inputs: &Value) -> Result<Valu
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
 
     match lifecycle.as_str() {
-        "create" => forge_create(repo, inputs, &path),
+        "create" => forge_create(repo, inputs, &path, &name),
         "update" => forge_update(repo, inputs, &path, &name),
         "delete" => Err("delete de capability-contract no soportado".into()),
         other => Err(format!("lifecycle_operation no soportada: {other}")),
     }
 }
 
-fn forge_create(repo: &Path, inputs: &Value, path: &Path) -> Result<Value, String> {
+fn row_name_key(line: &str) -> Option<String> {
+    let cols: Vec<&str> = line.split('|').map(str::trim).filter(|s| !s.is_empty()).collect();
+    if cols.len() >= 3 {
+        Some(cols[2].trim_matches('`').to_string())
+    } else if let Some(first) = cols.first() {
+        Some(
+            first
+                .trim_matches('`')
+                .trim_end_matches(".schema.json")
+                .to_string(),
+        )
+    } else {
+        None
+    }
+}
+
+/// Sincroniza de forma determinista e idempotente la fila del contrato en `index.md` si el índice existe.
+pub fn sync_contract_index_row(
+    dir: &Path,
+    name: &str,
+    uuid: &str,
+    version: &str,
+    hash: &str,
+) -> Result<(), String> {
+    let index_path = dir.join("index.md");
+    if !index_path.is_file() {
+        return Ok(());
+    }
+    let raw = fs::read_to_string(&index_path).map_err(|e| e.to_string())?;
+    let new_row = format!("| `{name}.schema.json` | `{uuid}` | {name} | {version} | `{hash}` |");
+    let lines: Vec<&str> = raw.lines().collect();
+
+    let mut sep_idx = None;
+    for (i, line) in lines.iter().enumerate() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('|') && trimmed.contains("---") && i > 0 {
+            let hdr = lines[i - 1].to_ascii_lowercase();
+            if hdr.contains("archivo fuente") || hdr.contains("uuid") {
+                sep_idx = Some(i);
+                break;
+            }
+        }
+    }
+    let Some(sep) = sep_idx else {
+        return Err(format!(
+            "tabla de catálogo no encontrada en {}",
+            index_path.display()
+        ));
+    };
+
+    let mut data_end = sep + 1;
+    while data_end < lines.len() && lines[data_end].trim_start().starts_with('|') {
+        data_end += 1;
+    }
+
+    let mut rows: Vec<(String, String)> = Vec::new();
+    let mut replaced = false;
+    for line in &lines[(sep + 1)..data_end] {
+        let key = row_name_key(line).unwrap_or_default();
+        if key == name {
+            if !replaced {
+                rows.push((name.to_string(), new_row.clone()));
+                replaced = true;
+            }
+        } else {
+            rows.push((key, (*line).to_string()));
+        }
+    }
+    if !replaced {
+        rows.push((name.to_string(), new_row));
+    }
+    rows.sort_by(|a, b| a.0.cmp(&b.0));
+
+    let mut out_lines: Vec<String> = lines[..=sep].iter().map(|s| (*s).to_string()).collect();
+    for (_, r) in rows {
+        out_lines.push(r);
+    }
+    for line in &lines[data_end..] {
+        out_lines.push((*line).to_string());
+    }
+    let mut out = out_lines.join("\n");
+    if raw.ends_with('\n') {
+        out.push('\n');
+    }
+    write_atomic(&index_path, &out)
+}
+
+fn forge_create(repo: &Path, inputs: &Value, path: &Path, name: &str) -> Result<Value, String> {
     if path.is_file() {
         let (_, existing) = read_schema(path)?;
         return match identity_of(&existing) {
@@ -303,6 +390,9 @@ fn forge_create(repo: &Path, inputs: &Value, path: &Path) -> Result<Value, Strin
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
     write_atomic(path, &text)?;
+    if let Some(dir) = path.parent() {
+        sync_contract_index_row(dir, name, &uuid, &version, &hash)?;
+    }
     Ok(handoff(&uuid, &hash, None, &version, json!({})))
 }
 
@@ -348,6 +438,9 @@ fn forge_update(repo: &Path, inputs: &Value, path: &Path, name: &str) -> Result<
             return Err("adopt alteró el contenido del schema (hash distinto)".into());
         }
         write_atomic(path, &text)?;
+        if let Some(dir) = path.parent() {
+            sync_contract_index_row(dir, name, &uuid, &version, &current_hash)?;
+        }
         return Ok(handoff(&uuid, &current_hash, None, &version, json!({"adopted": true})));
     }
 
@@ -375,6 +468,9 @@ fn forge_update(repo: &Path, inputs: &Value, path: &Path, name: &str) -> Result<
         let after: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
         compile(&after, "update/render")?;
         write_atomic(path, &text)?;
+        if let Some(dir) = path.parent() {
+            sync_contract_index_row(dir, name, &id.uuid, &new_version, &new_hash)?;
+        }
         return Ok(handoff(&id.uuid, &new_hash, Some(&id.hash), &new_version, json!({})));
     }
 
@@ -780,5 +876,31 @@ mod tests {
     fn semver_validation() {
         assert!(is_semver("2.0.0") && is_semver("1.2.3-rc.1"));
         assert!(!is_semver("2.0") && !is_semver("a.b.c") && !is_semver(""));
+    }
+
+    #[test]
+    fn sync_contract_index_row_inserts_and_updates_deterministically() {
+        let dir = tempfile::tempdir().unwrap();
+        let idx = dir.path().join("index.md");
+        fs::write(
+            &idx,
+            "---\nentity_family: \"capability-contracts\"\n---\n\n| Archivo fuente | uuid | name | version | hash_signature |\n|---|---|---|---|---|\n| `zeta.schema.json` | `uuid-z` | zeta | 1.0.0 | `sha256:zzz` |\n\n## Fin\n",
+        )
+        .unwrap();
+
+        // Insertar nuevo contrato en orden alfabético
+        sync_contract_index_row(dir.path(), "alpha.cap", "uuid-a", "1.0.0", "sha256:aaa").unwrap();
+        let after_insert = fs::read_to_string(&idx).unwrap();
+        assert!(after_insert.contains("| `alpha.cap.schema.json` | `uuid-a` | alpha.cap | 1.0.0 | `sha256:aaa` |"));
+        let pos_a = after_insert.find("alpha.cap").unwrap();
+        let pos_z = after_insert.find("zeta").unwrap();
+        assert!(pos_a < pos_z, "debe ordenar lexicográficamente");
+        assert!(after_insert.contains("## Fin"));
+
+        // Actualizar fila existente de forma idempotente
+        sync_contract_index_row(dir.path(), "alpha.cap", "uuid-a", "1.1.0", "sha256:bbb").unwrap();
+        let after_update = fs::read_to_string(&idx).unwrap();
+        assert!(after_update.contains("| `alpha.cap.schema.json` | `uuid-a` | alpha.cap | 1.1.0 | `sha256:bbb` |"));
+        assert!(!after_update.contains("sha256:aaa"));
     }
 }
