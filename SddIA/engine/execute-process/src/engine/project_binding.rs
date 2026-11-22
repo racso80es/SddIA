@@ -455,7 +455,7 @@ fn registered_roots(projects_dir: &Path, except_slug: &str) -> Result<Vec<PathBu
     Ok(out)
 }
 
-/// Labs efímeros y fixtures documentales bajo Core-self (AUT-6).
+/// Labs efímeros y fixtures documentales bajo Core-self (AUT-6, AUT-97).
 fn core_nested_index_exempt(other: &Path, core_root: &Path) -> bool {
     let rel: &Path = if other.is_absolute() {
         match other.strip_prefix(core_root) {
@@ -472,7 +472,11 @@ fn core_nested_index_exempt(other: &Path, core_root: &Path) -> bool {
         use std::path::Component;
         if let Component::Normal(name) = first {
             let s = name.to_string_lossy();
-            if s.starts_with("_refine_lab_") || s.starts_with("_forge_lab_") {
+            if s.starts_with("_refine_lab_")
+                || s.starts_with("_forge_lab_")
+                || s.starts_with("_forge_hu_")
+                || s.starts_with("_linear_e2e_")
+            {
                 return true;
             }
         }
@@ -1212,6 +1216,45 @@ mod tests {
         assert!(
             bind(repo.path(), &json!({"project_slug": "core"})).is_ok(),
             "core bind debe tolerar índice lab absoluto anidado"
+        );
+    }
+
+    #[test]
+    fn bind_core_tolerates_absolute_forge_hu_and_linear_e2e_labs_in_index() {
+        let repo = tempfile::tempdir().unwrap();
+        write_git_root(repo.path());
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        fs::create_dir_all(repo.path().join(".SddIA/projects")).unwrap();
+        fs::write(
+            repo.path().join(".SddIA/projects/core.md"),
+            core_index_md(uuid, "."),
+        )
+        .unwrap();
+        fs::write(repo.path().join(".SddIA/project.md"), core_manifest_md(uuid)).unwrap();
+        for (slug, dir_name) in [
+            ("forge-hu-ca5", "_forge_hu_forge-hu-ca5"),
+            ("linear-e2e-lab", "_linear_e2e_lab"),
+        ] {
+            let lab = repo.path().join(dir_name);
+            write_git_root(&lab);
+            fs::create_dir_all(lab.join(".SddIA")).unwrap();
+            fs::write(
+                lab.join(".SddIA/project.md"),
+                manifest_md(uuid, "branch_pr", "1.3.0"),
+            )
+            .unwrap();
+            fs::write(
+                repo.path().join(format!(".SddIA/projects/{slug}.md")),
+                format!(
+                    "---\nid: {slug}\nuuid: \"bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\nproject_root: \"{}\"\nmanifest_ref: .SddIA/project.md\ncodex_slug: codex-software-engineering\nstatus: active\n---\n",
+                    lab.display()
+                ),
+            )
+            .unwrap();
+        }
+        assert!(
+            bind(repo.path(), &json!({"project_slug": "core"})).is_ok(),
+            "core bind debe tolerar índices lab _forge_hu_ y _linear_e2e_ anidados"
         );
     }
 

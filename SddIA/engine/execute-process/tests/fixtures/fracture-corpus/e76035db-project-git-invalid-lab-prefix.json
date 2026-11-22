@@ -1,0 +1,11 @@
+{
+  "label": "e76035db-project-git-invalid-lab-prefix",
+  "fracture_family": "unclassified",
+  "trace_hash": "e76035db4846",
+  "process_name": "delivery-close-cycle",
+  "attempted_action": "delivery-close-cycle",
+  "agent_emitter": "domain-authority",
+  "error_trace": "DOMAIN_AUTHORITY_DENIED: PROJECT_GIT_INVALID: /home/racso/Proyectos/SddIA contiene otro proyecto /home/racso/Proyectos/SddIA/_forge_hu_forge-hu-ca5",
+  "expected_signature": "unclassified",
+  "note": "Incidente AUT-97: core_nested_index_exempt en project_binding.rs no eximía prefijos lab _forge_hu_ ni _linear_e2e_."
+}
