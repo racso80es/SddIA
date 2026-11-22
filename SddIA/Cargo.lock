@@ -5400,6 +5400,7 @@ dependencies = [
  "sddia-eda-catalog",
  "sddia-event-manager-host",
  "sddia-evolution-register",
+ "sddia-io",
  "serde",
  "serde_json",
  "serde_yaml",

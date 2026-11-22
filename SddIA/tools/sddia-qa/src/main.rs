@@ -51,7 +51,7 @@ Comandos:\n\
   verify-hooks [--json] [--fix]\n\
   workspace-prune --empty [--json]\n\
   evolution-rehash --id <uuid> [--json] [--dry-run]\n\
-  evolution-register [--json] [--dry-run]\n\
+  evolution-register [--json] [--dry-run] [--request-file <path>] (lee JSON de --request-file, SDDIA_CAPSULE_REQUEST o stdin no-TTY)\n\
   verify-domain-subscription-parity [--json]\n\
   merge-thermo-timings-report [--json]\n\
   verify-tracker-done-pre-push --persist-ref PATH\n\

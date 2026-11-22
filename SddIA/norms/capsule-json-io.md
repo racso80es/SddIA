@@ -31,9 +31,13 @@ Inyectado por `capability_di_resolver` cuando la fase declara `requires_capabili
 | `resolved_version` | string | sí | Versión del `provides` del proveedor. |
 | `binding_ssot` | string | sí | Clave Cúmulo del mapa (`capability_di.bindings`). |
 
-**Entrada alternativa:** variable de entorno `SDDIA_CAPSULE_REQUEST` con el mismo JSON. Si `SDDIA_SKIP_STDIN=1`, no se lee stdin.
+**Entrada alternativa y precedencia (`Fail-Fast TTY`):**
 
-**Archivo:** `--request-file <ruta>` (argumento del `.exe`) para pruebas locales.
+1. `--request-file <ruta>` (o `--request-file=<ruta>`, argumento del binario) para pruebas locales y ejecución sin pipe.
+2. Variable de entorno `SDDIA_CAPSULE_REQUEST` (definida y no vacía) con el mismo JSON.
+3. Si `SDDIA_SKIP_STDIN=1`, no se lee `stdin` (las tools que admiten petición vacía devuelven `{}`; las cápsulas/comandos estrictos devuelven error explícito).
+4. **Regla Fail-Fast TTY:** si no hay `--request-file` ni `SDDIA_CAPSULE_REQUEST` ni `SDDIA_SKIP_STDIN=1` y `stdin` es una terminal interactiva (`std::io::stdin().is_terminal()`), **prohibido** bloquear esperando `EOF`. El binario debe abortar inmediatamente (`< 50 ms`) emitiendo JSON de error (`success: false`, `exitCode: 1`) con las vías válidas de invocación.
+5. `stdin` (pipe/heredoc) únicamente cuando `!is_terminal()`.
 
 ## Respuesta
 

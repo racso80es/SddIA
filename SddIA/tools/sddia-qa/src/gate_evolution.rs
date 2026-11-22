@@ -8,7 +8,6 @@ use execute_process::engine::capsules::{
 };
 use serde_json::{json, Value};
 use std::fs;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
@@ -794,14 +793,10 @@ pub fn run_mutate(repo: &Path, args: &[String]) -> i32 {
         .pointer("/normative_documents/evolution_log")
         .and_then(|v| v.as_str())
         .unwrap_or("SddIA/evolution/Evolution_log.md");
-    let mut raw = String::new();
-    if std::io::stdin().read_to_string(&mut raw).is_err() {
-        return 1;
-    }
-    let mut payload: Value = match serde_json::from_str(raw.trim()) {
+    let mut payload: Value = match sddia_io::read_capsule_json_from_args(args, false) {
         Ok(v) => v,
         Err(e) => {
-            let body = json!({"success": false, "exitCode": 1, "message": e.to_string()});
+            let body = json!({"success": false, "exitCode": 1, "message": e});
             return emit(&body, json_out, 1);
         }
     };
