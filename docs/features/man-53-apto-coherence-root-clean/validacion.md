@@ -1,6 +1,6 @@
 ---
 feature_name: man-53-apto-coherence-root-clean
-created: "2026-11-22"
+created: 2026-11-22
 process: feature
 branch_name: feat/man-53-apto-coherence-root-clean
 persist_ref: docs/features/man-53-apto-coherence-root-clean
@@ -19,14 +19,19 @@ checks:
   KA_ROOT_PHYS_3: APTO
   KA_CLOSE_4: APTO
 git_changes:
-  - SddIA/engine/execute-process/src/engine/apto_coherence.rs
-  - SddIA/engine/execute-process/src/engine/qa_attestation.rs
-  - SddIA/engine/execute-process/src/engine/pull_request_review.rs
-  - SddIA/engine/execute-process/src/engine/residual_runner.rs
-  - SddIA/engine/execute-process/src/engine/delivery_close.rs
-  - SddIA/engine/execute-process/src/engine/accept_pr.rs
-  - docs/features/man-53-apto-coherence-root-clean/
+- SddIA/engine/execute-process/src/engine/apto_coherence.rs
+- SddIA/engine/execute-process/src/engine/qa_attestation.rs
+- SddIA/engine/execute-process/src/engine/pull_request_review.rs
+- SddIA/engine/execute-process/src/engine/residual_runner.rs
+- SddIA/engine/execute-process/src/engine/delivery_close.rs
+- SddIA/engine/execute-process/src/engine/accept_pr.rs
+- docs/features/man-53-apto-coherence-root-clean/
+validated_base_sha: 22ad1ba493ade3545ecaa5aeb221ba927ade4654
+validated_head_sha: de5e31dee2a6eaefffe4d5287c8804559f3c590b
+validated_tree_sha: b208c2cbfdbe8e3596996fe96efac3ae072a69aa
+diff_digest: sha256:243cc494644d7369f172a7dfccebbd632d9ab13cc25b71f8c065d097c9d3df5b
 ---
+
 # Validación — man-53-apto-coherence-root-clean
 
 ## Veredicto
