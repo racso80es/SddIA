@@ -92,6 +92,7 @@ const ENTITY_DIRS: &[(&str, &str)] = &[
     ("norm", "SddIA/library/norms"),
     ("codex", "SddIA/library/codexes"),
     ("suite", "SddIA/suites"),
+    ("capability-contract", "SddIA/library/norms/capability-contracts"),
 ];
 
 fn parse_index_uuids(index_path: &Path) -> std::collections::HashMap<String, String> {
@@ -103,7 +104,8 @@ fn parse_index_uuids(index_path: &Path) -> std::collections::HashMap<String, Str
         Regex::new(r"(?i)[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")
             .expect("uuid regex")
     });
-    let name_re = NAME_RE.get_or_init(|| Regex::new(r"`([^`]+\.md)`").expect("name regex"));
+    let name_re = NAME_RE
+        .get_or_init(|| Regex::new(r"`([^`]+?\.(?:md|schema\.json))`").expect("name regex"));
 
     let Ok(text) = fs::read_to_string(index_path) else {
         return std::collections::HashMap::new();
@@ -121,12 +123,20 @@ fn parse_index_uuids(index_path: &Path) -> std::collections::HashMap<String, Str
             continue;
         }
         if let Some(caps) = name_re.captures(line) {
-            let name = caps[1].replace(".md", "");
+            let name = caps[1]
+                .trim_end_matches(".schema.json")
+                .trim_end_matches(".md")
+                .to_string();
             out.insert(name, uuids[0].clone());
         } else {
             let cols: Vec<_> = line.split('|').map(str::trim).filter(|s| !s.is_empty()).collect();
             if let Some(first) = cols.first() {
-                out.insert(first.replace(".md", ""), uuids[0].clone());
+                let name = first
+                    .trim_matches('`')
+                    .trim_end_matches(".schema.json")
+                    .trim_end_matches(".md")
+                    .to_string();
+                out.insert(name, uuids[0].clone());
             }
         }
     }
@@ -185,12 +195,31 @@ pub fn scan_orphans(repo: &Path) -> Result<Value, String> {
         let index_map = parse_index_uuids(&base.join("index.md"));
         for (name, uuid) in index_map {
             indexed_count += 1;
-            let artifact = base.join(format!("{name}.md"));
+            let is_schema = *entity_class == "capability-contract";
+            let artifact = if is_schema {
+                base.join(format!("{name}.schema.json"))
+            } else {
+                base.join(format!("{name}.md"))
+            };
             let artifact_exists = artifact.is_file();
             let is_covered = is_entity_covered(repo, &uuid);
             if artifact_exists && !is_covered {
-                let fm = parse_frontmatter(&artifact).unwrap_or_default();
-                let hash_signature = resolve_hash_signature(&artifact, &fm)?;
+                let hash_signature = if is_schema {
+                    let raw = fs::read_to_string(&artifact).unwrap_or_default();
+                    serde_json::from_str::<Value>(&raw)
+                        .ok()
+                        .and_then(|v| {
+                            v.pointer("/x-sddia/hash_signature")
+                                .and_then(|h| h.as_str())
+                                .filter(|h| valid_sha256_str(h))
+                                .map(str::to_string)
+                        })
+                        .map(Ok)
+                        .unwrap_or_else(|| hash_from_artifact(&artifact))?
+                } else {
+                    let fm = parse_frontmatter(&artifact).unwrap_or_default();
+                    resolve_hash_signature(&artifact, &fm)?
+                };
                 orphans.push(json!({
                     "entity_class": entity_class,
                     "entity_name": name,
