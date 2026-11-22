@@ -18,6 +18,7 @@ mod verify_domain_subscription_parity;
 mod merge_thermo_timings;
 mod linear_direct_cycle_e2e_lab;
 mod linear_done_gate_both_e2e_lab;
+mod verify_capability_contracts;
 
 use execute_process::core::repo::find_repo_root;
 use execute_process::engine::done_gate;
@@ -32,6 +33,7 @@ fn usage() -> &'static str {
     "sddia-qa — aduana QA SddIA (sin Python)\n\
 Comandos:\n\
   verify-tools-index\n\
+  verify-capability-contracts [--json]\n\
   verify-process-integrity\n\
   verify-compiled-capsules [--json]\n\
   audit-eda-coverage --scan [--json]\n\
@@ -166,6 +168,9 @@ fn main() {
 
     let code = match cmd {
         "verify-tools-index" => verify_tools_index::run(&repo),
+        "verify-capability-contracts" => {
+            verify_capability_contracts::run(&repo, has_flag(rest, "--json"))
+        }
         "verify-process-integrity" => verify_process_integrity::run_cli(&repo),
         "verify-compiled-capsules" => {
             verify_compiled_capsules::run(&repo, has_flag(rest, "--json"))

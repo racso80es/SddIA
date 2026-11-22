@@ -14,6 +14,7 @@ fn index_map() -> HashMap<&'static str, &'static str> {
         ("action", "SddIA/actions/index.md"),
         ("codex", "SddIA/library/codexes/index.md"),
         ("suite", "SddIA/suites/index.md"),
+        ("capability-contract", "SddIA/library/norms/capability-contracts/index.md"),
     ])
 }
 

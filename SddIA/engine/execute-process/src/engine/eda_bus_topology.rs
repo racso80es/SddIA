@@ -533,7 +533,17 @@ pub fn dlt_threshold_ok(event: &Value) -> (bool, String) {
         return (false, "placeholder-hash".into());
     }
     let allowed = [
-        "process", "agent", "skill", "tool", "action", "norm", "codex", "event", "suite",
+        "process",
+        "agent",
+        "skill",
+        "tool",
+        "action",
+        "norm",
+        "codex",
+        "event",
+        "suite",
+        "daemon",
+        "capability-contract",
     ];
     let entity_class = payload
         .get("entity_class")
