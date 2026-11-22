@@ -8,7 +8,7 @@ use super::common::{
     patch_daemon_declaration,
     patch_artifact_body_replacements, patch_hash_signature_refresh, patch_norm_content_update,
     patch_process_outputs_update, patch_process_phases_update, refresh_process_hash, repo_tool_base,
-    required_str, sha256_canon,
+    required_str, resolve_lifecycle_operation, sha256_canon, sha256_text,
     str_field, sync_action_index_row, sync_daemons_index_census, sync_event_family_class_count,
     sync_events_root_family_count, update_library_norm_index_version, update_process_index_version,
     norm_integrity_hash, generate_uuid,
@@ -91,14 +91,135 @@ fn event_family_subscriptions_note(family: &str, event_type: &str) -> String {
     format!("Ver `SddIA/core/{rel}` → clave `{event_type}`.")
 }
 
+fn resolve_meta_contract_path(
+    repo: &Path,
+    preferred_subdir: Option<&str>,
+    name: &str,
+) -> Option<PathBuf> {
+    if !name.ends_with("-contract")
+        || name.contains('/')
+        || name.contains('\\')
+        || name.contains("..")
+    {
+        return None;
+    }
+    let sddia = repo.join("SddIA");
+    if let Some(sub) = preferred_subdir {
+        let p = sddia.join(sub).join(format!("{name}.md"));
+        if p.is_file() {
+            return Some(p);
+        }
+    }
+    let Ok(rd) = fs::read_dir(&sddia) else {
+        return None;
+    };
+    let mut dirs: Vec<PathBuf> = rd
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.is_dir())
+        .collect();
+    dirs.sort();
+    for dir in dirs {
+        let candidate = dir.join(format!("{name}.md"));
+        if candidate.is_file() {
+            return Some(candidate);
+        }
+    }
+    None
+}
+
+fn update_meta_contract_artifact(
+    repo: &Path,
+    preferred_subdir: Option<&str>,
+    name: &str,
+    inputs: &Value,
+    legacy_version_key: Option<&str>,
+) -> Result<Value, String> {
+    let contract_path = resolve_meta_contract_path(repo, preferred_subdir, name)
+        .ok_or_else(|| format!("meta-contract no encontrado: SddIA/*/{name}.md"))?;
+    let text = fs::read_to_string(&contract_path).map_err(|e| e.to_string())?;
+    let old_hash = sha256_text(&text);
+
+    let hash_refresh = inputs
+        .get("hash_refresh_only")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let replacements = inputs.get("markdown_body_replacements");
+    let has_replacements = replacements
+        .and_then(|v| v.as_array())
+        .map(|a| !a.is_empty())
+        .unwrap_or(false);
+    let explicit_version = optional_str(inputs, "contract_version")
+        .or_else(|| legacy_version_key.and_then(|k| optional_str(inputs, k)));
+
+    if !hash_refresh && !has_replacements && explicit_version.is_none() {
+        return Err(format!(
+            "meta-contract update sin campo de mutación reconocido para {name} (requiere markdown_body_replacements o hash_refresh_only)"
+        ));
+    }
+
+    let (yaml, body) = split_md_frontmatter(&text).unwrap_or((String::new(), text.clone()));
+    let new_body = if let Some(rep) = replacements.filter(|_| has_replacements) {
+        apply_markdown_body_replacements(&body, rep)?
+    } else {
+        body
+    };
+    let new_yaml = if let Some(ref ver) = explicit_version {
+        if yaml.contains("contract_version:") {
+            upsert_yaml_line(&yaml, "contract_version", ver)
+        } else {
+            yaml
+        }
+    } else {
+        yaml
+    };
+    let joined = if new_yaml.is_empty() {
+        new_body
+    } else {
+        format!("---\n{new_yaml}---\n{new_body}")
+    };
+    fs::write(&contract_path, &joined).map_err(|e| e.to_string())?;
+    let new_hash = sha256_text(&joined);
+
+    let version = explicit_version.unwrap_or_else(|| {
+        new_yaml
+            .lines()
+            .find_map(|l| l.trim().strip_prefix("contract_version:"))
+            .map(|v| v.trim().trim_matches('"').trim_matches('\'').to_string())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "1.0.0".to_string())
+    });
+    let rel = relpath_under_repo(repo, &contract_path);
+    let mut out = json!({
+        "artifact_contract_md": rel,
+        "handoff_entity_uuid": name,
+        "handoff_hash_signature_old": old_hash,
+        "handoff_hash_signature_new": new_hash,
+        "handoff_version": version,
+        "skip_domain_seal": true,
+    });
+    if name == "agents-contract" {
+        out["artifact_agent_md"] = json!(rel);
+    } else if name == "events-contract" {
+        out["artifact_event_md"] = json!(rel);
+    }
+    Ok(out)
+}
+
 pub fn run_tool_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "tool_name")?;
+    let lifecycle = resolve_lifecycle_operation(inputs, "create");
+    if lifecycle == "update" && name.ends_with("-contract") {
+        return update_meta_contract_artifact(repo, Some("tools"), &name, inputs, Some("tools_contract_version"));
+    }
     let scope = str_field(inputs, "scope", "core");
     let base = repo_tool_base(repo, &scope);
     let tool_path = base.join(format!("{name}.md"));
-    let lifecycle = str_field(inputs, "lifecycle_operation", "create");
 
-    if lifecycle == "update" && tool_path.is_file() {
+    if lifecycle == "update" {
+        if !tool_path.is_file() {
+            return Err(format!("tool update: no existe {}", tool_path.display()));
+        }
         apply_implementation_source_git_apply(repo, inputs)?;
         if inputs
             .get("hash_refresh_only")
@@ -195,10 +316,16 @@ implementation_path_ref: "SddIA/tools/{name}"
 
 pub fn run_action_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "action_name")?;
+    let lifecycle = resolve_lifecycle_operation(inputs, "create");
+    if lifecycle == "update" && name.ends_with("-contract") {
+        return update_meta_contract_artifact(repo, Some("actions"), &name, inputs, Some("actions_contract_version"));
+    }
     let action_path = repo.join("SddIA/actions").join(format!("{name}.md"));
-    let lifecycle = str_field(inputs, "lifecycle_operation", "create");
 
-    if lifecycle == "update" && action_path.is_file() {
+    if lifecycle == "update" {
+        if !action_path.is_file() {
+            return Err(format!("action update: no existe {}", action_path.display()));
+        }
         if inputs
             .get("hash_refresh_only")
             .and_then(|v| v.as_bool())
@@ -481,10 +608,16 @@ fn forge_outputs_extra(dest: &ProcessWriteDest, name: &str) -> Value {
 
 pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "process_name")?;
-    let lifecycle = str_field(inputs, "lifecycle_operation", "create");
+    let lifecycle = resolve_lifecycle_operation(inputs, "create");
+    if lifecycle == "update" && name.ends_with("-contract") {
+        return update_meta_contract_artifact(repo, Some("process"), &name, inputs, Some("process_contract_version"));
+    }
 
     if lifecycle == "update" {
-        if let Some(process_path) = locate_existing_process_path(repo, &name) {
+        let Some(process_path) = locate_existing_process_path(repo, &name) else {
+            return Err(format!("process update: no existe {name}"));
+        };
+        {
             let dest_root = process_path
                 .parent()
                 .ok_or_else(|| "process path sin parent".to_string())?
@@ -600,27 +733,38 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 return Ok(out);
             }
 
-            let fm = parse_frontmatter(&process_path)?;
-            let (old_hash, new_hash) = refresh_process_hash(&process_path)?;
-            let version = fm
-                .get("version")
-                .and_then(|v| v.as_str())
-                .unwrap_or("1.0.0")
-                .to_string();
-            let mut out = json!({
-                "handoff_entity_uuid": fm.get("uuid"),
-                "handoff_hash_signature_new": new_hash,
-                "handoff_hash_signature_old": old_hash,
-                "handoff_version": version,
-            });
-            if let (Value::Object(base), Value::Object(ext)) =
-                (&mut out, forge_outputs_extra(&dest, &name))
+            if inputs
+                .get("hash_refresh_only")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
             {
-                for (k, v) in ext {
-                    base.insert(k, v);
+                let fm = parse_frontmatter(&process_path)?;
+                let (old_hash, new_hash) = refresh_process_hash(&process_path)?;
+                let version = fm
+                    .get("version")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("1.0.0")
+                    .to_string();
+                let mut out = json!({
+                    "handoff_entity_uuid": fm.get("uuid"),
+                    "handoff_hash_signature_new": new_hash,
+                    "handoff_hash_signature_old": old_hash,
+                    "handoff_version": version,
+                });
+                if let (Value::Object(base), Value::Object(ext)) =
+                    (&mut out, forge_outputs_extra(&dest, &name))
+                {
+                    for (k, v) in ext {
+                        base.insert(k, v);
+                    }
                 }
+                return Ok(out);
             }
-            return Ok(out);
+
+            return Err(format!(
+                "process update sin campo de mutación reconocido para {name}; no se regenera {}",
+                process_path.display()
+            ));
         }
     }
 
@@ -823,35 +967,31 @@ fn upsert_cognitive_role_index(index_path: &Path, name: &str, descriptor: &str) 
 
 pub fn run_agent_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "agent_name")?;
+    let lifecycle = resolve_lifecycle_operation(inputs, "create");
+    if lifecycle == "update" && name.ends_with("-contract") {
+        return update_meta_contract_artifact(repo, Some("agents"), &name, inputs, Some("agents_contract_version"));
+    }
     let agent_path = repo.join("SddIA/agents").join(format!("{name}.md"));
-    let lifecycle = str_field(inputs, "lifecycle_operation", "create");
     if let Some(skip) = idempotent_forge_handoff(&agent_path, &lifecycle)? {
         return Ok(skip);
     }
-    if lifecycle == "update" && name == "agents-contract" && agent_path.is_file() {
-        let version = str_field(inputs, "agents_contract_version", "1.2.0");
-        let text = fs::read_to_string(&agent_path).map_err(|e| e.to_string())?;
-        let (yaml, body) = split_md_frontmatter(&text).unwrap_or((String::new(), text.clone()));
-        let new_body = if let Some(replacements) = inputs.get("markdown_body_replacements") {
-            apply_markdown_body_replacements(&body, replacements)?
-        } else {
-            body
-        };
-        let new_yaml = upsert_yaml_line(&yaml, "contract_version", &version);
-        let joined = if new_yaml.is_empty() {
-            new_body
-        } else {
-            format!("---\n{new_yaml}---\n{new_body}")
-        };
-        fs::write(&agent_path, joined).map_err(|e| e.to_string())?;
-        return Ok(json!({
-            "artifact_agent_md": agent_path.strip_prefix(repo).unwrap_or(&agent_path).to_string_lossy().replace('\\', "/"),
-            "handoff_entity_uuid": "agents-contract",
-            "handoff_version": version,
-            "skip_domain_seal": true,
-        }));
-    }
-    if lifecycle == "update" && agent_path.is_file() {
+    if lifecycle == "update" {
+        if !agent_path.is_file() {
+            return Err(format!("agent update: no existe {}", agent_path.display()));
+        }
+        if inputs
+            .get("hash_refresh_only")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
+            let patch = refresh_agent_hash_line_delimited(&agent_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
         if let Some(descriptor) = inputs
             .get("cognitive_role_descriptor")
             .and_then(|v| v.as_str())
@@ -948,6 +1088,10 @@ hash_signature: "{hash_sig}"
 
 pub fn run_norm_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "tactical_norm_name")?;
+    let lifecycle = resolve_lifecycle_operation(inputs, "create");
+    if lifecycle == "update" && name.ends_with("-contract") {
+        return update_meta_contract_artifact(repo, Some("norms"), &name, inputs, Some("norms_contract_version"));
+    }
     let library_path = repo.join("SddIA/library/norms").join(format!("{name}.md"));
     let operational_path = repo.join("SddIA/norms").join(format!("{name}.md"));
     let norm_path = if library_path.is_file() {
@@ -955,9 +1099,11 @@ pub fn run_norm_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     } else {
         operational_path
     };
-    let lifecycle = str_field(inputs, "lifecycle_operation", "create");
 
-    if lifecycle == "update" && norm_path.is_file() {
+    if lifecycle == "update" {
+        if !norm_path.is_file() {
+            return Err(format!("norm update: no existe {}", norm_path.display()));
+        }
         apply_implementation_source_git_apply(repo, inputs)?;
         if inputs
             .get("hash_refresh_only")
@@ -1052,8 +1198,11 @@ category: "{category}"
 
 pub fn run_codex_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let slug = optional_name(inputs, "domain_codex_slug")?;
+    let lifecycle = resolve_lifecycle_operation(inputs, "create");
+    if lifecycle == "update" && slug.ends_with("-contract") {
+        return update_meta_contract_artifact(repo, None, &slug, inputs, Some("codex_contract_version"));
+    }
     let codex_path = repo.join("SddIA/library/codexes").join(format!("{slug}.md"));
-    let lifecycle = str_field(inputs, "lifecycle_operation", "create");
     if lifecycle == "update" {
         if !codex_path.is_file() {
             return Err(format!("codex update: no existe {}", codex_path.display()));
@@ -1178,8 +1327,43 @@ Estrategia de dominio para {env_str}.
 
 pub fn run_suite_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "suite_name")?;
+    let lifecycle = resolve_lifecycle_operation(inputs, "create");
+    if lifecycle == "update" && name.ends_with("-contract") {
+        return update_meta_contract_artifact(repo, Some("suites"), &name, inputs, Some("suites_contract_version"));
+    }
     let suite_path = repo.join("SddIA/suites").join(format!("{name}.md"));
-    let lifecycle = str_field(inputs, "lifecycle_operation", "create");
+    if lifecycle == "update" {
+        if !suite_path.is_file() {
+            return Err(format!("suite update: no existe {}", suite_path.display()));
+        }
+        if inputs
+            .get("hash_refresh_only")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
+            let patch = patch_hash_signature_refresh(&suite_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
+        if let Some(replacements) = inputs.get("markdown_body_replacements") {
+            let (entity_uuid, old_hash, new_hash, version) =
+                patch_artifact_body_replacements(&suite_path, replacements)?;
+            return Ok(json!({
+                "handoff_entity_uuid": entity_uuid,
+                "handoff_hash_signature_new": new_hash,
+                "handoff_hash_signature_old": old_hash,
+                "handoff_version": version,
+            }));
+        }
+        return Err(format!(
+            "suite update sin campo de mutación reconocido para {name}; no se regenera {}",
+            suite_path.display()
+        ));
+    }
     if let Some(skip) = idempotent_forge_handoff(&suite_path, &lifecycle)? {
         return Ok(skip);
     }
@@ -1260,9 +1444,15 @@ Suite forjada por suite-creator (laboratorio SddIA).
 
 pub fn run_skill_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "skill_name")?;
+    let lifecycle = resolve_lifecycle_operation(inputs, "create");
+    if lifecycle == "update" && name.ends_with("-contract") {
+        return update_meta_contract_artifact(repo, Some("skills"), &name, inputs, Some("skills_contract_version"));
+    }
     let skill_path = repo.join("SddIA/skills").join(format!("{name}.md"));
-    let lifecycle = str_field(inputs, "lifecycle_operation", "create");
-    if lifecycle == "update" && skill_path.is_file() {
+    if lifecycle == "update" {
+        if !skill_path.is_file() {
+            return Err(format!("skill update: no existe {}", skill_path.display()));
+        }
         apply_implementation_source_git_apply(repo, inputs)?;
         if inputs
             .get("hash_refresh_only")
@@ -1414,42 +1604,17 @@ fn resolve_event_artifact_path(
 
 pub fn run_event_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "event_name")?;
+    let lifecycle = resolve_lifecycle_operation(inputs, "create");
+    if lifecycle == "update" && name.ends_with("-contract") {
+        return update_meta_contract_artifact(repo, Some("events"), &name, inputs, Some("events_contract_version"));
+    }
     let effective_family = resolve_effective_event_family(inputs)?;
     let (events_root, event_path) = resolve_event_artifact_path(repo, &name, &effective_family);
-    let lifecycle = str_field(inputs, "lifecycle_operation", "create");
-    if lifecycle == "update" && name == "events-contract" && event_path.is_file() {
-        let version = str_field(inputs, "events_contract_version", "1.2.0");
-        let text = fs::read_to_string(&event_path).map_err(|e| e.to_string())?;
-        let (yaml, body) = split_md_frontmatter(&text).unwrap_or((String::new(), text.clone()));
-        let new_body = if let Some(replacements) = inputs.get("markdown_body_replacements") {
-            apply_markdown_body_replacements(&body, replacements)?
-        } else {
-            body
-        };
-        let new_yaml = {
-            static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-            let re = RE.get_or_init(|| regex::Regex::new(r#"(?m)^contract_version:\s*.+$"#).expect("re"));
-            if yaml.contains("contract_version:") {
-                re.replace(&yaml, format!("contract_version: \"{version}\""))
-                    .to_string()
-            } else {
-                yaml
-            }
-        };
-        let joined = if new_yaml.is_empty() {
-            new_body
-        } else {
-            format!("---\n{new_yaml}---\n{new_body}")
-        };
-        fs::write(&event_path, joined).map_err(|e| e.to_string())?;
-        return Ok(json!({
-            "artifact_event_md": event_path.strip_prefix(repo).unwrap_or(&event_path).to_string_lossy().replace('\\', "/"),
-            "handoff_entity_uuid": "events-contract",
-            "handoff_version": version,
-            "skip_domain_seal": true,
-        }));
-    }
-    if lifecycle == "update" && event_path.is_file() {
+    if lifecycle == "update" {
+        if !event_path.is_file() {
+            return Err(format!("update: no existe {}", event_path.display()));
+        }
+        apply_implementation_source_git_apply(repo, inputs)?;
         if inputs
             .get("hash_refresh_only")
             .and_then(|v| v.as_bool())
@@ -1478,9 +1643,19 @@ pub fn run_event_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "handoff_version": version,
             }));
         }
-    }
-    if lifecycle == "update" && !event_path.is_file() {
-        return Err(format!("update: no existe {}", event_path.display()));
+        if inputs.get("implementation_source_git_apply").is_some() {
+            let patch = patch_hash_signature_refresh(&event_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
+        return Err(format!(
+            "event update sin campo de mutación reconocido para {name}; no se regenera {}",
+            event_path.display()
+        ));
     }
     if lifecycle == "create" && event_path.is_file() {
         return Err(format!("Ya existe {}", event_path.display()));
@@ -1652,6 +1827,10 @@ fn emitter_lines(emitters: &Value) -> String {
 /// Forja nativa `daemon-creator` (L-FORGE): `{name}.md` + fila en `daemons/index.md`.
 pub fn run_daemon_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "daemon_name")?;
+    let lifecycle = resolve_lifecycle_operation(inputs, "create");
+    if lifecycle == "update" && name.ends_with("-contract") {
+        return update_meta_contract_artifact(repo, Some("daemons"), &name, inputs, Some("daemons_contract_version"));
+    }
     let kebab = regex::Regex::new(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$").map_err(|e| e.to_string())?;
     if !kebab.is_match(&name) {
         return Err(format!("daemon_name no kebab-case: {name}"));
@@ -1659,11 +1838,13 @@ pub fn run_daemon_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
 
     let daemons_root = repo.join("SddIA/daemons");
     let daemon_path = daemons_root.join(format!("{name}.md"));
-    let lifecycle = str_field(inputs, "lifecycle_operation", "create");
     if let Some(skip) = idempotent_forge_handoff(&daemon_path, &lifecycle)? {
         return Ok(skip);
     }
-    if lifecycle == "update" && daemon_path.is_file() {
+    if lifecycle == "update" {
+        if !daemon_path.is_file() {
+            return Err(format!("daemon update: no existe {}", daemon_path.display()));
+        }
         apply_implementation_source_git_apply(repo, inputs)?;
         if inputs
             .get("hash_refresh_only")
@@ -2258,11 +2439,22 @@ phases:
         )
         .unwrap();
         let before = fs::read_to_string(&md).unwrap();
+        let err_empty = run_process_forge(
+            repo,
+            &json!({
+                "process_name": "hash-only-lab",
+                "lifecycle_operation": "update",
+            }),
+        )
+        .unwrap_err();
+        assert!(err_empty.contains("sin campo de mutación reconocido"), "{err_empty}");
+
         let out = run_process_forge(
             repo,
             &json!({
                 "process_name": "hash-only-lab",
                 "lifecycle_operation": "update",
+                "hash_refresh_only": true,
             }),
         )
         .expect("hash-only");
@@ -2880,5 +3072,174 @@ NOTA_BACKFILL
         assert!(constitution.contains("Filtro B (Esencia)"));
         assert!(constitution.contains("Protocolo de Acero"));
         assert!(constitution.contains("Cicatriz Rúnica"));
+    }
+
+    #[test]
+    fn operation_alias_and_precedence_with_lifecycle_operation() {
+        assert_eq!(
+            resolve_lifecycle_operation(&json!({"operation": "update"}), "create"),
+            "update"
+        );
+        assert_eq!(
+            resolve_lifecycle_operation(
+                &json!({"lifecycle_operation": "update", "operation": "create"}),
+                "create"
+            ),
+            "update"
+        );
+        assert_eq!(resolve_lifecycle_operation(&json!({}), "create"), "create");
+    }
+
+    #[test]
+    fn update_without_recognized_mutation_fails_loud_and_hash_refresh_succeeds() {
+        let _g = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
+        let td = tempfile::tempdir().unwrap();
+        let dir = td.path().to_path_buf();
+        fs::create_dir_all(dir.join("SddIA/core")).unwrap();
+        fs::create_dir_all(dir.join("SddIA/process")).unwrap();
+        fs::create_dir_all(dir.join("SddIA/events/domain")).unwrap();
+        fs::create_dir_all(dir.join("SddIA/suites")).unwrap();
+        fs::create_dir_all(dir.join("SddIA/tools")).unwrap();
+        fs::write(
+            dir.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"process":"SddIA/process","process_domain_roots":[]}}"#,
+        )
+        .unwrap();
+
+        let proc_md = "---\nuuid: \"u-proc\"\nname: demo-proc\nversion: \"1.0.0\"\ncontext:\n- ecosystem-evolution\nhash_signature: sha256:0000\nphases:\n- name: Paso 1\n  intent: hacer algo\n---\n\n# demo-proc\n";
+        fs::write(dir.join("SddIA/process/demo-proc.md"), proc_md).unwrap();
+
+        let err_proc = run_process_forge(
+            &dir,
+            &json!({"process_name": "demo-proc", "operation": "update"}),
+        )
+        .unwrap_err();
+        assert!(err_proc.contains("sin campo de mutación reconocido"), "{err_proc}");
+
+        let ok_refresh = run_process_forge(
+            &dir,
+            &json!({
+                "process_name": "demo-proc",
+                "operation": "update",
+                "hash_refresh_only": true,
+            }),
+        )
+        .expect("hash_refresh_only debe contar como mutación reconocida (D-E3)");
+        assert_eq!(ok_refresh["handoff_entity_uuid"], json!("u-proc"));
+        assert!(ok_refresh.get("idempotent").is_none());
+
+        fs::write(
+            dir.join("SddIA/events/domain/demo-evt.md"),
+            "---\nuuid: \"u-evt\"\nname: demo-evt\nversion: \"1.0.0\"\nevent_type: Demo_Evt\nevent_family: domain\nhash_signature: sha256:0000\n---\n\n# Demo\n",
+        )
+        .unwrap();
+        let err_evt = run_event_forge(
+            &dir,
+            &json!({"event_name": "demo-evt", "event_family": "domain", "operation": "update"}),
+        )
+        .unwrap_err();
+        assert!(err_evt.contains("sin campo de mutación reconocido"), "{err_evt}");
+
+        fs::write(
+            dir.join("SddIA/suites/demo-suite.md"),
+            "---\nuuid: \"u-suite\"\nname: demo-suite\nversion: \"1.0.0\"\nhash_signature: sha256:0000\n---\n\n# Demo\n",
+        )
+        .unwrap();
+        let err_suite = run_suite_forge(
+            &dir,
+            &json!({"suite_name": "demo-suite", "operation": "update"}),
+        )
+        .unwrap_err();
+        assert!(err_suite.contains("sin campo de mutación reconocido"), "{err_suite}");
+
+        fs::write(
+            dir.join("SddIA/tools/demo-tool.md"),
+            "---\nuuid: \"u-tool\"\nname: demo-tool\nversion: \"1.0.0\"\nhash_signature: sha256:0000\n---\n\n# Demo\n",
+        )
+        .unwrap();
+        let err_tool = run_tool_forge(
+            &dir,
+            &json!({"tool_name": "demo-tool", "operation": "update"}),
+        )
+        .unwrap_err();
+        assert!(err_tool.contains("sin parche reconocido"), "{err_tool}");
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn meta_contract_update_via_markdown_body_replacements() {
+        let _g = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
+        let td = tempfile::tempdir().unwrap();
+        let dir = td.path().to_path_buf();
+        fs::create_dir_all(dir.join("SddIA/events")).unwrap();
+        fs::create_dir_all(dir.join("SddIA/process")).unwrap();
+        fs::create_dir_all(dir.join("SddIA/norms")).unwrap();
+
+        fs::write(
+            dir.join("SddIA/events/events-contract.md"),
+            "---\ncontract_version: \"2.0.0\"\nentity_type: \"event\"\n---\n\n# Eventos\n\nTexto original.\n",
+        )
+        .unwrap();
+        fs::write(
+            dir.join("SddIA/process/process-contract.md"),
+            "---\ncontract_version: \"1.5.0\"\nentity_type: \"process\"\n---\n\n# Procesos\n\nRegla vieja.\n",
+        )
+        .unwrap();
+        fs::write(
+            dir.join("SddIA/norms/knowledge-contract.md"),
+            "---\ncontract_version: \"1.0.0\"\nentity_type: \"norm\"\n---\n\n# Knowledge\n\nBase.\n",
+        )
+        .unwrap();
+
+        // events-contract sin event_family y usando alias operation
+        let ev = materialize_by_inputs(
+            &dir,
+            &json!({
+                "entity_class": "event",
+                "event_name": "events-contract",
+                "operation": "update",
+                "markdown_body_replacements": [{"from": "Texto original.", "to": "Texto actualizado."}],
+            }),
+        )
+        .expect("events-contract update");
+        assert_eq!(ev["skip_domain_seal"], json!(true));
+        assert_ne!(ev["handoff_hash_signature_old"], ev["handoff_hash_signature_new"]);
+        assert!(fs::read_to_string(dir.join("SddIA/events/events-contract.md"))
+            .unwrap()
+            .contains("Texto actualizado."));
+
+        // process-contract
+        let pr = materialize_by_inputs(
+            &dir,
+            &json!({
+                "entity_class": "process",
+                "process_name": "process-contract",
+                "lifecycle_operation": "update",
+                "markdown_body_replacements": [{"from": "Regla vieja.", "to": "Regla nueva."}],
+            }),
+        )
+        .expect("process-contract update");
+        assert_eq!(pr["skip_domain_seal"], json!(true));
+        assert_ne!(pr["handoff_hash_signature_old"], pr["handoff_hash_signature_new"]);
+        assert!(fs::read_to_string(dir.join("SddIA/process/process-contract.md"))
+            .unwrap()
+            .contains("Regla nueva."));
+
+        // knowledge-contract
+        let kn = materialize_by_inputs(
+            &dir,
+            &json!({
+                "entity_class": "norm",
+                "tactical_norm_name": "knowledge-contract",
+                "lifecycle_operation": "update",
+                "markdown_body_replacements": [{"from": "Base.", "to": "Base v2."}],
+            }),
+        )
+        .expect("knowledge-contract update");
+        assert_eq!(kn["skip_domain_seal"], json!(true));
+        assert_ne!(kn["handoff_hash_signature_old"], kn["handoff_hash_signature_new"]);
+
+        let _ = fs::remove_dir_all(&dir);
     }
 }
