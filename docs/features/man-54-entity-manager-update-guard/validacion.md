@@ -1,6 +1,6 @@
 ---
 feature_name: man-54-entity-manager-update-guard
-created: "2026-11-22"
+created: 2026-11-22
 process: feature
 branch: feat/man-54-entity-manager-update-guard
 persist_ref: docs/features/man-54-entity-manager-update-guard
@@ -23,6 +23,10 @@ git_changes:
 - SddIA/tools/sddia-qa/src/main.rs
 - SddIA/evolution/Evolution_log.md
 - SddIA/evolution/d1685963-5daf-4c3a-aab4-f766c5e226b8.md
+validated_base_sha: 610146d0bb39e6ba18e525faf6a84918c21e1cbb
+validated_head_sha: d2a90a3ea4f4c272bfac375d02c0a5a34276780a
+validated_tree_sha: 7c6f8265f390e46ec4dd088da41b742c664b1eed
+diff_digest: sha256:3d971b829c2cfb619c09c12b73d5d5cea2d8205066d3c53d0333d80c79bfdc51
 ---
 
 # Validación — man-54-entity-manager-update-guard
