@@ -1,5 +1,5 @@
 {
-  "version": "1.12.0",
+  "version": "1.12.1",
   "description": "SSOT topológico Core SddIA — Event Manager: solo ids/tablas/suscripciones lógicas; ubicación física Redb/FS en bóveda de instancia (MAN-36)",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -66,6 +66,7 @@
     "templates": "SddIA/templates/templates-contract.md",
     "tokens": "SddIA/tokens/tokens-contract.md",
     "library_norms": "SddIA/library/norms/norms-contract.md",
+    "capability_contracts": "SddIA/library/norms/capability-contracts/capability-contracts-contract.md",
     "library_codexes": "SddIA/library/codexes/codex-contract.md",
     "events": "SddIA/events/events-contract.md",
     "suites": "SddIA/suites/suites-contract.md",
