@@ -1,5 +1,6 @@
 ---
 
+
 feature_name: man-53-apto-coherence-root-clean
 created: "2026-11-22"
 process: feature
@@ -8,7 +9,7 @@ persist_ref: docs/features/man-53-apto-coherence-root-clean
 tracker_ref: MAN-53
 base: main
 scope: "SddIA/engine/execute-process/src/engine/{apto_coherence.rs,pull_request_review.rs,qa_attestation.rs,delivery_close.rs,accept_pr.rs,residual_runner.rs}"
-execution_id: "a3971880-ee8b-49c3-97d4-40f61477aa47"
+execution_id: "c2474ace-b9f1-4707-819f-b76e3b717786"
 ---
 # Especificación Técnica — man-53-apto-coherence-root-clean
 

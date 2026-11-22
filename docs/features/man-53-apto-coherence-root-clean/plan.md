@@ -1,5 +1,6 @@
 ---
 
+
 feature_name: man-53-apto-coherence-root-clean
 created: "2026-11-22"
 process: feature
@@ -15,7 +16,7 @@ phases:
     name: "Check físico de directorios efímeros en raíz en delivery-close-cycle y accept-pr"
   - id: H4
     name: "Verificación cargo test / clippy, rebuild binarios y documentación de cierre"
-execution_id: "a3971880-ee8b-49c3-97d4-40f61477aa47"
+execution_id: "c2474ace-b9f1-4707-819f-b76e3b717786"
 ---
 # Plan de Implementación — man-53-apto-coherence-root-clean
 
