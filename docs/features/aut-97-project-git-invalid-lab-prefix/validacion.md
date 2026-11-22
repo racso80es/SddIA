@@ -1,7 +1,7 @@
 ---
 feature_name: aut-97-project-git-invalid-lab-prefix
-created: "2026-11-22"
-updated: "2026-11-22T14:12:30Z"
+created: 2026-11-22
+updated: 2026-11-22T14:12:30Z
 process: feature
 agent: argos
 branch: feat/aut-97-project-git-invalid-lab-prefix
@@ -11,7 +11,7 @@ pbi_ref: AUT-97
 document_id: PBI-FIX-FRACTURE-e76035db4846
 tracker_provider: linear
 tracker_ref: AUT-97
-execution_id: "cb6b60ee-cc70-49ea-a4e2-55d7d0ca15c7"
+execution_id: cb6b60ee-cc70-49ea-a4e2-55d7d0ca15c7
 norm_ref: features-documentation-pattern@1.3.1
 global: APTO
 pbi_archived: false
@@ -33,6 +33,10 @@ git_changes:
   - SddIA/engine/execute-process/tests/fixtures/fracture-corpus/e76035db-project-git-invalid-lab-prefix.json
   - docs/audits/AUT-97.md
   - docs/features/aut-97-project-git-invalid-lab-prefix/
+validated_base_sha: b288999719a805414810e74e5ef36df512bc5967
+validated_head_sha: 7d6520ffc6edccdc70be33fc4197376c1f7c609e
+validated_tree_sha: a79735a7260faebe3a2ef2ce685d68ce3d286d9d
+diff_digest: sha256:1f40b8940bacdbd96494904afc53b372bfb754b0ffe37c6768dcf0608a107336
 ---
 
 # Validación — aut-97-project-git-invalid-lab-prefix
