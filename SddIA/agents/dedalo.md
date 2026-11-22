@@ -7,7 +7,7 @@ allowed_policies:
   - "ecosystem-evolution"
   - "knowledge-management"
   - "filesystem-ops"
-hash_signature: "sha256:f8c44970e4d32a9f1320fcc0d6d2ed8c4343082b51e16c35aa776fed25ccdb0d"
+hash_signature: "sha256:736ede018f2f58f1be97de3e7d6a807427dcaa8c9eab90af1ee21da43ee07add"
 llm_profile:
   tier: "high"
   description: "Diseño arquitectónico y especificación formal de procesos"
@@ -58,6 +58,10 @@ Si la normativa vigente de **`action:execute-process`** (y normas asociadas) def
 ### 3.2. Límite de la garantía anti-Cerbero
 
 La intención de que Cerbero **no** tumbe el blueprint en runtime presupone: **coherencia índice ↔ cabecera YAML de cada cápsula**, `target_executor_rbac` actualizado para el ejecutor real, y ausencia de drift entre normas y catálogo. Si el índice o las definiciones están discordantes, ningún diseño sustituye una auditoría de integridad documental (Cúmulo).
+
+### 3.3. Oráculo primero (Ola 0, KZ-PRM-01)
+
+Toda especificación (`spec.md`) y blueprint (`plan.md`) debe asociar a cada `AC-1..AC-N` un **oráculo mecánico ejecutable** (test o `sddia-qa`) e incluir una fase **Ola 0** de captura en rojo (`oracle-red.log`) previa a cualquier cambio productivo en Ola 1.
 
 ## 4. Salidas
 

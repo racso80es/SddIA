@@ -1,0 +1,46 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+   Compiling sddia-qa v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/tools/sddia-qa)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.75s
+     Running unittests src/main.rs (SddIA/target/debug/deps/sddia_qa-2222a1728f618083)
+
+running 4 tests
+test gate_prompt_invariants::tests::prompt_invariants_ac1_oracle_ola0_present ... FAILED
+test gate_prompt_invariants::tests::prompt_invariants_ac3_hermetic_and_entity_manager_present ... FAILED
+test gate_prompt_invariants::tests::prompt_invariants_ac2_anti_evasion_present ... FAILED
+test gate_prompt_invariants::tests::prompt_invariants_ac4_host_parity_and_role_separation_present ... FAILED
+
+failures:
+
+---- gate_prompt_invariants::tests::prompt_invariants_ac1_oracle_ola0_present stdout ----
+
+thread 'gate_prompt_invariants::tests::prompt_invariants_ac1_oracle_ola0_present' (125443) panicked at tools/sddia-qa/src/gate_prompt_invariants.rs:16:13:
+SddIA/templates/spec-template/spec.md: falta invariante obligatoria `Oráculo mecánico`
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- gate_prompt_invariants::tests::prompt_invariants_ac3_hermetic_and_entity_manager_present stdout ----
+
+thread 'gate_prompt_invariants::tests::prompt_invariants_ac3_hermetic_and_entity_manager_present' (125445) panicked at tools/sddia-qa/src/gate_prompt_invariants.rs:16:13:
+SddIA/library/norms/features-documentation-pattern.md: falta invariante obligatoria `git status --porcelain`
+
+---- gate_prompt_invariants::tests::prompt_invariants_ac2_anti_evasion_present stdout ----
+
+thread 'gate_prompt_invariants::tests::prompt_invariants_ac2_anti_evasion_present' (125444) panicked at tools/sddia-qa/src/gate_prompt_invariants.rs:16:13:
+SddIA/norms/external-ai-constraints.md: falta invariante obligatoria `concat!`
+
+---- gate_prompt_invariants::tests::prompt_invariants_ac4_host_parity_and_role_separation_present stdout ----
+
+thread 'gate_prompt_invariants::tests::prompt_invariants_ac4_host_parity_and_role_separation_present' (125446) panicked at tools/sddia-qa/src/gate_prompt_invariants.rs:16:13:
+SddIA/norms/external-ai-constraints.md: falta invariante obligatoria `cargo build --workspace --release`
+
+
+failures:
+    gate_prompt_invariants::tests::prompt_invariants_ac1_oracle_ola0_present
+    gate_prompt_invariants::tests::prompt_invariants_ac2_anti_evasion_present
+    gate_prompt_invariants::tests::prompt_invariants_ac3_hermetic_and_entity_manager_present
+    gate_prompt_invariants::tests::prompt_invariants_ac4_host_parity_and_role_separation_present
+
+test result: FAILED. 0 passed; 4 failed; 0 ignored; 0 measured; 30 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p sddia-qa --bin sddia-qa`

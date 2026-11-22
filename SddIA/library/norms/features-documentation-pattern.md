@@ -1,13 +1,13 @@
 ---
 uuid: "4c448c82-de41-460f-b24f-82a84fa5ed69"
 name: "features-documentation-pattern"
-version: "1.3.2"
+version: "1.3.3"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
 category: "workflow"
 dependencies: []
-hash_signature: "sha256:7a177423613152896a065822e4163b86421c756700ece6e082a93792a2680d7b"
+hash_signature: "sha256:d87f2d748d327157295b0ce1608921c313f4fca06632db335248e8f2563b1699"
 ---
 
 ## Directriz Core
@@ -83,6 +83,11 @@ Tokens de **hito** o **diferimiento** **no** son canónicos para elevar `global`
 - flags `*_deferred: true` sobre hijos/fases del plan (p. ej. `h2_h6_deferred: true`)
 
 La aduana de coherencia (`apto_coherence`) invalida `global: APTO` si detecta estas señales, o si `execution` está blocked/parcial, o si quedan fases de `plan.md` sin evidencia de cierre. El rechazo es fricción accionable; no emite `System_Fracture_Detected`.
+
+## Oráculo primero (Ola 0) y Baseline Hermético (`KZ-PRM-01`, `KZ-PRM-03`)
+
+- **Oráculo primero (`spec.md` / `plan.md`):** Cada `AC-1..AC-N` debe declarar su **Oráculo mecánico ejecutable** (test unitario/integración o subcomando `sddia-qa`) y contar con captura en rojo (`oracle-red.log` bajo `persist_ref`) **antes** de autorizar cambios productivos en Ola 1. Ningún AC puede tener como único método de verificación un `grep` manual ad-hoc al cierre.
+- **Baseline hermético Ola 0 (`execution.md`):** Antes de modificar código productivo, registrar en `execution.md`: (1) `git status --porcelain` vacío; (2) ausencia física de `.events`, `orchestration`, `telemetry` y `_lab` en la raíz; (3) estado de `systemctl --user list-units 'sddia-*'`; (4) baseline de tests con entorno limpio (`env -u SDDIA_EVENT_STORE -u SDDIA_EXECUTE_PROCESS_BIN cargo test ...`).
 
 ## Restricciones Duras (Aduana de Fricción)
 

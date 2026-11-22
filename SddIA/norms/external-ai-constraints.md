@@ -94,6 +94,15 @@ Tras acuse de `delivery-close-cycle` con fase Publicación remota `failed` o `bl
 - Operador: `gh auth setup-git` (unificar helper). `gh auth refresh -s workflow` solo si git ya delega en `gh`.
 - Siguiente estímulo = laudo del Vértice Biológico o re-inyección DCC con credencial alineada.
 
+### DA-8 — Invariantes de Handoff, Anti-Evasión Léxica y Paridad de Host (`KZ-PRM-01` .. `KZ-PRM-06`)
+
+- **Oráculo primero en Ola 0 (`KZ-PRM-01`):** Cada `AC-1..AC-N` del plan debe tener un oráculo mecánico ejecutable capturado en rojo (`oracle-red.log`) antes de autorizar cambios productivos en Ola 1. Prohibido `grep` manual ad-hoc como único método de verificación.
+- **Anti-evasión léxica (`KZ-PRM-02`):** Ante un gate o test de higiene rojo, prohibido ofuscar literales (`concat!`, interpolación dinámica), cambiar solo prefijos de ruta manteniendo `std::fs`, o ampliar `VIRTUAL_PATH_ALLOW` / `SCAN_EXCLUDE` / `INTEGRATION_SRC` / `allowlists/*.toml` sin laudo `RATCHET_LAUDO` previo en `clarify.md`.
+- **Baseline hermético Ola 0 (`KZ-PRM-03`):** Registrar en `execution.md` antes de codificar: `git status --porcelain` vacío, ausencia física de `.events`/`orchestration`/`telemetry`/`_lab` en raíz, `systemctl --user list-units 'sddia-*'`, y baseline de tests con `env -u SDDIA_EVENT_STORE -u SDDIA_EXECUTE_PROCESS_BIN`.
+- **Protocolo estricto `entity-manager` (`KZ-PRM-04`):** Verificar siempre `handoff_hash_signature_new != handoff_hash_signature_old`. Si devuelve `idempotent` o firmas iguales, la mutación no se aplicó: corregir el payload y nunca editar `.md` de genoma a mano. Inspeccionar frontmatter, tablas y diagramas `mermaid`.
+- **Paridad build/host (`KZ-PRM-05`):** Si el diff toca crates Rust que producen o alimentan binarios residentes `sddia-*`: compilar `cargo build --workspace` y `cargo build --workspace --release`, reiniciar `systemctl --user restart 'sddia-*@*.service'` y re-ejecutar `cargo test -p execute-process --lib eda_event_token_hygiene` antes de `delivery-close-cycle`.
+- **Separación Tekton/Argos (`KZ-PRM-06`):** Prohibido recortar ACs o diferir hijos del plan sin `refine-item` previo; prohibido degradar `F3_TECH_GATE` o filas `PARCIAL` a `non_blocking_findings`. Tekton jamás escribe `global: APTO` en `validacion.md`.
+
 ## Prefijo creator (Fase B)
 
 Los procesos `*-creator` exigen que el runtime IDE anteponga este prefijo literal al contexto de Tekton **antes** de cualquier fase de forja:
