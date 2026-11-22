@@ -1,5 +1,10 @@
 ---
 
+
+
+
+
+
 feature_name: man-55-prompt-invariants-oracle-ola0
 created: "2026-11-22"
 process: feature
@@ -12,7 +17,7 @@ phases:
 branch_name: feat/man-55-prompt-invariants-oracle-ola0
 persist_ref: docs/features/man-55-prompt-invariants-oracle-ola0
 tracker_ref: MAN-55
-execution_id: "95aafb28-50d1-4f8c-bdfa-574f696d168f"
+execution_id: "be6ad381-b5a2-4450-b559-aedf31ec1694"
 ---
 # Plan — man-55-prompt-invariants-oracle-ola0
 

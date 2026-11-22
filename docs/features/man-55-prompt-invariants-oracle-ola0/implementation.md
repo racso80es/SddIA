@@ -1,5 +1,10 @@
 ---
 
+
+
+
+
+
 feature_name: man-55-prompt-invariants-oracle-ola0
 created: "2026-11-22"
 process: feature
@@ -10,7 +15,7 @@ items:
   - gate_allowlist_ratchet_and_prompt_oracles
   - entity_manager_norms_and_agents_update
   - templates_and_cursor_rules_update
-execution_id: "95aafb28-50d1-4f8c-bdfa-574f696d168f"
+execution_id: "be6ad381-b5a2-4450-b559-aedf31ec1694"
 ---
 # Implementación — man-55-prompt-invariants-oracle-ola0
 
