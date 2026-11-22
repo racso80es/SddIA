@@ -104,8 +104,8 @@ situational_notes:
 - Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO; pending/ vacío; tracker.provider=linear
 - delivery_state success · accept_pr_handoff pending — handoff a accept-pr aguas abajo
 validated_base_sha: 2307d0b3233c9a3cbec769cb676f2b56603ac22a
-validated_head_sha: a7dcd0ba6c1a0f45e6e423c947f28cf9ec3a2ad2
-validated_tree_sha: 1bf44bbd883ae922739441d29d34ca746f8064b1
+validated_head_sha: ea46bb0770fb9a1208d0aea47f6ed7942db5a33c
+validated_tree_sha: 4e8803625ad38281da1203e271787b4c63171218
 diff_digest: sha256:9bb17f57bdcfeb5d5e0c7db29b27e7931699f557c173be4194e602e92f8b7545
 execution_id: d7301123-c49f-4627-90f1-ff1fe78bcc66
 ---
