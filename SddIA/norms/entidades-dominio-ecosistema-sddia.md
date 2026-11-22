@@ -17,15 +17,17 @@ Se denominan **entidades de dominio** o **entidades del ecosistema SddIA** a aqu
 - **Principles** (paths.principlesPath) — contrato: principles-contract.json (required_token: Karma2Token).
 - **Templates** (paths.templatesPath) — contrato: templates-contract (required_token: Karma2Token).
 - **Tokens** (paths.tokensPath) — contrato: SddIA/tokens/tokens-contract.md (definición de los propios tokens).
+- **Capability Contracts** (`directories.capability_contracts`) — contrato: `contracts.capability_contracts` (`SddIA/library/norms/capability-contracts/capability-contracts-contract.md`, Sustrato B `{name}.schema.json` con `"x-sddia"`).
 
-## Obligaciones de estructura
+## Obligaciones de estructura (Norma de Identidad Polimórfica)
 
-Todas las **entidades de dominio** han de:
+Todas las **entidades de dominio** han de respetar uno de los dos sustratos canónicos de la Cicatriz Digital (`.cursorrules` §2):
 
-1. **Respetar la estructura** definida en su contrato: la estructura canónica para las entidades es un único archivo `spec.md` en la carpeta de la entidad (paths según Cúmulo), con los metadatos requeridos por el contrato integrados en formato **YAML Frontmatter** en la parte superior del archivo.
-2. **Tokens (`paths.tokensPath`):** Cada token catalogado es un único `<token-id>.md` con YAML frontmatter según `SddIA/tokens/tokens-contract.md`. En el Core no se usan `spec.json` ni subcarpetas por token para la definición.
+1. **Sustrato A (`{name}.md` con YAML Frontmatter):** Las entidades basadas en Markdown viven en un único archivo `{name}.md` bajo el directorio de su familia (resuelto vía Cúmulo), con los metadatos requeridos por su contrato (`uuid`, `name`, `version`, `hash_signature`, etc.) en bloque YAML Frontmatter en la cabecera del archivo.
+2. **Sustrato B (`{name}.schema.json` con `"x-sddia"`):** La familia `capability-contract` (`directories.capability_contracts`) vive en un único archivo `{name}.schema.json` (JSON Schema Draft 2020-12) con cabecera de identidad atómica en la clave raíz `"x-sddia": { "uuid", "version", "hash_signature" }`, donde `hash_signature` es el SHA-256 del JSON canónico con claves ordenadas excluyendo `"x-sddia"`.
+3. **Tokens (`paths.tokensPath`):** Cada token catalogado es un único `<token-id>.md` con YAML frontmatter según `SddIA/tokens/tokens-contract.md` (Sustrato A). En el Core no se usan `spec.json` ni subcarpetas por entidad para la definición.
 
-La validación de esta estructura puede realizarse mediante la acción `validate`, asegurando que el documento `spec.md` contiene un bloque YAML Frontmatter bien formado y que los atributos en él corresponden con el esquema esperado por su contrato.
+La validación de esta estructura se realiza mediante la acción `validate` y las aduanas `sddia-qa`, asegurando que cada artefacto Sustrato A posee YAML Frontmatter válido y cada artefacto Sustrato B posee `"x-sddia"` íntegro y compilable según su contrato.
 
 ## Documentación de tarea (`paths.featurePath`, `paths.fixPath`) y workspace operativo
 
