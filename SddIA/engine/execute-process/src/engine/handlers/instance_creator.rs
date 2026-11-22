@@ -600,10 +600,6 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
     materialize_local_paths(repo, &local_paths)?;
     let llm_reg = materialize_llm_registry(repo, &sddia)?;
     let domain_prof = materialize_domain_profile(&instance_root, &sddia, &profile, process_inputs)?;
-    let events = instance_root.join(".events");
-    for fam in ["pending", "domain", "orchestration", "telemetry", "dead-letter"] {
-        ensure_dir(&events.join(fam))?;
-    }
     phases.push(phase(
         "Topologia",
         "executed",

@@ -537,31 +537,16 @@ mod tests {
         .unwrap();
         fs::write(
             base.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_fractal":{"telemetry":".events/telemetry"}}"#,
+            r#"{"eda_fractal":{}}"#,
         )
         .unwrap();
-        fs::create_dir_all(base.join(".events/telemetry")).unwrap();
         let top = load_bus_topology(&base);
         (base, top)
     }
 
     fn telemetry_files(repo: &Path) -> Vec<Value> {
-        let dir = repo.join(".events/telemetry");
         let mut out = Vec::new();
-        if let Ok(rd) = fs::read_dir(&dir) {
-            for ent in rd.flatten() {
-                let p = ent.path();
-                if p.extension().and_then(|e| e.to_str()) != Some("json") {
-                    continue;
-                }
-                if let Ok(raw) = fs::read_to_string(&p) {
-                    if let Ok(v) = serde_json::from_str::<Value>(&raw) {
-                        out.push(v);
-                    }
-                }
-            }
-        }
-        if out.is_empty() {
+        {
             let _ = sddia_event_manager_host::with_productive_port(repo, "telemetry_list", |port| {
                 if let Ok(rows) = sddia_core::ports::event_manager::list_pending_ecsts(port, 200) {
                     out.extend(rows);

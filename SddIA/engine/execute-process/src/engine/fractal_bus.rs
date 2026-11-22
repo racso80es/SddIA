@@ -153,12 +153,12 @@ pub fn stamp_fractal_delivery_state(event_path: &Path, subscriber_key: &str, sta
 fn repo_root_from_event(path: &Path) -> Option<PathBuf> {
     let mut cur = path.parent();
     while let Some(dir) = cur {
-        if dir.file_name().and_then(|name| name.to_str()) == Some(".events") {
-            return dir.parent().map(Path::to_path_buf);
+        if dir.join("SddIA/core/cumulo.paths.json").is_file() {
+            return Some(dir.to_path_buf());
         }
         cur = dir.parent();
     }
-    None
+    crate::core::repo::find_repo_root().ok()
 }
 
 pub fn delivery_stamp_terminal_ok(status: &str) -> bool {

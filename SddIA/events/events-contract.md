@@ -69,37 +69,36 @@ Toda instancia persistida en el bus debe ser JSON UTF-8 con la forma:
 | `emitter_agent` | Sí | Identificador del emisor indexado |
 | `correlation_id` | No | UUID v4; solo si aplica saga causal |
 | `payload` | Sí | Objeto; forma gobernada por la Clase |
-| `delivery_state` | No | **Foto del alta (Ola A)** — copia del estado en emisión; **no** es SSOT de entrega. Prohibido mutar tras emisión en V3. Estado vivo por suscriptor: **`subscriber_delivery`** (store) o testigos FS |
+| `delivery_state` | No | **Foto del alta (Ola A)** — copia del estado en emisión; **no** es SSOT de entrega. Prohibido mutar tras emisión. Estado vivo por suscriptor: **`subscriber_delivery`** vía `EventManagerPort` |
 
-## 4. Ciclo de vida del bus (Ola C V3+)
+## 4. Ciclo de vida del bus (`EventManagerPort` ^2.0.0)
 
-Resolución operativa vía **`EventManagerPort` ^2.0.0** / `EventUri`. La configuración `event_bus` / `eda_bus` en `cumulo.paths.json` declara tablas lógicas y suscripciones; el store de instancia lo resuelve `sddia-event-manager-host` (bóveda `SDDIA_EVENT_MANAGER_*`). No hay variable de entorno de modo FS/dual como SSOT.
+Resolución operativa vía **`EventManagerPort` ^2.0.0** / `EventUri` (`eda://{family}/{event_id}`). La configuración `event_bus` / `eda_bus` en `cumulo.paths.json` declara tablas lógicas y suscripciones; el store de instancia lo resuelve `sddia-event-manager-host` (bóveda `SDDIA_EVENT_MANAGER_*`). No existe cola FS ni modo dual en runtime productivo.
 
 | Capa | Padre ECST | Estado de entrega por suscriptor | Persistencia |
 |------|------------|----------------------------------|--------------|
-| Puerto / host | ECST en store de instancia (Redb) | SSOT: `subscriber_delivery` vía puerto | Sin cola FS legacy |
+| Puerto / host | ECST en store de instancia (Redb vía `sddia-event-manager-host`) | SSOT: `subscriber_delivery` vía `EventManagerPort` | Sin cola FS legacy |
 
 ```mermaid
 flowchart TB
-  EM[Emisor action/process] --> STORE["events.redb (redb/dual)"]
-  EM --> P["pending/ JSON (filesystem/dual)"]
-  STORE --> W[event-watcher / pending redb]
-  P --> W
-  W --> RDE[process route-domain-event]
-  RDE --> DEL["subscriber_delivery + testigos FS si dual/filesystem"]
+  EM[Emisor action/process] -->|publish_ecst| PORT["EventManagerPort ^2.0.0 (EventUri)"]
+  PORT --> STORE["sddia-event-manager-host (events.redb)"]
+  STORE -->|claim_pending| W[event-watcher]
+  W -->|event_uri| RDE[process route-domain-event]
+  RDE -->|record_delivery / move_to_dlq| PORT
   RDE --> SUB[Suscriptores catálogo]
-  SUB --> DEL
-  DEL --> SW[event-sweeper / purge store]
+  SUB -->|verify_inline_ecst| PORT
+  PORT -->|list_terminal_events / purge_event| SW[eda_sweep]
 ```
 
-1. Emisores registran el ECST con `record_ecst` / `materialize_pending_domain_event`: en **`redb`** solo store; en **`filesystem`** JSON en `eda_bus.pending`; en **`dual`** ambos.
-2. `event-watcher` reclama entregas **`Pending`** vía `EventManagerPort`; invoca `route-domain-event` con `event_uri` canónico (`eda://{family}/{event_id}`).
-3. `route-domain-event` carga el ECST desde fichero si existe; si no, desde store (`load_dispatched_event`). En fan-out, los suscriptores con `process`/`action`/`tool` reciben el ECST en línea (`event` + `event_id` en stdin JSON); `event_uri` es compatibilidad lab. Valida contra la Clase catalogada.
-4. Fan-out asíncrono a suscriptores (`event-subscriptions.json`). Cada intento actualiza `subscriber_delivery` cuando el store está activo; en `filesystem`/`dual` también materializa testigos JSON bajo `processing/subscribers/`.
+1. Emisores registran el ECST mediante `EventManagerPort::publish_ecst` (`materialize_pending_domain_event` / `write_fractal_event`), obteniendo un `EventUri` canónico (`eda://{family}/{event_id}`).
+2. `event-watcher` reclama entregas **`Pending`** vía `EventManagerPort::claim_pending`; invoca `route-domain-event` con `event_uri` canónico (`eda://{family}/{event_id}`).
+3. `route-domain-event` carga y verifica el ECST exclusivamente mediante `EventManagerPort::get_event` / `verify_inline_ecst`. En fan-out, los suscriptores reciben el ECST en línea (`event` + `event_id` + `event_uri` en stdin JSON) y se valida contra la Clase catalogada.
+4. Fan-out asíncrono a suscriptores (`event-domain-subscriptions.json`, `event-telemetry-subscriptions.json`, `event-orchestration-subscriptions.json`). Cada intento actualiza `subscriber_delivery` mediante `EventManagerPort::record_delivery`.
 5. Resultado por suscriptor: `success`, `failed` o `skipped-<motivo>` en la respuesta del router; en store se persisten como `DeliveryStatus` (`success`, `failed`, `skipped`). **Prohibido** registrar `success` cuando el handler no produjo efecto (laudo AUT-20).
-6. Idempotencia ante re-enrutado: `terminal_witness_exists` consulta entrega terminal en **`subscriber_delivery`** (modo store) **y/o** testigo en `processed_subscribers` / `dead_letter_subscribers` (modo FS).
-7. Dead-letter: índice `dead_letter_index` en store y/o cabecera en `dead-letter/`; replay vía `EventStore::replay` / CLI `--replay-dead-letter`. Reintentos del watcher: hasta 3 intentos por clave de ruta.
-8. `event-sweeper` sigue siendo recolector de artefactos FS stale en modos con fichero; en **`redb`** puro la purga del padre y filas terminales es responsabilidad del store y de `try_sweep_event` / `purge_store_event`.
+6. Idempotencia ante re-enrutado: `terminal_witness_exists` consulta entregas terminales exclusivamente en **`subscriber_delivery`** vía `EventManagerPort::list_deliveries`.
+7. Dead-letter: `EventManagerPort::move_to_dlq` registra el fallo en `dead_letter_index`; replay vía `EventManagerPort::replay_dlq`. Reintentos del watcher: hasta 3 intentos por clave de ruta.
+8. Higiene y retención: `eda_sweep` consulta `EventManagerPort::list_terminal_events` y ejecuta `EventManagerPort::purge_event` sin operaciones `std::fs` sobre colas.
 9. **`PullRequest_Presented` → `pull-request-review`:** antes del subprocess, `resolve_pull_request_lifecycle` (gh → rama remota → ref `pull/N/head`) activa `merge_already_done` si el PR ya está mergeado; evita dead-letter por checkout cuando la rama fue podada post-merge.
 
 ## 5. Aseguramiento forense de payload (laudo Ola C)

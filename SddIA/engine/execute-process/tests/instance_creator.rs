@@ -62,7 +62,7 @@ use std::path::Path;
             !unit.contains(&format!("{}/SddIA/daemons", repo.display())),
             "ExecStart no debe ser repo forjador"
         );
-        assert!(instance.join(".events/pending").is_dir());
+        assert!(!instance.join(".events").exists());
         assert!(instance
             .join(".SddIA/systemd/sddia-email-watcher@.service")
             .is_file());
@@ -118,12 +118,10 @@ use std::path::Path;
         assert_eq!(smoke["mode"], "native-topology+local-qa");
         assert_eq!(smoke["success"], true);
         assert_eq!(smoke["checks"]["local_qa_emitted"], false);
-        let pending_n = instance
-            .join(".events/pending")
-            .read_dir()
-            .unwrap()
-            .count();
-        assert_eq!(pending_n, 0, "F-SMOKE-01: no Local_QA_Requested en pending");
+        assert!(
+            !instance.join(".events").exists(),
+            "F-SMOKE-01: sin topología FS .events en instancia hija"
+        );
     }
 
     #[test]
