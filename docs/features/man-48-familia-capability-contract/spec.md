@@ -2,6 +2,9 @@
 
 
 
+
+
+
 feature_name: man-48-familia-capability-contract
 created: "2026-11-22"
 updated: "2026-11-22"
@@ -12,7 +15,7 @@ persist_ref: docs/features/man-48-familia-capability-contract
 pbi_ref: MAN-48
 document_id: PBI-FAMILIA-CAPABILITY-CONTRACT-POLIMORFISMO
 status: diseno-aprobado
-execution_id: "9745b97a-4bcd-4993-bc32-200cf79cbc3a"
+execution_id: "a5fba947-f8c0-406c-b61f-9118bd175466"
 ---
 # Especificación Técnica — man-48-familia-capability-contract
 
