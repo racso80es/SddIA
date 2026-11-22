@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `8a78b9a1-e54b-4749-a2ca-0efb262d3caf` | 2026-11-22 | AUT-99: guarda Fail-Fast TTY, --request-file y paridad capsule-json-io v2.0 en sddia-io, sddia-qa y sddia-evolution-register | CANONICO | `SddIA/evolution/8a78b9a1-e54b-4749-a2ca-0efb262d3caf.md` |
 | `f8418993-fc83-430b-bb6d-6b51c3c277c9` | 2026-11-22 | MAN-51: cerrar punto ciego de gate-event-manager-port sobre sddia-daemon-runtime y erradicar residuos .events | CANONICO | `SddIA/evolution/f8418993-fc83-430b-bb6d-6b51c3c277c9.md` |
 | `ab3365ad-8352-4cef-9e76-7f39b1c41907` | 2026-11-22 | AUT-97: eximir prefijos lab _forge_hu_ y _linear_e2e_ en project_binding::core_nested_index_exempt, guard RAII en forge_hu y .gitignore | CANONICO | `SddIA/evolution/ab3365ad-8352-4cef-9e76-7f39b1c41907.md` |
 | `7966d58f-b59b-4f56-8957-8ab35abdc919` | 2026-11-22 | MAN-48: consolidación de la familia capability-contract (contrato legal, índice, motor y aduanas QA) | CANONICO | `SddIA/evolution/7966d58f-b59b-4f56-8957-8ab35abdc919.md` |
