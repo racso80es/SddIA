@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `d1685963-5daf-4c3a-aab4-f766c5e226b8` | 2026-11-22 | MAN-54: alias operation↔lifecycle_operation y fail-loud en update vacío en forjas/entity-manager, preservación de context en process update, recalc-process-hash-signatures multi-root y update gobernado de meta-contratos SddIA/*/*-contract.md | CANONICO | `SddIA/evolution/d1685963-5daf-4c3a-aab4-f766c5e226b8.md` |
 | `5eeeb86e-9de4-4bfa-a051-9b54e0c480db` | 2026-11-22 | MAN-53: endurecer apto_coherence C5 (matriz AC/CA), veto de checks troncales NO_APTO en apto_coherence y pull-request-review, y verificación física de directorios efímeros en raíz (delivery-close-cycle y accept-pr) | CANONICO | `SddIA/evolution/5eeeb86e-9de4-4bfa-a051-9b54e0c480db.md` |
 | `8e47108c-1d40-423c-9985-d80d64d5c1c2` | 2026-11-22 | MAN-52: ampliar sddia-runtime-parity a 9 órganos vivos, paridad MainPID systemd, disparo por diff git en validacion_runtime_parity, frescura en verify-compiled-capsules y script sync-live-organs.sh | CANONICO | `SddIA/evolution/8e47108c-1d40-423c-9985-d80d64d5c1c2.md` |
 | `8a78b9a1-e54b-4749-a2ca-0efb262d3caf` | 2026-11-22 | AUT-99: guarda Fail-Fast TTY, --request-file y paridad capsule-json-io v2.0 en sddia-io, sddia-qa y sddia-evolution-register | CANONICO | `SddIA/evolution/8a78b9a1-e54b-4749-a2ca-0efb262d3caf.md` |

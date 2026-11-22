@@ -70,35 +70,41 @@ fn flag_value<'a>(args: &'a [String], flag: &str) -> Option<&'a str> {
         .map(|s| s.as_str())
 }
 
-fn run_recalc(repo: &Path, args: &[String]) -> i32 {
+fn recalc_process_hash_signatures(
+    repo: &Path,
+    write: bool,
+    stems: Option<&[String]>,
+) -> Result<usize, String> {
     use execute_process::core::parser::load_frontmatter_yaml;
+    use execute_process::core::resolver::process_search_roots;
     use execute_process::forges::common::{refresh_process_hash, sha256_phases_integrity};
     use serde_json::Value;
     use serde_yaml::Value as YamlValue;
 
-    let write = has_flag(args, "--write");
-    let mut stems: Option<Vec<String>> = None;
-    if let Some(pos) = args.iter().position(|a| a == "--files") {
-        stems = Some(args[(pos + 1)..].to_vec());
-    }
-    let process_dir = repo.join("SddIA/process");
+    let roots = process_search_roots(repo)?;
     let skip = ["process-contract", "index"];
     let mut changed = 0usize;
-    let mut entries: Vec<_> = fs::read_dir(&process_dir)
-        .map(|rd| {
-            rd.filter_map(|e| e.ok())
-                .map(|e| e.path())
-                .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("md"))
-                .collect()
-        })
-        .unwrap_or_default();
+    let mut entries: Vec<std::path::PathBuf> = Vec::new();
+    for dir in roots {
+        if !dir.is_dir() {
+            continue;
+        }
+        if let Ok(rd) = fs::read_dir(&dir) {
+            for e in rd.flatten() {
+                let p = e.path();
+                if p.extension().and_then(|x| x.to_str()) == Some("md") {
+                    entries.push(p);
+                }
+            }
+        }
+    }
     entries.sort();
     for md in entries {
         let stem = md.file_stem().and_then(|s| s.to_str()).unwrap_or("");
         if skip.contains(&stem) {
             continue;
         }
-        if let Some(ref list) = stems {
+        if let Some(list) = stems {
             if !list.iter().any(|s| s == stem) {
                 continue;
             }
@@ -129,23 +135,40 @@ fn run_recalc(repo: &Path, args: &[String]) -> i32 {
             continue;
         }
         if write {
-            if let Err(e) = refresh_process_hash(&md) {
-                eprintln!("{}: {e}", md.display());
-                return 1;
-            }
+            refresh_process_hash(&md)?;
         }
+        let rel = md
+            .strip_prefix(repo)
+            .unwrap_or(&md)
+            .to_string_lossy()
+            .replace('\\', "/");
         eprintln!(
-            "{}: {} -> {}",
-            md.file_name().unwrap_or_default().to_string_lossy(),
+            "{rel}: {} -> {}",
             &old[..old.len().min(16)],
             &new[..new.len().min(16)]
         );
         changed += 1;
     }
-    if changed == 0 {
-        println!("recalc-process-hash-signatures: no changes");
+    Ok(changed)
+}
+
+fn run_recalc(repo: &Path, args: &[String]) -> i32 {
+    let write = has_flag(args, "--write");
+    let mut stems: Option<Vec<String>> = None;
+    if let Some(pos) = args.iter().position(|a| a == "--files") {
+        stems = Some(args[(pos + 1)..].to_vec());
     }
-    0
+    match recalc_process_hash_signatures(repo, write, stems.as_deref()) {
+        Ok(0) => {
+            println!("recalc-process-hash-signatures: no changes");
+            0
+        }
+        Ok(_) => 0,
+        Err(e) => {
+            eprintln!("{e}");
+            1
+        }
+    }
 }
 
 fn main() {
@@ -259,4 +282,48 @@ fn main() {
         }
     };
     std::process::exit(code);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::recalc_process_hash_signatures;
+    use execute_process::core::parser::load_frontmatter_yaml;
+    use std::fs;
+
+    #[test]
+    fn recalc_covers_core_and_codex_process_roots() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/process")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/library/codexes/codex-se/process")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"process":"SddIA/process","process_domain_roots":["SddIA/library/codexes/codex-se/process"]}}"#,
+        )
+        .unwrap();
+
+        let core_md = repo.join("SddIA/process/core-proc.md");
+        let codex_md = repo.join("SddIA/library/codexes/codex-se/process/codex-proc.md");
+        let sample = "---\nuuid: \"u1\"\nname: p\nversion: \"1.0.0\"\nhash_signature: sha256:0000000000000000\nphases:\n- name: F1\n  intent: algo\n---\n\n# p\n";
+        fs::write(&core_md, sample).unwrap();
+        fs::write(&codex_md, sample).unwrap();
+
+        let changed = recalc_process_hash_signatures(repo, true, None).expect("recalc");
+        assert_eq!(changed, 2);
+
+        let core_fm = load_frontmatter_yaml(&core_md).unwrap();
+        let codex_fm = load_frontmatter_yaml(&codex_md).unwrap();
+        assert_ne!(
+            core_fm.get("hash_signature").and_then(|v| v.as_str()),
+            Some("sha256:0000000000000000")
+        );
+        assert_ne!(
+            codex_fm.get("hash_signature").and_then(|v| v.as_str()),
+            Some("sha256:0000000000000000")
+        );
+
+        let second = recalc_process_hash_signatures(repo, true, None).expect("idempotent");
+        assert_eq!(second, 0);
+    }
 }

@@ -191,7 +191,7 @@ fn creator_inputs_from_entity(
             merge_maps(&base, fields)
         }
         "process" => {
-            // process_phases / process_version: solo si vienen en seed.
+            // process_phases / process_version / process_context: solo si vienen en seed.
             // Default stub en update destruiría genoma rico vía patch_process_phases_update.
             let mut fields: Map<String, Value> = Map::from_iter([
                 ("process_name".into(), seed_field(seed, "process_name", json!(entity_name))),
@@ -199,7 +199,6 @@ fn creator_inputs_from_entity(
                     "process_description".into(),
                     seed_field(seed, "process_description", json!(format!("Proceso {entity_name}"))),
                 ),
-                ("process_context".into(), seed_field(seed, "process_context", json!("ecosystem-evolution"))),
                 ("process_contract_version".into(), seed_field(seed, "process_contract_version", json!("1.3.0"))),
                 ("process_aliases".into(), seed_field(seed, "process_aliases", json!([]))),
             ]);
@@ -215,6 +214,7 @@ fn creator_inputs_from_entity(
                 fields.insert("process_version".into(), json!(ver));
             }
             for optional_key in [
+                "process_context",
                 "process_jurisdiction",
                 "process_domain_root",
                 "workspace_template",
@@ -565,12 +565,37 @@ fn workspace_template(process_def: &ProcessDef) -> Result<String, String> {
         .ok_or_else(|| "workspace_template ausente".into())
 }
 
+fn normalize_lifecycle_inputs(inputs: &Value) -> Value {
+    let mut out = inputs.clone();
+    if let Some(obj) = out.as_object_mut() {
+        let has_canonical = obj
+            .get("lifecycle_operation")
+            .and_then(|v| v.as_str())
+            .map(|s| !s.trim().is_empty())
+            .unwrap_or(false);
+        if !has_canonical {
+            if let Some(op) = obj
+                .get("operation")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                obj.insert("lifecycle_operation".into(), json!(op));
+            }
+        }
+    }
+    out
+}
+
 pub fn run(
     repo: &Path,
     process_def: &ProcessDef,
     phases: &[Value],
     process_inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
+    let normalized_inputs = normalize_lifecycle_inputs(process_inputs);
+    let process_inputs = &normalized_inputs;
+
     if process_inputs
         .get("lifecycle_operation")
         .and_then(|v| v.as_str())
@@ -806,5 +831,53 @@ mod tests {
         assert_eq!(inputs["process_inputs"][0]["audit_date"], json!("ISO"));
         assert_eq!(inputs["process_outputs"][0]["summary"], json!("conteos"));
         assert_eq!(inputs["phase_invocations"], json!([]));
+        assert!(inputs.get("process_context").is_none());
+    }
+
+    #[test]
+    fn process_update_preserves_existing_context_when_process_context_omitted() {
+        let tmp = tempfile::tempdir().unwrap();
+        let proc_path = tmp.path().join("demo.md");
+        std::fs::write(
+            &proc_path,
+            "---\nuuid: \"u-ctx\"\nname: demo\nversion: \"1.0.0\"\ncontext:\n- knowledge-management\n- source-control\nhash_signature: sha256:0000\nphases:\n- name: P1\n  intent: old\n---\n\n# demo\n",
+        )
+        .unwrap();
+
+        let child = creator_inputs_from_entity(
+            "process",
+            "demo",
+            "update",
+            &json!({"process_phases": [{"name": "P1", "intent": "new"}]}),
+        )
+        .expect("child inputs");
+        assert!(child.get("process_context").is_none());
+
+        crate::forges::common::patch_process_phases_update(
+            &proc_path,
+            &child["process_phases"],
+            None,
+            None,
+            None,
+            child.get("process_context"),
+        )
+        .expect("patch");
+
+        let updated = std::fs::read_to_string(&proc_path).unwrap();
+        assert!(updated.contains("knowledge-management"), "{updated}");
+        assert!(updated.contains("source-control"), "{updated}");
+        assert!(!updated.contains("ecosystem-evolution"), "{updated}");
+    }
+
+    #[test]
+    fn normalize_lifecycle_inputs_honors_operation_alias_and_canonical_precedence() {
+        let alias_only = normalize_lifecycle_inputs(&json!({"operation": "update"}));
+        assert_eq!(alias_only["lifecycle_operation"], json!("update"));
+
+        let both = normalize_lifecycle_inputs(&json!({
+            "lifecycle_operation": "update",
+            "operation": "create"
+        }));
+        assert_eq!(both["lifecycle_operation"], json!("update"));
     }
 }

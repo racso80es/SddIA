@@ -28,6 +28,18 @@ pub fn str_field(inputs: &Value, key: &str, default: &str) -> String {
     optional_str(inputs, key).unwrap_or_else(|| default.to_string())
 }
 
+/// Resuelve `lifecycle_operation` aceptando `"operation"` como alias (D-E2: canónico prevalece).
+pub fn resolve_lifecycle_operation(inputs: &Value, default: &str) -> String {
+    optional_str(inputs, "lifecycle_operation")
+        .or_else(|| optional_str(inputs, "operation"))
+        .unwrap_or_else(|| default.to_string())
+}
+
+/// Hash SHA-256 prefijado (`sha256:<hex>`) sobre texto UTF-8 arbitrario.
+pub fn sha256_text(text: &str) -> String {
+    format!("sha256:{:x}", Sha256::digest(text.as_bytes()))
+}
+
 /// JSON canónico: claves ordenadas, separadores `,` `:` sin espacios (paridad Python).
 pub fn canon_json_sorted(value: &Value) -> String {
     let sorted = sort_json(value);

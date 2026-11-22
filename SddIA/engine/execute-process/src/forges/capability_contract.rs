@@ -9,7 +9,7 @@
 //!   inserta el bloque **por texto** (el resto del fichero queda byte a byte).
 //! - Clase solo nativa: sin proceso `*-creator`, sin fallback.
 
-use super::common::{generate_uuid, required_str, sha256_canon, str_field};
+use super::common::{generate_uuid, required_str, resolve_lifecycle_operation, sha256_canon, str_field};
 use crate::core::paths::load_paths_config;
 use jsonschema::Validator;
 use serde_json::{json, Value};
@@ -253,7 +253,7 @@ pub fn run_capability_contract_forge(repo: &Path, inputs: &Value) -> Result<Valu
     validate_contract_name(&name)?;
     let dir = contracts_dir(repo)?;
     let path = dir.join(format!("{name}.schema.json"));
-    let lifecycle = str_field(inputs, "lifecycle_operation", "create");
+    let lifecycle = resolve_lifecycle_operation(inputs, "create");
 
     match lifecycle.as_str() {
         "create" => forge_create(repo, inputs, &path, &name),
