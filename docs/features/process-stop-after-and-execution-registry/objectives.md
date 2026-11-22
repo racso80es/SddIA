@@ -1,6 +1,7 @@
 ---
 
 
+
 feature_name: process-stop-after-and-execution-registry
 created: "2026-11-21"
 updated: "2026-11-21"
@@ -18,7 +19,7 @@ norm_ref: features-documentation-pattern@1.3.2
 agents: mayeuta
 supersedes:
   - INFORME-SDDIA-TQM-STOP-AFTER
-execution_id: "d7301123-c49f-4627-90f1-ff1fe78bcc66"
+execution_id: "1e7ca2f5-f505-46a6-a0be-c7a82d0b58a6"
 ---
 # Objetivos — process-stop-after-and-execution-registry
 

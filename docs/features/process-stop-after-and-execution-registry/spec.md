@@ -1,6 +1,7 @@
 ---
 
 
+
 feature_name: process-stop-after-and-execution-registry
 created: "2026-11-21"
 updated: "2026-11-21"
@@ -23,7 +24,7 @@ supersedes:
 related:
   - docs/features/kalma2-agent-verdict-barrier/
   - SddIA/process/process-contract.md
-execution_id: "d7301123-c49f-4627-90f1-ff1fe78bcc66"
+execution_id: "1e7ca2f5-f505-46a6-a0be-c7a82d0b58a6"
 ---
 # Especificación técnica — process-stop-after-and-execution-registry
 
