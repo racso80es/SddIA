@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-51-gate-sddia-daemon-runtime-residuos-events
 created: "2026-11-22"
 updated: "2026-11-22"
@@ -15,7 +16,6 @@ version_plan: "1.0.0"
 status: blueprint-ready
 audit_ref: docs/audits/informe_de_diagnostico_desacople_eventos_sddia.md
 norm_ref: features-documentation-pattern@1.3.1
-execution_id: "e8cd02b1-e76c-4a3c-a44c-1cef29bc4704"
 phases:
   - id: Ola 0
     name: Precondición y Oráculo en Rojo
@@ -27,6 +27,7 @@ phases:
     name: Contrato e Higiene Documental (AC-4)
   - id: Ola 4
     name: Verificación Completa y Paridad Host
+execution_id: "acbb527e-4d9c-4e3d-954c-91a9d8c7d1b6"
 ---
 # Plan de ejecución — man-51-gate-sddia-daemon-runtime-residuos-events
 

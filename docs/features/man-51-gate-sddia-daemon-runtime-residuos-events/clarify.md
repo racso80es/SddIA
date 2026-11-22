@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-51-gate-sddia-daemon-runtime-residuos-events
 created: "2026-11-22"
 updated: "2026-11-22"
@@ -19,7 +20,7 @@ norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-51.jsonl"
 audit_ref: docs/audits/informe_de_diagnostico_desacople_eventos_sddia.md
 agents: mayeuta
-execution_id: "e8cd02b1-e76c-4a3c-a44c-1cef29bc4704"
+execution_id: "acbb527e-4d9c-4e3d-954c-91a9d8c7d1b6"
 ---
 # Clarificación — man-51-gate-sddia-daemon-runtime-residuos-events
 
