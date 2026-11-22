@@ -216,6 +216,12 @@ fn path_in_scope(
             return true;
         }
     }
+    if matches!(
+        norm,
+        ".SddIA/state/active-executions.json" | ".SddIA/state/active-executions.json.tmp"
+    ) {
+        return true;
+    }
     false
 }
 
@@ -1483,5 +1489,62 @@ mod tests {
         let main_tip = lines.next().unwrap_or("");
         assert_eq!(feature_tip, main_tip, "la rama nueva queda sobre la base actualizada");
         assert!(!feature_tip.is_empty());
+    }
+
+    #[test]
+    fn active_executions_registry_is_not_reported_as_dirty() {
+        use crate::engine::execution_registry::{active_execution_entry, upsert_active_execution};
+        use std::process::Command;
+
+        assert!(path_in_scope(
+            ".SddIA/state/active-executions.json",
+            "docs/features/x",
+            None,
+            None,
+            None,
+        ));
+        assert!(path_in_scope(
+            ".SddIA/state/active-executions.json.tmp",
+            "docs/features/x",
+            None,
+            None,
+            None,
+        ));
+
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        write_cumulo(root);
+        link_capsule_target(root);
+        fs::create_dir_all(root.join(".SddIA/state")).unwrap();
+        fs::write(root.join(".SddIA/state/.keep"), "").unwrap();
+        init_git_repo(root);
+
+        upsert_active_execution(
+            root,
+            "exec-aut-98",
+            active_execution_entry(
+                "feature",
+                ".SddIA/workspaces/feature/exec-aut-98/",
+                Some("docs/features/x"),
+                "running",
+                &[],
+            ),
+        )
+        .unwrap();
+        assert!(root.join(".SddIA/state/active-executions.json").is_file());
+
+        // Verificar que git status lo ve sin seguimiento y dirty_paths_outside_scope lo excluye.
+        let status = Command::new("git")
+            .args(["status", "--porcelain"])
+            .current_dir(root)
+            .output()
+            .unwrap();
+        assert!(String::from_utf8_lossy(&status.stdout)
+            .contains(".SddIA/state/active-executions.json"));
+
+        std::env::remove_var("SDDIA_LAB_ALLOW_DIRTY");
+        let dirty =
+            dirty_paths_outside_scope(root, root, "docs/features/x", None, None, None).unwrap();
+        assert!(dirty.is_empty(), "active-executions.json no debe ser dirty: {dirty:?}");
     }
 }

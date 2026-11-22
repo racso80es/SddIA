@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `040df37a-4efe-4453-bbe1-0a5eccafd5fa` | 2026-11-22 | AUT-98: eximir .SddIA/state/active-executions.json en workspace_init::path_in_scope y .gitignore | CANONICO | `SddIA/evolution/040df37a-4efe-4453-bbe1-0a5eccafd5fa.md` |
 | `03d4d828-2cb8-424c-b6e4-c029dbe70a72` | 2026-11-22 | MAN-34: control contractual stop_after por phase_id, registro incremental write-ahead y resume | CANONICO | `SddIA/evolution/03d4d828-2cb8-424c-b6e4-c029dbe70a72.md` |
 | `74f9be57-c585-443e-8593-897abafa3322` | 2026-11-21 | MAN-46 (KZ-3): aduana parental_close_gate (hito no cierra PBI padre ni tracker sin AC cerrados o refine previo) | CANONICO | `SddIA/evolution/74f9be57-c585-443e-8593-897abafa3322.md` |
 | `a2e2fe0c-24ee-4fac-b946-4dfbde523f4d` | 2026-11-20 | MAN-45 (KZ-2): accept-pr exige atestación qa-attestation/1.0 aprobado del mismo tree_sha emitida por pull-request-review | CANONICO | `SddIA/evolution/a2e2fe0c-24ee-4fac-b946-4dfbde523f4d.md` |
