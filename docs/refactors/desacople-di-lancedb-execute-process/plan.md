@@ -1,4 +1,5 @@
 ---
+
 feature_name: desacople-di-lancedb-execute-process
 created: "2026-11-23"
 process: refactorization
@@ -6,12 +7,25 @@ branch_name: refactor/desacople-di-lancedb-execute-process
 persist_ref: docs/refactors/desacople-di-lancedb-execute-process
 tracker_ref: AUT-119
 phases:
-  - "T1: Purgar sddia-event-manager-host de lancedb_thought_repo y podar allowlists/eda-unit-backend.toml"
-  - "T2: Crear satélite nativo unificado SddIA/tools/lancedb-memory-adapter con sddia-io, retry y tests"
-  - "T3: Desacoplar execute-process (Cargo.toml, memory_evolution_ingest_core, user_preference, aiua_stimulus, tests)"
-  - "T4: Retirar thought-graph-access y actualizar SSOT (cumulo.paths.json, capability-taxonomy, capability-bindings, tools/index.md)"
-  - "T5: Configurar default-members en SddIA/Cargo.toml, actualizar scripts y CI (.github/workflows/sddia-index-qa.yml)"
-  - "T6: Registrar en SddIA/evolution/, ejecutar suites de test, gates sddia-qa y sellar validacion.md APTO"
+  - id: T1
+    name: "Purgar sddia-event-manager-host de lancedb_thought_repo y podar allowlists/eda-unit-backend.toml"
+    status: done
+  - id: T2
+    name: "Crear satélite nativo unificado SddIA/tools/lancedb-memory-adapter con sddia-io, retry y tests"
+    status: done
+  - id: T3
+    name: "Desacoplar execute-process (Cargo.toml, memory_evolution_ingest_core, user_preference, aiua_stimulus, tests)"
+    status: done
+  - id: T4
+    name: "Retirar thought-graph-access y actualizar SSOT (cumulo.paths.json, capability-taxonomy, capability-bindings, tools/index.md)"
+    status: done
+  - id: T5
+    name: "Configurar default-members en SddIA/Cargo.toml, actualizar scripts y CI (.github/workflows/sddia-index-qa.yml)"
+    status: done
+  - id: T6
+    name: "Registrar en SddIA/evolution/, ejecutar suites de test, gates sddia-qa y sellar validacion.md APTO"
+    status: done
+execution_id: "9d87f216-2e4f-4ade-8c8d-820e265f62b0"
 ---
 # Plan — desacople-di-lancedb-execute-process (`AUT-119`)
 
