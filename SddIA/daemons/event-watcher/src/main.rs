@@ -1,5 +1,6 @@
 use sddia_daemon_runtime::{
-    find_repo_root, load_bus_topology, BusTopology, DaemonRuntime,
+    find_repo_root, install_termination_handlers, load_bus_topology, shutdown_requested,
+    sleep_interruptible, BusTopology, DaemonRuntime,
 };
 use sddia_core::ports::event_manager::{
     ClaimPendingRequest, DeliveryStatus, EventManagerError, GetEventRequest,
@@ -105,7 +106,7 @@ fn spawn_heartbeat_worker(
 ) -> thread::JoinHandle<()> {
     thread::spawn(move || {
         let mut fails = 0u32;
-        loop {
+        while !shutdown_requested() {
             let tick_result = {
                 if let Ok(mut rt) = centinela.lock() {
                     rt.tick(&top)
@@ -125,7 +126,9 @@ fn spawn_heartbeat_worker(
                     }
                 }
             }
-            thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
+            if sleep_interruptible(Duration::from_secs(HEARTBEAT_TICK_SECONDS)) {
+                break;
+            }
         }
     })
 }
@@ -329,29 +332,56 @@ fn probe_clock_due_now() -> ProbeClock {
 
 fn invoke_named_probe(repo: &Path, process: &str, inputs: &str, label: &str) {
     let runner = execute_process_bin(repo);
-    match Command::new(&runner)
+    let mut child = match Command::new(&runner)
         .args(["--process", process, "--inputs", inputs])
         .current_dir(repo)
-        .output()
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
     {
-        Ok(out) if out.status.success() => {}
-        Ok(out) => {
-            let err = String::from_utf8_lossy(&out.stderr);
-            let so = String::from_utf8_lossy(&out.stdout);
-            eprintln!(
-                "[WATCHER] {label}: {}",
-                if !err.trim().is_empty() {
-                    err.trim()
-                } else {
-                    so.trim()
-                }
-            );
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("[WATCHER] {label} spawn: {e}");
+            return;
         }
-        Err(e) => eprintln!("[WATCHER] {label} spawn: {e}"),
+    };
+    loop {
+        if shutdown_requested() {
+            let _ = child.kill();
+            let _ = child.wait();
+            return;
+        }
+        match child.try_wait() {
+            Ok(Some(_)) => {
+                if let Ok(out) = child.wait_with_output() {
+                    if !out.status.success() {
+                        let err = String::from_utf8_lossy(&out.stderr);
+                        let so = String::from_utf8_lossy(&out.stdout);
+                        eprintln!(
+                            "[WATCHER] {label}: {}",
+                            if !err.trim().is_empty() {
+                                err.trim()
+                            } else {
+                                so.trim()
+                            }
+                        );
+                    }
+                }
+                return;
+            }
+            Ok(None) => thread::sleep(Duration::from_millis(100)),
+            Err(e) => {
+                eprintln!("[WATCHER] {label} wait: {e}");
+                return;
+            }
+        }
     }
 }
 
 fn tick_probes(repo: &Path, clock: &mut ProbeClock) {
+    if shutdown_requested() {
+        return;
+    }
     if clock.last_audit.elapsed() >= Duration::from_secs(HEARTBEAT_AUDIT_SWEEP_SECONDS) {
         invoke_named_probe(
             repo,
@@ -360,6 +390,9 @@ fn tick_probes(repo: &Path, clock: &mut ProbeClock) {
             "daemon-heartbeat-audit",
         );
         clock.last_audit = Instant::now();
+    }
+    if shutdown_requested() {
+        return;
     }
     if clock.last_vitality.elapsed() >= Duration::from_secs(clock.vitality_secs) {
         invoke_named_probe(repo, "system-vitality-probe", "{}", "system-vitality-probe");
@@ -632,9 +665,14 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
     let top = load_bus_topology(&repo);
     let mut centinela = DaemonRuntime::new(repo.clone(), "event-watcher");
     centinela.bootstrap(&top)?;
+    if !once {
+        if let Err(e) = install_termination_handlers() {
+            eprintln!("[WATCHER] {e}");
+        }
+    }
     let shared = Arc::new(Mutex::new(centinela));
     let book: SharedBook = Arc::new(Mutex::new(RouteBook::new()));
-    let _hb = if once {
+    let hb = if once {
         None
     } else {
         Some(spawn_heartbeat_worker(Arc::clone(&shared), top.clone()))
@@ -652,7 +690,7 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
             targets.iter().map(|(p, _)| p.display().to_string()).collect::<Vec<_>>()
         );
     }
-    loop {
+    while !shutdown_requested() {
         tick_probes(&repo, &mut probes);
         claim_store_pending(&repo, &top, &book);
         {
@@ -690,10 +728,19 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
             println!("[WATCHER] Ciclo único (--once). Fin.");
             break;
         }
-        thread::sleep(Duration::from_secs(POLL_SECONDS));
+        if sleep_interruptible(Duration::from_secs(POLL_SECONDS)) {
+            break;
+        }
+    }
+    if let Some(h) = hb {
+        let _ = h.join();
     }
     if let Ok(mut rt) = shared.lock() {
-        rt.shutdown();
+        if once {
+            rt.shutdown();
+        } else {
+            rt.graceful_shutdown(&top);
+        }
     }
     Ok(())
 }

@@ -3,6 +3,12 @@ pub mod eda_sweep;
 pub mod github_bridge;
 pub mod linear_bridge;
 pub mod linear_bridge_webhook;
+pub mod termination;
+
+pub use termination::{
+    clear_shutdown_request, install_termination_handlers, request_shutdown, shutdown_requested,
+    sleep_interruptible,
+};
 
 use chrono::Utc;
 use sddia_core::ports::event_manager::record_ecst as record_ecst_on_port;
@@ -343,6 +349,12 @@ impl DaemonRuntime {
         }
     }
 
+    /// Best-effort `shutting_down` + borrado de lock (D-SH / AUT-111).
+    pub fn graceful_shutdown(&mut self, top: &BusTopology) {
+        let _ = self.tick_with_status(top, "shutting_down");
+        self.shutdown();
+    }
+
     fn read_lock(&self) -> Result<Option<DaemonLock>, String> {
         if !self.lock_path.is_file() {
             return Ok(None);
@@ -569,4 +581,24 @@ mod tests {
         let _ = fs::remove_dir_all(&root);
     }
 
+    #[test]
+    fn graceful_shutdown_removes_lock_and_emits_shutting_down() {
+        let (base, mut rt, top) = fixture_runtime();
+        rt.bootstrap(&top).unwrap();
+        assert!(rt.lock_path.is_file());
+        rt.graceful_shutdown(&top);
+        assert_eq!(side_status(&rt.repo), "shutting_down");
+        assert!(!rt.lock_path.is_file());
+        let _ = fs::remove_dir_all(base);
+    }
+
+    #[test]
+    fn request_shutdown_flag_visible() {
+        clear_shutdown_request();
+        assert!(!shutdown_requested());
+        request_shutdown();
+        assert!(shutdown_requested());
+        clear_shutdown_request();
+        assert!(!shutdown_requested());
+    }
 }

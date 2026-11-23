@@ -2,14 +2,14 @@
 
 use chrono::Utc;
 use sddia_daemon_runtime::{
-    find_repo_root, load_bus_topology, write_fractal_event, BusTopology, DaemonRuntime,
+    find_repo_root, install_termination_handlers, load_bus_topology, shutdown_requested,
+    sleep_interruptible, write_fractal_event, BusTopology, DaemonRuntime,
 };
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -532,7 +532,7 @@ fn spawn_heartbeat_worker(
 ) -> thread::JoinHandle<()> {
     thread::spawn(move || {
         let mut fails = 0u32;
-        loop {
+        while !shutdown_requested() {
             let tick_result = {
                 if let Ok(mut rt) = centinela.lock() {
                     rt.tick(&top)
@@ -554,7 +554,9 @@ fn spawn_heartbeat_worker(
                     }
                 }
             }
-            thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
+            if sleep_interruptible(Duration::from_secs(HEARTBEAT_TICK_SECONDS)) {
+                break;
+            }
         }
     })
 }
@@ -679,7 +681,7 @@ fn poll_once(
     Ok(())
 }
 
-fn run_loop(running: Arc<AtomicBool>) -> Result<(), i32> {
+fn run_loop() -> Result<(), i32> {
     let repo = find_repo_root().map_err(|e| {
         eprintln!("{e}");
         1
@@ -695,11 +697,11 @@ fn run_loop(running: Arc<AtomicBool>) -> Result<(), i32> {
         1
     })?;
     let shared = Arc::new(Mutex::new(centinela));
-    let _hb = spawn_heartbeat_worker(Arc::clone(&shared), top.clone());
+    let hb = spawn_heartbeat_worker(Arc::clone(&shared), top.clone());
     println!(
         "[email-watcher] bucle iniciado (keepalive heartbeat cada {HEARTBEAT_TICK_SECONDS}s)"
     );
-    while running.load(Ordering::SeqCst) {
+    while !shutdown_requested() {
         if let Err(e) = poll_once(&repo, &top, &cfg, || {
             if let Ok(mut rt) = shared.lock() {
                 rt.note_stimulus();
@@ -710,15 +712,13 @@ fn run_loop(running: Arc<AtomicBool>) -> Result<(), i32> {
         if let Ok(mut rt) = shared.lock() {
             let _ = rt.tick(&top);
         }
-        let step = Duration::from_secs(1);
-        let mut waited = 0u64;
-        while waited < cfg.poll_secs && running.load(Ordering::SeqCst) {
-            thread::sleep(step);
-            waited += 1;
+        if sleep_interruptible(Duration::from_secs(cfg.poll_secs)) {
+            break;
         }
     }
+    let _ = hb.join();
     if let Ok(mut rt) = shared.lock() {
-        rt.shutdown();
+        rt.graceful_shutdown(&top);
     }
     Ok(())
 }
@@ -737,11 +737,9 @@ fn once_envelope(success: bool, message: &str) -> Value {
 }
 
 fn main() {
-    let running = Arc::new(AtomicBool::new(true));
-    let flag = Arc::clone(&running);
-    let _ = ctrlc::set_handler(move || {
-        flag.store(false, Ordering::SeqCst);
-    });
+    if let Err(e) = install_termination_handlers() {
+        eprintln!("[email-watcher] {e}");
+    }
     let once = env::args().any(|a| a == "--once");
     if once {
         let repo = match find_repo_root() {
@@ -782,7 +780,7 @@ fn main() {
         }
         return;
     }
-    if let Err(code) = run_loop(running) {
+    if let Err(code) = run_loop() {
         std::process::exit(code);
     }
 }
