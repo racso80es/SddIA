@@ -35,7 +35,7 @@ git_manager_invoked: false
 git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge session native_state; git_changes = path-assert FS (sin inventar gitStdout)
 git_evidence_source: evidence-bridge-session-native_state+path-assert-fs
 formal_execute_process: true
-formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff bajo persist_ref refactor ausente; workspace inject ac6c3a4e… solo transcript.md (sin § Runtime evidence machine)'
+formal_evidence_detail: session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff bajo persist_ref refactor ausente; workspace inject ac6c3a4e… solo transcript.md (sin § Runtime evidence machine)
 handoff_machine_file: absent
 handoff_evidence_block_pre: absent
 evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado; machine handoff en persist_ref ausente (no se usa handoff de docs/fixes/… otra entrega)
@@ -118,7 +118,7 @@ situational_notes:
 - Fase Veredicto y bloqueo · CID f1c2aa1e-cef7-4181-a713-16da156d7368 · exec ac6c3a4e-b8ab-4513-9903-62bc83eab999
 - 'Evidence Bridge session: source=native_state · TECH/GIT APTO · notes=idempotent-hit'
 - 'Evidence Bridge machine bajo persist_ref: ausente (_agent_handoff.md no materializado en docs/refactors/resolucion-estricta-capsulas-skill-tool/); workspace inject solo transcript.md; no se copia handoff de docs/fixes/… (otra entrega)'
-- 'persist_ref inject vacío → resuelto por cascade+branch a docs/refactors/resolucion-estricta-capsulas-skill-tool (PERSIST_REF_RESOLVED APTO; PERSIST_REF_INJECTED NO_APTO residual)'
+- persist_ref inject vacío → resuelto por cascade+branch a docs/refactors/resolucion-estricta-capsulas-skill-tool (PERSIST_REF_RESOLVED APTO; PERSIST_REF_INJECTED NO_APTO residual)
 - F2 heredado Triaje documental PASS_F2_DOC — objectives+clarify+spec+plan+implementation+execution (+ YAML) + evolution → APTO
 - F3_TECH_GATE APTO — proxy TECH_FORMAL_EXECUTE_PROCESS APTO + execution.md Ola 0/rojo narrado; KA-GATE-TRUNK-2 prohíbe F3=NO_APTO con global APTO
 - F4_CERBERO_RBAC APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked/permanent
@@ -136,13 +136,14 @@ situational_notes:
 - accept_pr_handoff pending — L-HANDOFF-F5; MERGE/pr_url ausentes
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs)
-validated_head_sha: ''
+validated_head_sha: 19aa2dc58853a3b02e9932235ddecd5a7517a7ae
 head_commit_sha_fs: a42081dde2df0de9920b9696172a67093b1e8958
-validated_base_sha: ''
-validated_tree_sha: ''
-diff_digest: ''
-execution_id: "ac6c3a4e-b8ab-4513-9903-62bc83eab999"
+validated_base_sha: efb7449fc68ecc7b26738cfa8dd89becd399a19a
+validated_tree_sha: a55baee00191e7ffa53bb943079e7a46b6b3e96c
+diff_digest: sha256:1181eb1d48f754c54e1b8cbbedf5cb2d9ef3a96d16d0914d587566fc7bebcf2b
+execution_id: ac6c3a4e-b8ab-4513-9903-62bc83eab999
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
