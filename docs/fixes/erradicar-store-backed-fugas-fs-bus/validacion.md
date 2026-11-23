@@ -1,6 +1,4 @@
 ---
-
-
 feature_name: erradicar-store-backed-fugas-fs-bus
 created: 2026-11-23
 updated: 2026-11-23T16:50:00Z
@@ -118,10 +116,14 @@ situational_notes:
 - BRANCH_WORKTREE_SYNC APTO — .git/HEAD → refs/heads/fix/erradicar-store-backed-fugas-fs-bus (= inject); tip FS d7817c385287f978d6aa2a9ae5a193213f05af99
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs)
-validated_head_sha: d7817c385287f978d6aa2a9ae5a193213f05af99
+validated_head_sha: ce9507b08c82f19708ded376bfc9c72551c58ef6
 head_commit_sha_fs: d7817c385287f978d6aa2a9ae5a193213f05af99
-execution_id: "f954cde9-5fd1-44a8-94d6-1d9581f97697"
+execution_id: f954cde9-5fd1-44a8-94d6-1d9581f97697
+validated_base_sha: a8719b46d7238207174fc83a3b876bbf9850bfa0
+validated_tree_sha: 0b6b33602161eda10b5a3ddfd354f593f82ec70a
+diff_digest: sha256:3da3e31e9cc735af7fc26c82aac3a67f05c2c5aea516d41d52f033f4e63c6ca3
 ---
+
 # Validación — Triaje documental (Argos · pull-request-review)
 
 ## Veredicto de fase
