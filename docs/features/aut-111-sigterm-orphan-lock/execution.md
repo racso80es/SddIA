@@ -1,4 +1,5 @@
 ---
+
 feature_name: aut-111-sigterm-orphan-lock
 created: "2026-11-23"
 updated: "2026-11-23"
@@ -7,15 +8,15 @@ branch_name: feat/aut-111-sigterm-orphan-lock
 persist_ref: docs/features/aut-111-sigterm-orphan-lock
 pbi_ref: AUT-111
 tracker_ref: AUT-111
-execution_id: "a4111dfb-8fd3-4792-b2a8-b43f89fe369a"
 items_applied:
   - ola0-oracle-red-baseline
   - runtime-sigterm-shared
   - wire-six-sentinels
   - audit-orphan-grace
   - release-sync-and-gates
+  - corpus-validacion-cierre
+execution_id: "a63234f0-08d8-421f-8d50-77b69b1355fe"
 ---
-
 # Ejecución — aut-111-sigterm-orphan-lock
 
 ## Baseline Ola 0 (hermético)
