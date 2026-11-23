@@ -1,5 +1,4 @@
 ---
-
 feature_name: aut-111-sigterm-orphan-lock
 created: 2026-11-23
 updated: 2026-11-23T15:25:00Z
@@ -35,7 +34,7 @@ git_manager_invoked: false
 git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; git_changes = path-assert FS (sin inventar gitStdout)
 git_evidence_source: evidence-bridge-session-native_state+handoff-machine+path-assert-fs
 formal_execute_process: true
-formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-23T14:21:29Z TECH/GIT APTO notes=idempotent-hit'
+formal_evidence_detail: session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-23T14:21:29Z TECH/GIT APTO notes=idempotent-hit
 handoff_machine_file: present
 handoff_evidence_block_pre: present
 evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit + machine native_state @ 2026-11-23T14:21:29Z); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado
@@ -136,8 +135,13 @@ situational_notes:
 - accept_pr_handoff pending — L-HANDOFF-F5; MERGE/pr_url ausentes
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs)
-execution_id: "a5f95b61-ab09-4659-8554-403502c4a239"
+execution_id: a5f95b61-ab09-4659-8554-403502c4a239
+validated_base_sha: 68953373a3510ef2ecadc6bb528043d0b5ac1f93
+validated_head_sha: 2e6df0d0de06df87054573c41a7c9ae9ef5b6296
+validated_tree_sha: da757dd910a1292ea4493f7f5be5b70e38e79a14
+diff_digest: sha256:187dba8603c2e7820eafd67c122003918be5d7677b29a29fd96f3ccf11b1f5bd
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
