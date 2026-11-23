@@ -1,7 +1,6 @@
 //! Handler nativo `notify-humanized-pr-merged` — estático ola 1 + síntesis Gemini fail-soft.
 
 use super::capsules::{invoke_git_manager, invoke_tool_capsule_json};
-use sddia_io::outbound_lab::truthy_env;
 use serde_json::{json, Value};
 use std::env;
 use std::path::Path;
@@ -315,22 +314,41 @@ fn invoke_send_telegram(repo: &Path, message: &str) -> Result<(), String> {
     }
 }
 
-pub fn run_from_event(repo: &Path, event: &Value) -> Result<NotifyOutcome, String> {
+pub trait HumanizedNotifyPort {
+    fn infer_synthesis(&self, repo: &Path, event: &Value) -> SynthesisOutcome;
+    fn send_telegram(&self, repo: &Path, message: &str) -> Result<(), String>;
+}
+
+pub struct ProdHumanizedNotifyPort;
+
+impl HumanizedNotifyPort for ProdHumanizedNotifyPort {
+    fn infer_synthesis(&self, repo: &Path, event: &Value) -> SynthesisOutcome {
+        try_infer_synthesis(repo, event)
+    }
+
+    fn send_telegram(&self, repo: &Path, message: &str) -> Result<(), String> {
+        invoke_send_telegram(repo, message)
+    }
+}
+
+pub fn run_from_event_with_port(
+    repo: &Path,
+    event: &Value,
+    port: &dyn HumanizedNotifyPort,
+) -> Result<NotifyOutcome, String> {
     let Some(static_msg) = pr_merged_static_message(event) else {
         return Ok(NotifyOutcome::SkippedEmpty);
     };
-    // CI/lab: smoke iota y jobs sin credenciales Telegram (paridad send-telegram-notification).
-    if truthy_env("SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM") {
-        return Ok(NotifyOutcome::Sent {
-            synthesized: false,
-        });
-    }
-    let outcome = try_infer_synthesis(repo, event);
+    let outcome = port.infer_synthesis(repo, event);
     let msg = assemble_humanized_message(&static_msg, &outcome);
-    invoke_send_telegram(repo, &msg)?;
+    port.send_telegram(repo, &msg)?;
     Ok(NotifyOutcome::Sent {
         synthesized: outcome.is_ready(),
     })
+}
+
+pub fn run_from_event(repo: &Path, event: &Value) -> Result<NotifyOutcome, String> {
+    run_from_event_with_port(repo, event, &ProdHumanizedNotifyPort)
 }
 
 /// Camino genérico `try_run_native` (solo payload): envelope ausente → sin correlación.
