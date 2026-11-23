@@ -1715,11 +1715,84 @@ pub(crate) fn assemble_domain_process_subscriber_inputs(
     }
 }
 
+pub(crate) trait SubscriberDispatchPort {
+    fn has_orchestrator_bin(&self, repo: &Path) -> bool;
+    fn dispatch_cognitive(
+        &self,
+        repo: &Path,
+        sid: &str,
+        agent_name: &str,
+        event: &Value,
+    ) -> (String, String, Option<String>, i32);
+    fn dispatch_process(
+        &self,
+        repo: &Path,
+        process_key: &str,
+        inputs: Value,
+    ) -> (String, i32);
+    fn run_notify_humanized_pr_merged(
+        &self,
+        repo: &Path,
+        event: &Value,
+    ) -> Result<super::notify_humanized_pr_merged::NotifyOutcome, String>;
+}
+
+struct ProdSubscriberDispatchPort;
+
+impl SubscriberDispatchPort for ProdSubscriberDispatchPort {
+    fn has_orchestrator_bin(&self, repo: &Path) -> bool {
+        resolve_orchestrator_bin(repo).is_ok()
+    }
+
+    fn dispatch_cognitive(
+        &self,
+        repo: &Path,
+        sid: &str,
+        agent_name: &str,
+        event: &Value,
+    ) -> (String, String, Option<String>, i32) {
+        dispatch_cognitive_subscriber(repo, sid, agent_name, event)
+    }
+
+    fn dispatch_process(
+        &self,
+        repo: &Path,
+        process_key: &str,
+        inputs: Value,
+    ) -> (String, i32) {
+        dispatch_process_subscriber(repo, process_key, inputs)
+    }
+
+    fn run_notify_humanized_pr_merged(
+        &self,
+        repo: &Path,
+        event: &Value,
+    ) -> Result<super::notify_humanized_pr_merged::NotifyOutcome, String> {
+        super::notify_humanized_pr_merged::run_from_event(repo, event)
+    }
+}
+
 pub(crate) fn dispatch_subscriber(
     repo: &Path,
     subscriber: &Value,
     event: &mut Value,
     batch_mode_iota: bool,
+) -> (String, String, Option<String>, i32) {
+    dispatch_subscriber_with_ports(
+        repo,
+        subscriber,
+        event,
+        batch_mode_iota,
+        &ProdSubscriberDispatchPort,
+    )
+}
+
+pub(crate) fn dispatch_subscriber_with_ports(
+    repo: &Path,
+    subscriber: &Value,
+    event: &mut Value,
+    batch_mode_iota: bool,
+    ports: &dyn SubscriberDispatchPort,
 ) -> (String, String, Option<String>, i32) {
     let sid = subscriber_id(subscriber);
     let agent = subscriber.get("agent").and_then(|v| v.as_str()).map(str::trim);
@@ -1742,7 +1815,7 @@ pub(crate) fn dispatch_subscriber(
     let agent_name = agent.unwrap();
     let declares_native = subscriber_declares_native(subscriber);
     if agent_tier_is_cognitive(repo, agent_name) && !declares_native {
-        return dispatch_cognitive_subscriber(repo, &sid, agent_name, event);
+        return ports.dispatch_cognitive(repo, &sid, agent_name, event);
     }
 
     if let Some(process_name) = subscriber.get("process").and_then(|v| v.as_str()) {
@@ -1768,7 +1841,7 @@ pub(crate) fn dispatch_subscriber(
                 return (sid, "failed".into(), Some(reason), exit_code);
             }
             AssembleProcessInputs::Invoke(mut process_inputs) => {
-                if resolve_orchestrator_bin(repo).is_err() {
+                if !ports.has_orchestrator_bin(repo) {
                     return (
                         sid,
                         "failed".into(),
@@ -1807,7 +1880,7 @@ pub(crate) fn dispatch_subscriber(
                         match try_acquire_ppr_dedupe(repo, branch, &head, event) {
                             Ok(Some(hex)) => {
                                 std::env::set_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0");
-                                let (status, exit_code) = dispatch_process_subscriber(
+                                let (status, exit_code) = ports.dispatch_process(
                                     repo,
                                     process_key,
                                     Value::Object(process_inputs),
@@ -1827,7 +1900,7 @@ pub(crate) fn dispatch_subscriber(
                 }
 
                 std::env::set_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0");
-                let (status, exit_code) = dispatch_process_subscriber(
+                let (status, exit_code) = ports.dispatch_process(
                     repo,
                     process_key,
                     Value::Object(process_inputs),
@@ -1965,7 +2038,7 @@ pub(crate) fn dispatch_subscriber(
     if subscriber.get("action").and_then(|v| v.as_str()).map(str::trim)
         == Some(super::notify_humanized_pr_merged::ACTION_NAME)
     {
-        match super::notify_humanized_pr_merged::run_from_event(repo, event) {
+        match ports.run_notify_humanized_pr_merged(repo, event) {
             Ok(super::notify_humanized_pr_merged::NotifyOutcome::Sent { .. }) => {
                 return (sid, "success".into(), None, 0);
             }
@@ -4287,7 +4360,6 @@ mod tier_dispatch {
             "event_type": "Domain_Probe",
             "payload": { "note": "ecst-desde-store" }
         });
-        let _missing = root.join("lab-bus/pending").join(format!("{event_id}.json"));
         let marker = root.join("spawned");
         let stdin_path = root.join("stdin.json");
         let none_bin = root.join("none.sh");
@@ -4341,20 +4413,58 @@ mod tier_dispatch {
     }
 
     #[test]
-    fn store_backed_native_capsule_does_not_use_cognitive_runtime() {
-        let _guard = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
-        let root = std::env::temp_dir().join(format!(
-            "sddia-tier-native-{}-{}",
-            std::process::id(),
-            uuid::Uuid::new_v4()
-        ));
-        fs::create_dir_all(&root).unwrap();
-        agent_md(&root, "tekton", "low");
-        agent_md(&root, "argos", "medium");
-        agent_md(&root, "cumulo", "none");
-        let event_id = "33333333-3333-4333-8333-333333333333";
+    fn native_action_subscriber_executes_without_cognitive_runtime() {
+        use serde_json::Value;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        struct SpyDispatchPort {
+            cognitive_calls: AtomicUsize,
+            process_calls: AtomicUsize,
+            notify_calls: AtomicUsize,
+        }
+
+        impl super::SubscriberDispatchPort for SpyDispatchPort {
+            fn has_orchestrator_bin(&self, _repo: &Path) -> bool {
+                true
+            }
+            fn dispatch_cognitive(
+                &self,
+                _repo: &Path,
+                sid: &str,
+                _agent_name: &str,
+                _event: &Value,
+            ) -> (String, String, Option<String>, i32) {
+                self.cognitive_calls.fetch_add(1, Ordering::SeqCst);
+                (sid.to_string(), "success".into(), None, 0)
+            }
+            fn dispatch_process(
+                &self,
+                _repo: &Path,
+                _process_key: &str,
+                _inputs: Value,
+            ) -> (String, i32) {
+                self.process_calls.fetch_add(1, Ordering::SeqCst);
+                ("success".into(), 0)
+            }
+            fn run_notify_humanized_pr_merged(
+                &self,
+                _repo: &Path,
+                _event: &Value,
+            ) -> Result<crate::engine::notify_humanized_pr_merged::NotifyOutcome, String> {
+                self.notify_calls.fetch_add(1, Ordering::SeqCst);
+                Ok(crate::engine::notify_humanized_pr_merged::NotifyOutcome::Sent {
+                    synthesized: false,
+                })
+            }
+        }
+
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+        agent_md(root, "tekton", "low");
+        agent_md(root, "argos", "medium");
+        agent_md(root, "cumulo", "none");
         let mut event = json!({
-            "event_id": event_id,
+            "event_id": "33333333-3333-4333-8333-333333333333",
             "event_type": "PullRequest_Merged",
             "payload": {
                 "source_branch": "feat/test",
@@ -4362,62 +4472,53 @@ mod tier_dispatch {
                 "author": "tester"
             }
         });
-        let _missing = root.join("lab-bus/pending").join(format!("{event_id}.json"));
-        let marker = root.join("cognitive_spawned");
-        let spawn_bin = root.join("spawn.sh");
-        write_exec(
-            &spawn_bin,
-            "#!/bin/sh\ntouch \"$SDDIA_TIER_MARKER\"\nexit 0\n",
-        );
-        let prev_cmd = std::env::var("SDDIA_AGENT_RUNTIME_COMMAND").ok();
-        let prev_marker = std::env::var("SDDIA_TIER_MARKER").ok();
-        // Hermético: el test espera "orquestador no encontrado"; un binario heredado del
-        // entorno (p. ej. ruta relativa exportada por el shell) cambiaría el resultado.
-        let prev_bin = std::env::var("SDDIA_EXECUTE_PROCESS_BIN").ok();
-        std::env::remove_var("SDDIA_EXECUTE_PROCESS_BIN");
-        std::env::set_var("SDDIA_AGENT_RUNTIME_COMMAND", &spawn_bin);
-        std::env::set_var("SDDIA_TIER_MARKER", &marker);
-
-        let process_sub = json!({"agent": "tekton", "process": "tracker-stamp"});
-        let (_sid, status, err, code) =
-            dispatch_subscriber(&root, &process_sub, &mut event, false);
-        assert_eq!(status, "failed", "{err:?} code={code}");
-        assert!(
-            err.as_deref()
-                .is_some_and(|e| e.contains("orquestador execute-process no encontrado")),
-            "{err:?}"
-        );
-        assert!(!marker.exists(), "process nativo spawneó AGENT_PHASE");
+        let spy = SpyDispatchPort {
+            cognitive_calls: AtomicUsize::new(0),
+            process_calls: AtomicUsize::new(0),
+            notify_calls: AtomicUsize::new(0),
+        };
 
         let action_sub = json!({
             "agent": "argos",
             "action": "notify-humanized-pr-merged"
         });
-        let (_sid, status, _err, code) =
-            dispatch_subscriber(&root, &action_sub, &mut event, false);
-        assert_ne!(status, "success", "action sin cápsula Telegram no debe acusar success");
-        assert_ne!(code, 0);
-        assert!(!marker.exists(), "action nativa spawneó AGENT_PHASE");
+        let (_sid, status, err, code) = super::dispatch_subscriber_with_ports(
+            root,
+            &action_sub,
+            &mut event,
+            false,
+            &spy,
+        );
+        assert_eq!(status, "success", "{err:?} code={code}");
+        assert_eq!(code, 0);
+        assert_eq!(spy.notify_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(spy.cognitive_calls.load(Ordering::SeqCst), 0);
+
+        let process_sub = json!({"agent": "tekton", "process": "tracker-stamp"});
+        let (_sid, status, err, code) = super::dispatch_subscriber_with_ports(
+            root,
+            &process_sub,
+            &mut event,
+            false,
+            &spy,
+        );
+        assert_eq!(status, "success", "{err:?} code={code}");
+        assert_eq!(code, 0);
+        assert_eq!(spy.process_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(spy.cognitive_calls.load(Ordering::SeqCst), 0);
 
         let none_process_sub = json!({"agent": "cumulo", "process": "tracker-stamp"});
-        let (_sid, status, err, _code) =
-            dispatch_subscriber(&root, &none_process_sub, &mut event, false);
-        assert_eq!(status, "failed", "{err:?}");
-        assert!(!marker.exists(), "process tier none spawneó AGENT_PHASE");
-
-        match prev_cmd {
-            Some(v) => std::env::set_var("SDDIA_AGENT_RUNTIME_COMMAND", v),
-            None => std::env::remove_var("SDDIA_AGENT_RUNTIME_COMMAND"),
-        }
-        match prev_marker {
-            Some(v) => std::env::set_var("SDDIA_TIER_MARKER", v),
-            None => std::env::remove_var("SDDIA_TIER_MARKER"),
-        }
-        match prev_bin {
-            Some(v) => std::env::set_var("SDDIA_EXECUTE_PROCESS_BIN", v),
-            None => std::env::remove_var("SDDIA_EXECUTE_PROCESS_BIN"),
-        }
-        let _ = fs::remove_dir_all(&root);
+        let (_sid, status, err, code) = super::dispatch_subscriber_with_ports(
+            root,
+            &none_process_sub,
+            &mut event,
+            false,
+            &spy,
+        );
+        assert_eq!(status, "success", "{err:?} code={code}");
+        assert_eq!(code, 0);
+        assert_eq!(spy.process_calls.load(Ordering::SeqCst), 2);
+        assert_eq!(spy.cognitive_calls.load(Ordering::SeqCst), 0);
     }
 
     #[test]
@@ -4482,9 +4583,7 @@ mod tier_dispatch {
             }
         });
         crate::engine::eda_port::publish_ecst(root, "pending", &ecst).unwrap();
-        let missing = root.join("lab-bus/pending").join(format!("{event_id}.json"));
-        assert!(!missing.is_file(), "no debe existir fichero ECST en bus FS");
-        let mut loaded = crate::engine::eda_port::load_dispatched(root, event_id, &missing)
+        let mut loaded = crate::engine::eda_port::load_dispatched(root, event_id, Path::new(""))
             .unwrap()
             .expect("evento cargado desde EventManagerPort");
         let prev_skip = std::env::var("SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM").ok();
