@@ -2,7 +2,10 @@ use sddia_daemon_runtime::github_bridge::{
     assimilate_failed_check_runs, failed_check_runs_from_payload, load_bridge_state,
     load_lab_ci_failure_payload, process_pr,
 };
-use sddia_daemon_runtime::{find_repo_root, load_bus_topology, BusTopology, DaemonRuntime};
+use sddia_daemon_runtime::{
+    find_repo_root, install_termination_handlers, load_bus_topology, shutdown_requested,
+    sleep_interruptible, BusTopology, DaemonRuntime,
+};
 use serde_json::{json, Value};
 use std::env;
 use std::fs;
@@ -21,7 +24,7 @@ fn spawn_heartbeat_worker(
 ) -> thread::JoinHandle<()> {
     thread::spawn(move || {
         let mut fails = 0u32;
-        loop {
+        while !shutdown_requested() {
             let tick_result = {
                 if let Ok(mut rt) = centinela.lock() {
                     rt.tick(&top)
@@ -43,7 +46,9 @@ fn spawn_heartbeat_worker(
                     }
                 }
             }
-            thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
+            if sleep_interruptible(Duration::from_secs(HEARTBEAT_TICK_SECONDS)) {
+                break;
+            }
         }
     })
 }
@@ -345,13 +350,22 @@ fn main() {
         std::process::exit(code);
     }
 
-    let _hb = spawn_heartbeat_worker(Arc::clone(&shared), top.clone());
+    if let Err(e) = install_termination_handlers() {
+        eprintln!("[GITHUB-BRIDGE] {e}");
+    }
+    let hb = spawn_heartbeat_worker(Arc::clone(&shared), top.clone());
     println!(
         "[GITHUB-BRIDGE] Iniciado (poll={}s, keepalive heartbeat cada {HEARTBEAT_TICK_SECONDS}s)",
         poll_seconds()
     );
-    loop {
+    while !shutdown_requested() {
         run_cycle(&repo, &shared, &top);
-        thread::sleep(Duration::from_secs(poll_seconds()));
+        if sleep_interruptible(Duration::from_secs(poll_seconds())) {
+            break;
+        }
     }
+    let _ = hb.join();
+    if let Ok(mut rt) = shared.lock() {
+        rt.graceful_shutdown(&top);
+    };
 }

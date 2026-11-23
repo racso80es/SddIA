@@ -14,5 +14,4 @@ uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 imap = "2.4"
 native-tls = "0.2"
-ctrlc = "3.4"
 sha2 = "0.10"

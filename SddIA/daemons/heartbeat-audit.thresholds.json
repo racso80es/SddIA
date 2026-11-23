@@ -1,4 +1,6 @@
 {
   "missed_cycles_threshold": 3,
-  "suspend_skew_seconds": 120
+  "suspend_skew_seconds": 120,
+  "orphan_lock_confirm_sweeps": 2,
+  "orphan_lock_grace_seconds": 45
 }

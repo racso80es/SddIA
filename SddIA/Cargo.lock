@@ -1775,7 +1775,6 @@ name = "email-watcher"
 version = "0.1.0"
 dependencies = [
  "chrono",
- "ctrlc",
  "imap",
  "native-tls",
  "sddia-daemon-runtime",
@@ -2778,7 +2777,6 @@ dependencies = [
 name = "iota-publish-relay"
 version = "0.1.0"
 dependencies = [
- "ctrlc",
  "sddia-daemon-runtime",
  "serde_json",
 ]
@@ -2950,7 +2948,6 @@ dependencies = [
 name = "kalma2-bridge"
 version = "0.1.0"
 dependencies = [
- "ctrlc",
  "sddia-core",
  "sddia-daemon-runtime",
  "sddia-ecosystem-health",
@@ -5251,6 +5248,7 @@ name = "sddia-daemon-runtime"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "ctrlc",
  "hex",
  "hmac",
  "libc",

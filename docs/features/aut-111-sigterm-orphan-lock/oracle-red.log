@@ -1,0 +1,237 @@
+=== OLA 0 BASELINE & ORACLE RED (AUT-111) ===
+--- 1. Root topology check ---
+ABSENT: .events
+ABSENT: orchestration
+ABSENT: telemetry
+ABSENT: _lab
+--- 2. Systemd user units ---
+UNIT                                                           LOAD   ACTIVE SUB     DESCRIPTION
+sddia-email-watcher@home-racso-Proyectos-SddIA.service         loaded active running SddIA email-watcher (home-racso-Proyectos-SddIA)
+sddia-event-watcher@home-racso-Proyectos-SddIA.service         loaded active running SddIA event-watcher (/home/racso/Proyectos/SddIA)
+sddia-github-bridge-watcher@home-racso-Proyectos-SddIA.service loaded active running SddIA github-bridge-watcher (/home/racso/Proyectos/SddIA)
+sddia-iota-publish-relay@home-racso-Proyectos-SddIA.service    loaded active running SddIA iota-publish-relay (/home/racso/Proyectos/SddIA)
+sddia-kalma2-bridge@home-racso-Proyectos-SddIA.service         loaded active running SddIA kalma2-bridge (/home/racso/Proyectos/SddIA)
+sddia-telegram-watcher@home-racso-Proyectos-SddIA.service      loaded active running SddIA telegram-watcher (/home/racso/Proyectos/SddIA)
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+6 loaded units listed. Pass --all to see loaded but inactive units, too.
+To show all installed unit files use 'systemctl list-unit-files'.
+--- 3. Evidence of orphan lock on systemd restart (2026-11-22) ---
+nov 22 19:12:06 racso-mint-portatil kalma2-bridge.sh[54484]: [kalma2-bridge] lock huérfano pid=5095; recuperando
+nov 22 19:12:06 racso-mint-portatil event-watcher.sh[54500]: [event-watcher] lock huérfano pid=5038; recuperando
+nov 22 19:12:06 racso-mint-portatil email-watcher.sh[54552]: [email-watcher] lock huérfano pid=5134; recuperando
+nov 22 19:12:06 racso-mint-portatil github-bridge-watcher.sh[54534]: [github-bridge-watcher] lock huérfano pid=5210; recuperando
+nov 22 19:12:06 racso-mint-portatil iota-publish-relay.sh[54641]: [iota-publish-relay] lock huérfano pid=5259; recuperando
+nov 22 19:12:06 racso-mint-portatil telegram-watcher.sh[54609]: [telegram-watcher] lock huérfano pid=5169; recuperando
+--- 4. Baseline cargo test (daemon_heartbeat & sddia-daemon-runtime) ---
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+   Compiling libc v0.2.186
+   Compiling generic-array v0.14.7
+   Compiling nix v0.31.3
+   Compiling bitflags v2.11.1
+   Compiling num-traits v0.2.19
+   Compiling sddia-eda-catalog v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/sddia-eda-catalog)
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling chrono v0.4.44
+   Compiling hmac v0.12.1
+   Compiling sha2 v0.10.9
+   Compiling getrandom v0.4.2
+   Compiling redb v2.6.4
+   Compiling uuid v1.23.2
+   Compiling sddia-io v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/sddia-io)
+   Compiling ctrlc v3.5.2
+   Compiling sddia-core v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/sddia-core)
+   Compiling sddia-infrastructure-fs-event v1.0.0 (/home/racso/Proyectos/SddIA/SddIA/infrastructure/adapters/fs_event_adapter)
+   Compiling sddia-infrastructure-redb-event v1.0.0 (/home/racso/Proyectos/SddIA/SddIA/infrastructure/adapters/redb_event_adapter)
+   Compiling sddia-event-manager-host v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/sddia-event-manager-host)
+   Compiling sddia-daemon-runtime v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/sddia-daemon-runtime)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.73s
+     Running unittests src/lib.rs (SddIA/target/debug/deps/sddia_daemon_runtime-df7fe1546de37dc7)
+
+running 23 tests
+test eda_sweep::fractal_dlq_tests::all_ok_not_terminal_with_failure ... ok
+test eda_sweep::fractal_dlq_tests::terminal_with_failure_classified_for_dlq ... ok
+test github_bridge::tests::unknown_job_maps_workflow_github_actions ... ok
+test github_bridge::tests::build_bus_event_leaves_delivery_state_empty ... ok
+test linear_bridge::tests::ac11_issue_without_hu_pbi_label_skipped ... ok
+test eda_sweep::fractal_dlq_tests::progress_sweep_leaf_does_not_purge_progress_dirs ... ok
+test linear_bridge::tests::ac12_sync_id_in_comment_suppresses ... ok
+test linear_bridge::tests::ac12_outbound_record_suppresses_event ... ok
+test linear_bridge_webhook::tests::ac13_invalid_signature_emits_nothing ... ok
+test linear_bridge_webhook::tests::ac22_event_envelope_never_contains_secret ... ok
+test termination::tests::request_sets_shutdown_flag ... ok
+test tests::request_shutdown_flag_visible ... ok
+test tests::resolve_execute_process_elf_skips_older_debug ... ok
+ayuda: Usando 'master' como el nombre de la rama inicial. Este nombre de rama predeterminado
+ayuda: está sujeto a cambios. Para configurar el nombre de la rama inicial para usar en todos
+ayuda: de sus nuevos repositorios, reprimiendo esta advertencia, llama a:
+ayuda: 
+ayuda: 	git config --global init.defaultBranch <nombre>
+ayuda: 
+ayuda: Los nombres comúnmente elegidos en lugar de 'master' son 'main', 'trunk' y
+ayuda: 'development'. Se puede cambiar el nombre de la rama recién creada mediante este comando:
+ayuda: 
+ayuda: 	git branch -m <nombre>
+Inicializado repositorio Git vacío en /tmp/sddia-gh-bridge-git-1b0a39f2-aac8-422d-be57-e76f32c03a0f/.git/
+[master (commit-raíz) aafa333] obj
+ 2 files changed, 9 insertions(+)
+ create mode 100644 docs/fixes/demo/objectives.md
+ create mode 100644 docs/fixes/other/objectives.md
+test github_bridge::tests::attach_tracker_reads_objectives_at_head ... ok
+test tests::lock_excludes_duplicate_pid ... ok
+test tests::tick_defaults_alive ... ok
+test linear_bridge_webhook::tests::ac13_valid_signature_emits_webhook_source ... ok
+test tests::tick_rejects_unknown_status ... ok
+test linear_bridge::tests::ac11_state_backlog_to_todo_emits_poll_event ... ok
+test github_bridge::tests::materialize_stamps_catalog_plan ... ok
+test tests::graceful_shutdown_removes_lock_and_emits_shutting_down ... ok
+test github_bridge::tests::failure_emits_once_cancelled_skipped ... ok
+test tests::tick_with_status_degraded_writes_payload ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.28s
+
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+   Compiling getrandom v0.3.4
+   Compiling getrandom v0.4.2
+   Compiling parking_lot_core v0.9.12
+   Compiling errno v0.3.14
+   Compiling socket2 v0.6.5
+   Compiling mio v1.2.2
+   Compiling num_cpus v1.17.0
+   Compiling getrandom v0.2.17
+   Compiling ahash v0.8.12
+   Compiling signal-hook-registry v1.4.8
+   Compiling uuid v1.23.2
+   Compiling rand v0.10.2
+   Compiling parking_lot v0.12.5
+   Compiling rand_core v0.9.5
+   Compiling dashmap v6.2.1
+   Compiling arrow-array v58.4.0
+   Compiling tokio v1.53.1
+   Compiling tempfile v3.27.0
+   Compiling rand_chacha v0.9.0
+   Compiling ring v0.17.14
+   Compiling twox-hash v2.1.4
+   Compiling quick_cache v0.6.24
+   Compiling moka v0.12.16
+   Compiling rand v0.9.5
+   Compiling lz4_flex v0.13.1
+   Compiling lz4-sys v1.11.1+lz4-1.10.0
+   Compiling io-uring v0.7.14
+   Compiling lz4 v1.28.1
+   Compiling memmap2 v0.9.11
+   Compiling rand_xoshiro v0.7.0
+   Compiling jsonb v0.5.6
+   Compiling lindera-dictionary v3.0.7
+   Compiling rand_distr v0.5.1
+   Compiling matrixmultiply v0.3.11
+   Compiling rustls-webpki v0.103.13
+   Compiling dirs-sys v0.5.0
+   Compiling sddia-io v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/sddia-io)
+   Compiling arrow-select v58.4.0
+   Compiling arrow-row v58.4.0
+   Compiling arrow-arith v58.4.0
+   Compiling rustls v0.23.40
+   Compiling arrow-ord v58.4.0
+   Compiling arrow-ipc v58.4.0
+   Compiling arrow-string v58.4.0
+   Compiling object_store v0.13.2
+   Compiling arrow-cast v58.4.0
+   Compiling tokio-util v0.7.19
+   Compiling datafusion-common-runtime v54.1.0
+   Compiling tokio-rustls v0.26.4
+   Compiling tokio-stream v0.1.19
+   Compiling h2 v0.4.19
+   Compiling async-compression v0.4.43
+   Compiling tower v0.5.3
+   Compiling fsst v10.0.0
+   Compiling lindera v3.0.7
+   Compiling sddia-core v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/sddia-core)
+   Compiling arrow-csv v58.4.0
+   Compiling arrow-json v58.4.0
+   Compiling tower-http v0.6.11
+   Compiling lance-arrow-scalar v58.0.0
+   Compiling arrow v58.4.0
+   Compiling lance-arrow-stats v58.0.0
+   Compiling lance-tokenizer v10.0.0
+   Compiling datafusion-common v54.1.0
+   Compiling lance-datagen v10.0.0
+   Compiling hyper v1.11.1
+   Compiling dirs v6.0.0
+   Compiling ndarray v0.16.1
+   Compiling sddia-infrastructure-redb-event v1.0.0 (/home/racso/Proyectos/SddIA/SddIA/infrastructure/adapters/redb_event_adapter)
+   Compiling sddia-infrastructure-fs-event v1.0.0 (/home/racso/Proyectos/SddIA/SddIA/infrastructure/adapters/fs_event_adapter)
+   Compiling nix v0.31.3
+   Compiling lance-arrow v10.0.0
+   Compiling hyper-util v0.1.20
+   Compiling sddia-event-manager-host v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/sddia-event-manager-host)
+   Compiling ctrlc v3.5.2
+   Compiling uuid-simd v0.8.0
+   Compiling sddia-daemon-runtime v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/sddia-daemon-runtime)
+   Compiling referencing v0.26.2
+   Compiling repo-retention-purger v1.0.0 (/home/racso/Proyectos/SddIA/SddIA/tools/repo-retention-purger)
+   Compiling hyper-rustls v0.27.9
+   Compiling reqwest v0.12.28
+   Compiling jsonschema v0.26.2
+   Compiling sddia-ecosystem-health v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/ecosystem-health)
+   Compiling datafusion-expr-common v54.1.0
+   Compiling lance-namespace-reqwest-client v0.8.6
+   Compiling datafusion-physical-expr-common v54.1.0
+   Compiling datafusion-functions-aggregate-common v54.1.0
+   Compiling datafusion-functions-window-common v54.1.0
+   Compiling datafusion-expr v54.1.0
+   Compiling datafusion-physical-expr v54.1.0
+   Compiling datafusion-execution v54.1.0
+   Compiling datafusion-functions v54.1.0
+   Compiling datafusion-functions-aggregate v54.1.0
+   Compiling datafusion-optimizer v54.1.0
+   Compiling datafusion-functions-window v54.1.0
+   Compiling datafusion-physical-plan v54.1.0
+   Compiling datafusion-physical-expr-adapter v54.1.0
+   Compiling datafusion-functions-nested v54.1.0
+   Compiling datafusion-sql v54.1.0
+   Compiling datafusion-session v54.1.0
+   Compiling lance-core v10.0.0
+   Compiling datafusion-datasource v54.1.0
+   Compiling datafusion-catalog v54.1.0
+   Compiling datafusion-pruning v54.1.0
+   Compiling datafusion-datasource-json v54.1.0
+   Compiling datafusion-datasource-csv v54.1.0
+   Compiling lance-namespace v10.0.0
+   Compiling datafusion-physical-optimizer v54.1.0
+   Compiling datafusion-datasource-arrow v54.1.0
+   Compiling lance-select v10.0.0
+   Compiling lance-encoding v10.0.0
+   Compiling lance-io v10.0.0
+   Compiling lance-linalg v10.0.0
+   Compiling lance-file v10.0.0
+   Compiling lance-table v10.0.0
+   Compiling datafusion-functions-table v54.1.0
+   Compiling datafusion-catalog-listing v54.1.0
+   Compiling datafusion v54.1.0
+   Compiling lance-index-core v10.0.0
+   Compiling lance-datafusion v10.0.0
+   Compiling lance-index v10.0.0
+   Compiling lance v10.0.0
+   Compiling lance-namespace-impls v10.0.0
+   Compiling lancedb v0.37.1
+   Compiling sddia-infrastructure-lancedb-evolution v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/infrastructure/adapters/lancedb_evolution_repo)
+   Compiling sddia-infrastructure-lancedb-preferences v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/infrastructure/adapters/lancedb_preferences_repo)
+   Compiling execute-process v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/engine/execute-process)
+error[E0063]: missing fields `orphan_lock_confirm_sweeps` and `orphan_lock_grace_seconds` in initializer of `heartbeat_audit_thresholds::HeartbeatAuditThresholds`
+   --> engine/execute-process/src/engine/handlers/daemon_heartbeat.rs:772:26
+    |
+772 |         let thresholds = HeartbeatAuditThresholds {
+    |                          ^^^^^^^^^^^^^^^^^^^^^^^^ missing `orphan_lock_confirm_sweeps` and `orphan_lock_grace_seconds`
+
+For more information about this error, try `rustc --explain E0063`.
+error: could not compile `execute-process` (lib test) due to 1 previous error

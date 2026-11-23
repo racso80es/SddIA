@@ -1,4 +1,7 @@
-use sddia_daemon_runtime::{find_repo_root, load_bus_topology, BusTopology, DaemonRuntime};
+use sddia_daemon_runtime::{
+    find_repo_root, install_termination_handlers, load_bus_topology, shutdown_requested,
+    sleep_interruptible, BusTopology, DaemonRuntime,
+};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::env;
@@ -8,8 +11,8 @@ use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::{thread, time::Duration};
 
-/// Margen bajo el intervalo de heartbeat (30s) para no bloquear el hilo principal en el límite.
-const POLL_TIMEOUT: u64 = 25;
+/// Margen bajo `TimeoutStopSec=10` de systemd para salir limpio ante SIGTERM.
+const POLL_TIMEOUT: u64 = 5;
 const HEARTBEAT_TICK_SECONDS: u64 = 10;
 const HEARTBEAT_EMIT_FAIL_BUDGET: u32 = 5;
 const CONFLICT_BACKOFF_SECONDS: u64 = 5;
@@ -151,7 +154,7 @@ fn get_updates(token: &str, offset: i64) -> Vec<Value> {
     let agent = ureq::agent();
     match agent
         .get(&url)
-        .timeout(Duration::from_secs(POLL_TIMEOUT + 10))
+        .timeout(Duration::from_secs(POLL_TIMEOUT + 3))
         .call()
     {
         Ok(resp) => {
@@ -184,7 +187,7 @@ fn spawn_heartbeat_worker(
 ) -> thread::JoinHandle<()> {
     thread::spawn(move || {
         let mut fails = 0u32;
-        loop {
+        while !shutdown_requested() {
             let tick_result = {
                 if let Ok(mut rt) = centinela.lock() {
                     rt.tick(&top)
@@ -206,7 +209,9 @@ fn spawn_heartbeat_worker(
                     }
                 }
             }
-            thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
+            if sleep_interruptible(Duration::from_secs(HEARTBEAT_TICK_SECONDS)) {
+                break;
+            }
         }
     })
 }
@@ -442,20 +447,38 @@ fn run_loop(repo: PathBuf, dry_run: bool) -> Result<(), i32> {
         eprintln!("[telegram-watcher] {e}");
         1
     })?;
+    if let Err(e) = install_termination_handlers() {
+        eprintln!("[telegram-watcher] {e}");
+    }
     let shared = Arc::new(Mutex::new(centinela));
-    let _hb = spawn_heartbeat_worker(Arc::clone(&shared), top.clone());
+    let hb = spawn_heartbeat_worker(Arc::clone(&shared), top.clone());
     println!(
         "[telegram-watcher] bucle iniciado (keepalive heartbeat cada {HEARTBEAT_TICK_SECONDS}s)"
     );
-    loop {
-        let mut centinela = shared.lock().map_err(|_| {
-            eprintln!("[telegram-watcher] lock poisoned");
-            1
-        })?;
-        run_once(&repo, &top, dry_run, &mut centinela)?;
+    let mut exit_code: Result<(), i32> = Ok(());
+    while !shutdown_requested() {
+        let mut centinela = match shared.lock() {
+            Ok(g) => g,
+            Err(_) => {
+                eprintln!("[telegram-watcher] lock poisoned");
+                exit_code = Err(1);
+                break;
+            }
+        };
+        if let Err(code) = run_once(&repo, &top, dry_run, &mut centinela) {
+            exit_code = Err(code);
+            break;
+        }
         drop(centinela);
-        thread::sleep(Duration::from_secs(1));
+        if sleep_interruptible(Duration::from_secs(1)) {
+            break;
+        }
     }
+    let _ = hb.join();
+    if let Ok(mut rt) = shared.lock() {
+        rt.graceful_shutdown(&top);
+    }
+    exit_code
 }
 
 fn main() {

@@ -1,16 +1,16 @@
 //! Centinela supervisor: lock + Daemon_Heartbeat + spawn/reap del hijo Node (`server.mjs`).
 //! Ceguera lógica: no lee genoma ni invoca execute-process. Solo vitalidad + /health.
 
-use sddia_daemon_runtime::{find_repo_root, load_bus_topology, DaemonRuntime};
+use sddia_daemon_runtime::{
+    find_repo_root, install_termination_handlers, load_bus_topology, shutdown_requested,
+    sleep_interruptible, DaemonRuntime,
+};
 use std::env;
 use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::thread;
 use std::time::{Duration, Instant};
 
 const DAEMON_NAME: &str = "iota-publish-relay";
@@ -195,12 +195,8 @@ fn main() {
         }
     };
 
-    let stop = Arc::new(AtomicBool::new(false));
-    {
-        let stop_c = Arc::clone(&stop);
-        let _ = ctrlc::set_handler(move || {
-            stop_c.store(true, Ordering::SeqCst);
-        });
+    if let Err(e) = install_termination_handlers() {
+        eprintln!("[{DAEMON_NAME}] {e}");
     }
 
     let health = health_url();
@@ -213,7 +209,7 @@ fn main() {
     let mut child_spawned_at: Option<Instant> = None;
     let mut last_restart = Instant::now() - Duration::from_secs(RESTART_BACKOFF_SECS);
 
-    while !stop.load(Ordering::SeqCst) {
+    while !shutdown_requested() {
         let mut child_alive_now = false;
         if let Some(ref mut c) = child {
             child_alive_now = child_alive(c);
@@ -225,7 +221,9 @@ fn main() {
 
         if child.is_none() {
             if last_restart.elapsed() < Duration::from_secs(RESTART_BACKOFF_SECS) {
-                thread::sleep(Duration::from_millis(200));
+                if sleep_interruptible(Duration::from_millis(200)) {
+                    break;
+                }
             } else {
                 match spawn_node_child(&repo, &relay_dir) {
                     Ok(c) => {
@@ -265,14 +263,16 @@ fn main() {
             child_spawned_at = None;
         }
 
-        thread::sleep(Duration::from_secs(TICK_SECS));
+        if sleep_interruptible(Duration::from_secs(TICK_SECS)) {
+            break;
+        }
     }
 
     if let Some(mut c) = child.take() {
         let _ = c.kill();
         let _ = c.wait();
     }
-    centinela.shutdown();
+    centinela.graceful_shutdown(&top);
     eprintln!("[{DAEMON_NAME}] shutdown limpio");
 }
 

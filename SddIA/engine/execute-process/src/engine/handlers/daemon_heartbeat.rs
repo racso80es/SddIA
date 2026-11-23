@@ -278,6 +278,9 @@ fn record_heartbeat_at(state: &mut Value, repo: &Path, payload: &Value, at: Opti
         entry.insert("status".into(), json!(s));
     }
     entry.remove("fracture_event_id");
+    entry.remove("orphan_suspect_since");
+    entry.remove("orphan_dead_sweeps");
+    entry.remove("orphan_suspect_pid");
     daemons.insert(daemon_id.to_string(), Value::Object(entry));
 }
 
@@ -445,6 +448,110 @@ pub fn effective_heartbeat_baseline(
     }
 }
 
+fn clear_orphan_suspect(state: &mut Value, daemon_id: &str) {
+    let Some(entry) = state
+        .as_object_mut()
+        .and_then(|o| o.get_mut("daemons"))
+        .and_then(|d| d.as_object_mut())
+        .and_then(|d| d.get_mut(daemon_id))
+        .and_then(|v| v.as_object_mut())
+    else {
+        return;
+    };
+    entry.remove("orphan_suspect_since");
+    entry.remove("orphan_dead_sweeps");
+    entry.remove("orphan_suspect_pid");
+}
+
+fn handle_dead_pid_lock(
+    repo: &Path,
+    state: &mut Value,
+    daemon_id: &str,
+    pid: i32,
+    lock: &Value,
+    thresholds: &HeartbeatAuditThresholds,
+) -> Result<Option<Value>, String> {
+    let is_shutting_down = state
+        .get("daemons")
+        .and_then(|d| d.get(daemon_id))
+        .and_then(|e| e.get("status"))
+        .and_then(|v| v.as_str())
+        == Some("shutting_down");
+    if is_shutting_down {
+        let _ = remove_lock(repo, daemon_id);
+        let daemons = state
+            .as_object_mut()
+            .and_then(|o| o.get_mut("daemons"))
+            .and_then(|d| d.as_object_mut())
+            .ok_or("state daemons invalid")?;
+        let mut entry = daemons
+            .get(daemon_id)
+            .and_then(|v| v.as_object())
+            .cloned()
+            .unwrap_or_default();
+        entry.insert("classification".into(), json!("clean_shutdown"));
+        entry.remove("orphan_suspect_since");
+        entry.remove("orphan_dead_sweeps");
+        entry.remove("orphan_suspect_pid");
+        daemons.insert(daemon_id.to_string(), Value::Object(entry));
+        return Ok(None);
+    }
+
+    let already_fractured = state
+        .get("daemons")
+        .and_then(|d| d.get(daemon_id))
+        .and_then(|e| e.get("fracture_event_id"))
+        .is_some();
+    if already_fractured {
+        return emit_orphan_lock_fracture(repo, state, daemon_id, pid, lock);
+    }
+
+    let daemons = state
+        .as_object_mut()
+        .and_then(|o| o.get_mut("daemons"))
+        .and_then(|d| d.as_object_mut())
+        .ok_or("state daemons invalid")?;
+    let mut entry = daemons
+        .get(daemon_id)
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+
+    let prev_pid = entry.get("orphan_suspect_pid").and_then(|v| v.as_i64());
+    let (sweeps, suspect_since) = if prev_pid == Some(pid as i64) {
+        let s = entry
+            .get("orphan_dead_sweeps")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0)
+            + 1;
+        let since = entry
+            .get("orphan_suspect_since")
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
+            .unwrap_or_else(iso_now);
+        (s, since)
+    } else {
+        (1, iso_now())
+    };
+
+    entry.insert("orphan_suspect_pid".into(), json!(pid));
+    entry.insert("orphan_suspect_since".into(), json!(suspect_since));
+    entry.insert("orphan_dead_sweeps".into(), json!(sweeps));
+
+    let confirmed_by_sweeps = sweeps >= thresholds.orphan_lock_confirm_sweeps;
+    let confirmed_by_grace = parse_iso(&suspect_since)
+        .is_some_and(|dt| (Utc::now() - dt).num_seconds() >= thresholds.orphan_lock_grace_seconds);
+
+    if !confirmed_by_sweeps && !confirmed_by_grace {
+        entry.insert("classification".into(), json!("orphan_suspect"));
+        daemons.insert(daemon_id.to_string(), Value::Object(entry));
+        return Ok(None);
+    }
+
+    daemons.insert(daemon_id.to_string(), Value::Object(entry));
+    emit_orphan_lock_fracture(repo, state, daemon_id, pid, lock)
+}
+
 fn audit_running_daemon(
     repo: &Path,
     state: &mut Value,
@@ -455,6 +562,7 @@ fn audit_running_daemon(
 ) -> Result<Option<Value>, String> {
     let lock = read_lock(repo, daemon_id);
     let Some(lock) = lock else {
+        clear_orphan_suspect(state, daemon_id);
         return Ok(None);
     };
     let pid = lock.get("pid").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
@@ -471,8 +579,9 @@ fn audit_running_daemon(
         }
     }
     if !pid_alive(pid) {
-        return emit_orphan_lock_fracture(repo, state, daemon_id, pid, &lock);
+        return handle_dead_pid_lock(repo, state, daemon_id, pid, &lock, thresholds);
     }
+    clear_orphan_suspect(state, daemon_id);
 
     if host_suspend {
         return Ok(None);
@@ -772,6 +881,7 @@ mod tests {
         let thresholds = HeartbeatAuditThresholds {
             missed_cycles_threshold: 3,
             suspend_skew_seconds: 60,
+            ..HeartbeatAuditThresholds::default()
         };
         let past = (Utc::now() - chrono::Duration::hours(2))
             .to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
@@ -876,6 +986,12 @@ mod tests {
         )
         .unwrap();
         crate::engine::daemons::write_lock(repo, "kalma2-bridge", 999_999, 30).unwrap();
+        let audit0 = audit_staleness(repo).unwrap();
+        assert!(
+            audit0.fractures.is_empty(),
+            "primer muestreo es sospecha sin fractura: {:?}",
+            audit0.fractures
+        );
         let audit = audit_staleness(repo).unwrap();
         assert_eq!(audit.fractures.len(), 1, "{:?}", audit.fractures);
         let eid = audit.fractures[0]["event_id"].as_str().unwrap();
@@ -913,6 +1029,8 @@ mod tests {
         )
         .unwrap();
         crate::engine::daemons::write_lock(repo, "kalma2-bridge", 999_999, 30).unwrap();
+        let audit0 = audit_staleness(repo).unwrap();
+        assert!(audit0.fractures.is_empty());
         let audit = audit_staleness(repo).unwrap();
         let eid = audit.fractures[0]["event_id"].as_str().unwrap();
         assert!(
@@ -921,6 +1039,75 @@ mod tests {
         );
         let rows = crate::engine::eda_port::load_domain_ecsts(repo, 64).unwrap();
         assert!(rows.iter().any(|e| e["event_id"] == eid));
+    }
+
+    #[test]
+    fn orphan_lock_clears_suspect_when_lock_removed() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
+        let dir = tempfile::TempDir::new().unwrap();
+        let repo = dir.path();
+        std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::create_dir_all(repo.join("lab-bus/pending")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./lab-bus/pending"}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            repo.join("SddIA/daemons/kalma2-bridge.md"),
+            "---\nuuid: \"00000000-0000-4000-8000-000000000099\"\nname: kalma2-bridge\nexecution:\n  heartbeat_interval_seconds: 30\n---\n",
+        )
+        .unwrap();
+        let lock_path =
+            crate::engine::daemons::write_lock(repo, "kalma2-bridge", 999_999, 30).unwrap();
+        let a1 = audit_staleness(repo).unwrap();
+        assert!(a1.fractures.is_empty());
+        std::fs::remove_file(&lock_path).unwrap();
+        let a2 = audit_staleness(repo).unwrap();
+        assert!(a2.fractures.is_empty());
+        let state: Value = serde_json::from_str(
+            &std::fs::read_to_string(repo.join(".SddIA/daemons/state/heartbeat-audit.json")).unwrap(),
+        )
+        .unwrap();
+        assert!(state["daemons"]["kalma2-bridge"]["orphan_dead_sweeps"].is_null());
+    }
+
+    #[test]
+    fn orphan_lock_shutting_down_cleans_lock_without_fracture() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
+        let dir = tempfile::TempDir::new().unwrap();
+        let repo = dir.path();
+        std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::create_dir_all(repo.join("lab-bus/pending")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./lab-bus/pending"}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            repo.join("SddIA/daemons/kalma2-bridge.md"),
+            "---\nuuid: \"00000000-0000-4000-8000-000000000099\"\nname: kalma2-bridge\nexecution:\n  heartbeat_interval_seconds: 30\n---\n",
+        )
+        .unwrap();
+        let hb = repo.join(".SddIA/daemons/state/heartbeats");
+        std::fs::create_dir_all(&hb).unwrap();
+        std::fs::write(
+            hb.join("kalma2-bridge.json"),
+            r#"{"daemon_name":"kalma2-bridge","pid":999999,"timestamp":"2099-01-01T00:00:00Z","status":"shutting_down","source":"side-channel"}"#,
+        )
+        .unwrap();
+        let lock_path =
+            crate::engine::daemons::write_lock(repo, "kalma2-bridge", 999_999, 30).unwrap();
+        let a1 = audit_staleness(repo).unwrap();
+        assert!(a1.fractures.is_empty());
+        assert!(!lock_path.is_file(), "lock debe depurarse en shutting_down");
+        let state: Value = serde_json::from_str(
+            &std::fs::read_to_string(repo.join(".SddIA/daemons/state/heartbeat-audit.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(state["daemons"]["kalma2-bridge"]["classification"], "clean_shutdown");
     }
 
     #[test]

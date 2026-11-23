@@ -9,6 +9,8 @@ use std::path::Path;
 pub struct HeartbeatAuditThresholds {
     pub missed_cycles_threshold: i64,
     pub suspend_skew_seconds: i64,
+    pub orphan_lock_confirm_sweeps: i64,
+    pub orphan_lock_grace_seconds: i64,
 }
 
 impl Default for HeartbeatAuditThresholds {
@@ -16,6 +18,8 @@ impl Default for HeartbeatAuditThresholds {
         Self {
             missed_cycles_threshold: 3,
             suspend_skew_seconds: 120,
+            orphan_lock_confirm_sweeps: 2,
+            orphan_lock_grace_seconds: 45,
         }
     }
 }
@@ -30,6 +34,16 @@ fn parse_thresholds_value(body: &Value) -> HeartbeatAuditThresholds {
     if let Some(v) = body.get("suspend_skew_seconds").and_then(|x| x.as_i64()) {
         if v > 0 {
             t.suspend_skew_seconds = v;
+        }
+    }
+    if let Some(v) = body.get("orphan_lock_confirm_sweeps").and_then(|x| x.as_i64()) {
+        if v > 0 {
+            t.orphan_lock_confirm_sweeps = v;
+        }
+    }
+    if let Some(v) = body.get("orphan_lock_grace_seconds").and_then(|x| x.as_i64()) {
+        if v > 0 {
+            t.orphan_lock_grace_seconds = v;
         }
     }
     t
@@ -96,7 +110,7 @@ mod tests {
         .unwrap();
         fs::write(
             repo.join("SddIA/daemons/heartbeat-audit.thresholds.json"),
-            r#"{"missed_cycles_threshold":3,"suspend_skew_seconds":120}"#,
+            r#"{"missed_cycles_threshold":3,"suspend_skew_seconds":120,"orphan_lock_confirm_sweeps":2,"orphan_lock_grace_seconds":45}"#,
         )
         .unwrap();
         let overlay_dir = repo.join(".SddIA/daemons/state");
@@ -115,12 +129,14 @@ mod tests {
         fs::write(
             dir.path()
                 .join("SddIA/daemons/heartbeat-audit.thresholds.json"),
-            r#"{"missed_cycles_threshold":5,"suspend_skew_seconds":90}"#,
+            r#"{"missed_cycles_threshold":5,"suspend_skew_seconds":90,"orphan_lock_confirm_sweeps":3,"orphan_lock_grace_seconds":60}"#,
         )
         .unwrap();
         let t = load_heartbeat_audit_thresholds(dir.path());
         assert_eq!(t.missed_cycles_threshold, 5);
         assert_eq!(t.suspend_skew_seconds, 90);
+        assert_eq!(t.orphan_lock_confirm_sweeps, 3);
+        assert_eq!(t.orphan_lock_grace_seconds, 60);
     }
 
     #[test]
@@ -128,10 +144,19 @@ mod tests {
         let dir = tempfile::TempDir::new().unwrap();
         write_repo_layout(
             dir.path(),
-            Some(r#"{"missed_cycles_threshold":7,"suspend_skew_seconds":200}"#),
+            Some(r#"{"missed_cycles_threshold":7,"suspend_skew_seconds":200,"orphan_lock_confirm_sweeps":4,"orphan_lock_grace_seconds":90}"#),
         );
         let t = load_heartbeat_audit_thresholds(dir.path());
         assert_eq!(t.missed_cycles_threshold, 7);
         assert_eq!(t.suspend_skew_seconds, 200);
+        assert_eq!(t.orphan_lock_confirm_sweeps, 4);
+        assert_eq!(t.orphan_lock_grace_seconds, 90);
+    }
+
+    #[test]
+    fn defaults_include_orphan_grace() {
+        let t = HeartbeatAuditThresholds::default();
+        assert_eq!(t.orphan_lock_confirm_sweeps, 2);
+        assert_eq!(t.orphan_lock_grace_seconds, 45);
     }
 }

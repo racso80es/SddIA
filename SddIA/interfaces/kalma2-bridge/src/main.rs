@@ -9,7 +9,10 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tiny_http::{Header, Method, Response, Server, StatusCode};
 use uuid::Uuid;
-use sddia_daemon_runtime::{load_bus_topology, DaemonRuntime};
+use sddia_daemon_runtime::{
+    install_termination_handlers, load_bus_topology, shutdown_requested, sleep_interruptible,
+    DaemonRuntime,
+};
 
 mod eda_productive;
 
@@ -2750,37 +2753,48 @@ fn main() {
         eprintln!("[kalma2-bridge] heartbeat bootstrap: {e}");
         std::process::exit(1);
     }
+    if let Err(e) = install_termination_handlers() {
+        eprintln!("[kalma2-bridge] {e}");
+    }
     let shared = Arc::new(Mutex::new(runtime));
-    {
+    let hb = {
         let hb = Arc::clone(&shared);
         let top_hb = top.clone();
-        thread::spawn(move || loop {
-            if let Ok(mut rt) = hb.lock() {
-                if let Err(e) = rt.tick(&top_hb) {
-                    eprintln!("[kalma2-bridge] heartbeat: {e}");
+        thread::spawn(move || {
+            while !shutdown_requested() {
+                if let Ok(mut rt) = hb.lock() {
+                    if let Err(e) = rt.tick(&top_hb) {
+                        eprintln!("[kalma2-bridge] heartbeat: {e}");
+                    }
+                }
+                if sleep_interruptible(Duration::from_secs(10)) {
+                    break;
                 }
             }
-            thread::sleep(Duration::from_secs(10));
-        });
-    }
-    {
-        let stop = Arc::clone(&shared);
-        let _ = ctrlc::set_handler(move || {
-            if let Ok(mut rt) = stop.lock() {
-                rt.shutdown();
-            }
-            std::process::exit(0);
-        });
-    }
+        })
+    };
 
     let repo = Arc::new(repo);
     let ui_root = Arc::new(ui_root);
 
-    for req in server.incoming_requests() {
-        let repo = Arc::clone(&repo);
-        let ui_root = Arc::clone(&ui_root);
-        thread::spawn(move || dispatch(req, repo, ui_root));
+    while !shutdown_requested() {
+        match server.recv_timeout(Duration::from_millis(500)) {
+            Ok(Some(req)) => {
+                let repo = Arc::clone(&repo);
+                let ui_root = Arc::clone(&ui_root);
+                thread::spawn(move || dispatch(req, repo, ui_root));
+            }
+            Ok(None) => {}
+            Err(e) => {
+                eprintln!("[kalma2-bridge] server recv_timeout: {e}");
+                break;
+            }
+        }
     }
+    let _ = hb.join();
+    if let Ok(mut rt) = shared.lock() {
+        rt.graceful_shutdown(&top);
+    };
 }
 
 #[cfg(test)]
