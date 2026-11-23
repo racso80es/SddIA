@@ -106,8 +106,10 @@ fn looks_like_persist_path(s: &str) -> bool {
     let t = s.trim().trim_start_matches("./");
     t.starts_with("docs/features/")
         || t.starts_with("docs/fixes/")
+        || t.starts_with("docs/refactors/")
         || t.contains("/features/")
         || t.contains("/fixes/")
+        || t.contains("/refactors/")
 }
 
 pub fn resolve_persist_ref(repo: &Path, parent_ref_or_persist: &str) -> Option<String> {
@@ -129,7 +131,7 @@ fn scan_persist_for_issue(repo: &Path, issue_ref: &str) -> Option<String> {
     if needle.is_empty() {
         return None;
     }
-    for root_name in ["docs/features", "docs/fixes"] {
+    for root_name in ["docs/features", "docs/fixes", "docs/refactors"] {
         let root = repo.join(root_name);
         let Ok(entries) = fs::read_dir(&root) else {
             continue;
