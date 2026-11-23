@@ -1,6 +1,6 @@
 //! Handler nativo `notify-humanized-pr-merged` — estático ola 1 + síntesis Gemini fail-soft.
 
-use super::capsules::{invoke_capsule_json, invoke_git_manager, invoke_tool_capsule_json};
+use super::capsules::{invoke_git_manager, invoke_tool_capsule_json};
 use sddia_io::outbound_lab::truthy_env;
 use serde_json::{json, Value};
 use std::env;
@@ -299,7 +299,7 @@ pub fn try_infer_synthesis(repo: &Path, event: &Value) -> SynthesisOutcome {
 
 fn invoke_send_telegram(repo: &Path, message: &str) -> Result<(), String> {
     let req = json!({ "message": message });
-    match invoke_capsule_json(repo, "send-telegram-notification", &req, false) {
+    match invoke_tool_capsule_json(repo, "send-telegram-notification", &req, false) {
         Ok(result)
             if result.exit_code == 0 && result.body.get("success") == Some(&json!(true)) =>
         {

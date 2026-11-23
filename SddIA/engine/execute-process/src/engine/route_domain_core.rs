@@ -1,7 +1,7 @@
 //! Núcleo orquestador `route-domain-event` nativo (paridad `route_domain_event_core.py`).
 
 use super::actions;
-use super::capsules::{invoke_capsule_json, invoke_git_manager, invoke_tool_capsule_json};
+use super::capsules::{invoke_git_manager, invoke_tool_capsule_json};
 use super::ecst_validation::{load_event_class_schemas, validate_ecst_instance};
 use super::project_binding::plan_route_for_repo;
 use super::eda_bus_topology::{
@@ -567,7 +567,7 @@ fn build_telegram_message_from_event(event: &Value) -> Option<String> {
 
 fn invoke_send_telegram_notification(repo: &Path, message: &str) -> Result<(bool, Value), String> {
     let req = json!({"message": message});
-    match invoke_capsule_json(repo, "send-telegram-notification", &req, false) {
+    match invoke_tool_capsule_json(repo, "send-telegram-notification", &req, false) {
         Ok(result)
             if result.exit_code == 0 && result.body.get("success") == Some(&json!(true)) =>
         {

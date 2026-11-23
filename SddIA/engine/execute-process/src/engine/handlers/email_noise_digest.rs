@@ -1,7 +1,7 @@
 //! Handler nativo `email-noise-digest` (PBI-EMAIL-NOISE-HEURISTIC-DIGEST).
 //! Batch determinista de ruido Triaje-C. Cero LLM. Cero IMAP.
 
-use super::super::capsules::invoke_capsule_json;
+use super::super::capsules::invoke_tool_capsule_json;
 use super::super::daemons::{iso_now, state_dir, write_json_atomic};
 use crate::envelope::OrchestratorEnvelope;
 use chrono::{DateTime, Utc};
@@ -437,7 +437,7 @@ fn default_notify(
     if let Some(rm) = reply_markup {
         payload["reply_markup"] = rm.clone();
     }
-    let inv = invoke_capsule_json(repo, "send-telegram-notification", &payload, false)?;
+    let inv = invoke_tool_capsule_json(repo, "send-telegram-notification", &payload, false)?;
     if inv.body.get("success") == Some(&json!(true)) {
         return Ok(inv.body);
     }
