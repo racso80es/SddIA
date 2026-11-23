@@ -1,10 +1,11 @@
 ---
+
 id: aut-117-clarify
 tracker_ref: AUT-117
 process: feature
 persist_ref: docs/features/observabilidad-dlq-alertas-kaizen
+execution_id: "9778fc29-5146-4076-bfc8-6a9be0a12ba7"
 ---
-
 # Clarificaciones y Límites — AUT-117
 
 ## Decisiones Cerradas

@@ -1,10 +1,11 @@
 ---
+
 id: aut-117-plan
 tracker_ref: AUT-117
 process: feature
 persist_ref: docs/features/observabilidad-dlq-alertas-kaizen
+execution_id: "9778fc29-5146-4076-bfc8-6a9be0a12ba7"
 ---
-
 # Plan de Implementación — AUT-117
 
 1. Crear `SddIA/engine/execute-process/src/engine/dlq_kaizen_alert.rs` con contrato `DlqAlertSink`, `ProdDlqAlertSink`, anti-recursión, deduplicación por firma y 3 tests unitarios herméticos.

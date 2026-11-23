@@ -1,11 +1,12 @@
 ---
+
 id: aut-117-objectives
 tracker_ref: AUT-117
 process: feature
 persist_ref: docs/features/observabilidad-dlq-alertas-kaizen
 branch: feat/observabilidad-dlq-alertas-kaizen
+execution_id: "9778fc29-5146-4076-bfc8-6a9be0a12ba7"
 ---
-
 # Objetivos — AUT-117: Observabilidad DLQ y Alertas Kaizen
 
 ## Objetivo Principal
