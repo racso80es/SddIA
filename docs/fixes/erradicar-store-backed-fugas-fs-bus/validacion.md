@@ -116,12 +116,12 @@ situational_notes:
 - BRANCH_WORKTREE_SYNC APTO — .git/HEAD → refs/heads/fix/erradicar-store-backed-fugas-fs-bus (= inject); tip FS d7817c385287f978d6aa2a9ae5a193213f05af99
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs)
-validated_head_sha: ce9507b08c82f19708ded376bfc9c72551c58ef6
+validated_head_sha: 3be7786d4d5f877caac98cb9261775ef09b7a5a2
 head_commit_sha_fs: d7817c385287f978d6aa2a9ae5a193213f05af99
 execution_id: f954cde9-5fd1-44a8-94d6-1d9581f97697
 validated_base_sha: a8719b46d7238207174fc83a3b876bbf9850bfa0
-validated_tree_sha: 0b6b33602161eda10b5a3ddfd354f593f82ec70a
-diff_digest: sha256:3da3e31e9cc735af7fc26c82aac3a67f05c2c5aea516d41d52f033f4e63c6ca3
+validated_tree_sha: 5df0b2ed49ce718c32ff2e75925a758640be71e5
+diff_digest: sha256:b53f830dbe6258628172e19bea16deaffda6a60c6a3360269fd409dbdade4eea
 ---
 
 # Validación — Triaje documental (Argos · pull-request-review)
