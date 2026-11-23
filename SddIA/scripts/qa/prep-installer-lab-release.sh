@@ -11,7 +11,7 @@ INSTALLER_LAB_RELEASE_PKGS=(
   event-watcher
   send-telegram-notification
   llm-router
-  thought-graph-access
+  lancedb-memory-adapter
 )
 build_args=(build --release)
 for pkg in "${INSTALLER_LAB_RELEASE_PKGS[@]}"; do

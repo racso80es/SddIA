@@ -1,0 +1,21 @@
+[package]
+name = "lancedb-memory-adapter"
+version = "0.1.0"
+edition = "2021"
+description = "Satélite nativo unificado de memoria vectorial LanceDB (evolution, preferences, thought)"
+
+[[bin]]
+name = "lancedb-memory-adapter"
+path = "src/main.rs"
+
+[dependencies]
+sddia-io = { path = "../../sddia-io" }
+sddia-core-memory = { path = "../../core/memory" }
+user-preference-core = { path = "../../user-preference-core" }
+sddia-infrastructure-lancedb-evolution = { path = "../../infrastructure/adapters/lancedb_evolution_repo" }
+sddia-infrastructure-lancedb-preferences = { path = "../../infrastructure/adapters/lancedb_preferences_repo" }
+sddia-infrastructure-lancedb-thought = { path = "../../infrastructure/adapters/lancedb_thought_repo" }
+serde_json = "1.0"
+
+[dev-dependencies]
+tempfile = "3.10"

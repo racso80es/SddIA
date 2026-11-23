@@ -1,19 +1,63 @@
-//! Ingesta `Domain_Entity_Telemetry_Captured` → LanceDB (puerto `EvolutionStore`).
+//! Ingesta `Domain_Entity_Telemetry_Captured` → proveedor DI `lancedb-memory-adapter`.
 
+use super::capsules::invoke_tool_capsule_json;
 use super::fractal_bus::stamp_fractal_delivery_state_by_id;
 use super::workspace::load_paths_config;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
-use sddia_core_memory::models::evolution_node::{EvolutionEvent, SpatialPolarity};
-use sddia_core_memory::ports::EvolutionStore;
-use sddia_core_memory::services::inference_binding::LocalHashingEmbedder;
-use sddia_core_memory::services::inference_binding::SemanticInference;
-use sddia_infrastructure_lancedb_evolution::{LanceDbEvolutionAdapter, TABLE_EVOLUTION};
 use std::path::{Path, PathBuf};
 
 pub const MEMORY_EVOLUTION_INGEST_SUBSCRIBER_KEY: &str = "cumulo.memory-evolution-ingest";
 const VECTOR_STORE_DEFAULT: &str = ".SddIA/vector_store";
 const LANCEDB_SUBDIR: &str = "lancedb";
+const TABLE_EVOLUTION: &str = "evolution";
+const LANCEDB_ADAPTER_TOOL: &str = "lancedb-memory-adapter";
+
+pub trait EvolutionIngestPort {
+    fn ingest_telemetry(
+        &self,
+        repo: &Path,
+        record_id: &str,
+        polarity: &str,
+        payload: &str,
+        operational_metadata: &Value,
+    ) -> Result<Value, String>;
+}
+
+pub struct CapsuleEvolutionIngestPort;
+
+impl EvolutionIngestPort for CapsuleEvolutionIngestPort {
+    fn ingest_telemetry(
+        &self,
+        repo: &Path,
+        record_id: &str,
+        polarity: &str,
+        payload: &str,
+        operational_metadata: &Value,
+    ) -> Result<Value, String> {
+        let req = json!({
+            "request": {
+                "operation": "evolution.ingest_telemetry",
+                "repository_path": repo.display().to_string(),
+                "record_id": record_id,
+                "polarity": polarity,
+                "payload": payload,
+                "operational_metadata": operational_metadata,
+            }
+        });
+        let cap = invoke_tool_capsule_json(repo, LANCEDB_ADAPTER_TOOL, &req, false)?;
+        if cap.exit_code != 0 || cap.body.get("success") == Some(&json!(false)) {
+            let msg = cap
+                .body
+                .get("error")
+                .and_then(|v| v.as_str())
+                .or_else(|| cap.body.get("message").and_then(|v| v.as_str()))
+                .unwrap_or("lancedb-memory-adapter failed");
+            return Err(msg.to_string());
+        }
+        Ok(cap.body.get("result").cloned().unwrap_or_else(|| json!({})))
+    }
+}
 
 fn sha256_hex(payload: &str) -> String {
     let mut hasher = Sha256::new();
@@ -57,12 +101,30 @@ pub fn vector_store_root(repo: &Path) -> PathBuf {
 }
 
 pub fn lancedb_uri(repo: &Path) -> PathBuf {
+    if let Ok(cfg) = load_paths_config(repo) {
+        if let Some(rel) = cfg
+            .pointer("/paths/lancedbStore")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            return repo.join(rel.trim_start_matches("./"));
+        }
+    }
     vector_store_root(repo).join(LANCEDB_SUBDIR)
 }
 
 /// Procesa un evento domain en ruta relativa; fail-soft hacia el caller vía `ok`.
 pub fn ingest_domain_event_file(repo: &Path, rel_path: &str) -> Value {
-    match ingest_inner(repo, rel_path) {
+    ingest_domain_event_file_with_port(repo, rel_path, &CapsuleEvolutionIngestPort)
+}
+
+pub fn ingest_domain_event_file_with_port(
+    repo: &Path,
+    rel_path: &str,
+    port: &dyn EvolutionIngestPort,
+) -> Value {
+    match ingest_inner(repo, rel_path, port) {
         Ok(v) => v,
         Err(e) => json!({"ok": false, "error": e}),
     }
@@ -70,13 +132,25 @@ pub fn ingest_domain_event_file(repo: &Path, rel_path: &str) -> Value {
 
 /// Entrada de proceso (`event` / `event_id` / `event_uri`); AUT-57.
 pub fn ingest_from_process_inputs(repo: &Path, inputs: &Value) -> Value {
-    match ingest_from_inputs(repo, inputs) {
+    ingest_from_process_inputs_with_port(repo, inputs, &CapsuleEvolutionIngestPort)
+}
+
+pub fn ingest_from_process_inputs_with_port(
+    repo: &Path,
+    inputs: &Value,
+    port: &dyn EvolutionIngestPort,
+) -> Value {
+    match ingest_from_inputs(repo, inputs, port) {
         Ok(v) => v,
         Err(e) => json!({"ok": false, "error": e}),
     }
 }
 
-fn ingest_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, String> {
+fn ingest_from_inputs(
+    repo: &Path,
+    inputs: &Value,
+    port: &dyn EvolutionIngestPort,
+) -> Result<Value, String> {
     let body = super::ecst_input_loader::load_ecst_from_inputs(repo, inputs)?;
     let event_ref = inputs
         .get("event_uri")
@@ -90,16 +164,25 @@ fn ingest_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 .map(|id| format!("eda://domain/{id}"))
                 .unwrap_or_else(|| "unknown".into())
         });
-    ingest_ecst_body(repo, &body, &event_ref)
+    ingest_ecst_body_with_port(repo, &body, &event_ref, port)
 }
 
-fn ingest_inner(repo: &Path, rel_path: &str) -> Result<Value, String> {
+fn ingest_inner(
+    repo: &Path,
+    rel_path: &str,
+    port: &dyn EvolutionIngestPort,
+) -> Result<Value, String> {
     let body = super::ecst_input_loader::load_ecst_from_rel(repo, rel_path)?;
-    ingest_ecst_body(repo, &body, rel_path)
+    ingest_ecst_body_with_port(repo, &body, rel_path, port)
 }
 
 fn resolve_event_id(body: &Value, event_ref: &str) -> String {
-    if let Some(id) = body.get("event_id").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()) {
+    if let Some(id) = body
+        .get("event_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
         return id.to_string();
     }
     if let Ok(uri) = sddia_core::ports::event_manager::EventUri::parse(event_ref) {
@@ -112,7 +195,12 @@ fn resolve_event_id(body: &Value, event_ref: &str) -> String {
         .to_string()
 }
 
-fn ingest_ecst_body(repo: &Path, body: &Value, event_ref: &str) -> Result<Value, String> {
+fn ingest_ecst_body_with_port(
+    repo: &Path,
+    body: &Value,
+    event_ref: &str,
+    port: &dyn EvolutionIngestPort,
+) -> Result<Value, String> {
     let event_id = resolve_event_id(body, event_ref);
 
     let event_type = body
@@ -155,14 +243,10 @@ fn ingest_ecst_body(repo: &Path, body: &Value, event_ref: &str) -> Result<Value,
         .get("success_status")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    let polarity = if success {
-        SpatialPolarity::EfficientSymmetry
+    let polarity_label = if success {
+        "EfficientSymmetry"
     } else {
-        SpatialPolarity::StructuralFracture
-    };
-    let polarity_label = match polarity {
-        SpatialPolarity::EfficientSymmetry => "EfficientSymmetry",
-        SpatialPolarity::StructuralFracture => "StructuralFracture",
+        "StructuralFracture"
     };
 
     let payload_str = serde_json::to_string(&payload).map_err(|e| e.to_string())?;
@@ -173,13 +257,18 @@ fn ingest_ecst_body(repo: &Path, body: &Value, event_ref: &str) -> Result<Value,
         sha256_hex(&payload_str)
     };
 
-    let uri = lancedb_uri(repo);
-    let adapter = LanceDbEvolutionAdapter::open(&uri).map_err(|e| e.to_string())?;
-    if adapter
-        .get_event_by_id(&record_id)
-        .map_err(|e| e.to_string())?
-        .is_some()
-    {
+    let op_meta = json!({
+        "success": success,
+        "entity_id": entity_id,
+        "entity_type": payload.get("entity_type"),
+        "origin_stimulus": payload.get("origin_stimulus"),
+        "duration_ms": metrics.get("duration_ms"),
+        "exit_code": metrics.get("exit_code"),
+        "source_event_id": body.get("event_id"),
+    });
+
+    let res = port.ingest_telemetry(repo, &record_id, polarity_label, &payload_str, &op_meta)?;
+    if res.get("skipped").and_then(|v| v.as_str()) == Some("already_indexed") {
         stamp_fractal_delivery_state_by_id(
             repo,
             &event_id,
@@ -194,26 +283,6 @@ fn ingest_ecst_body(repo: &Path, body: &Value, event_ref: &str) -> Result<Value,
             "table": TABLE_EVOLUTION,
         }));
     }
-
-    let mut event = EvolutionEvent {
-        id: record_id.clone(),
-        polarity,
-        payload: payload_str,
-        operational_metadata: json!({
-            "success": success,
-            "entity_id": entity_id,
-            "entity_type": payload.get("entity_type"),
-            "origin_stimulus": payload.get("origin_stimulus"),
-            "duration_ms": metrics.get("duration_ms"),
-            "exit_code": metrics.get("exit_code"),
-            "source_event_id": body.get("event_id"),
-        }),
-        embedding: None,
-    };
-    LocalHashingEmbedder
-        .embed_event(&mut event)
-        .map_err(|e| e.to_string())?;
-    adapter.store_event(event).map_err(|e| e.to_string())?;
 
     stamp_fractal_delivery_state_by_id(
         repo,

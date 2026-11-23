@@ -16,7 +16,7 @@ else
   while IFS= read -r f; do
     [[ -z "$f" ]] && continue
     case "$f" in
-      SddIA/core/memory/*|SddIA/infrastructure/adapters/lancedb*|SddIA/tools/evolution-register/*|SddIA/engine/execute-process/*|SddIA/Cargo.toml|SddIA/Cargo.lock|.github/workflows/sddia-index-qa.yml)
+      SddIA/core/memory/*|SddIA/infrastructure/adapters/lancedb*|SddIA/tools/lancedb-memory-adapter/*|SddIA/tools/evolution-register/*|SddIA/engine/execute-process/*|SddIA/Cargo.toml|SddIA/Cargo.lock|.github/workflows/sddia-index-qa.yml)
         lance_memory=true
         ;;
     esac

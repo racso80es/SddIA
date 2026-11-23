@@ -86,9 +86,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install protoc (lance-encoding)
-        run: sudo apt-get update -o Acquire::Languages=none && sudo apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-wasip1
@@ -190,9 +187,6 @@ jobs:
           add-job-id-key: "false"
           cache-workspace-crates: "true"
 
-      - name: Install protoc (execute-process / lance deps)
-        run: sudo apt-get update -o Acquire::Languages=none && sudo apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev
-
       - name: EventManagerPort contract & gate (MAN-35)
         working-directory: SddIA
         run: |
@@ -219,7 +213,7 @@ jobs:
         if: needs.changes.outputs.lance_memory == 'true'
         working-directory: SddIA
         run: |
-          cargo test -p sddia-evolution-register -p sddia-core-memory -p sddia-infrastructure-lancedb-thought -p sddia-infrastructure-lancedb-evolution -p execute-process --test memory_evolution_ingest
+          cargo test -p sddia-evolution-register -p sddia-core-memory -p sddia-infrastructure-lancedb-thought -p sddia-infrastructure-lancedb-evolution -p sddia-infrastructure-lancedb-preferences -p lancedb-memory-adapter -p execute-process --test memory_evolution_ingest
 
   eda-iota-smoke-simulate:
     needs: native-build

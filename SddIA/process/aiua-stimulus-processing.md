@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:38fc4d27e9dfb4a1ccafc2f05f7175c736ef1996979fe7b3c9484579e45ae70f
+hash_signature: "sha256:ab1efe666bbd0a5696ad760cd9696d03f1ecb6757570ba8f82b2e0ea10c5393e"
 inputs:
 - 'prompt: string obligatorio'
 - 'context_query: string opcional; default=prompt'
@@ -35,7 +35,7 @@ phases:
   id: despacho_motor
 - delegates_to:
   - action:persist-thought-record
-  intent: Persistir par estímulo/respuesta; el adaptador emite Thought_Persisted.
+  intent: Persistir par estímulo/respuesta vía tool:lancedb-memory-adapter; execute-process emite Thought_Persisted.
   name: Consolidacion-Memoria
   id: consolidacion_memoria
 uuid: 6c595785-e386-402f-b570-0b2aa6343051

@@ -197,57 +197,10 @@ fn batches_to_thoughts(batches: &[RecordBatch]) -> Result<Vec<ThoughtNode>, Memo
 
 pub struct LanceDbThoughtRepo {
     db: lancedb::Connection,
-    repo_root: Option<std::path::PathBuf>,
-    store_path: String,
-}
-
-fn emit_thought_persisted(
-    repo: &Path,
-    thought: &ThoughtNode,
-    store_path: &str,
-) -> Result<(), MemoryStoreError> {
-    let event_id = uuid::Uuid::new_v4().to_string();
-    let status = thought
-        .metadata
-        .get("status")
-        .and_then(|v| v.as_str())
-        .unwrap_or("ACTIVE");
-    let event = serde_json::json!({
-        "event_id": event_id,
-        "event_type": "Thought_Persisted",
-        "event_family": "domain",
-        "timestamp": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
-        "emitter_agent": "lancedb-thought-repo",
-        "payload": {
-            "node_id": thought.node_id,
-            "parent_id": thought.parent_id.clone().unwrap_or_default(),
-            "status": status,
-            "store_path": store_path,
-        },
-        "delivery_state": {},
-    });
-    let mut stamped = event;
-    sddia_eda_catalog::stamp_published_event(repo, &mut stamped).map_err(|e| MemoryStoreError::Io {
-        reason: e,
-    })?;
-    sddia_event_manager_host::with_productive_port(repo, "thought_publish", |port| {
-        sddia_core::ports::event_manager::publish_ecst(port, repo, "pending", &stamped)
-            .map(|_| ())
-            .map_err(|e| e.to_string())
-    })
-    .map_err(|e| MemoryStoreError::Io { reason: e })?;
-    Ok(())
 }
 
 impl LanceDbThoughtRepo {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, MemoryStoreError> {
-        Self::open_with_bus(path, None)
-    }
-
-    pub fn open_with_bus(
-        path: impl AsRef<Path>,
-        repo_root: Option<std::path::PathBuf>,
-    ) -> Result<Self, MemoryStoreError> {
         let path = path.as_ref();
         std::fs::create_dir_all(path).map_err(|e| MemoryStoreError::Io {
             reason: e.to_string(),
@@ -258,11 +211,7 @@ impl LanceDbThoughtRepo {
         let db = rt()
             .block_on(async { lancedb::connect(uri).execute().await })
             .map_err(map_lance)?;
-        let repo = Self {
-            db,
-            repo_root,
-            store_path: path.to_string_lossy().into_owned(),
-        };
+        let repo = Self { db };
         rt().block_on(repo.ensure_table())?;
         Ok(repo)
     }
@@ -363,11 +312,7 @@ impl ThoughtGraphRepository for LanceDbThoughtRepo {
     type Error = MemoryStoreError;
 
     fn store_thought(&self, thought: ThoughtNode) -> Result<(), Self::Error> {
-        rt().block_on(self.upsert(thought.clone()))?;
-        if let Some(repo) = &self.repo_root {
-            emit_thought_persisted(repo, &thought, &self.store_path)?;
-        }
-        Ok(())
+        rt().block_on(self.upsert(thought))
     }
 
     fn get_thought_by_id(&self, node_id: &str) -> Result<Option<ThoughtNode>, Self::Error> {
@@ -512,33 +457,5 @@ mod tests {
             Ok(_) => panic!("expected schema incompatible"),
         };
         assert!(matches!(err, MemoryStoreError::SchemaIncompatible { .. }));
-    }
-
-    #[test]
-    fn store_thought_emits_thought_persisted_when_bus_configured() {
-        let dir = tempdir().unwrap();
-        std::fs::create_dir_all(dir.path().join(".SddIA/runtime")).unwrap();
-        let repo = LanceDbThoughtRepo::open_with_bus(
-            dir.path().join("lancedb"),
-            Some(dir.path().to_path_buf()),
-        )
-        .unwrap();
-        let n = node("emit-me", None, fixture_vec(0.3, 0.1));
-        repo.store_thought(n.clone()).unwrap();
-        let listed = sddia_event_manager_host::with_productive_port(dir.path(), "test_list_pending", |port| {
-            port.list_pending(sddia_core::ports::event_manager::ListPendingRequest {
-                limit: Some(10),
-            })
-            .map_err(|e| e.to_string())
-        })
-        .expect("list");
-        assert_eq!(listed.events.len(), 1);
-        let body = &listed.events[0].ecst;
-        assert_eq!(body["event_type"], "Thought_Persisted");
-        assert_eq!(body["emitter_agent"], "lancedb-thought-repo");
-        assert_eq!(body["payload"]["node_id"], n.node_id);
-        assert_eq!(body["payload"]["parent_id"], "");
-        assert_eq!(body["payload"]["status"], "ACTIVE");
-        assert!(body["payload"].get("biological_vertex_output").is_none());
     }
 }

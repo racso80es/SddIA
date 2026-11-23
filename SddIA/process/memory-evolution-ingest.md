@@ -26,7 +26,7 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # memory-evolution-ingest
 
-Suscriptor de `Domain_Entity_Telemetry_Captured` (fan-out `route-domain`). Indexa el snapshot de ejecución en el store evolution vía puerto `EvolutionStore` (`{paths.vectorStore}/lancedb/`; adapter `lancedb_evolution_repo`). No persiste JSON SSOT paralelo bajo `.SddIA/vector_store/evolution/`.
+Suscriptor de `Domain_Entity_Telemetry_Captured` (fan-out `route-domain`). Indexa el snapshot de ejecución en el store evolution vía puerto DI `EvolutionIngestPort` → `tool:lancedb-memory-adapter` (`{paths.lancedbStore}`; adapter `lancedb_evolution_repo`). No persiste JSON SSOT paralelo bajo `.SddIA/vector_store/evolution/`.
 
 Runtime nativo: `memory_evolution_ingest_core` en `execute-process` (despacho fractal + invocación directa del proceso).
 

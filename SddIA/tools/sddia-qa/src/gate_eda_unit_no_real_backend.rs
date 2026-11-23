@@ -70,7 +70,6 @@ fn path_allowlisted(rel: &str) -> bool {
     if rel.starts_with("SddIA/interfaces/kalma2-bridge/")
         || rel.starts_with("SddIA/tools/event-bus-audit/")
         || rel.starts_with("SddIA/tools/repo-retention-purger/")
-        || rel.starts_with("SddIA/tools/thought-graph-access/")
     {
         return true;
     }

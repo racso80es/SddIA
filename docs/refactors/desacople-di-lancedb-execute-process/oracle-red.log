@@ -1,0 +1,45 @@
+=== ORACLE RED: cargo tree -p execute-process (lancedb|lance|arrow|datafusion|tokio) ===
+├── sddia-infrastructure-lancedb-evolution v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/infrastructure/adapters/lancedb_evolution_repo)
+│   ├── lancedb v0.37.1
+│   │   ├── arrow v58.4.0
+│   │   │   ├── arrow-arith v58.4.0
+│   │   │   │   ├── arrow-array v58.4.0
+│   │   │   │   │   ├── arrow-buffer v58.4.0
+│   │   │   │   │   ├── arrow-data v58.4.0
+│   │   │   │   │   │   ├── arrow-buffer v58.4.0 (*)
+│   │   │   │   │   │   ├── arrow-schema v58.4.0
+│   │   │   │   │   ├── arrow-schema v58.4.0 (*)
+│   │   │   │   ├── arrow-buffer v58.4.0 (*)
+│   │   │   │   ├── arrow-data v58.4.0 (*)
+│   │   │   │   ├── arrow-schema v58.4.0 (*)
+│   │   │   ├── arrow-array v58.4.0 (*)
+│   │   │   ├── arrow-buffer v58.4.0 (*)
+│   │   │   ├── arrow-cast v58.4.0
+│   │   │   │   ├── arrow-array v58.4.0 (*)
+│   │   │   │   ├── arrow-buffer v58.4.0 (*)
+│   │   │   │   ├── arrow-data v58.4.0 (*)
+│   │   │   │   ├── arrow-ord v58.4.0
+│   │   │   │   │   ├── arrow-array v58.4.0 (*)
+│   │   │   │   │   ├── arrow-buffer v58.4.0 (*)
+│   │   │   │   │   ├── arrow-data v58.4.0 (*)
+│   │   │   │   │   ├── arrow-schema v58.4.0 (*)
+│   │   │   │   │   └── arrow-select v58.4.0
+│   │   │   │   │       ├── arrow-array v58.4.0 (*)
+│   │   │   │   │       ├── arrow-buffer v58.4.0 (*)
+│   │   │   │   │       ├── arrow-data v58.4.0 (*)
+│   │   │   │   │       ├── arrow-schema v58.4.0 (*)
+│   │   │   │   ├── arrow-schema v58.4.0 (*)
+│   │   │   │   ├── arrow-select v58.4.0 (*)
+│   │   │   ├── arrow-csv v58.4.0
+│   │   │   │   ├── arrow-array v58.4.0 (*)
+│   │   │   │   ├── arrow-cast v58.4.0 (*)
+│   │   │   │   ├── arrow-schema v58.4.0 (*)
+│   │   │   ├── arrow-data v58.4.0 (*)
+│   │   │   ├── arrow-ipc v58.4.0
+│   │   │   │   ├── arrow-array v58.4.0 (*)
+│   │   │   │   ├── arrow-buffer v58.4.0 (*)
+│   │   │   │   ├── arrow-data v58.4.0 (*)
+=== ORACLE RED: thought-graph-access binary still exists ===
+-rw-rw-r-- 1 racso racso 455 nov 17 18:03 SddIA/tools/thought-graph-access/Cargo.toml
+=== ORACLE RED: default-members in SddIA/Cargo.toml ===
+MISSING: default-members not configured

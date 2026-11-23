@@ -19,7 +19,7 @@ Contrato normativo de la familia: `tools-contract.md` (no constituye una tool ca
 | `repo-retention-purger.md` | `e9f12a4f-f6b1-4ad3-af03-634c8cc9707c` | repo-retention-purger | 1.0.0 | tools-contract v1.5.0 | filesystem-ops | `repo_retention_purger` |
 | `llm-router.md` | `3836c0da-ef32-419b-9a73-89afed4a93ac` | llm-router | 1.0.0 | tools-contract v1.2.0 | system-operations | `llm_router` |
 | `ephemeral-cache-purger.md` | `8929eeea-5e5b-402a-aafa-4a9b429acaec` | ephemeral-cache-purger | 1.0.0 | tools-contract v1.5.0 | filesystem-ops | `ephemeral_cache_purger` |
-| `thought-graph-access.md` | `e61d4096-b610-4eaf-a6f6-823153a30a6b` | thought-graph-access | 1.0.0 | tools-contract v1.5.0 | ecosystem-evolution | `thought_graph_access` |
+| `lancedb-memory-adapter.md` | `7a4e91c2-3b5d-4f8a-9c1e-6d2f8b0a4c71` | lancedb-memory-adapter | 1.0.0 | tools-contract v1.5.0 | ecosystem-evolution | `lancedb_memory_adapter`, `capsule-json-io`, `memory:evolution-store`, `memory:pref-vector`, `memory:thought-graph` |
 | `gemini-http-infer.md` | `7a8da3ad-4916-4ee3-8407-aa1ecdc7ecba` | gemini-http-infer | 1.1.0 | tools-contract v1.2.0 | system-operations | `gemini_http_infer`, `llm:infer` |
 | `telegram-gateway.md` | `a23dda8f-b5d5-4091-a21c-f408159d3a3e` | telegram-gateway | 1.0.0 | tools-contract v1.3.0 | ecosystem-evolution | `telegram_gateway` |
 | `event-bus-audit.md` | `31fce110-1622-489c-a816-112849e22adb` | event-bus-audit | 1.2.0 | tools-contract v1.2.0 | quality-assurance | `event_bus_audit` |

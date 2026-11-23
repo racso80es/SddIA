@@ -123,6 +123,7 @@
     "auditsPath": "docs/audits",
     "userPreferencesStore": ".SddIA/vector_store/user_preferences/",
     "vectorStore": ".SddIA/vector_store/",
+    "lancedbStore": ".SddIA/vector_store/lancedb/",
     "todos": {
       "pending": "docs/todos/pending",
       "done": "docs/todos/done"

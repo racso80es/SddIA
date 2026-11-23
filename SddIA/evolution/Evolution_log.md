@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `bab6e051-04bd-4d83-b73e-267189430e37` | 2026-11-23 | AUT-119: Desacople DI de memoria vectorial LanceDB respecto a execute-process hacia satélite nativo unificado tool:lancedb-memory-adapter, retirada de thought-graph-access, purga Redb en lancedb_thought_repo, SSOT paths.lancedbStore, default-members en Cargo.toml y ajuste CI. | CANONICO | `SddIA/evolution/bab6e051-04bd-4d83-b73e-267189430e37.md` |
 | `8a84d306-43b2-42e4-b8a0-bac20be04595` | 2026-11-23 | AUT-117: observabilidad DLQ, deduplicación Kaizen_Alert_Required por firma, escalado en event-bus-audit y remediación de silencios | CANONICO | `SddIA/evolution/8a84d306-43b2-42e4-b8a0-bac20be04595.md` |
 | `8a84d306-43b2-42e4-b8a0-bac20be04595` | 2026-11-23 | AUT-117: observabilidad DLQ, deduplicación Kaizen_Alert_Required por firma, escalado en event-bus-audit y remediación de silencios | CANONICO | `SddIA/evolution/8a84d306-43b2-42e4-b8a0-bac20be04595.md` |
 | `a72ada6f-8987-4452-b42c-f70aaa919cfa` | 2026-11-23 | AUT-116: migrar notify_humanized_pr_merged y route_domain_core a DI (HumanizedNotifyPort), retirar SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM/HANDOFF y añadir gate-no-env-bypass | CANONICO | `SddIA/evolution/a72ada6f-8987-4452-b42c-f70aaa919cfa.md` |
