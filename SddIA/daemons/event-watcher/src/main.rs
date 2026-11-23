@@ -466,7 +466,7 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
                 DeliveryStatus::Nack
             };
             let delivery_id = format!("{uuid_c}:{WATCHER_ROUTE_DOMAIN_SUBSCRIBER}");
-            let _ = with_productive_port(&repo_c, "record_delivery", |port| {
+            if let Err(e) = with_productive_port(&repo_c, "record_delivery", |port| {
                 port.record_delivery(RecordDeliveryRequest {
                     event_id: uuid_c.clone(),
                     delivery_id,
@@ -475,7 +475,9 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
                     attempt: None,
                 })
                 .map_err(|e| e.to_string())
-            });
+            }) {
+                eprintln!("[WATCHER] record_delivery error event_id={uuid_c}: {e}");
+            }
             if let Ok(mut b) = book_c.lock() {
                 apply_route_outcome_fractal(
                     &mut b,
