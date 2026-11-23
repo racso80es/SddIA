@@ -135,12 +135,13 @@ situational_notes:
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs)
 head_commit_sha_fs: cec0e99edbe768ece45aaab7af21be660709ed50
-validated_base_sha: ''
-validated_head_sha: ''
-validated_tree_sha: ''
-diff_digest: ''
-execution_id: "9778fc29-5146-4076-bfc8-6a9be0a12ba7"
+validated_base_sha: 49f6cdb693e763dec75adfaaf1c3fad294c2ae70
+validated_head_sha: 8ffdb80c0095369d4688ecb5cec426e3af534809
+validated_tree_sha: 5efaf5f14fe0153c1a44db96b7db8600a8fc0c6c
+diff_digest: sha256:f8299db7aa8224ed0f41bfd93df8d3377f3f58ed7149192f3331e07927182804
+execution_id: 9778fc29-5146-4076-bfc8-6a9be0a12ba7
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
