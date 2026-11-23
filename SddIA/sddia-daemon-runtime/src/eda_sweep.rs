@@ -108,18 +108,22 @@ fn sweep_fractal_family(repo: &Path, family: &str, report: &mut SweepReport) -> 
                 .iter()
                 .any(|d| d.status == DeliveryStatus::Nack);
             if all_ack {
-                let _ = port.purge_event(PurgeEventRequest {
+                if let Err(e) = port.purge_event(PurgeEventRequest {
                     event_id: event_id.clone(),
-                });
+                }) {
+                    eprintln!("[EDA-SWEEP] purge_event failed event_id={event_id}: {e}");
+                }
                 report.purged.push(json!({
                     "family": family,
                     "event_id": event_id,
                 }));
             } else if any_nack && all_terminal {
-                let _ = port.move_to_dlq(MoveToDlqRequest {
+                if let Err(e) = port.move_to_dlq(MoveToDlqRequest {
                     event_id: event_id.clone(),
                     reason: "fractal-subscriber-failure".into(),
-                });
+                }) {
+                    eprintln!("[EDA-SWEEP] move_to_dlq failed event_id={event_id}: {e}");
+                }
                 report.dead_lettered.push(json!({
                     "family": family,
                     "event_id": event_id,
@@ -508,13 +512,17 @@ fn finalize_kaizen_terminal(
     _origin_topology: &str,
 ) -> Result<Value, String> {
     with_productive_port(repo, "finalize_kaizen_terminal", |port| {
-        let _ = port.move_to_dlq(MoveToDlqRequest {
+        if let Err(e) = port.move_to_dlq(MoveToDlqRequest {
             event_id: event_uuid.to_string(),
             reason: "kaizen-terminal".into(),
-        });
-        let _ = port.purge_event(PurgeEventRequest {
+        }) {
+            eprintln!("[eda_sweep] finalize_kaizen_terminal move_to_dlq error event_id={event_uuid}: {e}");
+        }
+        if let Err(e) = port.purge_event(PurgeEventRequest {
             event_id: event_uuid.to_string(),
-        });
+        }) {
+            eprintln!("[eda_sweep] finalize_kaizen_terminal purge_event error event_id={event_uuid}: {e}");
+        }
         Ok(json!({"pending": 1, "headers": 0}))
     })
 }
@@ -528,9 +536,11 @@ pub fn archive_event_after_sweep(
     let _ = event_type;
     let witnesses = list_witnesses(repo, bus, "processed_subscribers", event_uuid).len();
     with_productive_port(repo, "archive_event_after_sweep", |port| {
-        let _ = port.purge_event(PurgeEventRequest {
+        if let Err(e) = port.purge_event(PurgeEventRequest {
             event_id: event_uuid.to_string(),
-        });
+        }) {
+            eprintln!("[eda_sweep] archive_event_after_sweep purge_event error event_id={event_uuid}: {e}");
+        }
         Ok(json!({
             "witnesses": witnesses,
             "headers": 0,

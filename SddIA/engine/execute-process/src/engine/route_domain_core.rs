@@ -2297,6 +2297,14 @@ fn handle_subscriber(
             None,
         )
     } else {
+        let err_trace = err.as_deref().unwrap_or(&status);
+        super::dlq_kaizen_alert::notify_dlq_failure_fail_soft(
+            repo,
+            event_uuid,
+            event_type,
+            &sid,
+            err_trace,
+        );
         promote_witness(
             repo,
             bus,
@@ -2304,7 +2312,7 @@ fn handle_subscriber(
             &sid,
             "dead-letter",
             Some(&json!({
-                "error_trace": err.as_deref().unwrap_or(&status),
+                "error_trace": err_trace,
                 "delegation": delegation,
             })),
             None,

@@ -9,6 +9,8 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `8a84d306-43b2-42e4-b8a0-bac20be04595` | 2026-11-23 | AUT-117: observabilidad DLQ, deduplicación Kaizen_Alert_Required por firma, escalado en event-bus-audit y remediación de silencios | CANONICO | `SddIA/evolution/8a84d306-43b2-42e4-b8a0-bac20be04595.md` |
+| `8a84d306-43b2-42e4-b8a0-bac20be04595` | 2026-11-23 | AUT-117: observabilidad DLQ, deduplicación Kaizen_Alert_Required por firma, escalado en event-bus-audit y remediación de silencios | CANONICO | `SddIA/evolution/8a84d306-43b2-42e4-b8a0-bac20be04595.md` |
 | `a72ada6f-8987-4452-b42c-f70aaa919cfa` | 2026-11-23 | AUT-116: migrar notify_humanized_pr_merged y route_domain_core a DI (HumanizedNotifyPort), retirar SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM/HANDOFF y añadir gate-no-env-bypass | CANONICO | `SddIA/evolution/a72ada6f-8987-4452-b42c-f70aaa919cfa.md` |
 | `55b44f5e-292f-4c51-abf9-33d1f9c5ce04` | 2026-11-23 | AUT-115: sanear tests de despacho de suscriptores con SubscriberDispatchPort DI (eliminar store_backed y aserciones negativas) | CANONICO | `SddIA/evolution/55b44f5e-292f-4c51-abf9-33d1f9c5ce04.md` |
 | `cf3bbcc3-df0e-4b12-ac55-b2fb65351b7d` | 2026-11-23 | AUT-118: rechazo estricto CapsuleKindMismatch en resolve_capsule/Cerbero RBAC, corrección de call sites send-telegram-notification y gate-capsule-kind en sddia-qa | CANONICO | `SddIA/evolution/cf3bbcc3-df0e-4b12-ac55-b2fb65351b7d.md` |

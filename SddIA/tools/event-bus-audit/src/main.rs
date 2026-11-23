@@ -347,8 +347,12 @@ fn is_fracture_stale_detail(detail: &str) -> bool {
     detail.contains("event_type=System_Fracture_Detected;")
 }
 
-fn needs_kaizen_actionable(circuit_alert: bool, actionable_stale_pending_count: u64) -> bool {
-    circuit_alert || actionable_stale_pending_count > 0
+fn needs_kaizen_actionable(
+    circuit_alert: bool,
+    actionable_stale_pending_count: u64,
+    active_dlq_signatures: u64,
+) -> bool {
+    circuit_alert || actionable_stale_pending_count > 0 || active_dlq_signatures > 0
 }
 
 fn validate_ecst_event(
@@ -1361,8 +1365,22 @@ fn main() {
         }
     }
 
-    let needs_kaizen =
-        needs_kaizen_actionable(circuit_alert, summary.actionable_stale_pending_count);
+    let active_dlq_signatures = u64::from(
+        req.get("active_dlq_signatures")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0)
+            > 0
+            || (!state.dead_letter_errors.is_empty()
+                && req
+                    .get("escalate_active_dlq")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false)),
+    );
+    let needs_kaizen = needs_kaizen_actionable(
+        circuit_alert,
+        summary.actionable_stale_pending_count,
+        active_dlq_signatures,
+    );
 
     let mut kaizen_event_id = None;
     let mut kaizen_target = None;
@@ -1379,7 +1397,7 @@ fn main() {
             structural_error_count,
             summary.dead_letter_count
         );
-        let implicated: Vec<String> = state
+        let mut implicated: Vec<String> = state
             .anomalies
             .iter()
             .filter(|a| {
@@ -1390,6 +1408,11 @@ fn main() {
             .take(50)
             .map(|a| a.path.clone())
             .collect();
+        if active_dlq_signatures > 0 {
+            for (err_key, count) in state.dead_letter_errors.iter().take(20) {
+                implicated.push(format!("dlq:{err_key} (count={count})"));
+            }
+        }
         if implicated.is_empty() {
             eprintln!("warn: needs_kaizen sin implicated_files; se omite emisión Kaizen");
         } else {
@@ -1584,15 +1607,22 @@ mod tests {
 
     #[test]
     fn needs_kaizen_ignores_historical_dl_and_fracture_stale() {
-        assert!(!needs_kaizen_actionable(false, 0));
-        assert!(needs_kaizen_actionable(true, 0));
-        assert!(needs_kaizen_actionable(false, 1));
+        assert!(!needs_kaizen_actionable(false, 0, 0));
+        assert!(needs_kaizen_actionable(true, 0, 0));
+        assert!(needs_kaizen_actionable(false, 1, 0));
         assert!(is_fracture_stale_detail(
             "event_type=System_Fracture_Detected; pending age 26h > threshold 24h"
         ));
         assert!(!is_fracture_stale_detail(
             "event_type=PullRequest_Presented; pending age 26h > threshold 24h"
         ));
+    }
+
+    #[test]
+    fn aut117_active_dlq_signatures_trigger_needs_kaizen() {
+        assert!(needs_kaizen_actionable(false, 0, 1));
+        assert!(needs_kaizen_actionable(false, 0, 3));
+        assert!(!needs_kaizen_actionable(false, 0, 0));
     }
 
     #[test]
