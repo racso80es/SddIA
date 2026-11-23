@@ -6,8 +6,9 @@ contract: "agents-contract v1.0.0"
 allowed_policies:
   - "knowledge-management"
   - "filesystem-ops"
-hash_signature: "sha256:11191748becb8d032739112b9e2cddc7e47fbb453a0c9ed6ee7613e9a8055ea6"
+hash_signature: "sha256:6810ed23c370d96d4798ae75a0408056661f51c155107a0c71bd6d4507076b09"
 llm_profile:
+  thinking_profile: "reasoning"
   tier: "high"
   description: "Mayéutica, refinamiento de requisitos y síntesis de intenciones"
 inputs:

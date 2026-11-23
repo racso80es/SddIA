@@ -10,8 +10,9 @@ allowed_policies:
   - "system-operations"
   - "chaos-engineering"
   - "tracker-operations"
-hash_signature: "sha256:937b852658c19be1ad0e0575f448eee1839a1f37aa6a1b202918f1e53fe9847d"
+hash_signature: "sha256:12489c0145bd1fec01d8891dd2506a656d15f7d3f2ea38c84b16224aed1e297e"
 llm_profile:
+  thinking_profile: "execution"
   tier: "low"
   description: "Forja táctica según especificación; sin decisiones de arquitectura"
 inputs:

@@ -9,8 +9,9 @@ allowed_policies:
   - "source-control"
   - "event-routing"
   - "tracker-operations"
-hash_signature: "sha256:73746cf3e60848e488478f5d3935501e4e0c90202d4664468186e2ee0e870c1a"
+hash_signature: "sha256:237b9340685cffff2a309d9a3912df5723f0b9e281ff940bb6be05118ca2e00e"
 llm_profile:
+  thinking_profile: "audit"
   tier: "medium"
   description: "Síntesis de audit_report_md y correction_blueprint_md tras evidencia de cápsulas"
 inputs:

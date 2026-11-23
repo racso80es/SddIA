@@ -6,8 +6,9 @@ contract: "agents-contract v1.0.0"
 allowed_policies:
   - "knowledge-management"
   - "ecosystem-evolution"
-hash_signature: "sha256:453e85e9c9322a1975543f7b76fbb3074e882d6ead79ae4fe883014cede57fe3"
+hash_signature: "sha256:85812dc392f4ae2a91431c50798645328f6b50115bd38c536f99403fc24c094c"
 llm_profile:
+  thinking_profile: "deterministic"
   tier: "none"
   description: "Topología y SSOT; prohibido LLM"
 inputs:

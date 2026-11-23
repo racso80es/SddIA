@@ -2,7 +2,7 @@
 uuid: "c4a8f2e1-7b3d-4e9a-a1c6-5d8f0b2e4a71"
 id: capability-bindings
 name: capability-bindings
-version: "1.10.0"
+version: "1.11.0"
 nature: "runtime-ssot"
 scope: "agnostic"
 bindings:
@@ -91,6 +91,25 @@ bindings:
         provider: "adapter:external-capsule-event-adapter"
         provider_version: ">=2.0.0"
         resolution: "path|uri de binario/.wasm vía config de instancia"
+  - capability_id: "agent:runtime"
+    contract: "agent.runtime"
+    contract_version: "1.0.0"
+    contract_schema: "agent.runtime.schema.json"
+    provider: "adapter:cursor-agent-runtime"
+    provider_version: ">=1.0.0"
+    roles:
+      cursor:
+        provider: "adapter:cursor-agent-runtime"
+        provider_version: ">=1.0.0"
+      antigravity:
+        provider: "adapter:antigravity-agent-runtime"
+        provider_version: ">=1.0.0"
+      local-llm:
+        provider: "adapter:local-llm-agent-runtime"
+        provider_version: ">=1.0.0"
+      test:
+        provider: "mock:in-memory-agent-runtime"
+        provider_version: ">=1.0.0"
 ---
 
 # Capability bindings (SSOT DI)

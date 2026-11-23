@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0.0",
+  "active_provider": "cursor",
+  "unattended_policy": "pause_awaiting_agents",
+  "providers": {
+    "cursor": {
+      "transport_mode": "headless_cli",
+      "models": {
+        "reasoning": "reasoning-tier-default",
+        "audit": "audit-tier-default",
+        "execution": "execution-tier-default"
+      }
+    },
+    "antigravity": {
+      "transport_mode": "interactive_relay",
+      "models": {
+        "reasoning": "reasoning-tier-default",
+        "audit": "audit-tier-default",
+        "execution": "execution-tier-default"
+      }
+    },
+    "local-llm": {
+      "transport_mode": "headless_api",
+      "endpoint": "",
+      "models": {
+        "reasoning": "local-reasoning-default",
+        "audit": "local-audit-default",
+        "execution": "local-execution-default"
+      }
+    }
+  }
+}

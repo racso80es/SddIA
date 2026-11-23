@@ -429,6 +429,7 @@ pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<
         "append-mayeuta-hypothesis" => super::append_mayeuta_hypothesis::run(repo, inputs)?,
         "persist-pec-correlation-proof" => super::persist_pec_correlation_proof::run(repo, inputs)?,
         "notify-humanized-pr-merged" => super::notify_humanized_pr_merged::run(repo, inputs)?,
+        "switch-llm-provider" => super::agent_runtime::switch_llm_provider(repo, inputs)?,
         _ => return Ok(None),
     };
     Ok(Some(data))

@@ -7,8 +7,9 @@ allowed_policies:
   - "ecosystem-evolution"
   - "knowledge-management"
   - "filesystem-ops"
-hash_signature: "sha256:736ede018f2f58f1be97de3e7d6a807427dcaa8c9eab90af1ee21da43ee07add"
+hash_signature: "sha256:33ed0524a68e94af4a93e3cb7a459eaa6658a9ec440bd425a89952d96da8cf17"
 llm_profile:
+  thinking_profile: "reasoning"
   tier: "high"
   description: "Diseño arquitectónico y especificación formal de procesos"
 inputs:

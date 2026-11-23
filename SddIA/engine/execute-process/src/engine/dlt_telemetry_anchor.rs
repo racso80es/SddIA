@@ -201,6 +201,7 @@ mod tests {
 
     #[test]
     fn skip_when_no_wallet_no_simulate() {
+        let _lab = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
         let _g = IOTA_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let sim = std::env::var("SDDIA_LAB_SIMULATE_IOTA").ok();
         let mock_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();

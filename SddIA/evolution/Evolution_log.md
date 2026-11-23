@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 158
+universe_total: 159
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `d122a000-2026-4123-8122-000000000122` | 2026-11-23 | AUT-122: Inyección de Dependencias de proveedores LLM (agent:runtime, AgentRuntimePort, AgentRuntimeDiFactory perezosa), taxonomía cerrada thinking_profile en agents-contract v1.3.0 y 7 agentes Core, configuración local no versionada .SddIA/llm-runtime.local.json con action:switch-llm-provider sin auto-failover y trazabilidad en phase_reports.json y llm_interaction_audit.rs. | CANONICO | `SddIA/evolution/d122a000-2026-4123-8122-000000000122.md` |
 | `bab6e051-04bd-4d83-b73e-267189430e37` | 2026-11-23 | AUT-119: Desacople DI de memoria vectorial LanceDB respecto a execute-process hacia satélite nativo unificado tool:lancedb-memory-adapter, retirada de thought-graph-access, purga Redb en lancedb_thought_repo, SSOT paths.lancedbStore, default-members en Cargo.toml y ajuste CI. | CANONICO | `SddIA/evolution/bab6e051-04bd-4d83-b73e-267189430e37.md` |
 | `8a84d306-43b2-42e4-b8a0-bac20be04595` | 2026-11-23 | AUT-117: observabilidad DLQ, deduplicación Kaizen_Alert_Required por firma, escalado en event-bus-audit y remediación de silencios | CANONICO | `SddIA/evolution/8a84d306-43b2-42e4-b8a0-bac20be04595.md` |
 | `8a84d306-43b2-42e4-b8a0-bac20be04595` | 2026-11-23 | AUT-117: observabilidad DLQ, deduplicación Kaizen_Alert_Required por firma, escalado en event-bus-audit y remediación de silencios | CANONICO | `SddIA/evolution/8a84d306-43b2-42e4-b8a0-bac20be04595.md` |

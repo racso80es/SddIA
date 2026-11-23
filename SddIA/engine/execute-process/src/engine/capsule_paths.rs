@@ -293,6 +293,7 @@ mod tests {
 
     #[test]
     fn legacy_returns_first_profile_file() {
+        let _g = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
         let td = tempfile::tempdir().unwrap();
         let root = td.path();
         write_cumulo(root);
@@ -308,6 +309,7 @@ mod tests {
 
     #[test]
     fn anchored_rejects_without_witness() {
+        let _g = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
         let td = tempfile::tempdir().unwrap();
         let root = td.path();
         write_cumulo(root);

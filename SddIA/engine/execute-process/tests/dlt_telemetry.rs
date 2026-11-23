@@ -37,10 +37,19 @@ impl Drop for DltLabGuard {
 }
 
 fn write_min_repo(repo: &std::path::Path) {
+    let real_target = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../target")
+        .canonicalize()
+        .unwrap();
     fs::create_dir_all(repo.join("SddIA/core")).unwrap();
     fs::write(
         repo.join("SddIA/core/cumulo.paths.json"),
-        r#"{
+        serde_json::to_string_pretty(&json!({
+          "compiled_capsules": {
+            "native_root": real_target.display().to_string(),
+            "wasm_root": real_target.join("wasm32-wasip1").display().to_string(),
+            "profiles": ["release", "debug"]
+          },
           "eda_bus": {
             "store": ".SddIA/runtime/events.redb"
           },
@@ -51,7 +60,8 @@ fn write_min_repo(repo: &std::path::Path) {
           },
           "eda_instance": {"proofs": ".SddIA/proofs"},
           "paths": {"vectorStore": ".SddIA/vector_store"}
-        }"#,
+        }))
+        .unwrap(),
     )
     .unwrap();
     fs::write(

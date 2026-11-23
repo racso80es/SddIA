@@ -6,11 +6,16 @@
 
 use crate::core::parser::{parse_frontmatter, parse_frontmatter_from_str};
 use super::project_binding;
+use super::workspace::load_paths_config;
 use serde_json::{json, Value};
+use serde_yaml::Value as YamlValue;
+use std::cell::RefCell;
+use std::collections::HashSet;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
@@ -25,6 +30,239 @@ const DEFAULT_TIMEOUT_REFINE_SECS: u64 = 900;
 const MIN_EXECUTION_TIMEOUT_SECS: u64 = 2400;
 const KILL_GRACE_MS: u64 = 500;
 const DETERMINISTIC_AGENTS: &[&str] = &["cerbero", "cumulo", "radamanto"];
+const DEFAULT_LOCAL_RUNTIME_REL: &str = ".SddIA/llm-runtime.local.json";
+const CANONICAL_AGENT_RUNTIME_ROLES: &[&str] = &["cursor", "antigravity", "local-llm", "test"];
+
+pub const ERR_PROVIDER_QUOTA_EXCEEDED: &str = "PROVIDER_QUOTA_EXCEEDED";
+pub const ERR_PROVIDER_TIMEOUT: &str = "PROVIDER_TIMEOUT";
+pub const ERR_PROVIDER_UNAVAILABLE: &str = "PROVIDER_UNAVAILABLE";
+pub const ERR_PROVIDER_UNATTENDED_UNSUPPORTED: &str = "PROVIDER_UNATTENDED_UNSUPPORTED";
+pub const ERR_LLM_MODEL_UNRESOLVED: &str = "LLM_MODEL_UNRESOLVED";
+pub const ERR_CAPABILITY_BINDING_MISSING: &str = "CAPABILITY_BINDING_MISSING";
+
+/// Taxonomía cerrada de perfiles cognitivos (`agents-contract.md` v1.3.0, AUT-122).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ThinkingProfile {
+    Deterministic = 0,
+    Execution = 1,
+    Audit = 2,
+    Reasoning = 3,
+}
+
+impl ThinkingProfile {
+    pub fn parse(raw: &str) -> Option<Self> {
+        match raw.trim().to_ascii_lowercase().as_str() {
+            "reasoning" | "high" => Some(Self::Reasoning),
+            "audit" | "medium" => Some(Self::Audit),
+            "execution" | "low" => Some(Self::Execution),
+            "deterministic" | "none" => Some(Self::Deterministic),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Reasoning => "reasoning",
+            Self::Audit => "audit",
+            Self::Execution => "execution",
+            Self::Deterministic => "deterministic",
+        }
+    }
+
+    pub fn legacy_tier(self) -> &'static str {
+        match self {
+            Self::Reasoning => "high",
+            Self::Audit => "medium",
+            Self::Execution => "low",
+            Self::Deterministic => "none",
+        }
+    }
+
+    pub fn legacy_env_key(self) -> Option<&'static str> {
+        match self {
+            Self::Reasoning => Some("SDDIA_LLM_TIER_HIGH"),
+            Self::Audit => Some("SDDIA_LLM_TIER_MEDIUM"),
+            Self::Execution => Some("SDDIA_LLM_TIER_LOW"),
+            Self::Deterministic => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProviderMode {
+    InteractiveRelay,
+    HeadlessCli,
+    HeadlessApi,
+    Deterministic,
+}
+
+impl ProviderMode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::InteractiveRelay => "interactive_relay",
+            Self::HeadlessCli => "headless_cli",
+            Self::HeadlessApi => "headless_api",
+            Self::Deterministic => "deterministic",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnattendedPolicy {
+    PauseAwaitingAgents,
+    FailFast,
+}
+
+impl UnattendedPolicy {
+    pub fn parse(raw: Option<&str>) -> Self {
+        match raw.map(str::trim).unwrap_or("pause_awaiting_agents") {
+            "fail_fast" => Self::FailFast,
+            _ => Self::PauseAwaitingAgents,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PauseAwaitingAgents => "pause_awaiting_agents",
+            Self::FailFast => "fail_fast",
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct AgentInvocationRequest {
+    pub repo_root: PathBuf,
+    pub process_name: String,
+    pub phase_name: String,
+    pub agents: Vec<String>,
+    pub thinking_profile: ThinkingProfile,
+    pub resolved_model: Option<String>,
+    pub unattended_policy: UnattendedPolicy,
+    pub payload: Value,
+    pub cwd: PathBuf,
+    pub timeout_secs: u64,
+    pub timeout_floor_applied: bool,
+    pub depth: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct AgentExecutionResult {
+    pub status: String,
+    pub provider_id: String,
+    pub provider_mode: ProviderMode,
+    pub thinking_profile: ThinkingProfile,
+    pub resolved_model: Option<String>,
+    pub message: Option<String>,
+    pub note: Option<String>,
+    pub error_code: Option<String>,
+    pub error: Option<String>,
+    pub runtime_response: Option<Value>,
+    pub raw_stdout: Option<String>,
+    pub timeout_secs: Option<u64>,
+    pub timeout_floor_applied: bool,
+}
+
+pub trait AgentRuntimePort: Send + Sync {
+    fn provider_id(&self) -> &str;
+    fn mode(&self) -> ProviderMode;
+    fn supports_unattended(&self) -> bool;
+    fn invoke(&self, req: &AgentInvocationRequest) -> AgentExecutionResult;
+}
+
+thread_local! {
+    static MOCK_AGENT_RUNTIME: RefCell<Option<Arc<dyn AgentRuntimePort>>> = const { RefCell::new(None) };
+}
+
+pub fn with_mock_agent_runtime<F, R>(mock: Arc<dyn AgentRuntimePort>, f: F) -> R
+where
+    F: FnOnce() -> R,
+{
+    MOCK_AGENT_RUNTIME.with(|slot| {
+        let prev = slot.replace(Some(mock));
+        let out = f();
+        slot.replace(prev);
+        out
+    })
+}
+
+pub fn has_mock_agent_runtime() -> bool {
+    MOCK_AGENT_RUNTIME.with(|slot| slot.borrow().is_some())
+}
+
+fn current_mock_agent_runtime() -> Option<Arc<dyn AgentRuntimePort>> {
+    MOCK_AGENT_RUNTIME.with(|slot| slot.borrow().clone())
+}
+
+/// Adaptador mock en memoria (`mock:in-memory-agent-runtime`) para tests unitarios sin variables `SDDIA_LAB_*`.
+pub struct InMemoryAgentRuntimeMock {
+    pub provider: String,
+    pub mode: ProviderMode,
+    pub status: String,
+    pub resolved_model_override: Option<String>,
+    pub message: Option<String>,
+    pub error_code: Option<String>,
+    pub error: Option<String>,
+}
+
+impl Default for InMemoryAgentRuntimeMock {
+    fn default() -> Self {
+        Self {
+            provider: "mock".to_string(),
+            mode: ProviderMode::HeadlessApi,
+            status: "executed".to_string(),
+            resolved_model_override: Some("mock-model-v1".to_string()),
+            message: Some("mock-executed".to_string()),
+            error_code: None,
+            error: None,
+        }
+    }
+}
+
+impl AgentRuntimePort for InMemoryAgentRuntimeMock {
+    fn provider_id(&self) -> &str {
+        &self.provider
+    }
+
+    fn mode(&self) -> ProviderMode {
+        self.mode
+    }
+
+    fn supports_unattended(&self) -> bool {
+        true
+    }
+
+    fn invoke(&self, req: &AgentInvocationRequest) -> AgentExecutionResult {
+        let resolved_model = self
+            .resolved_model_override
+            .clone()
+            .or_else(|| req.resolved_model.clone());
+        AgentExecutionResult {
+            status: self.status.clone(),
+            provider_id: self.provider.clone(),
+            provider_mode: self.mode,
+            thinking_profile: req.thinking_profile,
+            resolved_model,
+            message: self.message.clone(),
+            note: None,
+            error_code: self.error_code.clone(),
+            error: self.error.clone(),
+            runtime_response: Some(json!({
+                "success": self.status == "executed" || self.status == "awaiting_agents",
+                "data": {
+                    "status": self.status,
+                    "provider": self.provider,
+                    "thinking_profile": req.thinking_profile.as_str(),
+                    "message": self.message,
+                    "error_code": self.error_code,
+                },
+                "error": self.error,
+            })),
+            raw_stdout: None,
+            timeout_secs: None,
+            timeout_floor_applied: req.timeout_floor_applied,
+        }
+    }
+}
 
 fn env_truthy(key: &str) -> bool {
     std::env::var(key)
@@ -44,12 +282,200 @@ fn agent_runtime_depth() -> u32 {
 }
 
 pub fn is_configured() -> bool {
+    if has_mock_agent_runtime() {
+        return true;
+    }
     if lab_relay_active() {
         return false;
     }
     std::env::var(ENV_CMD)
         .map(|v| !v.trim().is_empty())
         .unwrap_or(false)
+}
+
+pub fn is_configured_for(repo: &Path, inputs: &Value) -> bool {
+    if is_configured() {
+        return true;
+    }
+    if lab_relay_active() {
+        return false;
+    }
+    if inputs.get("llm_runtime").is_some() {
+        return true;
+    }
+    local_runtime_config_path(repo).is_file()
+}
+
+pub fn local_runtime_config_path(repo: &Path) -> PathBuf {
+    let rel = load_paths_config(repo)
+        .ok()
+        .and_then(|cfg| {
+            cfg.pointer("/instance/llm_runtime_local")
+                .and_then(|v| v.as_str())
+                .map(|s| s.trim().trim_start_matches("./").to_string())
+        })
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| DEFAULT_LOCAL_RUNTIME_REL.to_string());
+    repo.join(rel)
+}
+
+pub fn allowed_agent_runtime_roles(repo: &Path) -> HashSet<String> {
+    let bindings_path = repo.join("SddIA/core/capability-bindings.md");
+    if let Ok(fm) = parse_frontmatter(&bindings_path) {
+        if let Some(YamlValue::Sequence(seq)) = fm.get("bindings") {
+            for item in seq {
+                let cap_id = item
+                    .get("capability_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if cap_id == "agent:runtime" {
+                    if let Some(YamlValue::Mapping(roles)) = item.get("roles") {
+                        let mut set = HashSet::new();
+                        for (k, _) in roles {
+                            if let Some(role) = k.as_str() {
+                                set.insert(role.trim().to_string());
+                            }
+                        }
+                        if !set.is_empty() {
+                            return set;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    CANONICAL_AGENT_RUNTIME_ROLES
+        .iter()
+        .map(|s| (*s).to_string())
+        .collect()
+}
+
+fn load_local_runtime_config(repo: &Path, inputs: &Value) -> Result<Option<Value>, String> {
+    if let Some(inline) = inputs.get("llm_runtime") {
+        if inline.is_object() {
+            return Ok(Some(inline.clone()));
+        }
+    }
+    let path = local_runtime_config_path(repo);
+    if !path.is_file() {
+        return Ok(None);
+    }
+    let raw = fs::read_to_string(&path)
+        .map_err(|e| format!("llm-runtime.local.json ilegible: {e}"))?;
+    let val: Value = serde_json::from_str(&raw)
+        .map_err(|e| format!("llm-runtime.local.json JSON inválido: {e}"))?;
+    Ok(Some(val))
+}
+
+fn env_model_override(provider: &str, profile: ThinkingProfile) -> Option<String> {
+    let prov_upper = provider.trim().to_ascii_uppercase().replace('-', "_");
+    let prof_upper = profile.as_str().to_ascii_uppercase();
+    let specific_key = format!("SDDIA_LLM_MODEL_{prov_upper}_{prof_upper}");
+    if let Ok(v) = std::env::var(&specific_key) {
+        let t = v.trim();
+        if !t.is_empty() {
+            return Some(t.to_string());
+        }
+    }
+    if let Some(legacy_key) = profile.legacy_env_key() {
+        if let Ok(v) = std::env::var(legacy_key) {
+            let t = v.trim();
+            if !t.is_empty() {
+                return Some(t.to_string());
+            }
+        }
+    }
+    if let Ok(v) = std::env::var("SDDIA_AGENT_RUNTIME_MODEL") {
+        let t = v.trim();
+        if !t.is_empty() {
+            return Some(t.to_string());
+        }
+    }
+    None
+}
+
+/// Acción determinista `switch-llm-provider`: valida contra `capability-bindings.md` y persiste `.SddIA/llm-runtime.local.json`.
+pub fn switch_llm_provider(repo: &Path, inputs: &Value) -> Result<Value, String> {
+    let provider = inputs
+        .get("provider")
+        .or_else(|| inputs.get("active_provider"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| "provider requerido para switch-llm-provider".to_string())?;
+    let roles = allowed_agent_runtime_roles(repo);
+    if !roles.contains(provider) {
+        return Err(format!(
+            "{ERR_CAPABILITY_BINDING_MISSING}: proveedor '{provider}' no registrado en roles de agent:runtime"
+        ));
+    }
+    let path = local_runtime_config_path(repo);
+    let mut cfg = if path.is_file() {
+        let raw = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        serde_json::from_str::<Value>(&raw).unwrap_or_else(|_| json!({}))
+    } else {
+        let example_path = repo.join(".SddIA/llm-runtime.example.json");
+        if example_path.is_file() {
+            let raw = fs::read_to_string(&example_path).unwrap_or_default();
+            serde_json::from_str::<Value>(&raw).unwrap_or_else(|_| json!({}))
+        } else {
+            json!({
+                "schema_version": "1.0.0",
+                "providers": {}
+            })
+        }
+    };
+    if !cfg.is_object() {
+        cfg = json!({});
+    }
+    cfg["schema_version"] = json!("1.0.0");
+    cfg["active_provider"] = json!(provider);
+    let policy = UnattendedPolicy::parse(
+        inputs
+            .get("unattended_policy")
+            .and_then(|v| v.as_str())
+            .or_else(|| cfg.get("unattended_policy").and_then(|v| v.as_str())),
+    );
+    cfg["unattended_policy"] = json!(policy.as_str());
+    if cfg.get("providers").and_then(|v| v.as_object()).is_none() {
+        cfg["providers"] = json!({});
+    }
+    if let Some(models) = inputs.get("models").and_then(|v| v.as_object()) {
+        if cfg["providers"].get(provider).and_then(|v| v.as_object()).is_none() {
+            cfg["providers"][provider] = json!({ "models": {} });
+        }
+        if cfg["providers"][provider].get("models").and_then(|v| v.as_object()).is_none() {
+            cfg["providers"][provider]["models"] = json!({});
+        }
+        if let Some(target) = cfg["providers"][provider]["models"].as_object_mut() {
+            for (k, v) in models {
+                target.insert(k.clone(), v.clone());
+            }
+        }
+    }
+    if let Some(endpoint) = inputs.get("endpoint").and_then(|v| v.as_str()) {
+        if cfg["providers"].get(provider).and_then(|v| v.as_object()).is_none() {
+            cfg["providers"][provider] = json!({});
+        }
+        cfg["providers"][provider]["endpoint"] = json!(endpoint.trim());
+    }
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let tmp = path.with_extension("json.tmp");
+    let serialized = serde_json::to_vec_pretty(&cfg).map_err(|e| e.to_string())?;
+    fs::write(&tmp, serialized).map_err(|e| e.to_string())?;
+    fs::rename(&tmp, &path).map_err(|e| e.to_string())?;
+    let rel = path
+        .strip_prefix(repo)
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
+        .unwrap_or_else(|_| path.display().to_string());
+    Ok(json!({
+        "success": true,
+        "active_provider": provider,
+        "unattended_policy": policy.as_str(),
+        "config_path": rel,
+    }))
 }
 
 fn parse_env_timeout_secs(key: &str) -> Option<u64> {
@@ -322,53 +748,127 @@ fn is_none_tier(tier: &str) -> bool {
     tier.eq_ignore_ascii_case("none")
 }
 
+fn default_thinking_profile_for_agent(name: &str) -> ThinkingProfile {
+    match name {
+        "mayeuta" | "dedalo" => ThinkingProfile::Reasoning,
+        "argos" => ThinkingProfile::Audit,
+        "cerbero" | "cumulo" | "radamanto" => ThinkingProfile::Deterministic,
+        _ => ThinkingProfile::Execution,
+    }
+}
+
 /// Lee `llm_profile` de `SddIA/agents/{name}.md`. Fail-soft si el `.md` falta.
-/// `all_none` = todos los agentes de la fase son `tier: none` (o deterministas sin YAML).
-fn load_llm_profiles(repo: &Path, agents: &[String]) -> (Value, bool) {
+/// Devuelve `(llm_profiles_map, dominant_thinking_profile, all_none)`.
+pub fn load_llm_profiles_with_thinking(
+    repo: &Path,
+    agents: &[String],
+) -> (Value, ThinkingProfile, bool) {
     let mut map = serde_json::Map::new();
     if agents.is_empty() {
-        return (Value::Object(map), false);
+        return (Value::Object(map), ThinkingProfile::Execution, false);
     }
     let mut all_none = true;
+    let mut dominant: Option<ThinkingProfile> = None;
     for name in agents {
         let path = repo.join("SddIA/agents").join(format!("{name}.md"));
         if !path.is_file() {
+            let inferred = default_thinking_profile_for_agent(name);
             if is_deterministic_agent(name) {
-                map.insert(name.clone(), json!({ "tier": "none" }));
+                map.insert(
+                    name.clone(),
+                    json!({
+                        "thinking_profile": "deterministic",
+                        "tier": "none",
+                    }),
+                );
             } else {
                 all_none = false;
             }
+            dominant = Some(dominant.map_or(inferred, |cur| cur.max(inferred)));
             continue;
         }
         let fm = match parse_frontmatter(&path) {
             Ok(m) => m,
             Err(_) => {
                 all_none = false;
+                let inferred = default_thinking_profile_for_agent(name);
+                dominant = Some(dominant.map_or(inferred, |cur| cur.max(inferred)));
                 continue;
             }
         };
         match fm.get("llm_profile") {
             Some(profile) => {
-                let json_profile = serde_json::to_value(profile).unwrap_or(json!({}));
-                let tier = json_profile
+                let mut json_profile = serde_json::to_value(profile).unwrap_or(json!({}));
+                let tp_raw = json_profile
+                    .get("thinking_profile")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| json_profile.get("tier").and_then(|v| v.as_str()))
+                    .unwrap_or("");
+                let tp = ThinkingProfile::parse(tp_raw)
+                    .unwrap_or_else(|| default_thinking_profile_for_agent(name));
+                if let Some(obj) = json_profile.as_object_mut() {
+                    if !obj.contains_key("thinking_profile") {
+                        obj.insert("thinking_profile".into(), json!(tp.as_str()));
+                    }
+                    if !obj.contains_key("tier") {
+                        obj.insert("tier".into(), json!(tp.legacy_tier()));
+                    }
+                }
+                let tier_s = json_profile
                     .get("tier")
                     .and_then(|v| v.as_str())
-                    .unwrap_or("");
-                if !is_none_tier(tier) {
+                    .unwrap_or(tp.legacy_tier());
+                if tp != ThinkingProfile::Deterministic && !is_none_tier(tier_s) {
                     all_none = false;
                 }
+                dominant = Some(dominant.map_or(tp, |cur| cur.max(tp)));
                 map.insert(name.clone(), json_profile);
             }
             None => {
+                let inferred = default_thinking_profile_for_agent(name);
                 if is_deterministic_agent(name) {
-                    map.insert(name.clone(), json!({ "tier": "none" }));
+                    map.insert(
+                        name.clone(),
+                        json!({
+                            "thinking_profile": "deterministic",
+                            "tier": "none",
+                        }),
+                    );
                 } else {
                     all_none = false;
                 }
+                dominant = Some(dominant.map_or(inferred, |cur| cur.max(inferred)));
             }
         }
     }
-    (Value::Object(map), all_none)
+    let resolved_dominant = dominant.unwrap_or(if all_none {
+        ThinkingProfile::Deterministic
+    } else {
+        ThinkingProfile::Execution
+    });
+    (Value::Object(map), resolved_dominant, all_none)
+}
+
+pub fn enrich_simulated_agent_entry(repo: &Path, delegates: &[Value], entry: &mut Value) {
+    let agents = agent_names(delegates);
+    let (_profiles, thinking_profile, all_none) = load_llm_profiles_with_thinking(repo, &agents);
+    entry["agent_ids"] = json!(agents);
+    entry["thinking_profile"] = json!(thinking_profile.as_str());
+    if all_none {
+        entry["llm_provider"] = json!("deterministic-none");
+        entry["resolved_model"] = Value::Null;
+        entry["provider_mode"] = json!(ProviderMode::Deterministic.as_str());
+    } else {
+        if entry.get("llm_provider").is_none() {
+            entry["llm_provider"] = json!("cursor");
+        }
+        if entry.get("resolved_model").is_none() {
+            entry["resolved_model"] = Value::Null;
+        }
+        if entry.get("provider_mode").is_none() {
+            entry["provider_mode"] = json!(ProviderMode::InteractiveRelay.as_str());
+        }
+    }
 }
 
 fn truthy_state_flag(state: &Value, key: &str) -> bool {
@@ -593,7 +1093,644 @@ fn wait_child_with_timeout(
     }
 }
 
-/// Invoca el CLI de runtime para una fase de agentes.
+fn classify_error_code_from_text(raw: &str, explicit_code: Option<&str>) -> Option<String> {
+    if let Some(code) = explicit_code.map(str::trim).filter(|s| !s.is_empty()) {
+        return Some(match code {
+            "rate_limited" | "quota_exceeded" | ERR_PROVIDER_QUOTA_EXCEEDED => {
+                ERR_PROVIDER_QUOTA_EXCEEDED.to_string()
+            }
+            "timeout" | "agent-runtime-timeout" | ERR_PROVIDER_TIMEOUT => {
+                ERR_PROVIDER_TIMEOUT.to_string()
+            }
+            "upstream_unavailable" | "unavailable" | ERR_PROVIDER_UNAVAILABLE => {
+                ERR_PROVIDER_UNAVAILABLE.to_string()
+            }
+            other => other.to_string(),
+        });
+    }
+    let low = raw.to_ascii_lowercase();
+    if low.contains("quota") || low.contains("rate_limit") || low.contains("rate-limit") || low.contains("429") {
+        Some(ERR_PROVIDER_QUOTA_EXCEEDED.to_string())
+    } else if low.contains("timeout") {
+        Some(ERR_PROVIDER_TIMEOUT.to_string())
+    } else if low.contains("unavailable") || low.contains("connection refused") {
+        Some(ERR_PROVIDER_UNAVAILABLE.to_string())
+    } else {
+        None
+    }
+}
+
+fn execute_cli_subcommand(
+    provider_id: &str,
+    command_raw: &str,
+    req: &AgentInvocationRequest,
+) -> AgentExecutionResult {
+    let parts = match split_command(command_raw) {
+        Ok(p) => p,
+        Err(e) => {
+            return AgentExecutionResult {
+                status: "failed".into(),
+                provider_id: provider_id.into(),
+                provider_mode: ProviderMode::HeadlessCli,
+                thinking_profile: req.thinking_profile,
+                resolved_model: req.resolved_model.clone(),
+                message: None,
+                note: None,
+                error_code: Some(ERR_PROVIDER_UNAVAILABLE.into()),
+                error: Some(e),
+                runtime_response: None,
+                raw_stdout: None,
+                timeout_secs: None,
+                timeout_floor_applied: req.timeout_floor_applied,
+            };
+        }
+    };
+    let (bin, args) = match parts.split_first() {
+        Some((b, a)) => (b.clone(), a.to_vec()),
+        None => {
+            return AgentExecutionResult {
+                status: "failed".into(),
+                provider_id: provider_id.into(),
+                provider_mode: ProviderMode::HeadlessCli,
+                thinking_profile: req.thinking_profile,
+                resolved_model: req.resolved_model.clone(),
+                message: None,
+                note: None,
+                error_code: Some(ERR_PROVIDER_UNAVAILABLE.into()),
+                error: Some("comando runtime vacío".into()),
+                runtime_response: None,
+                raw_stdout: None,
+                timeout_secs: None,
+                timeout_floor_applied: req.timeout_floor_applied,
+            };
+        }
+    };
+
+    let mut child = match build_agent_command(&req.repo_root, &bin, &args, &req.cwd, req.depth).spawn()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            return AgentExecutionResult {
+                status: "failed".into(),
+                provider_id: provider_id.into(),
+                provider_mode: ProviderMode::HeadlessCli,
+                thinking_profile: req.thinking_profile,
+                resolved_model: req.resolved_model.clone(),
+                message: None,
+                note: None,
+                error_code: Some(ERR_PROVIDER_UNAVAILABLE.into()),
+                error: Some(format!("spawn agent-runtime: {e}")),
+                runtime_response: None,
+                raw_stdout: None,
+                timeout_secs: None,
+                timeout_floor_applied: req.timeout_floor_applied,
+            };
+        }
+    };
+
+    if let Some(mut stdin) = child.stdin.take() {
+        let body = serde_json::to_string(&req.payload).unwrap_or_else(|_| "{}".into());
+        if let Err(e) = stdin.write_all(body.as_bytes()) {
+            return AgentExecutionResult {
+                status: "failed".into(),
+                provider_id: provider_id.into(),
+                provider_mode: ProviderMode::HeadlessCli,
+                thinking_profile: req.thinking_profile,
+                resolved_model: req.resolved_model.clone(),
+                message: None,
+                note: None,
+                error_code: None,
+                error: Some(format!("stdin agent-runtime: {e}")),
+                runtime_response: None,
+                raw_stdout: None,
+                timeout_secs: None,
+                timeout_floor_applied: req.timeout_floor_applied,
+            };
+        }
+    }
+
+    let out = match wait_child_with_timeout(child, Duration::from_secs(req.timeout_secs)) {
+        Ok(o) => o,
+        Err("agent-runtime-timeout") => {
+            return AgentExecutionResult {
+                status: "failed".into(),
+                provider_id: provider_id.into(),
+                provider_mode: ProviderMode::HeadlessCli,
+                thinking_profile: req.thinking_profile,
+                resolved_model: req.resolved_model.clone(),
+                message: None,
+                note: None,
+                error_code: Some(ERR_PROVIDER_TIMEOUT.into()),
+                error: Some("agent-runtime-timeout".into()),
+                runtime_response: None,
+                raw_stdout: None,
+                timeout_secs: Some(req.timeout_secs),
+                timeout_floor_applied: req.timeout_floor_applied,
+            };
+        }
+        Err(e) => {
+            return AgentExecutionResult {
+                status: "failed".into(),
+                provider_id: provider_id.into(),
+                provider_mode: ProviderMode::HeadlessCli,
+                thinking_profile: req.thinking_profile,
+                resolved_model: req.resolved_model.clone(),
+                message: None,
+                note: None,
+                error_code: None,
+                error: Some(e.to_string()),
+                runtime_response: None,
+                raw_stdout: None,
+                timeout_secs: None,
+                timeout_floor_applied: req.timeout_floor_applied,
+            };
+        }
+    };
+
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    let line = stdout
+        .lines()
+        .map(str::trim)
+        .rfind(|l| !l.is_empty())
+        .unwrap_or("");
+
+    if line.is_empty() {
+        let err_msg = if stderr.trim().is_empty() {
+            format!(
+                "agent-runtime sin stdout (exit {})",
+                out.status.code().unwrap_or(1)
+            )
+        } else {
+            stderr.trim().to_string()
+        };
+        let code = classify_error_code_from_text(&err_msg, None);
+        return AgentExecutionResult {
+            status: "failed".into(),
+            provider_id: provider_id.into(),
+            provider_mode: ProviderMode::HeadlessCli,
+            thinking_profile: req.thinking_profile,
+            resolved_model: req.resolved_model.clone(),
+            message: None,
+            note: None,
+            error_code: code,
+            error: Some(err_msg),
+            runtime_response: None,
+            raw_stdout: None,
+            timeout_secs: None,
+            timeout_floor_applied: req.timeout_floor_applied,
+        };
+    }
+
+    let body: Value = match serde_json::from_str(line) {
+        Ok(v) => v,
+        Err(e) => {
+            return AgentExecutionResult {
+                status: "failed".into(),
+                provider_id: provider_id.into(),
+                provider_mode: ProviderMode::HeadlessCli,
+                thinking_profile: req.thinking_profile,
+                resolved_model: req.resolved_model.clone(),
+                message: None,
+                note: None,
+                error_code: None,
+                error: Some(format!("JSON agent-runtime: {e}")),
+                runtime_response: None,
+                raw_stdout: Some(line.to_string()),
+                timeout_secs: None,
+                timeout_floor_applied: req.timeout_floor_applied,
+            };
+        }
+    };
+
+    let success = body
+        .get("success")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let data = body.get("data").cloned().unwrap_or(json!({}));
+    let status = data
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or(if success { "executed" } else { "failed" });
+
+    let mut normalized = match status {
+        "executed" | "awaiting_agents" | "failed" | "blocked" => status.to_string(),
+        "awaiting" => "awaiting_agents".to_string(),
+        _ if success => "executed".to_string(),
+        _ => "failed".to_string(),
+    };
+
+    let message = data
+        .get("message")
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
+    let mut error = body
+        .get("error")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    if matches!(normalized.as_str(), "blocked" | "failed")
+        && error.as_deref().unwrap_or("").is_empty()
+    {
+        if let Some(ref msg) = message {
+            if !msg.is_empty() {
+                error = Some(msg.clone());
+            }
+        }
+    }
+    if !out.status.success() && normalized == "executed" {
+        normalized = "failed".to_string();
+        error = Some(format!(
+            "agent-runtime exit {} pese a status executed",
+            out.status.code().unwrap_or(1)
+        ));
+    }
+    let explicit_code = data
+        .get("error_code")
+        .or_else(|| body.get("error_code"))
+        .and_then(|v| v.as_str());
+    let combined_err = error
+        .as_deref()
+        .or(message.as_deref())
+        .unwrap_or("");
+    let error_code = if matches!(normalized.as_str(), "failed" | "blocked") {
+        classify_error_code_from_text(combined_err, explicit_code)
+    } else {
+        None
+    };
+    let resolved_model = data
+        .get("resolved_model")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .or_else(|| req.resolved_model.clone());
+
+    AgentExecutionResult {
+        status: normalized,
+        provider_id: provider_id.into(),
+        provider_mode: ProviderMode::HeadlessCli,
+        thinking_profile: req.thinking_profile,
+        resolved_model,
+        message,
+        note: None,
+        error_code,
+        error,
+        runtime_response: Some(body),
+        raw_stdout: None,
+        timeout_secs: None,
+        timeout_floor_applied: req.timeout_floor_applied,
+    }
+}
+
+pub struct CursorAgentRuntimeAdapter {
+    pub command: Option<String>,
+}
+
+impl AgentRuntimePort for CursorAgentRuntimeAdapter {
+    fn provider_id(&self) -> &str {
+        "cursor"
+    }
+
+    fn mode(&self) -> ProviderMode {
+        if self.command.as_deref().map(str::trim).is_some_and(|s| !s.is_empty()) {
+            ProviderMode::HeadlessCli
+        } else {
+            ProviderMode::InteractiveRelay
+        }
+    }
+
+    fn supports_unattended(&self) -> bool {
+        self.command.as_deref().map(str::trim).is_some_and(|s| !s.is_empty())
+    }
+
+    fn invoke(&self, req: &AgentInvocationRequest) -> AgentExecutionResult {
+        if let Some(cmd) = self.command.as_deref().filter(|s| !s.trim().is_empty()) {
+            return execute_cli_subcommand("cursor", cmd, req);
+        }
+        if req.unattended_policy == UnattendedPolicy::FailFast {
+            return AgentExecutionResult {
+                status: "failed".into(),
+                provider_id: "cursor".into(),
+                provider_mode: ProviderMode::InteractiveRelay,
+                thinking_profile: req.thinking_profile,
+                resolved_model: req.resolved_model.clone(),
+                message: None,
+                note: None,
+                error_code: Some(ERR_PROVIDER_UNATTENDED_UNSUPPORTED.into()),
+                error: Some(format!(
+                    "{ERR_PROVIDER_UNATTENDED_UNSUPPORTED}: cursor sin comando CLI bajo unattended_policy=fail_fast"
+                )),
+                runtime_response: None,
+                raw_stdout: None,
+                timeout_secs: None,
+                timeout_floor_applied: req.timeout_floor_applied,
+            };
+        }
+        AgentExecutionResult {
+            status: "simulated".into(),
+            provider_id: "cursor".into(),
+            provider_mode: ProviderMode::InteractiveRelay,
+            thinking_profile: req.thinking_profile,
+            resolved_model: req.resolved_model.clone(),
+            message: None,
+            note: Some("agentes IDE; sin SDDIA_AGENT_RUNTIME_COMMAND".into()),
+            error_code: None,
+            error: None,
+            runtime_response: None,
+            raw_stdout: None,
+            timeout_secs: None,
+            timeout_floor_applied: req.timeout_floor_applied,
+        }
+    }
+}
+
+pub struct AntigravityAgentRuntimeAdapter {
+    pub command: Option<String>,
+    pub explicit_local_config: bool,
+}
+
+impl AgentRuntimePort for AntigravityAgentRuntimeAdapter {
+    fn provider_id(&self) -> &str {
+        "antigravity"
+    }
+
+    fn mode(&self) -> ProviderMode {
+        if self.command.as_deref().map(str::trim).is_some_and(|s| !s.is_empty()) {
+            ProviderMode::HeadlessCli
+        } else {
+            ProviderMode::InteractiveRelay
+        }
+    }
+
+    fn supports_unattended(&self) -> bool {
+        self.command.as_deref().map(str::trim).is_some_and(|s| !s.is_empty())
+    }
+
+    fn invoke(&self, req: &AgentInvocationRequest) -> AgentExecutionResult {
+        if let Some(cmd) = self.command.as_deref().filter(|s| !s.trim().is_empty()) {
+            return execute_cli_subcommand("antigravity", cmd, req);
+        }
+        if req.unattended_policy == UnattendedPolicy::FailFast {
+            return AgentExecutionResult {
+                status: "failed".into(),
+                provider_id: "antigravity".into(),
+                provider_mode: ProviderMode::InteractiveRelay,
+                thinking_profile: req.thinking_profile,
+                resolved_model: req.resolved_model.clone(),
+                message: None,
+                note: None,
+                error_code: Some(ERR_PROVIDER_UNATTENDED_UNSUPPORTED.into()),
+                error: Some(format!(
+                    "{ERR_PROVIDER_UNATTENDED_UNSUPPORTED}: antigravity en modo interactive_relay bajo unattended_policy=fail_fast"
+                )),
+                runtime_response: None,
+                raw_stdout: None,
+                timeout_secs: None,
+                timeout_floor_applied: req.timeout_floor_applied,
+            };
+        }
+        let status = if self.explicit_local_config {
+            "awaiting_agents"
+        } else {
+            "simulated"
+        };
+        AgentExecutionResult {
+            status: status.into(),
+            provider_id: "antigravity".into(),
+            provider_mode: ProviderMode::InteractiveRelay,
+            thinking_profile: req.thinking_profile,
+            resolved_model: req.resolved_model.clone(),
+            message: Some("relevo interactivo en proveedor antigravity".into()),
+            note: Some("proveedor antigravity (interactive_relay)".into()),
+            error_code: None,
+            error: None,
+            runtime_response: None,
+            raw_stdout: None,
+            timeout_secs: None,
+            timeout_floor_applied: req.timeout_floor_applied,
+        }
+    }
+}
+
+pub struct LocalLlmAgentRuntimeAdapter {
+    pub command: Option<String>,
+    pub endpoint: Option<String>,
+}
+
+impl AgentRuntimePort for LocalLlmAgentRuntimeAdapter {
+    fn provider_id(&self) -> &str {
+        "local-llm"
+    }
+
+    fn mode(&self) -> ProviderMode {
+        if self.command.as_deref().map(str::trim).is_some_and(|s| !s.is_empty()) {
+            ProviderMode::HeadlessCli
+        } else {
+            ProviderMode::HeadlessApi
+        }
+    }
+
+    fn supports_unattended(&self) -> bool {
+        true
+    }
+
+    fn invoke(&self, req: &AgentInvocationRequest) -> AgentExecutionResult {
+        if let Some(cmd) = self.command.as_deref().filter(|s| !s.trim().is_empty()) {
+            return execute_cli_subcommand("local-llm", cmd, req);
+        }
+        let ep = self
+            .endpoint
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        let msg = match ep {
+            Some(url) => format!(
+                "{ERR_PROVIDER_UNAVAILABLE}: endpoint local-llm '{url}' sin transporte activo configurado"
+            ),
+            None => format!(
+                "{ERR_PROVIDER_UNAVAILABLE}: proveedor local-llm sin endpoint ni comando configurado en .SddIA/llm-runtime.local.json"
+            ),
+        };
+        AgentExecutionResult {
+            status: "failed".into(),
+            provider_id: "local-llm".into(),
+            provider_mode: ProviderMode::HeadlessApi,
+            thinking_profile: req.thinking_profile,
+            resolved_model: req.resolved_model.clone(),
+            message: None,
+            note: None,
+            error_code: Some(ERR_PROVIDER_UNAVAILABLE.into()),
+            error: Some(msg),
+            runtime_response: None,
+            raw_stdout: None,
+            timeout_secs: None,
+            timeout_floor_applied: req.timeout_floor_applied,
+        }
+    }
+}
+
+pub struct ResolvedRuntimeContext {
+    pub port: Arc<dyn AgentRuntimePort>,
+    pub provider_id: String,
+    pub resolved_model: Option<String>,
+    pub unattended_policy: UnattendedPolicy,
+    pub has_command: bool,
+}
+
+/// Factoría DI perezosa (`AgentRuntimeDiFactory`, AUT-122).
+/// Solo se invoca cuando `thinking_profile != ThinkingProfile::Deterministic`.
+pub struct AgentRuntimeDiFactory;
+
+impl AgentRuntimeDiFactory {
+    pub fn resolve(
+        repo: &Path,
+        inputs: &Value,
+        thinking_profile: ThinkingProfile,
+    ) -> Result<ResolvedRuntimeContext, (String, String)> {
+        let env_cmd = std::env::var(ENV_CMD)
+            .ok()
+            .map(|v| v.trim().to_string())
+            .filter(|s| !s.is_empty());
+        if let Some(mock) = current_mock_agent_runtime() {
+            let pid = mock.provider_id().to_string();
+            let model = env_model_override(&pid, thinking_profile);
+            return Ok(ResolvedRuntimeContext {
+                port: mock,
+                provider_id: pid,
+                resolved_model: model,
+                unattended_policy: UnattendedPolicy::PauseAwaitingAgents,
+                has_command: false,
+            });
+        }
+
+        let local_cfg = load_local_runtime_config(repo, inputs)
+            .map_err(|e| (ERR_CAPABILITY_BINDING_MISSING.to_string(), e))?;
+        let explicit_local = local_cfg.is_some();
+
+        let active_provider = local_cfg
+            .as_ref()
+            .and_then(|c| c.get("active_provider").and_then(|v| v.as_str()))
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+            .or_else(|| {
+                std::env::var("SDDIA_LLM_ACTIVE_PROVIDER")
+                    .ok()
+                    .map(|v| v.trim().to_string())
+                    .filter(|s| !s.is_empty())
+            })
+            .unwrap_or_else(|| "cursor".to_string());
+
+        let allowed_roles = allowed_agent_runtime_roles(repo);
+        if !allowed_roles.contains(&active_provider) {
+            return Err((
+                ERR_CAPABILITY_BINDING_MISSING.to_string(),
+                format!(
+                    "{ERR_CAPABILITY_BINDING_MISSING}: proveedor '{active_provider}' no figura en roles de agent:runtime"
+                ),
+            ));
+        }
+
+        let unattended_policy = UnattendedPolicy::parse(
+            local_cfg
+                .as_ref()
+                .and_then(|c| c.get("unattended_policy").and_then(|v| v.as_str())),
+        );
+
+        let provider_cfg = local_cfg
+            .as_ref()
+            .and_then(|c| c.get("providers"))
+            .and_then(|p| p.get(&active_provider));
+
+        let cfg_model = provider_cfg
+            .and_then(|p| p.get("models"))
+            .and_then(|m| m.get(thinking_profile.as_str()))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string);
+
+        let resolved_model = env_model_override(&active_provider, thinking_profile).or(cfg_model);
+
+        if explicit_local
+            && thinking_profile != ThinkingProfile::Deterministic
+            && active_provider != "test"
+        {
+            let provider_block_present = provider_cfg.is_some()
+                || local_cfg
+                    .as_ref()
+                    .and_then(|c| c.get("strict_models"))
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+            if provider_block_present && resolved_model.is_none() {
+                return Err((
+                    ERR_LLM_MODEL_UNRESOLVED.to_string(),
+                    format!(
+                        "{ERR_LLM_MODEL_UNRESOLVED}: sin modelo para perfil '{}' en proveedor '{}'",
+                        thinking_profile.as_str(),
+                        active_provider
+                    ),
+                ));
+            }
+        }
+
+        let cfg_command = provider_cfg
+            .and_then(|p| p.get("command"))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+            .or(env_cmd);
+
+        let cfg_endpoint = provider_cfg
+            .and_then(|p| p.get("endpoint"))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+            .or_else(|| {
+                std::env::var("SDDIA_LOCAL_LLM_ENDPOINT")
+                    .ok()
+                    .map(|v| v.trim().to_string())
+                    .filter(|s| !s.is_empty())
+            });
+
+        let has_command = cfg_command.is_some();
+        let port: Arc<dyn AgentRuntimePort> = match active_provider.as_str() {
+            "cursor" => Arc::new(CursorAgentRuntimeAdapter {
+                command: cfg_command,
+            }),
+            "antigravity" => Arc::new(AntigravityAgentRuntimeAdapter {
+                command: cfg_command,
+                explicit_local_config: explicit_local,
+            }),
+            "local-llm" => Arc::new(LocalLlmAgentRuntimeAdapter {
+                command: cfg_command,
+                endpoint: cfg_endpoint,
+            }),
+            "test" => Arc::new(InMemoryAgentRuntimeMock {
+                resolved_model_override: resolved_model.clone(),
+                ..Default::default()
+            }),
+            other => {
+                return Err((
+                    ERR_CAPABILITY_BINDING_MISSING.to_string(),
+                    format!("{ERR_CAPABILITY_BINDING_MISSING}: proveedor no soportado '{other}'"),
+                ));
+            }
+        };
+
+        Ok(ResolvedRuntimeContext {
+            port,
+            provider_id: active_provider,
+            resolved_model,
+            unattended_policy,
+            has_command,
+        })
+    }
+}
+
+/// Invoca el puerto DI de runtime para una fase de agentes (`AgentRuntimePort`, AUT-122).
 pub fn invoke_agent_phase(
     repo: &Path,
     process_name: &str,
@@ -603,10 +1740,15 @@ pub fn invoke_agent_phase(
     state: &Value,
     di_binding: Option<Value>,
 ) -> Value {
+    let agents = agent_names(delegates);
+    let (llm_profiles, thinking_profile, all_none) = load_llm_profiles_with_thinking(repo, &agents);
+
     let mut entry = json!({
         "phase_name": phase_name,
         "delegates_to": delegates,
         "handler": "agent-runtime",
+        "agent_ids": agents,
+        "thinking_profile": thinking_profile.as_str(),
     });
     if let Some(di) = &di_binding {
         entry["di_binding"] = di.clone();
@@ -616,40 +1758,32 @@ pub fn invoke_agent_phase(
         eprintln!("agent-runtime: lab-relay activo (bóveda ignorada)");
         entry["status"] = json!("simulated");
         entry["note"] = json!("SDDIA_AGENT_RELAY_IDE=1; relevo IDE");
+        entry["llm_provider"] = json!("cursor");
+        entry["resolved_model"] = Value::Null;
+        entry["provider_mode"] = json!(ProviderMode::InteractiveRelay.as_str());
         return finish_agent_entry(entry, process_name, phase_name);
     }
 
     if agent_runtime_depth() >= 1 {
         entry["status"] = json!("simulated");
         entry["note"] = json!("reentry-guard: SDDIA_AGENT_RUNTIME_DEPTH>=1");
+        entry["llm_provider"] = json!("cursor");
+        entry["resolved_model"] = Value::Null;
+        entry["provider_mode"] = json!(ProviderMode::InteractiveRelay.as_str());
         return finish_agent_entry(entry, process_name, phase_name);
     }
 
-    let raw = match std::env::var(ENV_CMD) {
-        Ok(v) if !v.trim().is_empty() => v,
-        _ => {
-            entry["status"] = json!("simulated");
-            entry["note"] = json!("agentes IDE; sin SDDIA_AGENT_RUNTIME_COMMAND");
-            return finish_agent_entry(entry, process_name, phase_name);
-        }
-    };
-
-    let parts = match split_command(&raw) {
-        Ok(p) => p,
-        Err(e) => {
-            entry["status"] = json!("failed");
-            entry["error"] = json!(e);
-            return finish_agent_entry(entry, process_name, phase_name);
-        }
-    };
-    let (bin, args) = match parts.split_first() {
-        Some((b, a)) => (b.clone(), a.to_vec()),
-        None => {
-            entry["status"] = json!("failed");
-            entry["error"] = json!("comando runtime vacío");
-            return finish_agent_entry(entry, process_name, phase_name);
-        }
-    };
+    // Invariante de evaluación perezosa: si todos los agentes son `deterministic`,
+    // cortocircuita sin evaluar `.SddIA/llm-runtime.local.json` ni spawnear comando.
+    if all_none {
+        entry["status"] = json!("executed");
+        entry["note"] = json!("deterministic-agent-no-llm");
+        entry["llm_profiles"] = llm_profiles;
+        entry["llm_provider"] = json!("deterministic-none");
+        entry["resolved_model"] = Value::Null;
+        entry["provider_mode"] = json!(ProviderMode::Deterministic.as_str());
+        return finish_agent_entry(entry, process_name, phase_name);
+    }
 
     let execution_id = resolve_execution_id(inputs, state);
     let persist_ref_val = resolve_persist_ref_value(inputs, state);
@@ -662,18 +1796,32 @@ pub fn invoke_agent_phase(
             entry["status"] = json!("failed");
             entry["error"] = json!("persist-execution-id-conflict");
             entry["conflict_paths"] = json!(conflicts);
+            entry["llm_provider"] = json!("cursor");
+            entry["resolved_model"] = Value::Null;
+            entry["provider_mode"] = json!(ProviderMode::InteractiveRelay.as_str());
             return finish_agent_entry(entry, process_name, phase_name);
         }
     }
 
-    let agents = agent_names(delegates);
-    let (llm_profiles, all_none) = load_llm_profiles(repo, &agents);
-    if all_none {
-        entry["status"] = json!("executed");
-        entry["note"] = json!("deterministic-agent-no-llm");
-        entry["llm_profiles"] = llm_profiles;
-        return finish_agent_entry(entry, process_name, phase_name);
-    }
+    let resolved_ctx = match AgentRuntimeDiFactory::resolve(repo, inputs, thinking_profile) {
+        Ok(ctx) => ctx,
+        Err((code, msg)) => {
+            entry["status"] = json!("failed");
+            entry["error_code"] = json!(code);
+            entry["error"] = json!(msg);
+            entry["llm_provider"] = json!("unresolved");
+            entry["resolved_model"] = Value::Null;
+            entry["provider_mode"] = json!(ProviderMode::InteractiveRelay.as_str());
+            return finish_agent_entry(entry, process_name, phase_name);
+        }
+    };
+
+    entry["llm_provider"] = json!(resolved_ctx.provider_id);
+    entry["resolved_model"] = match &resolved_ctx.resolved_model {
+        Some(m) => json!(m),
+        None => Value::Null,
+    };
+    entry["provider_mode"] = json!(resolved_ctx.port.mode().as_str());
 
     let branch_name = inputs
         .get("branch_name")
@@ -714,44 +1862,49 @@ pub fn invoke_agent_phase(
                 .flatten()
                 .map(|b| b.project_root.to_string_lossy().replace('\\', "/"))
         });
-    let mcp_servers = if let Some(ref root) = project_root {
-        let command = workspace_server_binary(repo).display().to_string();
-        let repo_s = repo.display().to_string();
-        let mut args = vec![
-            "--root".to_string(),
-            root.clone(),
-            "--sddia-repo".to_string(),
-            repo_s.clone(),
-            "--instance-root".to_string(),
-            repo_s,
-        ];
-        if let Some(ws) = state
-            .get("workspace_path")
-            .or_else(|| state.get("workspace").and_then(|w| w.get("workspace_path")))
-            .and_then(|v| v.as_str())
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-        {
-            args.push("--workspace-path".to_string());
-            args.push(ws.to_string());
-        }
-        let env_keys: Vec<&str> = if inputs
-            .get("correlation_id")
-            .and_then(|v| v.as_str())
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .is_some()
-        {
-            vec!["SDDIA_CORRELATION_ID"]
+
+    let mcp_servers = if resolved_ctx.has_command {
+        if let Some(ref root) = project_root {
+            let command = workspace_server_binary(repo).display().to_string();
+            let repo_s = repo.display().to_string();
+            let mut args = vec![
+                "--root".to_string(),
+                root.clone(),
+                "--sddia-repo".to_string(),
+                repo_s.clone(),
+                "--instance-root".to_string(),
+                repo_s,
+            ];
+            if let Some(ws) = state
+                .get("workspace_path")
+                .or_else(|| state.get("workspace").and_then(|w| w.get("workspace_path")))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                args.push("--workspace-path".to_string());
+                args.push(ws.to_string());
+            }
+            let env_keys: Vec<&str> = if inputs
+                .get("correlation_id")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .is_some()
+            {
+                vec!["SDDIA_CORRELATION_ID"]
+            } else {
+                vec![]
+            };
+            Some(json!([{
+                "name": "sddia-workspace-server",
+                "command": command,
+                "args": args,
+                "env_keys": env_keys,
+            }]))
         } else {
-            vec![]
-        };
-        Some(json!([{
-            "name": "sddia-workspace-server",
-            "command": command,
-            "args": args,
-            "env_keys": env_keys,
-        }]))
+            None
+        }
     } else {
         None
     };
@@ -790,6 +1943,9 @@ pub fn invoke_agent_phase(
         "process_name": process_name,
         "phase_name": phase_name,
         "agents": agents,
+        "thinking_profile": thinking_profile.as_str(),
+        "llm_provider": resolved_ctx.provider_id,
+        "resolved_model": resolved_ctx.resolved_model,
         "llm_profiles": llm_profiles,
         "persist_ref": persist_ref_val,
         "branch_name": branch_name,
@@ -814,7 +1970,7 @@ pub fn invoke_agent_phase(
         }
     }
 
-    if phase_name == "Verificación" {
+    if phase_name == "Verificación" && resolved_ctx.has_command {
         let branch = branch_name
             .as_str()
             .map(str::trim)
@@ -835,133 +1991,63 @@ pub fn invoke_agent_phase(
         }
     }
 
-    let depth = agent_runtime_depth();
-    let cwd = agent_runtime_cwd(repo, project_root.as_deref(), execution_id.as_deref());
-    let mut child = match build_agent_command(repo, &bin, &args, &cwd, depth).spawn() {
-        Ok(c) => c,
-        Err(e) => {
-            entry["status"] = json!("failed");
-            entry["error"] = json!(format!("spawn agent-runtime: {e}"));
-            return finish_agent_entry(entry, process_name, phase_name);
-        }
-    };
-
-    if let Some(mut stdin) = child.stdin.take() {
-        let body = serde_json::to_string(&payload).unwrap_or_else(|_| "{}".into());
-        if let Err(e) = stdin.write_all(body.as_bytes()) {
-            entry["status"] = json!("failed");
-            entry["error"] = json!(format!("stdin agent-runtime: {e}"));
-            return finish_agent_entry(entry, process_name, phase_name);
-        }
-    }
-
     let timeout_secs = resolve_timeout_secs(phase_name);
+    let mut timeout_floor_applied = false;
     if execution_timeout_floor_applied(phase_name, timeout_secs) {
         let without_floor = parse_env_timeout_secs(ENV_TIMEOUT_EXEC)
             .or_else(|| parse_env_timeout_secs(ENV_TIMEOUT))
             .unwrap_or(DEFAULT_TIMEOUT_SECS);
         if without_floor < MIN_EXECUTION_TIMEOUT_SECS {
+            timeout_floor_applied = true;
             entry["timeout_floor_applied"] = json!(true);
         }
     }
-    let out = match wait_child_with_timeout(child, Duration::from_secs(timeout_secs)) {
-        Ok(o) => o,
-        Err("agent-runtime-timeout") => {
-            entry["status"] = json!("failed");
-            entry["error"] = json!("agent-runtime-timeout");
-            entry["timeout_secs"] = json!(timeout_secs);
-            return finish_agent_entry(entry, process_name, phase_name);
-        }
-        Err(e) => {
-            entry["status"] = json!("failed");
-            entry["error"] = json!(e);
-            return finish_agent_entry(entry, process_name, phase_name);
-        }
+
+    let req = AgentInvocationRequest {
+        repo_root: repo.to_path_buf(),
+        process_name: process_name.to_string(),
+        phase_name: phase_name.to_string(),
+        agents,
+        thinking_profile,
+        resolved_model: resolved_ctx.resolved_model,
+        unattended_policy: resolved_ctx.unattended_policy,
+        payload,
+        cwd: agent_runtime_cwd(repo, project_root.as_deref(), execution_id.as_deref()),
+        timeout_secs,
+        timeout_floor_applied,
+        depth: agent_runtime_depth(),
     };
 
-    let stdout = String::from_utf8_lossy(&out.stdout);
-    let stderr = String::from_utf8_lossy(&out.stderr);
-    let line = stdout
-        .lines()
-        .map(str::trim)
-        .rfind(|l| !l.is_empty())
-        .unwrap_or("");
-
-    if line.is_empty() {
-        entry["status"] = json!("failed");
-        entry["error"] = json!(if stderr.trim().is_empty() {
-            format!(
-                "agent-runtime sin stdout (exit {})",
-                out.status.code().unwrap_or(1)
-            )
-        } else {
-            stderr.trim().to_string()
-        });
-        return finish_agent_entry(entry, process_name, phase_name);
-    }
-
-    let body: Value = match serde_json::from_str(line) {
-        Ok(v) => v,
-        Err(e) => {
-            entry["status"] = json!("failed");
-            entry["error"] = json!(format!("JSON agent-runtime: {e}"));
-            entry["raw_stdout"] = json!(line);
-            return finish_agent_entry(entry, process_name, phase_name);
-        }
+    let result = resolved_ctx.port.invoke(&req);
+    entry["status"] = json!(result.status);
+    entry["llm_provider"] = json!(result.provider_id);
+    entry["provider_mode"] = json!(result.provider_mode.as_str());
+    entry["thinking_profile"] = json!(result.thinking_profile.as_str());
+    entry["resolved_model"] = match result.resolved_model {
+        Some(m) => json!(m),
+        None => Value::Null,
     };
-
-    let success = body
-        .get("success")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
-    let data = body.get("data").cloned().unwrap_or(json!({}));
-    let status = data
-        .get("status")
-        .and_then(|v| v.as_str())
-        .unwrap_or(if success { "executed" } else { "failed" });
-
-    let normalized = match status {
-        "executed" | "awaiting_agents" | "failed" | "blocked" => status,
-        "awaiting" => "awaiting_agents",
-        _ if success => "executed",
-        _ => "failed",
-    };
-
-    entry["status"] = json!(normalized);
-    if let Some(msg) = data.get("message").and_then(|v| v.as_str()) {
+    if let Some(msg) = result.message {
         entry["message"] = json!(msg);
     }
-    if let Some(err) = body
-        .get("error")
-        .and_then(|v| v.as_str())
-        .filter(|s| !s.is_empty())
-    {
+    if let Some(note) = result.note {
+        entry["note"] = json!(note);
+    }
+    if let Some(code) = result.error_code {
+        entry["error_code"] = json!(code);
+    }
+    if let Some(err) = result.error {
         entry["error"] = json!(err);
     }
-    if matches!(normalized, "blocked" | "failed") {
-        let has_error = entry
-            .get("error")
-            .and_then(|v| v.as_str())
-            .map(|s| !s.is_empty())
-            .unwrap_or(false);
-        if !has_error {
-            if let Some(msg) = data
-                .get("message")
-                .and_then(|v| v.as_str())
-                .filter(|s| !s.is_empty())
-            {
-                entry["error"] = json!(msg);
-            }
-        }
+    if let Some(to) = result.timeout_secs {
+        entry["timeout_secs"] = json!(to);
     }
-    if !out.status.success() && normalized == "executed" {
-        entry["status"] = json!("failed");
-        entry["error"] = json!(format!(
-            "agent-runtime exit {} pese a status executed",
-            out.status.code().unwrap_or(1)
-        ));
+    if let Some(raw_out) = result.raw_stdout {
+        entry["raw_stdout"] = json!(raw_out);
     }
-    entry["runtime_response"] = body;
+    if let Some(resp) = result.runtime_response {
+        entry["runtime_response"] = resp;
+    }
     finish_agent_entry(entry, process_name, phase_name)
 }
 
@@ -1700,5 +2786,276 @@ print(json.dumps({"success":True,"data":{"status":"executed","message":"soft-ok"
         let _ = fs::remove_dir_all(&dir);
         assert_eq!(entry["status"], "executed", "{entry}");
         assert_eq!(entry["message"], "soft-ok");
+    }
+
+    #[test]
+    fn thinking_profile_taxonomy_and_multi_agent_precedence() {
+        let dir = std::env::temp_dir().join(format!("sddia-tp-prec-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(dir.join("SddIA/agents")).unwrap();
+        fs::write(
+            dir.join("SddIA/agents/mayeuta.md"),
+            "---\nname: mayeuta\nllm_profile:\n  thinking_profile: reasoning\n  tier: high\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            dir.join("SddIA/agents/argos.md"),
+            "---\nname: argos\nllm_profile:\n  thinking_profile: audit\n  tier: medium\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            dir.join("SddIA/agents/tekton.md"),
+            "---\nname: tekton\nllm_profile:\n  thinking_profile: execution\n  tier: low\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            dir.join("SddIA/agents/cerbero.md"),
+            "---\nname: cerbero\nllm_profile:\n  thinking_profile: deterministic\n  tier: none\n---\n",
+        )
+        .unwrap();
+
+        let (_, tp_reason, all_none_1) = load_llm_profiles_with_thinking(
+            &dir,
+            &["tekton".into(), "argos".into(), "mayeuta".into()],
+        );
+        assert_eq!(tp_reason, ThinkingProfile::Reasoning);
+        assert!(!all_none_1);
+
+        let (_, tp_audit, all_none_2) =
+            load_llm_profiles_with_thinking(&dir, &["tekton".into(), "argos".into()]);
+        assert_eq!(tp_audit, ThinkingProfile::Audit);
+        assert!(!all_none_2);
+
+        let (_, tp_exec, all_none_3) =
+            load_llm_profiles_with_thinking(&dir, &["cerbero".into(), "tekton".into()]);
+        assert_eq!(tp_exec, ThinkingProfile::Execution);
+        assert!(!all_none_3);
+
+        let (_, tp_det, all_none_4) =
+            load_llm_profiles_with_thinking(&dir, &["cerbero".into(), "cumulo".into()]);
+        assert_eq!(tp_det, ThinkingProfile::Deterministic);
+        assert!(all_none_4);
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn di_factory_lazy_deterministic_ignores_broken_local_config() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-lazy-det-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(dir.join(".SddIA")).unwrap();
+        // Broken JSON in .SddIA/llm-runtime.local.json must NOT be evaluated for deterministic agents
+        fs::write(
+            dir.join(".SddIA/llm-runtime.local.json"),
+            "{ invalid json !!!",
+        )
+        .unwrap();
+        let entry = invoke_agent_phase(
+            &dir,
+            "pull-request-review",
+            "Certificación RBAC",
+            &[json!("agent:cerbero")],
+            &json!({}),
+            &json!({}),
+            None,
+        );
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(entry["status"], "executed", "{entry}");
+        assert_eq!(entry["thinking_profile"], "deterministic");
+        assert_eq!(entry["llm_provider"], "deterministic-none");
+        assert_eq!(entry["provider_mode"], "deterministic");
+        assert!(entry["resolved_model"].is_null());
+    }
+
+    #[test]
+    fn di_factory_resolves_models_and_rejects_missing_model_or_binding() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-di-cfg-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(dir.join(".SddIA")).unwrap();
+
+        // 1. Unknown provider -> CAPABILITY_BINDING_MISSING
+        fs::write(
+            dir.join(".SddIA/llm-runtime.local.json"),
+            r#"{"active_provider":"unknown-ide","providers":{"unknown-ide":{"models":{"reasoning":"m1"}}}}"#,
+        )
+        .unwrap();
+        let bad_binding = invoke_agent_phase(
+            &dir,
+            "feature",
+            "Diseño de Blueprint",
+            &[json!("agent:dedalo")],
+            &json!({}),
+            &json!({}),
+            None,
+        );
+        assert_eq!(bad_binding["status"], "failed");
+        assert_eq!(bad_binding["error_code"], ERR_CAPABILITY_BINDING_MISSING);
+
+        // 2. Missing model for reasoning in configured provider -> LLM_MODEL_UNRESOLVED
+        fs::write(
+            dir.join(".SddIA/llm-runtime.local.json"),
+            r#"{"active_provider":"antigravity","providers":{"antigravity":{"models":{"execution":"flash-only"}}}}"#,
+        )
+        .unwrap();
+        let bad_model = invoke_agent_phase(
+            &dir,
+            "feature",
+            "Diseño de Blueprint",
+            &[json!("agent:dedalo")],
+            &json!({}),
+            &json!({}),
+            None,
+        );
+        assert_eq!(bad_model["status"], "failed");
+        assert_eq!(bad_model["error_code"], ERR_LLM_MODEL_UNRESOLVED);
+
+        // 3. Valid antigravity interactive relay config -> awaiting_agents + resolved_model
+        fs::write(
+            dir.join(".SddIA/llm-runtime.local.json"),
+            r#"{"active_provider":"antigravity","unattended_policy":"pause_awaiting_agents","providers":{"antigravity":{"models":{"reasoning":"gemini-2.5-pro"}}}}"#,
+        )
+        .unwrap();
+        let ok_agy = invoke_agent_phase(
+            &dir,
+            "feature",
+            "Diseño de Blueprint",
+            &[json!("agent:dedalo")],
+            &json!({}),
+            &json!({}),
+            None,
+        );
+        assert_eq!(ok_agy["status"], "awaiting_agents", "{ok_agy}");
+        assert_eq!(ok_agy["llm_provider"], "antigravity");
+        assert_eq!(ok_agy["thinking_profile"], "reasoning");
+        assert_eq!(ok_agy["resolved_model"], "gemini-2.5-pro");
+        assert_eq!(ok_agy["provider_mode"], "interactive_relay");
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn no_auto_failover_on_quota_timeout_or_unavailable_and_mock_injection() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-nofailover-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(dir.join(".SddIA")).unwrap();
+
+        // 1. local-llm without endpoint fails with PROVIDER_UNAVAILABLE (no fallback to cursor/antigravity)
+        fs::write(
+            dir.join(".SddIA/llm-runtime.local.json"),
+            r#"{"active_provider":"local-llm","providers":{"local-llm":{"endpoint":"","models":{"execution":"qwen-coder"}}}}"#,
+        )
+        .unwrap();
+        let local_res = invoke_agent_phase(
+            &dir,
+            "feature",
+            "Ejecución",
+            &[json!("agent:tekton")],
+            &json!({}),
+            &json!({}),
+            None,
+        );
+        assert_eq!(local_res["status"], "failed");
+        assert_eq!(local_res["llm_provider"], "local-llm");
+        assert_eq!(local_res["error_code"], ERR_PROVIDER_UNAVAILABLE);
+
+        // 2. Cursor CLI quota exceeded -> PROVIDER_QUOTA_EXCEEDED without switching provider
+        let quota_script = mock_script(
+            &dir,
+            "#!/bin/sh\ncat >/dev/null\necho '{\"success\":false,\"data\":{\"status\":\"failed\",\"error_code\":\"rate_limited\",\"message\":\"429 quota exceeded\"}}'\n",
+        );
+        fs::write(
+            dir.join(".SddIA/llm-runtime.local.json"),
+            serde_json::to_string(&json!({
+                "active_provider": "cursor",
+                "providers": {
+                    "cursor": {
+                        "command": quota_script.display().to_string(),
+                        "models": { "execution": "composer-2.5" }
+                    },
+                    "antigravity": {
+                        "models": { "execution": "gemini-2.5-flash" }
+                    }
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let quota_res = invoke_agent_phase(
+            &dir,
+            "feature",
+            "Ejecución",
+            &[json!("agent:tekton")],
+            &json!({}),
+            &json!({}),
+            None,
+        );
+        assert_eq!(quota_res["status"], "failed");
+        assert_eq!(quota_res["llm_provider"], "cursor");
+        assert_eq!(quota_res["error_code"], ERR_PROVIDER_QUOTA_EXCEEDED);
+
+        // 3. In-memory mock injection without SDDIA_LAB_*
+        let mock = Arc::new(InMemoryAgentRuntimeMock {
+            provider: "mock".into(),
+            mode: ProviderMode::HeadlessApi,
+            status: "executed".into(),
+            resolved_model_override: Some("mock-audit-v1".into()),
+            message: Some("mock-ok".into()),
+            error_code: None,
+            error: None,
+        });
+        let mock_res = with_mock_agent_runtime(mock, || {
+            invoke_agent_phase(
+                &dir,
+                "feature",
+                "Verificación",
+                &[json!("agent:argos")],
+                &json!({}),
+                &json!({}),
+                None,
+            )
+        });
+        assert_eq!(mock_res["status"], "executed");
+        assert_eq!(mock_res["llm_provider"], "mock");
+        assert_eq!(mock_res["thinking_profile"], "audit");
+        assert_eq!(mock_res["resolved_model"], "mock-audit-v1");
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn switch_llm_provider_persists_local_config_and_rejects_unknown_provider() {
+        let dir = std::env::temp_dir().join(format!("sddia-switch-llm-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+
+        let err = switch_llm_provider(&dir, &json!({"provider": "invalid-provider"})).unwrap_err();
+        assert!(err.contains(ERR_CAPABILITY_BINDING_MISSING));
+
+        let ok = switch_llm_provider(
+            &dir,
+            &json!({
+                "provider": "antigravity",
+                "unattended_policy": "pause_awaiting_agents",
+                "models": {
+                    "reasoning": "gemini-2.5-pro",
+                    "audit": "gemini-2.5-pro",
+                    "execution": "gemini-2.5-flash"
+                }
+            }),
+        )
+        .expect("switch-llm-provider should succeed");
+        assert_eq!(ok["active_provider"], "antigravity");
+        assert_eq!(ok["config_path"], ".SddIA/llm-runtime.local.json");
+        let saved: Value = serde_json::from_str(
+            &fs::read_to_string(dir.join(".SddIA/llm-runtime.local.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(saved["active_provider"], "antigravity");
+        assert_eq!(
+            saved["providers"]["antigravity"]["models"]["reasoning"],
+            "gemini-2.5-pro"
+        );
+        let _ = fs::remove_dir_all(&dir);
     }
 }

@@ -3041,7 +3041,7 @@ NOTA_BACKFILL
     fn catalog_cognitive_roles_match_the_contract() {
         let repo = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..");
         let contract = fs::read_to_string(repo.join("SddIA/agents/agents-contract.md")).unwrap();
-        assert!(contract.contains("contract_version: \"1.2.0\""));
+        assert!(contract.contains("contract_version: \"1.3.0\""));
         let index = fs::read_to_string(repo.join("SddIA/agents/index.md")).unwrap();
         let rows = index
             .lines()

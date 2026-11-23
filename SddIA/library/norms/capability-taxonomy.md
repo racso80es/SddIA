@@ -1,12 +1,12 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.12"
+version: "1.0.13"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
 category: "architecture"
-hash_signature: "sha256:f1af3c84125a87207e62ed65006b29d1db5525413bbb5686f9b51f24e77df601"
+hash_signature: "sha256:75f526fd3d66b58fe59f92da72f4752bb62f05104f67362a62eb99d607afdd20"
 catalog:
   - id: "doc:closure"
     contract: "doc.closure"
@@ -80,6 +80,10 @@ catalog:
     contract: "eda.event_manager"
     version: "2.0.0"
     description: "EventManagerPort 2.0 — ciclo de vida, consultas, DLT/admin y verify ECST; store vía host Redb (MAN-43)."
+  - id: "agent:runtime"
+    contract: "agent.runtime"
+    version: "1.0.0"
+    description: "AgentRuntimePort 1.0 — ejecución cognitiva de fases de agentes del Core por thinking_profile y proveedor DI sin auto-failover (AUT-122)."
 ---
 
 ## Directriz Core
@@ -112,6 +116,7 @@ Alta y mutación del `catalog` (incluido bump de versión por capacidad): única
 | `memory:thought-graph` | `memory.thought_graph` | 1.0.0 | Búsqueda y persistencia de ThoughtNode (LanceDB) |
 | `tracker:lifecycle` | `tracker.lifecycle` | 1.0.0 | Ciclo de vida de un ítem de gestión; stdout `emit_v2` |
 | `eda:event-manager` | `eda.event_manager` | 2.0.0 | EventManagerPort 2.0 / host Redb (MAN-43) |
+| `agent:runtime` | `agent.runtime` | 1.0.0 | AgentRuntimePort 1.0 / proveedor LLM activo sin auto-failover (AUT-122) |
 
 ## Restricciones Duras
 
