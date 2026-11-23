@@ -201,3 +201,147 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 notes: "idempotent-hit"
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-23T15:50:37Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-git-apto; handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-23T15:52:17Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `539ede09-aa13-4683-b254-800fc6b8cb9d`
+- correlation_id: `352e0c0c-ac09-494d-a823-f14ff874bb4c`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residual: worktree `refactor/resolucion-estricta-capsulas-skill-tool` ≠ inject; ref fix ausente; workspace vacío.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Tocados: `docs/fixes/erradicar-store-backed-fugas-fs-bus/validacion.md` (Triaje documental).
+- R1/R2: copia bridge `native_state` @ `15:50:37Z` → TECH/GIT **APTO**; Shell git-manager Rejected (sin stdout inventado).
+- F2: `spec`+`plan`+`objectives`+`implementation`+`execution`+YAML+evolution OK; `clarify`/`oracle-red` ausentes (no bloquean).
+- R3 KM: **APTO** — 0 writes `docs/todos/**`; Linear AUT-114.
+- Residual: worktree `refactor/resolucion-estricta-capsulas-skill-tool` ≠ inject; ref fix ausente; workspace vacío.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-23T15:52:17Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-git-apto; idempotent-hit"
+```
+
+## 2026-11-23T15:53:47Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `539ede09-aa13-4683-b254-800fc6b8cb9d`
+- correlation_id: `352e0c0c-ac09-494d-a823-f14ff874bb4c`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residuales: `{eid}.json`/fractal, `oracle-red` ausente, workspace vacío, `accept_pr_handoff: pending`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success`)
+
+- Tocados: `docs/fixes/erradicar-store-backed-fugas-fs-bus/validacion.md` (Veredicto y bloqueo).
+- R1/R2: bridge `native_state`/`handoff-git-apto; idempotent-hit` → TECH/GIT **APTO**; Shell `git-manager` Rejected (sin stdout inventado).
+- F2–F5 APTO; F4 PPR ∉ revoked; R3 KM APTO (0 writes `docs/todos/**`).
+- Branch FS ≠ inject (`refactor/…` @ `efb7449f…`; ref fix ausente) — residual no bloqueante.
+- Residuales: `{eid}.json`/fractal, `oracle-red` ausente, workspace vacío, `accept_pr_handoff: pending`.
+```
+
+## 2026-11-23T15:54:44Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `651183a4-f303-4347-937c-e2c020839ecc`
+- correlation_id: `56e609b4-a418-4edd-9732-a7444d996eaa`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residual: worktree `refactor/resolucion-estricta-capsulas-skill-tool` ≠ inject; ref fix ausente; `{eid}.json`; workspace vacío
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Tocados: `docs/fixes/erradicar-store-backed-fugas-fs-bus/validacion.md`
+- R1/R2: copia bridge `native_state` → TECH/GIT **APTO**; Shell git-manager Rejected (sin stdout inventado)
+- F2: objectives+spec+plan+implementation+execution+YAML+evolution **APTO**
+- R3 KM: **APTO** — 0 writes `docs/todos/**`; Linear AUT-114
+- Residual: worktree `refactor/resolucion-estricta-capsulas-skill-tool` ≠ inject; ref fix ausente; `{eid}.json`; workspace vacío
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-23T15:54:44Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-git-apto; idempotent-hit"
+```
+
+## 2026-11-23T15:56:56Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `651183a4-f303-4347-937c-e2c020839ecc`
+- correlation_id: `56e609b4-a418-4edd-9732-a7444d996eaa`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residuales: `{eid}.json`/fractal, `oracle-red` ausente, workspace vacío, `accept_pr_handoff: pending`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success`)
+
+- Tocados: `docs/fixes/erradicar-store-backed-fugas-fs-bus/validacion.md` (Veredicto y bloqueo).
+- R1/R2: bridge `native_state`/`handoff-git-apto; idempotent-hit` → TECH/GIT **APTO**; Shell `git-manager` Rejected (sin stdout inventado).
+- F2–F5 APTO; F4 PPR ∉ revoked; R3 KM APTO (0 writes `docs/todos/**`).
+- Branch FS ≠ inject (`refactor/…` @ `a42081dd…`; ref fix ausente) — residual no bloqueante.
+- Residuales: `{eid}.json`/fractal, `oracle-red` ausente, workspace vacío, `accept_pr_handoff: pending`.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-23T15:57:14Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-git-apto; handoff-formal-scan; idempotent-hit"
+```
