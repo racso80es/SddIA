@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `55b44f5e-292f-4c51-abf9-33d1f9c5ce04` | 2026-11-23 | AUT-115: sanear tests de despacho de suscriptores con SubscriberDispatchPort DI (eliminar store_backed y aserciones negativas) | CANONICO | `SddIA/evolution/55b44f5e-292f-4c51-abf9-33d1f9c5ce04.md` |
 | `cf3bbcc3-df0e-4b12-ac55-b2fb65351b7d` | 2026-11-23 | AUT-118: rechazo estricto CapsuleKindMismatch en resolve_capsule/Cerbero RBAC, corrección de call sites send-telegram-notification y gate-capsule-kind en sddia-qa | CANONICO | `SddIA/evolution/cf3bbcc3-df0e-4b12-ac55-b2fb65351b7d.md` |
 | `e27a7b37-0ee1-4d31-ac8e-168c847b4e29` | 2026-11-23 | AUT-114: erradicar store_backed y fugas de sustrato FS vs Redb en route_domain_core/route_fractal_core/ecst_input_loader y vetarlos en gate-event-manager-port | CANONICO | `SddIA/evolution/e27a7b37-0ee1-4d31-ac8e-168c847b4e29.md` |
 | `8552e2d7-e6c3-4669-8dae-81c508eb52b2` | 2026-11-23 | AUT-111: manejo efectivo SIGTERM/SIGINT en sddia-daemon-runtime y los 6 centinelas más ventana de gracia/confirmación orphan-lock en daemon-heartbeat-audit | CANONICO | `SddIA/evolution/8552e2d7-e6c3-4669-8dae-81c508eb52b2.md` |
