@@ -116,11 +116,11 @@ situational_notes:
 - BRANCH_WORKTREE_SYNC APTO — .git/HEAD → refs/heads/fix/erradicar-store-backed-fugas-fs-bus (= inject); tip FS d7817c385287f978d6aa2a9ae5a193213f05af99
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs)
-validated_head_sha: 3be7786d4d5f877caac98cb9261775ef09b7a5a2
+validated_head_sha: 3ebbfc698c0669bb3adf0c5d61c7fc89f10844c7
 head_commit_sha_fs: d7817c385287f978d6aa2a9ae5a193213f05af99
 execution_id: f954cde9-5fd1-44a8-94d6-1d9581f97697
 validated_base_sha: a8719b46d7238207174fc83a3b876bbf9850bfa0
-validated_tree_sha: 5df0b2ed49ce718c32ff2e75925a758640be71e5
+validated_tree_sha: 527e0b488628c4516d7c201affaabb30ee3f30a2
 diff_digest: sha256:b53f830dbe6258628172e19bea16deaffda6a60c6a3360269fd409dbdade4eea
 ---
 
