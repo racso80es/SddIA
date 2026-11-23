@@ -1,4 +1,10 @@
 ---
+
+
+
+
+
+
 feature_name: aut-111-sigterm-orphan-lock
 created: "2026-11-23"
 updated: "2026-11-23"
@@ -22,10 +28,9 @@ consolidated_from:
   - AUT-107
   - AUT-108
 dor_profile: bug-fix
-execution_id: "a4111dfb-8fd3-4792-b2a8-b43f89fe369a"
 source_refine: .SddIA/workspaces/refine-item/6081e9da-416f-4ff8-a29d-e3a41d4e8bb5
+execution_id: "a5f95b61-ab09-4659-8554-403502c4a239"
 ---
-
 # Clarificación — aut-111-sigterm-orphan-lock
 
 Transcript Mayeuta (Estabilización de Requisitos). Fuente: `item.refined.md` / `verdict.json` del refine `6081e9da-…` (`verdict: refined`, sin preguntas abiertas).

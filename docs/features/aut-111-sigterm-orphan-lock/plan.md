@@ -1,4 +1,10 @@
 ---
+
+
+
+
+
+
 feature_name: aut-111-sigterm-orphan-lock
 created: "2026-11-23"
 updated: "2026-11-23"
@@ -11,7 +17,6 @@ pbi_ref: AUT-111
 document_id: PBI-FIX-CONSOLIDATED-ORPHAN-LOCK-SIGTERM
 status: plan_ready
 dor_profile: bug-fix
-execution_id: "a4111dfb-8fd3-4792-b2a8-b43f89fe369a"
 ola: "0 + 1 + 2 + cierre"
 phases:
   - ola0-oracle-red-baseline
@@ -19,8 +24,8 @@ phases:
   - wire-six-sentinels
   - audit-orphan-grace
   - corpus-validacion-cierre
+execution_id: "a5f95b61-ab09-4659-8554-403502c4a239"
 ---
-
 # Plan — aut-111-sigterm-orphan-lock
 
 Blueprint ejecutable para Tekton. Oráculos = CA de `spec.md` / `objectives.md`.

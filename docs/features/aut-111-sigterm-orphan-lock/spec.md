@@ -1,4 +1,10 @@
 ---
+
+
+
+
+
+
 feature_name: aut-111-sigterm-orphan-lock
 created: "2026-11-23"
 updated: "2026-11-23"
@@ -13,7 +19,6 @@ pbi_ref: AUT-111
 document_id: PBI-FIX-CONSOLIDATED-ORPHAN-LOCK-SIGTERM
 status: spec_ready
 dor_profile: bug-fix
-execution_id: "a4111dfb-8fd3-4792-b2a8-b43f89fe369a"
 dedalo_verdict: ok
 consolidated_from:
   - AUT-100
@@ -25,8 +30,8 @@ consolidated_from:
   - AUT-106
   - AUT-107
   - AUT-108
+execution_id: "a5f95b61-ab09-4659-8554-403502c4a239"
 ---
-
 # Spec — aut-111-sigterm-orphan-lock
 
 ## Resumen

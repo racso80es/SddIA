@@ -1,5 +1,10 @@
 ---
 
+
+
+
+
+
 feature_name: aut-111-sigterm-orphan-lock
 created: "2026-11-23"
 updated: "2026-11-23"
@@ -15,7 +20,7 @@ items_applied:
   - audit-orphan-grace
   - release-sync-and-gates
   - corpus-validacion-cierre
-execution_id: "a63234f0-08d8-421f-8d50-77b69b1355fe"
+execution_id: "a5f95b61-ab09-4659-8554-403502c4a239"
 ---
 # Ejecución — aut-111-sigterm-orphan-lock
 

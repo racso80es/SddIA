@@ -1,4 +1,10 @@
 ---
+
+
+
+
+
+
 feature_name: aut-111-sigterm-orphan-lock
 created: "2026-11-23"
 updated: "2026-11-23"
@@ -7,13 +13,12 @@ branch_name: feat/aut-111-sigterm-orphan-lock
 persist_ref: docs/features/aut-111-sigterm-orphan-lock
 pbi_ref: AUT-111
 tracker_ref: AUT-111
-execution_id: "a4111dfb-8fd3-4792-b2a8-b43f89fe369a"
 items:
   - runtime-sigterm-shared
   - wire-six-sentinels
   - audit-orphan-grace
+execution_id: "a5f95b61-ab09-4659-8554-403502c4a239"
 ---
-
 # Implementación — aut-111-sigterm-orphan-lock
 
 ## Touchpoints aplicados
