@@ -1,10 +1,12 @@
 ---
+
 feature_name: desacople-di-lancedb-execute-process
 created: "2026-11-23"
 process: refactorization
 branch_name: refactor/desacople-di-lancedb-execute-process
 persist_ref: docs/refactors/desacople-di-lancedb-execute-process
 tracker_ref: AUT-119
+execution_id: "9d87f216-2e4f-4ade-8c8d-820e265f62b0"
 ---
 # Objetivos y Criterios de Aceptación — desacople-di-lancedb-execute-process (`AUT-119`)
 

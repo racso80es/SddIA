@@ -1,4 +1,5 @@
 ---
+
 feature_name: desacople-di-lancedb-execute-process
 created: "2026-11-23"
 process: refactorization
@@ -26,6 +27,7 @@ items:
   - "SddIA/Cargo.toml"
   - ".github/workflows/sddia-index-qa.yml"
   - "SddIA/evolution/bab6e051-04bd-4d83-b73e-267189430e37.md"
+execution_id: "9d87f216-2e4f-4ade-8c8d-820e265f62b0"
 ---
 # Implementación — desacople-di-lancedb-execute-process (`AUT-119`)
 

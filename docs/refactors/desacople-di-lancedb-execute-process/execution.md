@@ -1,4 +1,5 @@
 ---
+
 feature_name: desacople-di-lancedb-execute-process
 created: "2026-11-23"
 process: refactorization
@@ -12,6 +13,7 @@ items_applied:
   - "T4: Retirada thought-graph-access + SSOT (cumulo.paths, bindings, taxonomy, eda-coverage, tools/index)"
   - "T5: default-members en SddIA/Cargo.toml + CI/scripts"
   - "T6: Registro SddIA/evolution/bab6e051-04bd-4d83-b73e-267189430e37.md + gates sddia-qa"
+execution_id: "9d87f216-2e4f-4ade-8c8d-820e265f62b0"
 ---
 # Registro de Ejecución — desacople-di-lancedb-execute-process (`AUT-119`)
 
