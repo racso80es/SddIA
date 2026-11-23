@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `e27a7b37-0ee1-4d31-ac8e-168c847b4e29` | 2026-11-23 | AUT-114: erradicar store_backed y fugas de sustrato FS vs Redb en route_domain_core/route_fractal_core/ecst_input_loader y vetarlos en gate-event-manager-port | CANONICO | `SddIA/evolution/e27a7b37-0ee1-4d31-ac8e-168c847b4e29.md` |
 | `8552e2d7-e6c3-4669-8dae-81c508eb52b2` | 2026-11-23 | AUT-111: manejo efectivo SIGTERM/SIGINT en sddia-daemon-runtime y los 6 centinelas más ventana de gracia/confirmación orphan-lock en daemon-heartbeat-audit | CANONICO | `SddIA/evolution/8552e2d7-e6c3-4669-8dae-81c508eb52b2.md` |
 | `9823b787-cf0b-48f3-bc9e-91fec7f1eb66` | 2026-11-22 | MAN-55: estandarización de invariantes de prompts/handoff (KZ-PRM-01..06) y gate ratchet de allowlists en sddia-qa (KZ-EST-01) | CANONICO | `SddIA/evolution/9823b787-cf0b-48f3-bc9e-91fec7f1eb66.md` |
 | `d1685963-5daf-4c3a-aab4-f766c5e226b8` | 2026-11-22 | MAN-54: alias operation↔lifecycle_operation y fail-loud en update vacío en forjas/entity-manager, preservación de context en process update, recalc-process-hash-signatures multi-root y update gobernado de meta-contratos SddIA/*/*-contract.md | CANONICO | `SddIA/evolution/d1685963-5daf-4c3a-aab4-f766c5e226b8.md` |

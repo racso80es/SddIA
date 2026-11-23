@@ -31,6 +31,10 @@ const FS_OPS_FORBIDDEN: &[&str] = &[
     "fs::rename",
 ];
 
+/// AUT-114: veto de ramificación por sustrato (`store_backed`) y `.is_file()` sobre rutas/ids de evento.
+const SUBSTRATE_LEAK_FORBIDDEN: &[&str] = &["store_backed"];
+const EVENT_PATH_IS_FILE_FORBIDDEN: &[&str] = &["event_path.is_file()", "pending_path.is_file()"];
+
 #[derive(Debug, Serialize)]
 struct Violation {
     path: String,
@@ -202,8 +206,36 @@ fn scan_file(repo: &Path, path: &Path) -> Vec<Violation> {
                 }
             }
         }
+        for pat in SUBSTRATE_LEAK_FORBIDDEN {
+            if line.contains(pat) {
+                out.push(Violation {
+                    path: rel.clone(),
+                    line: line_no,
+                    pattern: (*pat).into(),
+                    snippet: line.trim().chars().take(120).collect(),
+                });
+            }
+        }
+        if event_substrate_scope(&rel) {
+            for pat in EVENT_PATH_IS_FILE_FORBIDDEN {
+                if line.contains(pat) {
+                    out.push(Violation {
+                        path: rel.clone(),
+                        line: line_no,
+                        pattern: (*pat).into(),
+                        snippet: line.trim().chars().take(120).collect(),
+                    });
+                }
+            }
+        }
     }
     out
+}
+
+fn event_substrate_scope(rel: &str) -> bool {
+    rel == "SddIA/engine/execute-process/src/engine/route_domain_core.rs"
+        || rel == "SddIA/engine/execute-process/src/engine/ecst_input_loader.rs"
+        || fs_ops_scope(rel)
 }
 
 fn fs_ops_scope(rel: &str) -> bool {
@@ -368,5 +400,23 @@ mod tests {
         fs::write(&f, "fn bad() -> &'static str { concat!('.', \"events/\") }\n").unwrap();
         let v = scan_file(repo, &f);
         assert!(!v.is_empty());
+    }
+
+    #[test]
+    fn aut114_rejects_store_backed_and_event_path_is_file_in_prod() {
+        let dir = tempfile::tempdir().unwrap();
+        let repo = dir.path();
+        let engine = repo.join("SddIA/engine/execute-process/src/engine");
+        fs::create_dir_all(&engine).unwrap();
+        let f = engine.join("route_domain_core.rs");
+        fs::write(
+            &f,
+            "fn bad(event_path: &std::path::Path) -> bool { let store_backed = !event_path.is_file(); store_backed }\n",
+        )
+        .unwrap();
+        let v = scan_file(repo, &f);
+        assert_eq!(v.len(), 2, "{v:?}");
+        assert!(v.iter().any(|x| x.pattern == "store_backed"));
+        assert!(v.iter().any(|x| x.pattern == "event_path.is_file()"));
     }
 }
