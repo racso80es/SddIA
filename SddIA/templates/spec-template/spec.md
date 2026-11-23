@@ -26,9 +26,11 @@ Plantilla motor para forjar `spec.md` bajo `persist_ref`. Incluye **Declaración
 
 ### Criterios de aceptación
 
-| ID | Criterio |
-|----|----------|
-| CA-1 | … |
+> **Regla Ola 0 (`KZ-PRM-01`):** Cada criterio debe declarar su **Oráculo mecánico ejecutable (Ola 0)** (test unitario/integración o subcomando `sddia-qa`) y contar con captura en rojo (`oracle-red.log` bajo `persist_ref`) antes de autorizar cambios productivos en Ola 1. Prohibido usar `grep` manual ad-hoc como único método de verificación.
+
+| ID | Criterio | Oráculo mecánico ejecutable (Ola 0) |
+|----|----------|-------------------------------------|
+| CA-1 | … | `cargo test …` / `sddia-qa …` |
 
 ### Impacto en Documentación
 

@@ -9,7 +9,7 @@ allowed_policies:
   - "source-control"
   - "event-routing"
   - "tracker-operations"
-hash_signature: "sha256:69bded9172269e5e033db04a73a1799798d4bbb5d010c6d4a1f479ec6d790eab"
+hash_signature: "sha256:73746cf3e60848e488478f5d3935501e4e0c90202d4664468186e2ee0e870c1a"
 llm_profile:
   tier: "medium"
   description: "Síntesis de audit_report_md y correction_blueprint_md tras evidencia de cápsulas"
@@ -41,6 +41,8 @@ Argos es el **nodo de verificación** del Core SddIA: consolida evidencia **dete
 4. **Corrección:** Si el veredicto es rechazo, genera `correction_blueprint_md`: un blueprint de proceso alineado a `process-contract` (fases con `name`, `intent` y `delegates_to`) donde cada entrada de `delegates_to` sea un identificador estricto **`tipo:nombre`** de cápsula existente en el catálogo (p. ej. `skill:…`, `action:…`, `tool:…`, `agent:…`), **sin** abstracciones ni placeholders no resueltos en índice.
 
 ## 3. Falla controlada
+
+**Separación y no degradación (`KZ-PRM-06`):** Prohibido degradar fallos de `F3_TECH_GATE` o filas `PARCIAL` de la matriz de ACs a `non_blocking_findings`, ni recortar ACs sin `refine-item` previo.
 
 Si el `active_norm_pack` no define cápsulas de verificación aplicables, si la topología no permite resolver referencias, o si `acceptance_criteria` es inconsistente, Argos **no improvisa** auditoría sustitutiva: aborta con `approval_status` de fallo de integridad y documenta el vacío normativo en `audit_report_md`.
 

@@ -244,12 +244,12 @@ pub fn resolve_fs_backend_config(
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use std::sync::Mutex;
     use tempfile::tempdir;
 
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
+    pub(crate) static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     fn clear_em_env() {
         for k in [VAR_PROVIDER, VAR_REDB_PATH, VAR_FS_ROOT] {

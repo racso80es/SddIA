@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `9823b787-cf0b-48f3-bc9e-91fec7f1eb66` | 2026-11-22 | MAN-55: estandarización de invariantes de prompts/handoff (KZ-PRM-01..06) y gate ratchet de allowlists en sddia-qa (KZ-EST-01) | CANONICO | `SddIA/evolution/9823b787-cf0b-48f3-bc9e-91fec7f1eb66.md` |
 | `d1685963-5daf-4c3a-aab4-f766c5e226b8` | 2026-11-22 | MAN-54: alias operation↔lifecycle_operation y fail-loud en update vacío en forjas/entity-manager, preservación de context en process update, recalc-process-hash-signatures multi-root y update gobernado de meta-contratos SddIA/*/*-contract.md | CANONICO | `SddIA/evolution/d1685963-5daf-4c3a-aab4-f766c5e226b8.md` |
 | `5eeeb86e-9de4-4bfa-a051-9b54e0c480db` | 2026-11-22 | MAN-53: endurecer apto_coherence C5 (matriz AC/CA), veto de checks troncales NO_APTO en apto_coherence y pull-request-review, y verificación física de directorios efímeros en raíz (delivery-close-cycle y accept-pr) | CANONICO | `SddIA/evolution/5eeeb86e-9de4-4bfa-a051-9b54e0c480db.md` |
 | `8e47108c-1d40-423c-9985-d80d64d5c1c2` | 2026-11-22 | MAN-52: ampliar sddia-runtime-parity a 9 órganos vivos, paridad MainPID systemd, disparo por diff git en validacion_runtime_parity, frescura en verify-compiled-capsules y script sync-live-organs.sh | CANONICO | `SddIA/evolution/8e47108c-1d40-423c-9985-d80d64d5c1c2.md` |

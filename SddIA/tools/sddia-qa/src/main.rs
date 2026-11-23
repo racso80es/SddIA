@@ -1,6 +1,8 @@
+mod gate_allowlist_ratchet;
 mod gate_evolution;
 mod gate_event_manager_port;
 mod gate_eda_unit_no_real_backend;
+mod gate_prompt_invariants;
 mod verify_hooks;
 mod eda_e2e_lab;
 mod iota_ci_smoke;
@@ -48,6 +50,7 @@ Comandos:\n\
   gate-evolution [--json] [--range|--all] [--if-touched] [--sync-base] [--require-synced-base]\n\
   gate-event-manager-port [--json]\n\
   gate-eda-unit-no-real-backend [--json]\n\
+  gate-allowlist-ratchet [--json] [--base REF]\n\
   verify-hooks [--json] [--fix]\n\
   workspace-prune --empty [--json]\n\
   evolution-rehash --id <uuid> [--json] [--dry-run]\n\
@@ -237,6 +240,11 @@ fn main() {
         "gate-eda-unit-no-real-backend" => {
             gate_eda_unit_no_real_backend::run(&repo, has_flag(rest, "--json"))
         }
+        "gate-allowlist-ratchet" => gate_allowlist_ratchet::run(
+            &repo,
+            has_flag(rest, "--json"),
+            flag_value(rest, "--base"),
+        ),
         "verify-hooks" => verify_hooks::run(
             &repo,
             has_flag(rest, "--json"),

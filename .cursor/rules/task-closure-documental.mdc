@@ -47,6 +47,8 @@ Done = un único PR mergeado en main
 - `done_gate: both` como camino de cierre.
 - Abrir un segundo PR `docs/cerrar-pbi-*` solo para documentación post-merge.
 - Push directo a `main` con cierre documental (bloqueado por pre-push; usar un PR único).
+- Recortar ACs o diferir hijos del plan sin `refine-item` previo (`KZ-PRM-06`).
+- Degradar fallos de `F3_TECH_GATE` o filas `PARCIAL` a `non_blocking_findings`; Tekton jamás escribe `global: APTO` en `validacion.md`.
 
 ## Opcional (auditoría)
 

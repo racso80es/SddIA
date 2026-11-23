@@ -220,11 +220,9 @@ pub fn resolve_role_port(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::tests::ENV_LOCK;
     use sddia_core::ports::event_manager::EventManagerError;
-    use std::sync::Mutex;
     use tempfile::tempdir;
-
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     fn clear_em_env() {
         for k in [
@@ -281,6 +279,8 @@ mod tests {
 
     #[test]
     fn with_productive_port_drops_adapter_after_op() {
+        let _g = ENV_LOCK.lock().unwrap();
+        clear_em_env();
         let dir = tempdir().expect("tempdir");
         let opened = with_productive_port(dir.path(), "unit-scoped", |port| {
             let hs = port
@@ -305,6 +305,8 @@ mod tests {
 
     #[test]
     fn rejects_contract_below_required_range() {
+        let _g = ENV_LOCK.lock().unwrap();
+        clear_em_env();
         let dir = tempdir().expect("tempdir");
         let mut factory = productive_factory(dir.path()).expect("factory");
         factory.register_role(
@@ -324,6 +326,8 @@ mod tests {
 
     #[test]
     fn fs_role_opens_configured_root() {
+        let _g = ENV_LOCK.lock().unwrap();
+        clear_em_env();
         let dir = tempdir().expect("tempdir");
         let root = dir.path();
         std::fs::create_dir_all(root.join(".SddIA/.dev")).unwrap();
