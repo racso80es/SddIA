@@ -3,7 +3,7 @@ feature_name: resolucion-estricta-capsulas-skill-tool
 created: 2026-11-23
 updated: 2026-11-23T17:00:00Z
 process: pull-request-review
-phase: Veredicto y bloqueo
+phase: Triaje documental
 agent: argos
 agents: argos
 branch: refactor/resolucion-estricta-capsulas-skill-tool
@@ -15,32 +15,31 @@ persist_ref_injected: ''
 pbi_ref: ''
 tracker_provider: linear
 tracker_ref: AUT-118
-correlation_id: f1c2aa1e-cef7-4181-a713-16da156d7368
-pr_presented_event_id: f1c2aa1e-cef7-4181-a713-16da156d7368
-audit_event_reference: f1c2aa1e-cef7-4181-a713-16da156d7368
-workspace_path_injected: .SddIA/workspaces/pull-request-review/ac6c3a4e-b8ab-4513-9903-62bc83eab999/
+correlation_id: BvyXzLxHHPqZJNHdq1W6CZ83wG9ToFeyBFp4HayQMce8
+pr_presented_event_id: BvyXzLxHHPqZJNHdq1W6CZ83wG9ToFeyBFp4HayQMce8
+audit_event_reference: BvyXzLxHHPqZJNHdq1W6CZ83wG9ToFeyBFp4HayQMce8
+workspace_path_injected: .SddIA/workspaces/pull-request-review/efade43f-ba65-4707-b15f-fc08837c8983/
 workspace_materialized: absent
 norm_ref: features-documentation-pattern@1.3.3
 source_process: refactorization
 global: APTO
 pbi_archived: false
-approval_status: aprobado
-verdict: aprobado
-delivery_state: success
-resolution: PASS_F5_VERDICT
+approval_status: pendiente_fases_posteriores
+verdict: ''
+delivery_state: ''
+resolution: PASS_F2_DOC
 accept_pr_handoff: false
 accept_pr_handoff_status: pending
-accept_pr_block_reason: pr_url/MERGE ausentes este CID; L-HANDOFF-F5 — prohibido accept_pr_handoff true sin vía de merge soberano
 git_manager_invoked: false
-git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge session native_state; git_changes = path-assert FS (sin inventar gitStdout)
-git_evidence_source: evidence-bridge-session-native_state+path-assert-fs
+git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge session prosthesis_subprocess; git_changes = path-assert FS (sin inventar gitStdout)
+git_evidence_source: evidence-bridge-session-prosthesis_subprocess+path-assert-fs
 formal_execute_process: true
-formal_evidence_detail: session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff bajo persist_ref refactor ausente; workspace inject ac6c3a4e… solo transcript.md (sin § Runtime evidence machine)
+formal_evidence_detail: session Runtime evidence source=prosthesis_subprocess TECH/GIT APTO notes=(none); machine handoff bajo persist_ref refactor ausente; workspace inject efade43f… vacío (0 ficheros; sin § Runtime evidence machine)
 handoff_machine_file: absent
 handoff_evidence_block_pre: absent
-evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado; machine handoff en persist_ref ausente (no se usa handoff de docs/fixes/… otra entrega)
-shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID f1c2aa1e… · exec ac6c3a4e…
-scope: PPR Veredicto y bloqueo — F5 + Evidence Bridge R1/R2/R3 + gates F2/F3/F4 (CID f1c2aa1e… · exec ac6c3a4e…)
+evidence_bridge_notes: R1/R2 copia Runtime evidence (session prosthesis_subprocess notes=none); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Triaje — sin stdout inventado; machine handoff en persist_ref ausente (no se usa handoff de docs/fixes/… otra entrega)
+shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Triaje documental CID BvyXzLxH… · exec efade43f…
+scope: PPR Triaje documental — F2_DOC + Evidence Bridge R1/R2/R3 (CID BvyXzLxH… · exec efade43f…)
 checks:
   K-CROSS: APTO
   K-RT: APTO
@@ -50,12 +49,6 @@ checks:
   branch: APTO
   git_changes: APTO
   F2_DOC_GATE: APTO
-  F3_TECH_GATE: APTO
-  F4_RBAC_GATE: APTO
-  F4_CERBERO_RBAC: APTO
-  F5_VERDICT: APTO
-  F5_VERDICT_GATE: APTO
-  ROOT_TOPOLOGY_CLEAN: APTO
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: APTO
   DOC_SPEC: APTO
@@ -81,12 +74,9 @@ checks:
   ARGOS_NO_KM_WRITE: APTO
   PBI_PENDING_ABSENT: APTO
   TRACKER_LINEAR_NO_KM_FILE: APTO
-  CERBERO_PPR_NOT_REVOKED: APTO
-  PPR_NOT_REVOKED: APTO
   CODE_TOUCHPOINT_PRESENT: APTO
   WSPACE_MATERIALIZED: NO_APTO
-  MERGE_ALREADY_OBSERVED: NO_APTO
-  ACCEPT_PR_HANDOFF: NO_APTO
+  ROOT_TOPOLOGY_CLEAN: APTO
 git_changes:
   branch: refactor/resolucion-estricta-capsulas-skill-tool
   base: main
@@ -112,51 +102,42 @@ non_blocking_findings:
 - GIT_EVIDENCE_SESSION_SHELL
 - GIT_EVIDENCE_NATIVE_PPR
 - WSPACE_MATERIALIZED
-- MERGE_ALREADY_OBSERVED
-- ACCEPT_PR_HANDOFF
 situational_notes:
-- Fase Veredicto y bloqueo · CID f1c2aa1e-cef7-4181-a713-16da156d7368 · exec ac6c3a4e-b8ab-4513-9903-62bc83eab999
-- 'Evidence Bridge session: source=native_state · TECH/GIT APTO · notes=idempotent-hit'
-- 'Evidence Bridge machine bajo persist_ref: ausente (_agent_handoff.md no materializado en docs/refactors/resolucion-estricta-capsulas-skill-tool/); workspace inject solo transcript.md; no se copia handoff de docs/fixes/… (otra entrega)'
+- Fase Triaje documental · CID BvyXzLxHHPqZJNHdq1W6CZ83wG9ToFeyBFp4HayQMce8 · exec efade43f-ba65-4707-b15f-fc08837c8983
+- 'Evidence Bridge session: source=prosthesis_subprocess · TECH/GIT APTO · notes=(none)'
+- 'Evidence Bridge machine bajo persist_ref: ausente (_agent_handoff.md no materializado en docs/refactors/resolucion-estricta-capsulas-skill-tool/); workspace inject vacío (0 ficheros); no se copia handoff de docs/fixes/… (otra entrega)'
 - persist_ref inject vacío → resuelto por cascade+branch a docs/refactors/resolucion-estricta-capsulas-skill-tool (PERSIST_REF_RESOLVED APTO; PERSIST_REF_INJECTED NO_APTO residual)
-- F2 heredado Triaje documental PASS_F2_DOC — objectives+clarify+spec+plan+implementation+execution (+ YAML) + evolution → APTO
-- F3_TECH_GATE APTO — proxy TECH_FORMAL_EXECUTE_PROCESS APTO + execution.md Ola 0/rojo narrado; KA-GATE-TRUNK-2 prohíbe F3=NO_APTO con global APTO
-- F4_CERBERO_RBAC APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked/permanent
-- F5_VERDICT APTO — blocking_findings=[] → PASS_F5_VERDICT · verdict aprobado · delivery_state success
-- ROOT_TOPOLOGY_CLEAN APTO — path-assert FS: raíz sin .events/orchestration/telemetry/_lab sueltos
+- F2 refactorization cascada — objectives+clarify+spec+plan+implementation+execution (+ YAML) + evolution → PASS_F2_DOC
 - Shell ./sddia-run.sh --tool git-manager → Rejected; sin gitStdout de esta sesión Argos
-- GIT_EVIDENCE_NATIVE_PPR NO_APTO — workspace exec ac6c3a4e… sin prep-branch stdout propio (solo transcript.md)
+- GIT_EVIDENCE_NATIVE_PPR NO_APTO — workspace exec efade43f… ausente/vacío; sin prep-branch stdout propio
 - git_changes = path-assert FS (touchpoints + cascada + evolution canónico); no es gitStdout sesión
-- WSPACE_MATERIALIZED NO_APTO — workspace inject ac6c3a4e… sin handoff machine; no bloquea F5
+- WSPACE_MATERIALIZED NO_APTO — workspace inject efade43f… vacío; no bloquea F2
 - DOC_EVOLUTION APTO — hito canónico cf3bbcc3-df0e-4b12-ac55-b2fb65351b7d.md + fila Evolution_log AUT-118
-- DOC_ORACLE_RED_FILE NO_APTO — oracle-red.log ausente bajo persist_ref; rojo Ola 0 narrado en execution.md (no bloquea F5)
+- DOC_ORACLE_RED_FILE NO_APTO — oracle-red.log ausente bajo persist_ref; rojo Ola 0 narrado en execution.md (no bloquea F2)
 - K-CROSS…K-TEST APTO — path-assert: invoke_tool_capsule_json en notify/route/email_noise; CapsuleKindMismatch+validate_capsule_kind_against_ssot+aut118_* en capsules.rs; CerberoDiCode::CapsuleKindMismatch; gate_capsule_kind + verify-tools-index
 - Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO; pending/ vacío; tracker.provider=linear; 0 hits AUT-118 bajo docs/todos/
-- BRANCH_WORKTREE_SYNC APTO — .git/HEAD → refs/heads/refactor/resolucion-estricta-capsulas-skill-tool @ a42081dd… = inject
-- accept_pr_handoff pending — L-HANDOFF-F5; MERGE/pr_url ausentes
+- BRANCH_WORKTREE_SYNC APTO — .git/HEAD → refs/heads/refactor/resolucion-estricta-capsulas-skill-tool @ 43cd4210… = inject
+- ROOT_TOPOLOGY_CLEAN APTO — path-assert FS: raíz sin .events/orchestration/telemetry/_lab sueltos
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs)
-validated_head_sha: 19aa2dc58853a3b02e9932235ddecd5a7517a7ae
-head_commit_sha_fs: a42081dde2df0de9920b9696172a67093b1e8958
+head_commit_sha_fs: 43cd421035e211ddc77385bb0704722eec9b1e9c
+execution_id: efade43f-ba65-4707-b15f-fc08837c8983
 validated_base_sha: efb7449fc68ecc7b26738cfa8dd89becd399a19a
-validated_tree_sha: a55baee00191e7ffa53bb943079e7a46b6b3e96c
-diff_digest: sha256:1181eb1d48f754c54e1b8cbbedf5cb2d9ef3a96d16d0914d587566fc7bebcf2b
-execution_id: ac6c3a4e-b8ab-4513-9903-62bc83eab999
+validated_head_sha: 694a884bdf185220090d650aa089471281f5b4b8
+validated_tree_sha: 59fbc6543951dceb3f28817ad10ec2a703ded24a
+diff_digest: sha256:9a5ff29f84a6e70916157bd88a80010d8234a011fde6a8b2173296528349448b
 ---
 
-# Validación — Veredicto y bloqueo (Argos · pull-request-review)
+# Validación — Triaje documental (Argos · pull-request-review)
 
 ## Veredicto de fase
 
-**APTO** — `resolution: PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `accept_pr_handoff: pending` · `blocking_findings: []`.
+**APTO** — `resolution: PASS_F2_DOC` · `blocking_findings: []` · `approval_status: pendiente_fases_posteriores`.
 
 | Gate | Delegado | Estado | Criterio |
 |------|----------|--------|----------|
-| F2 | Argos (doc) | **APTO** | heredado `PASS_F2_DOC` · refactorization cascada + YAML + evolution |
-| F3 | proxy + execution | **APTO** | `TECH_FORMAL_EXECUTE_PROCESS` APTO + `execution.md` Ola 0 |
-| F4 | Cerbero FS | **APTO** | `pull-request-review` ∉ revoked/permanent |
-| F5 | Argos (síntesis) | **APTO** | `blocking_findings=[]` → `PASS_F5_VERDICT` |
-| R1 TECH_FORMAL | Evidence Bridge | **APTO** | copia session `native_state` |
+| F2 | Argos (doc) | **APTO** | cascada refactorization + YAML + evolution → `PASS_F2_DOC` |
+| R1 TECH_FORMAL | Evidence Bridge | **APTO** | copia session `prosthesis_subprocess` |
 | R2 GIT_EVIDENCE | Evidence Bridge | **APTO** | copia bridge session; sin stdout inventado |
 | R3 KM | Argos | **APTO** | 0 writes ilegítimos bajo `docs/todos/**` |
 
@@ -167,18 +148,18 @@ Copia literal session — **no** stdout Shell inventado:
 | Campo | Valor |
 |-------|-------|
 | `schema` | `kalma2-agent-runtime-evidence/v1` |
-| `source` (session) | `native_state` |
+| `source` (session) | `prosthesis_subprocess` |
 | `source` (machine handoff) | **ausente** bajo persist_ref / workspace |
-| `notes` (session) | `idempotent-hit` |
+| `notes` (session) | `(none)` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
 | `formal_execute_process` | `true` |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — Shell Rejected; sin `gitStdout` |
-| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** — workspace `ac6c3a4e…` sin prep-branch stdout |
+| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** — workspace `efade43f…` vacío |
 | `HANDOFF_MACHINE_FILE` | **NO_APTO** — `_agent_handoff.md` no materializado en persist_ref |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**`; `pending/` vacío |
 
-Fuente: prompt Runtime evidence (session) `native_state` notes=`idempotent-hit`. Machine handoff de `docs/fixes/erradicar-store-backed-fugas-fs-bus/` **no** se usa (otra entrega / otro `persist_ref`).
+Fuente: prompt Runtime evidence (session) `prosthesis_subprocess` notes=`(none)`. Machine handoff de `docs/fixes/erradicar-store-backed-fugas-fs-bus/` **no** se usa (otra entrega / otro `persist_ref`).
 
 ## Ingesta
 
@@ -187,16 +168,15 @@ Fuente: prompt Runtime evidence (session) `native_state` notes=`idempotent-hit`.
 | `persist_ref` (inyectado) | vacío |
 | `persist_ref` (resuelto) | `docs/refactors/resolucion-estricta-capsulas-skill-tool` — cascade+branch presentes |
 | `pbi_ref` (inyectado) | vacío · tracker Linear `AUT-118` |
-| `correlation_id` | `f1c2aa1e-cef7-4181-a713-16da156d7368` |
-| `execution_id` | `ac6c3a4e-b8ab-4513-9903-62bc83eab999` |
+| `correlation_id` | `BvyXzLxHHPqZJNHdq1W6CZ83wG9ToFeyBFp4HayQMce8` |
+| `execution_id` | `efade43f-ba65-4707-b15f-fc08837c8983` |
 | `branch_name` (runtime) | `refactor/resolucion-estricta-capsulas-skill-tool` |
-| Worktree HEAD (FS) | `refs/heads/refactor/resolucion-estricta-capsulas-skill-tool` @ `a42081dd…` (**= inject**) |
+| Worktree HEAD (FS) | `refs/heads/refactor/resolucion-estricta-capsulas-skill-tool` @ `43cd4210…` (**= inject**) |
 | `source_process` | `refactorization` |
 | Tracker | `linear` · sin fichero KM AUT-118 |
-| Workspace inject | solo `transcript.md` (sin handoff machine) |
-| Cerbero PPR | ∉ `revoked` / `permanent` |
+| Workspace inject | vacío (0 ficheros; sin handoff machine) |
 
-## Cascada F2 → F5
+## Cascada F2
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
@@ -209,12 +189,9 @@ Fuente: prompt Runtime evidence (session) `native_state` notes=`idempotent-hit`.
 | `DOC_FRONTMATTER_YAML` | **APTO** | `---` YAML en objectives/clarify/spec/plan/implementation/execution |
 | `DOC_EVOLUTION` | **APTO** | canónico `cf3bbcc3-…` + `Evolution_log` AUT-118 |
 | `DOC_AC_CASCADE` | **APTO** | K-CROSS…K-TEST en `spec.md` / `objectives.md` |
-| `DOC_ORACLE_RED_FILE` | **NO_APTO** | `oracle-red.log` ausente · no bloquea F5 |
+| `DOC_ORACLE_RED_FILE` | **NO_APTO** | `oracle-red.log` ausente · no bloquea F2 |
 | `CODE_TOUCHPOINT_PRESENT` | **APTO** | `capsules` / `cerbero_di_rbac` / `notify_humanized_pr_merged` / `route_domain_core` / `email_noise_digest` / `gate_capsule_kind` |
-| `F2_DOC_GATE` | **APTO** | heredado Triaje → `PASS_F2_DOC` |
-| `F3_TECH_GATE` | **APTO** | proxy `TECH_FORMAL_EXECUTE_PROCESS` APTO + `execution.md` Ola 0; **no** NO_APTO (veto troncal KA-GATE-TRUNK-2) |
-| `F4_RBAC_GATE` / `F4_CERBERO_RBAC` | **APTO** | `pull-request-review` ∉ `revoked`/`permanent` |
-| `F5_VERDICT` / `F5_VERDICT_GATE` | **APTO** | `blocking_findings=[]` → `PASS_F5_VERDICT` · `verdict: aprobado` |
+| `F2_DOC_GATE` | **APTO** | → `PASS_F2_DOC` |
 
 ## Matriz de Criterios (AC) — path-assert documental
 
@@ -225,23 +202,21 @@ Fuente: prompt Runtime evidence (session) `native_state` notes=`idempotent-hit`.
 | K-QA | **APTO** | `gate_capsule_kind.rs` + registro `gate-capsule-kind` en `main.rs` + integración en `verify_tools_index.rs` |
 | K-TEST | **APTO** | oráculo/unitarios declarados en `spec`/`objectives`/`execution`; touchpoints presentes (sin cargo stdout físico esta sesión) |
 
-## branch / git_changes / KM / handoff
+## branch / git_changes / KM
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
-| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Evidence Bridge session `native_state` (copia) |
+| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Evidence Bridge session `prosthesis_subprocess` (copia) |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** | Shell Rejected; sin `gitStdout` |
-| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** | workspace `ac6c3a4e…` sin prep-branch stdout |
+| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** | workspace `efade43f…` vacío |
 | `BRANCH_RUNTIME_INJECT` | **APTO** | inject = `refactor/resolucion-estricta-capsulas-skill-tool` |
-| `BRANCH_WORKTREE_SYNC` | **APTO** | HEAD → misma ref @ `a42081dd…` |
+| `BRANCH_WORKTREE_SYNC` | **APTO** | HEAD → misma ref @ `43cd4210…` |
 | `branch` | **APTO** | worktree = inject |
 | `git_changes` | **APTO** | path-assert FS (no `gitStdout` cápsula) |
 | `TRACKER_LINEAR_NO_KM_FILE` | **APTO** | provider `linear` · 0 ficheros AUT-118 bajo `docs/todos/` |
 | `PBI_PENDING_ABSENT` | **APTO** | `docs/todos/pending/` vacío |
 | `ROOT_TOPOLOGY_CLEAN` | **APTO** | FS: sin `.events`, `orchestration`, `telemetry`, `_lab` en raíz |
-| `WSPACE_MATERIALIZED` | **NO_APTO** | workspace sin handoff machine; **no bloquea** F5 |
-| `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin MERGE observado este CID |
-| `ACCEPT_PR_HANDOFF` | **NO_APTO** | `pending` (L-HANDOFF-F5); **no** `true` |
+| `WSPACE_MATERIALIZED` | **NO_APTO** | workspace vacío; **no bloquea** F2 |
 
 `git_changes.paths` = path-assert FS (touchpoints + evolution canónico + persist_ref). Sin bypass raw destructivo. Sin `validated_base_sha` / `diff_digest` inventados (cápsula git-manager no ejecutada aquí).
 
@@ -253,29 +228,23 @@ Fuente: prompt Runtime evidence (session) `native_state` notes=`idempotent-hit`.
 
 ```json
 {
-  "phase": "Veredicto y bloqueo",
+  "phase": "Triaje documental",
   "process": "pull-request-review",
   "global": "APTO",
-  "resolution": "PASS_F5_VERDICT",
-  "verdict": "aprobado",
-  "delivery_state": "success",
-  "accept_pr_handoff": false,
-  "accept_pr_handoff_status": "pending",
+  "resolution": "PASS_F2_DOC",
+  "approval_status": "pendiente_fases_posteriores",
   "pbi_archived": false,
   "branch": "refactor/resolucion-estricta-capsulas-skill-tool",
   "branch_worktree_observed": "refactor/resolucion-estricta-capsulas-skill-tool",
-  "head_commit_sha_fs": "a42081dde2df0de9920b9696172a67093b1e8958",
+  "head_commit_sha_fs": "43cd421035e211ddc77385bb0704722eec9b1e9c",
   "persist_ref": "docs/refactors/resolucion-estricta-capsulas-skill-tool",
   "tracker_ref": "AUT-118",
-  "correlation_id": "f1c2aa1e-cef7-4181-a713-16da156d7368",
-  "execution_id": "ac6c3a4e-b8ab-4513-9903-62bc83eab999",
+  "correlation_id": "BvyXzLxHHPqZJNHdq1W6CZ83wG9ToFeyBFp4HayQMce8",
+  "execution_id": "efade43f-ba65-4707-b15f-fc08837c8983",
   "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
   "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
   "RBAC_AUTHORING_KM_POLICY": "APTO",
   "F2_DOC_GATE": "APTO",
-  "F3_TECH_GATE": "APTO",
-  "F4_CERBERO_RBAC": "APTO",
-  "F5_VERDICT": "APTO",
   "BRANCH_WORKTREE_SYNC": "APTO",
   "blocking": []
 }
@@ -283,10 +252,10 @@ Fuente: prompt Runtime evidence (session) `native_state` notes=`idempotent-hit`.
 
 ## Alcance
 
-Veredicto y bloqueo **aprueba** peaje F5 (`PASS_F5_VERDICT`). Residuales no bloqueantes: `persist_ref` inject vacío (resuelto), `oracle-red.log` ausente, machine handoff ausente bajo persist_ref, workspace sin handoff, Shell git-manager Rejected, `accept_pr_handoff: pending`. Downstream: Cosecha Kaizen → Handoff materialización (`accept-pr`; sin merge directo en aduana). Argos **no** escribe bajo `docs/todos/` ni reescribe `_agent_handoff.md`.
+Triaje documental **aprueba** peaje F2 (`PASS_F2_DOC`). Residuales no bloqueantes: `persist_ref` inject vacío (resuelto), `oracle-red.log` ausente, machine handoff ausente bajo persist_ref, workspace vacío, Shell git-manager Rejected. Fases posteriores (técnico / Cerbero / Veredicto) fuera de este dictamen. Argos **no** escribe bajo `docs/todos/` ni reescribe `_agent_handoff.md`.
 
 ## approval_status
 
 ```text
-aprobado
+pendiente_fases_posteriores
 ```
