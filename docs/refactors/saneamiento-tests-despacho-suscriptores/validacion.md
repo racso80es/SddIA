@@ -130,10 +130,10 @@ situational_notes:
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs)
 head_commit_sha_fs: 02eaae9f95bd5ddb9894d219261936c30981a3a8
 execution_id: 1d5d4e51-7853-4013-a6ee-7a670c92ca64
-validated_base_sha: ''
-validated_head_sha: ''
-validated_tree_sha: ''
-diff_digest: ''
+validated_base_sha: 513905000ce066ecc9dc35c599ac89b8aeada562
+validated_head_sha: d9395353dd9a1f4e408ecd6cf92206906032e753
+validated_tree_sha: 748195b2470339526d99791af0fefe9c9deafa6d
+diff_digest: sha256:e56b82eab2388c495263b54f8436f5ee020273bca52b61c0edceb823f42809d3
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
