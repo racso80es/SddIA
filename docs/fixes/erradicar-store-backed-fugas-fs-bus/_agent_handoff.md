@@ -164,3 +164,40 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 notes: "handoff-formal-scan; idempotent-hit"
 ```
+
+## 2026-11-23T15:46:06Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `f954cde9-5fd1-44a8-94d6-1d9581f97697`
+- correlation_id: `AF68Mhi5DyWEmXGTVVwHLPQyvdMpQdUDdaXvFCyBdyQv`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residuales no bloqueantes: `oracle-red.log` ausente; residual `{eid}.json` en `load_ecst_for_handler`; workspace vacío.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Tocados: `docs/fixes/erradicar-store-backed-fugas-fs-bus/validacion.md` (Triaje documental).
+- R1/R2: copia bridge `native_state` → `TECH_FORMAL`/`GIT_EVIDENCE` **APTO**; Shell `git-manager` Rejected (sin stdout inventado).
+- F2 bug-fix: `spec`+`implementation`+`execution`+YAML+evolution OK; `objectives`/`plan` opcionales ausentes (no bloquean).
+- R3 KM: **APTO** — 0 writes bajo `docs/todos/**`; Linear AUT-114 sin fichero KM.
+- Branch FS = inject `fix/erradicar-store-backed-fugas-fs-bus` @ `d7817c38…`.
+- Residuales no bloqueantes: `oracle-red.log` ausente; residual `{eid}.json` en `load_ecst_for_handler`; workspace vacío.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-23T15:46:06Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
