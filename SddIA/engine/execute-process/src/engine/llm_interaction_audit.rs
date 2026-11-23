@@ -43,6 +43,18 @@ pub struct FrictionRow {
     pub mensaje: String,
 }
 
+/// Fila de auditoría para la sección dedicada `## Ejecuciones de Agente` (AUT-122).
+/// Preserva intacta la tabla de 4 columnas `entity_type | entity_id | invoked_by | timestamp`.
+#[derive(Debug, Clone)]
+pub struct AgentExecutionAuditRow {
+    pub agent_id: String,
+    pub thinking_profile: String,
+    pub llm_provider: String,
+    pub resolved_model: String,
+    pub phase_id: String,
+    pub timestamp: String,
+}
+
 fn audits_dir(repo: &Path) -> Result<PathBuf, String> {
     let cfg = load_paths_config(repo)?;
     let rel = cfg
@@ -262,6 +274,148 @@ pub fn append_friction(
     text.push_str(&block);
     fs::write(&path, text).map_err(|e| e.to_string())?;
     Ok(json!({"written": true, "path": path.to_string_lossy()}))
+}
+
+fn agent_exec_row_key(row: &AgentExecutionAuditRow) -> String {
+    format!(
+        "agent_exec|{}|{}|{}|{}|{}|{}",
+        row.agent_id.trim(),
+        row.thinking_profile.trim(),
+        row.llm_provider.trim(),
+        row.resolved_model.trim(),
+        row.phase_id.trim(),
+        row.timestamp.trim()
+    )
+}
+
+fn parse_existing_agent_exec_rows(body: &str) -> std::collections::HashSet<String> {
+    let mut keys = std::collections::HashSet::new();
+    let Some(idx) = body.find("## Ejecuciones de Agente") else {
+        return keys;
+    };
+    for line in body[idx..].lines() {
+        let line = line.trim();
+        if !line.starts_with('|') || line.contains("---") || line.contains("thinking_profile") {
+            continue;
+        }
+        let cols: Vec<&str> = line
+            .split('|')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .collect();
+        if cols.len() >= 6 {
+            keys.insert(format!(
+                "agent_exec|{}|{}|{}|{}|{}|{}",
+                cols[0], cols[1], cols[2], cols[3], cols[4], cols[5]
+            ));
+        }
+    }
+    keys
+}
+
+/// Registra una fila en la sección dedicada `## Ejecuciones de Agente` de `docs/audits/{tracker_ref}.md`,
+/// sin alterar la tabla de 4 columnas ni `KARMA2_ENTITY_TYPES` (AUT-122).
+pub fn append_agent_execution(
+    repo: &Path,
+    tracker_ref: &str,
+    row: &AgentExecutionAuditRow,
+    require_active: bool,
+) -> Result<Value, String> {
+    if require_active && !fetch_llm_audit_active(repo, tracker_ref)? {
+        return Ok(json!({"skipped": true, "reason": "llm_audit_inactive"}));
+    }
+    let path = audit_path(repo, tracker_ref)?;
+    ensure_audit_shell(repo, &path, tracker_ref)?;
+    let mut text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let existing = parse_existing_agent_exec_rows(&text);
+    let key = agent_exec_row_key(row);
+    if existing.contains(&key) {
+        return Ok(json!({
+            "skipped": true,
+            "reason": "duplicate_row",
+            "path": path.to_string_lossy(),
+        }));
+    }
+    if !text.contains("## Ejecuciones de Agente") {
+        if !text.ends_with('\n') {
+            text.push('\n');
+        }
+        text.push_str(
+            "\n## Ejecuciones de Agente\n\n| agent_id | thinking_profile | llm_provider | resolved_model | phase_id | timestamp |\n| --- | --- | --- | --- | --- | --- |\n",
+        );
+    }
+    let model_cell = if row.resolved_model.trim().is_empty() {
+        "none"
+    } else {
+        row.resolved_model.trim()
+    };
+    let line = format!(
+        "| {} | {} | {} | {} | {} | {} |\n",
+        row.agent_id.trim(),
+        row.thinking_profile.trim(),
+        row.llm_provider.trim(),
+        model_cell,
+        row.phase_id.trim(),
+        row.timestamp.trim()
+    );
+    text.push_str(&line);
+    fs::write(&path, text).map_err(|e| e.to_string())?;
+    Ok(json!({"written": true, "path": path.to_string_lossy()}))
+}
+
+/// Hook best-effort tras cada fase de agente en procesos de ciclo (`feature`, `bug-fix`, `refactorization`).
+pub fn maybe_record_agent_phase_execution(
+    repo: &Path,
+    process_name: &str,
+    phase_id: &str,
+    process_inputs: &Value,
+    phase_entry: &Value,
+) {
+    if !matches!(process_name, "feature" | "bug-fix" | "refactorization") {
+        return;
+    }
+    let Some(tracker_ref) = resolve_tracker_ref_for_peaje(repo, process_inputs) else {
+        return;
+    };
+    let agents: Vec<String> = phase_entry
+        .get("agent_ids")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    let agent_id = if agents.is_empty() {
+        "unknown".to_string()
+    } else {
+        agents.join(",")
+    };
+    let thinking_profile = phase_entry
+        .get("thinking_profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("execution")
+        .to_string();
+    let llm_provider = phase_entry
+        .get("llm_provider")
+        .and_then(|v| v.as_str())
+        .unwrap_or("cursor")
+        .to_string();
+    let resolved_model = phase_entry
+        .get("resolved_model")
+        .and_then(|v| v.as_str())
+        .unwrap_or("none")
+        .to_string();
+    let timestamp = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+    let row = AgentExecutionAuditRow {
+        agent_id,
+        thinking_profile,
+        llm_provider,
+        resolved_model,
+        phase_id: phase_id.to_string(),
+        timestamp,
+    };
+    let _ = append_agent_execution(repo, &tracker_ref, &row, false);
 }
 
 pub fn maybe_record_friction_on_failure(
@@ -485,5 +639,43 @@ mod tests {
         };
         assert!(normalize_entity_type("process").is_ok());
         assert!(append_interaction(repo, "LAB-1", &row, false).is_err());
+    }
+
+    #[test]
+    fn append_agent_execution_creates_dedicated_section_and_preserves_4col_table() {
+        let td = tempfile::tempdir().unwrap();
+        let repo = td.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"auditsPath":"docs/audits"}}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("docs/audits")).unwrap();
+        let row4 = InteractionRow {
+            entity_type: "process".into(),
+            entity_id: "feature".into(),
+            invoked_by: "execute-process".into(),
+            timestamp: "2026-11-23T19:00:00Z".into(),
+        };
+        append_interaction(repo, "AUT-122", &row4, false).unwrap();
+
+        let agent_row = AgentExecutionAuditRow {
+            agent_id: "mayeuta".into(),
+            thinking_profile: "reasoning".into(),
+            llm_provider: "antigravity".into(),
+            resolved_model: "gemini-2.5-pro".into(),
+            phase_id: "stabilization".into(),
+            timestamp: "2026-11-23T19:00:05Z".into(),
+        };
+        let r1 = append_agent_execution(repo, "AUT-122", &agent_row, false).unwrap();
+        assert_eq!(r1.get("written"), Some(&json!(true)));
+        let r2 = append_agent_execution(repo, "AUT-122", &agent_row, false).unwrap();
+        assert_eq!(r2.get("reason"), Some(&json!("duplicate_row")));
+
+        let text = fs::read_to_string(repo.join("docs/audits/AUT-122.md")).unwrap();
+        assert!(text.contains("| entity_type | entity_id | invoked_by | timestamp |"));
+        assert!(text.contains("## Ejecuciones de Agente"));
+        assert!(text.contains("| mayeuta | reasoning | antigravity | gemini-2.5-pro | stabilization | 2026-11-23T19:00:05Z |"));
     }
 }

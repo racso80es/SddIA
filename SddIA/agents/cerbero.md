@@ -12,10 +12,11 @@ inputs:
 outputs:
   - "authorization_status": "JSON con exitCode (0/1) y log de auditoría"
 llm_profile:
+  thinking_profile: "deterministic"
   tier: "none"
   description: "RBAC determinista; prohibido LLM"
 cognitive_role_descriptor: "Peaje RBAC determinista"
-hash_signature: "sha256:06fb97e854eefba4827d30a8682bd9c12b42a25fb2f55d816308d19f1f041e91"
+hash_signature: "sha256:c2e2f71aea6a9386f297fbca8add64f442be3a7075e192ae2f00de24e01765ed"
 ---
 
 # Agente Cerbero: Motor de Gobernanza y Compliance

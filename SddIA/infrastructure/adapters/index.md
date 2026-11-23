@@ -22,6 +22,9 @@ Contrato normativo de la familia: `adapters-contract.md` (no constituye un adapt
 | `external-capsule-event-adapter.md` | `d2c6a9b8-1f0e-4d30-85a4-c3b2a1098765` | external-capsule-event-adapter | 1.0.0 | active | sddia-infrastructure-external-capsule-event | external_capsule_event_adapter |
 | `fs-event-adapter.md` | `e3a7b0c1-2d3e-4f50-96a5-b4c3d2e1f0a9` | fs-event-adapter | 1.0.0 | active | sddia-infrastructure-fs-event | fs_event_adapter |
 | `redb-event-adapter.md` | `f4a8b1c2-3d4e-5f60-a7b8-c9d0e1f2a3b4` | redb-event-adapter | 1.0.0 | active | sddia-infrastructure-redb-event | redb_event_adapter |
+| `cursor-agent-runtime.md` | `7a11c010-2026-4122-9101-000000000001` | cursor-agent-runtime | 1.0.0 | active | execute-process | cursor_agent_runtime |
+| `antigravity-agent-runtime.md` | `7a11c010-2026-4122-9101-000000000002` | antigravity-agent-runtime | 1.0.0 | active | execute-process | antigravity_agent_runtime |
+| `local-llm-agent-runtime.md` | `7a11c010-2026-4122-9101-000000000003` | local-llm-agent-runtime | 1.0.0 | active | execute-process | local_llm_agent_runtime |
 
 ## Archivos en carpeta no catalogados como adaptador
 
@@ -29,6 +32,6 @@ Contrato normativo de la familia: `adapters-contract.md` (no constituye un adapt
 
 ## Integridad (última pasada)
 
-- **Sincronización:** 6 adaptadores catalogados (LanceDB ×3 + EventManager aditivo ×3 / MAN-32).
+- **Sincronización:** 9 adaptadores catalogados (LanceDB ×3 + EventManager aditivo ×3 / MAN-32 + AgentRuntime ×3 / AUT-122).
 - **Metadatos:** columnas alineadas a `adapters-contract.md` §1.
 - **Estado:** LanceDB `active`; EventManager redb/fs/external `active` (PBI-EDA-001).

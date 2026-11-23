@@ -1,5 +1,5 @@
 {
-  "version": "1.12.1",
+  "version": "1.13.0",
   "description": "SSOT topológico Core SddIA — Event Manager: solo ids/tablas/suscripciones lógicas; ubicación física Redb/FS en bóveda de instancia (MAN-36)",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -132,6 +132,8 @@
   "instance": {
     "projects": ".SddIA/projects",
     "llm_registry": ".SddIA/llm-registry.json",
+    "llm_runtime_local": ".SddIA/llm-runtime.local.json",
+    "llm_runtime_example": ".SddIA/llm-runtime.example.json",
     "host_registry": ".SddIA/instances.json",
     "installer_logs": ".SddIA/logs/installer"
   },

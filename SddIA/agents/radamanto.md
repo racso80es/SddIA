@@ -14,10 +14,11 @@ outputs:
   - "domain_telemetry_snapshots": "Domain_Entity_Telemetry_Captured por cada consumo OK (trazabilidad vectorial)"
   - "dlt_seals": "Sellado iota-immutable-publisher exclusivo sobre gobernanza entidades / inmunidad"
 llm_profile:
+  thinking_profile: "deterministic"
   tier: "none"
   description: "Actuario de umbrales; prohibido LLM"
 cognitive_role_descriptor: "Actuario de umbrales sobre telemetría"
-hash_signature: "sha256:f9cfe14ad0e564c4051943dbb630463633f42148237a73c345afaabb819d5c53"
+hash_signature: "sha256:b78dc609757752b46a7a065e12ae52551683d1fca6549364ac1702c7c6e440f1"
 ---
 
 # Agente Radamanto: Certificador / Actuario

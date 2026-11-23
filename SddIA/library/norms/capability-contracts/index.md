@@ -17,6 +17,7 @@ Contrato normativo de la familia: `capability-contracts-contract.md` (no constit
 | Archivo fuente | uuid | name | version | hash_signature |
 |----------------|------|------|---------|----------------|
 | `agenda.persist.schema.json` | `55b20c14-90d5-41d6-8c19-e8325f9eade0` | agenda.persist | 1.0.0 | `sha256:4869ce78fc16949b53c8425aa9f45c055bbfe4a14f47fed7edfaf4dccf61034c` |
+| `agent.runtime.schema.json` | `b2163414-81e4-432f-8c13-0986af8cc3ff` | agent.runtime | 1.0.0 | `sha256:0c15fd725a57e3fd678996e85d40c14f427152d76ac088efcff6314d70115b1e` |
 | `audit.compliance.schema.json` | `4173d7c1-0c6b-4e82-9250-23b6b5c68554` | audit.compliance | 1.0.0 | `sha256:35fee64ec8475024dad74df0ffcac386f01ed8b36b3b7c4ad1ff5ad8883a743e` |
 | `bus.route.schema.json` | `547bebe1-d3d1-4b1b-a703-670bf79dd321` | bus.route | 1.0.0 | `sha256:10bd19fda99388c02825b1d6b9f89e434eb344191a3b9e1e3a1a9749af20a895` |
 | `channel.ingest.schema.json` | `1a7193e7-1049-462f-a204-5bd86d222e45` | channel.ingest | 1.0.0 | `sha256:1ca1b231f32f48ae7fedfc625a87ac2894ffc2503789b7f94e68faf8edfde753` |

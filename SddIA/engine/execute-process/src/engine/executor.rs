@@ -321,14 +321,47 @@ fn resume_skip_or_block(
         attach_phase_id(&mut kept, phase);
         return Ok(Some(kept));
     }
-    if matches!(status, "in_progress" | "failed" | "blocked") {
+    if matches!(status, "in_progress" | "failed" | "blocked" | "awaiting_agents" | "simulated") {
         let pid = phase_id_of(phase).unwrap_or("");
-        if pid == "execution" || phase.get("name").and_then(|v| v.as_str()) == Some("Ejecución") {
+        let pname = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
+        let is_design_phase = pid == "design"
+            || matches!(
+                pname,
+                "Diseño de Blueprint" | "Diseño del fix" | "Diseño de refactor"
+            );
+        if matches!(status, "awaiting_agents" | "simulated") && is_design_phase {
+            if design_artifacts_ready(repo, inputs, require_plan_for_process(process_name)) {
+                if let (Some(live_id), Some(persist)) = (
+                    inputs
+                        .get("execution_id")
+                        .and_then(|v| v.as_str())
+                        .map(str::trim)
+                        .filter(|s| !s.is_empty()),
+                    inputs
+                        .get("persist_ref")
+                        .and_then(|v| v.as_str())
+                        .map(str::trim)
+                        .filter(|s| !s.is_empty()),
+                ) {
+                    super::agent_runtime::reconcile_persist_execution_id_for_reentry(
+                        repo, persist, live_id,
+                    );
+                }
+                let mut completed = prior.clone();
+                completed["status"] = json!("executed");
+                completed["skipped"] = json!(true);
+                completed["reason"] = json!("interactive_relay_artifacts_ready");
+                completed["handler"] = json!("execution-resume");
+                attach_phase_id(&mut completed, phase);
+                return Ok(Some(completed));
+            }
+        }
+        if pid == "execution" || pname == "Ejecución" {
             if !design_artifacts_ready(repo, inputs, require_plan_for_process(process_name)) {
                 return Err(json!({
                     "status": "blocked",
                     "friction_id": "resume_design_artifacts_missing",
-                    "message": "resume tras design executed sin spec.md (y plan.md si aplica)",
+                    "message": "resume tras design sin spec.md (y plan.md si aplica)",
                     "operator_hint": "Materializar artefactos de diseño bajo persist_ref o no usar resume",
                 }));
             }
@@ -665,7 +698,7 @@ fn execute_phase_body(
             state,
             &mut entry,
         );
-        if super::agent_runtime::is_configured() {
+        if super::agent_runtime::is_configured_for(repo, inputs) {
             let mut agent_entry = super::agent_runtime::invoke_agent_phase(
                 repo,
                 process_name,
@@ -713,10 +746,18 @@ fn execute_phase_body(
                     agent_entry["lifecycle_validation"] = lc;
                 }
             }
+            super::llm_interaction_audit::maybe_record_agent_phase_execution(
+                repo,
+                process_name,
+                phase_id_of(phase).unwrap_or(phase_name),
+                inputs,
+                &agent_entry,
+            );
             return agent_entry;
         }
         entry["status"] = json!("simulated");
         entry["note"] = json!("agentes IDE; sin SDDIA_AGENT_RUNTIME_COMMAND");
+        super::agent_runtime::enrich_simulated_agent_entry(repo, &delegates, &mut entry);
         if phase_name == "Verificación" && process_has_doc_cascade_delivery(process_name) {
             if let Some(lc) =
                 super::lifecycle_phase_action::maybe_apply_validation_from_validacion(repo, inputs, "argos")
@@ -724,6 +765,13 @@ fn execute_phase_body(
                 entry["lifecycle_validation"] = lc;
             }
         }
+        super::llm_interaction_audit::maybe_record_agent_phase_execution(
+            repo,
+            process_name,
+            phase_id_of(phase).unwrap_or(phase_name),
+            inputs,
+            &entry,
+        );
         return entry;
     }
 
@@ -1451,5 +1499,48 @@ mod tests {
             normalize_stop_after(&json!(["design", "execution"])).unwrap(),
             vec!["design".to_string(), "execution".to_string()]
         );
+    }
+
+    #[test]
+    fn resume_after_provider_switch_from_awaiting_agents_advances_when_design_ready() {
+        let td = tempfile::tempdir().unwrap();
+        let repo = td.path();
+        let persist = repo.join("docs/features/switch-demo");
+        fs::create_dir_all(&persist).unwrap();
+        fs::write(
+            persist.join("spec.md"),
+            "---\nexecution_id: \"old-id\"\n---\n# spec\n",
+        )
+        .unwrap();
+        fs::write(
+            persist.join("plan.md"),
+            "---\nexecution_id: \"old-id\"\n---\n# plan\n",
+        )
+        .unwrap();
+        let design_phase = json!({
+            "id": "design",
+            "name": "Diseño de Blueprint",
+            "delegates_to": ["agent:dedalo"]
+        });
+        let prior = json!({
+            "phase_id": "design",
+            "phase_name": "Diseño de Blueprint",
+            "status": "awaiting_agents",
+            "llm_provider": "cursor",
+            "thinking_profile": "reasoning"
+        });
+        let inputs = json!({
+            "persist_ref": "docs/features/switch-demo",
+            "execution_id": "live-switch-id",
+            "resume": true
+        });
+        let res = resume_skip_or_block(repo, "feature", &design_phase, &prior, &inputs)
+            .expect("design ready should not block");
+        let completed = res.expect("design phase should be marked completed on resume");
+        assert_eq!(completed["status"], "executed");
+        assert_eq!(completed["reason"], "interactive_relay_artifacts_ready");
+        assert_eq!(completed["llm_provider"], "cursor");
+        let updated_spec = fs::read_to_string(persist.join("spec.md")).unwrap();
+        assert!(updated_spec.contains("live-switch-id"));
     }
 }

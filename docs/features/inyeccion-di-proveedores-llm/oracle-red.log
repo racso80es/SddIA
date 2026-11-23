@@ -1,0 +1,21 @@
+=== Ola 0 Red Oracle Capture (AUT-122) ===
+Date: 2026-11-23T18:22:27Z
+--- AC-1: thinking_profile in agents-contract.md and SddIA/agents/*.md ---
+SddIA/agents/agents-contract.md:0
+SddIA/agents/argos.md:0
+SddIA/agents/cerbero.md:0
+SddIA/agents/cumulo.md:0
+SddIA/agents/dedalo.md:0
+SddIA/agents/index.md:0
+SddIA/agents/mayeuta.md:0
+SddIA/agents/radamanto.md:0
+SddIA/agents/tekton.md:0
+--- AC-2: agent:runtime in capability-taxonomy.md and capability-bindings.md ---
+SddIA/library/norms/capability-taxonomy.md:0
+SddIA/core/capability-bindings.md:0
+schema: MISSING (RED)
+--- AC-3: AgentRuntimePort & switch-llm-provider ---
+0
+action: MISSING (RED)
+--- AC-4: Ejecuciones de Agente in llm_interaction_audit.rs ---
+0

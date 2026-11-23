@@ -1,0 +1,146 @@
+{
+  "x-sddia": {
+    "uuid": "b2163414-81e4-432f-8c13-0986af8cc3ff",
+    "version": "1.0.0",
+    "hash_signature": "sha256:0c15fd725a57e3fd678996e85d40c14f427152d76ac088efcff6314d70115b1e"
+  },
+  "$defs": {
+    "request": {
+      "additionalProperties": true,
+      "properties": {
+        "agents": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "llm_provider": {
+          "type": "string"
+        },
+        "operation": {
+          "const": "AGENT_PHASE"
+        },
+        "phase_name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "process_name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolved_model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "thinking_profile": {
+          "enum": [
+            "reasoning",
+            "audit",
+            "execution",
+            "deterministic"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation",
+        "process_name",
+        "phase_name",
+        "agents",
+        "thinking_profile"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://sddia.local/capability-contracts/agent.runtime.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "data": {
+      "additionalProperties": true,
+      "properties": {
+        "error_code": {
+          "enum": [
+            "PROVIDER_QUOTA_EXCEEDED",
+            "PROVIDER_TIMEOUT",
+            "PROVIDER_UNAVAILABLE",
+            "PROVIDER_UNATTENDED_UNSUPPORTED",
+            "LLM_MODEL_UNRESOLVED",
+            "CAPABILITY_BINDING_MISSING"
+          ],
+          "type": "string"
+        },
+        "llm_provider": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "provider_mode": {
+          "enum": [
+            "interactive_relay",
+            "headless_cli",
+            "headless_api",
+            "deterministic"
+          ],
+          "type": "string"
+        },
+        "resolved_model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "executed",
+            "awaiting_agents",
+            "blocked",
+            "failed",
+            "simulated"
+          ],
+          "type": "string"
+        },
+        "thinking_profile": {
+          "enum": [
+            "reasoning",
+            "audit",
+            "execution",
+            "deterministic"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "thinking_profile",
+        "llm_provider",
+        "provider_mode"
+      ],
+      "type": "object"
+    },
+    "error": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "exitCode": {
+      "type": "integer"
+    },
+    "success": {
+      "description": "true si el proveedor ejecutó o pausó controladamente la fase de agente",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "success",
+    "data"
+  ],
+  "title": "agent.runtime",
+  "type": "object"
+}

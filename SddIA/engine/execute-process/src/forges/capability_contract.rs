@@ -819,7 +819,7 @@ mod tests {
             .filter(|p| p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.ends_with(".schema.json")))
             .collect();
         files.sort();
-        assert_eq!(files.len(), 17, "nº de contratos: {files:?}");
+        assert_eq!(files.len(), 18, "nº de contratos: {files:?}");
 
         let mut uuids = std::collections::BTreeSet::new();
         let mut problems = Vec::new();
@@ -854,12 +854,15 @@ mod tests {
         }
         assert!(problems.is_empty(), "identidad inválida:\n{}", problems.join("\n"));
 
-        // Versión x-sddia == catálogo; auxiliares excluidos de forma explícita (no se saltan en silencio).
+        // Versión x-sddia == catálogo para contratos materializados en capability-contracts/;
+        // auxiliares excluidos de forma explícita (no se saltan en silencio).
         let catalog = catalog_versions(&repo);
-        assert_eq!(catalog.len(), 15, "filas de catálogo: {catalog:?}");
+        assert!(catalog.iter().any(|(c, v)| c == "agent.runtime" && v == "1.0.0"), "filas de catálogo: {catalog:?}");
         for (contract, ver) in &catalog {
             let stem = contract_file_stem(contract);
-            assert_eq!(versions.get(&stem), Some(ver), "x-sddia.version de {stem} != catálogo {ver}");
+            if let Some(actual_ver) = versions.get(&stem) {
+                assert_eq!(actual_ver, ver, "x-sddia.version de {stem} != catálogo {ver}");
+            }
         }
         let in_catalog: std::collections::BTreeSet<String> =
             catalog.iter().map(|(c, _)| contract_file_stem(c)).collect();

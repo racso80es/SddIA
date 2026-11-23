@@ -1,5 +1,5 @@
 ---
-contract_version: "1.2.0"
+contract_version: "1.3.0"
 entity_type: "agent"
 jurisdiction: "Core SddIA"
 ---
@@ -33,18 +33,22 @@ Para facilitar el Desarrollo Kaizen y la futura industrialización, el esquema d
 * `minteo_maximo`: Límite de instancias o usos permitidos antes de requerir evolución.
 * `porcentaje_de_exito`: Variable actualizable que audita la eficacia histórica del agente en sus tareas.
 
-## 5. Perfil cognitivo (`llm_profile`, opcional)
-Campo YAML opcional. El genoma declara un nivel abstracto; la instancia resuelve el modelo físico en bóveda (`SDDIA_LLM_TIER_*`). Prohibido incrustar slugs comerciales, IPs o URLs de inferencia.
+## 5. Perfil cognitivo y tipo de pensamiento (`llm_profile`, obligatorio en Core v1.3.0)
+El genoma declara un perfil de pensamiento abstracto (`thinking_profile`); la instancia local (`.SddIA/llm-runtime.local.json` o bóveda `.SddIA/.dev/.env`) resuelve el proveedor activo y el modelo físico sin acoplar el genoma. Prohibido incrustar slugs comerciales de modelos, IPs o URLs de inferencia en `SddIA/`.
 
 ```yaml
 llm_profile:
-  tier: "high"   # high | medium | low | none
+  thinking_profile: "reasoning" # reasoning | audit | execution | deterministic
+  tier: "high"                  # high | medium | low | none (alias retrocompatible v1)
   description: "texto breve de la carga cognitiva"
 ```
 
-* `high` / `medium` / `low`: el orquestador inyecta el nodo en el payload `AGENT_PHASE` (`llm_profiles`).
-* `none`: agente determinista. Una fase cuyos delegados son solo `none` **no** spawnea `SDDIA_AGENT_RUNTIME_COMMAND`.
-* Agentes sin el bloque: no se inventa un tier cognitivo. `cerbero`, `cumulo` y `radamanto` se tratan como `none` si el bloque falta.
+* **Taxonomía cerrada (`thinking_profile`):**
+  * `reasoning` (`tier: high`): análisis profundo, mayéutica, diseño arquitectónico y especificación (`mayeuta`, `dedalo`).
+  * `audit` (`tier: medium`): síntesis determinista de evidencias y juicio de artefactos (`argos`).
+  * `execution` (`tier: low`): forja táctica acotada a especificación (`tekton`).
+  * `deterministic` (`tier: none`): lógica determinista sin LLM (`cerbero`, `cumulo`, `radamanto`). Una fase cuyos delegados son solo `deterministic` **no** invoca proveedor LLM.
+* **Precedencia en fases multi-agente:** `reasoning > audit > execution > deterministic`.
 
 ## 6. Descriptor de rol cognitivo (`cognitive_role_descriptor`, opcional)
 
