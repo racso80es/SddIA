@@ -1,6 +1,4 @@
 ---
-
-
 feature_name: erradicar-store-backed-fugas-fs-bus
 created: 2026-11-23
 updated: 2026-11-23T16:45:00Z
@@ -138,10 +136,14 @@ situational_notes:
 - accept_pr_handoff pending — L-HANDOFF-F5; MERGE/pr_url ausentes
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs)
-validated_head_sha: 91f74995858cf1c94aab1b8e28d314c4210d6302
+validated_head_sha: d7817c385287f978d6aa2a9ae5a193213f05af99
 head_commit_sha_fs: 91f74995858cf1c94aab1b8e28d314c4210d6302
-execution_id: "f954cde9-5fd1-44a8-94d6-1d9581f97697"
+execution_id: f954cde9-5fd1-44a8-94d6-1d9581f97697
+validated_base_sha: a8719b46d7238207174fc83a3b876bbf9850bfa0
+validated_tree_sha: b8d9663cadbb04e9525d67f6c5da83927f8b2de1
+diff_digest: sha256:86602529744f5156370da68f9f10faf984cc3a87fa66130a714b64ec5bedae6e
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
