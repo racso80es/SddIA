@@ -149,6 +149,13 @@ pub fn run(repo: &Path) -> i32 {
     if local_index.is_file() || local_dir.is_dir() {
         errors.extend(audit_scope("local", &local_dir, &local_index));
     }
+    let kind_report = super::gate_capsule_kind::scan_repo(repo);
+    for v in kind_report.violations {
+        errors.push(format!(
+            "capsule-kind-mismatch: {}:{} '{}' catalogado como '{}' pero invocado como '{}'",
+            v.path, v.line, v.capsule, v.catalog_kind, v.invoked_as
+        ));
+    }
     if errors.is_empty() {
         println!("verify-tools-index: OK");
         0

@@ -5,6 +5,10 @@
 
 
 
+
+
+
+
 feature_name: erradicar-store-backed-fugas-fs-bus
 created: "2026-11-23"
 process: bug-fix
@@ -13,7 +17,7 @@ scope: Erradicar ramificación store_backed y fugas de sustrato FS vs Redb en el
 branch_name: fix/erradicar-store-backed-fugas-fs-bus
 persist_ref: docs/fixes/erradicar-store-backed-fugas-fs-bus
 tracker_ref: AUT-114
-execution_id: "f954cde9-5fd1-44a8-94d6-1d9581f97697"
+execution_id: "f464f55f-a2d5-40d6-b63b-e57f510f9709"
 ---
 # Especificación Técnica — erradicar-store-backed-fugas-fs-bus (`AUT-114`)
 

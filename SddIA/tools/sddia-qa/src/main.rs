@@ -1,4 +1,5 @@
 mod gate_allowlist_ratchet;
+mod gate_capsule_kind;
 mod gate_evolution;
 mod gate_event_manager_port;
 mod gate_eda_unit_no_real_backend;
@@ -49,6 +50,7 @@ Comandos:\n\
   migrate-evolution-history manifest|apply|verify|reindex [--json] [--write PATH] [--manifest PATH] [--lote L1|L2|L3|L4] [--dry-run]\n\
   gate-evolution [--json] [--range|--all] [--if-touched] [--sync-base] [--require-synced-base]\n\
   gate-event-manager-port [--json]\n\
+  gate-capsule-kind [--json]\n\
   gate-eda-unit-no-real-backend [--json]\n\
   gate-allowlist-ratchet [--json] [--base REF]\n\
   verify-hooks [--json] [--fix]\n\
@@ -237,6 +239,7 @@ fn main() {
         "gate-event-manager-port" => {
             gate_event_manager_port::run(&repo, has_flag(rest, "--json"))
         }
+        "gate-capsule-kind" => gate_capsule_kind::run(&repo, has_flag(rest, "--json")),
         "gate-eda-unit-no-real-backend" => {
             gate_eda_unit_no_real_backend::run(&repo, has_flag(rest, "--json"))
         }

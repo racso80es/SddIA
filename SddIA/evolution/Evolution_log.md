@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `cf3bbcc3-df0e-4b12-ac55-b2fb65351b7d` | 2026-11-23 | AUT-118: rechazo estricto CapsuleKindMismatch en resolve_capsule/Cerbero RBAC, corrección de call sites send-telegram-notification y gate-capsule-kind en sddia-qa | CANONICO | `SddIA/evolution/cf3bbcc3-df0e-4b12-ac55-b2fb65351b7d.md` |
 | `e27a7b37-0ee1-4d31-ac8e-168c847b4e29` | 2026-11-23 | AUT-114: erradicar store_backed y fugas de sustrato FS vs Redb en route_domain_core/route_fractal_core/ecst_input_loader y vetarlos en gate-event-manager-port | CANONICO | `SddIA/evolution/e27a7b37-0ee1-4d31-ac8e-168c847b4e29.md` |
 | `8552e2d7-e6c3-4669-8dae-81c508eb52b2` | 2026-11-23 | AUT-111: manejo efectivo SIGTERM/SIGINT en sddia-daemon-runtime y los 6 centinelas más ventana de gracia/confirmación orphan-lock en daemon-heartbeat-audit | CANONICO | `SddIA/evolution/8552e2d7-e6c3-4669-8dae-81c508eb52b2.md` |
 | `9823b787-cf0b-48f3-bc9e-91fec7f1eb66` | 2026-11-22 | MAN-55: estandarización de invariantes de prompts/handoff (KZ-PRM-01..06) y gate ratchet de allowlists en sddia-qa (KZ-EST-01) | CANONICO | `SddIA/evolution/9823b787-cf0b-48f3-bc9e-91fec7f1eb66.md` |

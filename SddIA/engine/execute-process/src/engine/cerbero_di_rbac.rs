@@ -20,6 +20,7 @@ pub enum CerberoDiCode {
     RbacDenied,
     EntityRevoked,
     ConfigError,
+    CapsuleKindMismatch,
 }
 
 impl CerberoDiCode {
@@ -28,8 +29,36 @@ impl CerberoDiCode {
             Self::RbacDenied => "CERBERO_RBAC_DENIED",
             Self::EntityRevoked => "CERBERO_ENTITY_REVOKED",
             Self::ConfigError => "CERBERO_CONFIG_ERROR",
+            Self::CapsuleKindMismatch => "CERBERO_CAPSULE_KIND_MISMATCH",
         }
     }
+}
+
+/// Registra incidente de cruce taxonómico `skill` vs `tool` en el bus/DLQ de Cerbero (fail-soft).
+pub fn record_capsule_kind_mismatch(
+    repo: &Path,
+    asset_id: &str,
+    requested_kind: &str,
+    catalog_kind: &str,
+) {
+    let reason = format!(
+        "CapsuleKindMismatch: '{asset_id}' está catalogado como '{catalog_kind}' pero se invocó como '{requested_kind}'"
+    );
+    eprintln!("[cerbero-rbac] {reason}");
+    let ev = json!({
+        "event_id": Uuid::new_v4().to_string(),
+        "event_type": "Cerbero_Capsule_Kind_Mismatch",
+        "occurred_at": Utc::now().to_rfc3339(),
+        "payload": {
+            "code": CerberoDiCode::CapsuleKindMismatch.as_str(),
+            "asset_id": asset_id,
+            "requested_kind": requested_kind,
+            "catalog_kind": catalog_kind,
+            "reason": reason,
+        },
+        "emitter": "cerbero_di_rbac",
+    });
+    let _ = publish_dead_letter_via_port(repo, &ev, &reason);
 }
 
 #[derive(Debug, Clone)]

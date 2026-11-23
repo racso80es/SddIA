@@ -178,12 +178,53 @@ fn inject_wasmtime_sddia_env(cmd: &mut Command) {
     }
 }
 
+fn index_contains_capsule(index_path: &Path, name: &str) -> bool {
+    let Ok(text) = std::fs::read_to_string(index_path) else {
+        return false;
+    };
+    let needle_backtick = format!("`{name}`");
+    let needle_md = format!("`{name}.md`");
+    let needle_cell = format!("| {name} |");
+    text.lines().any(|line| {
+        let t = line.trim();
+        t.starts_with('|')
+            && (t.contains(&needle_backtick)
+                || t.contains(&needle_md)
+                || t.contains(&needle_cell))
+    })
+}
+
+fn validate_capsule_kind_against_ssot(
+    repo: &Path,
+    name: &str,
+    entity_label: &str,
+) -> Result<(), String> {
+    if entity_label != "skill" && entity_label != "tool" {
+        return Ok(());
+    }
+    let in_skills = index_contains_capsule(&repo.join("SddIA/skills/index.md"), name);
+    let in_tools = index_contains_capsule(&repo.join("SddIA/tools/index.md"), name);
+    let mismatch = match entity_label {
+        "skill" if in_tools && !in_skills => Some("tool"),
+        "tool" if in_skills && !in_tools => Some("skill"),
+        _ => None,
+    };
+    if let Some(actual_kind) = mismatch {
+        super::cerbero_di_rbac::record_capsule_kind_mismatch(repo, name, entity_label, actual_kind);
+        return Err(format!(
+            "CapsuleKindMismatch: '{name}' está catalogado como '{actual_kind}' en SddIA/{actual_kind}s/index.md pero se invocó como '{entity_label}'"
+        ));
+    }
+    Ok(())
+}
+
 fn resolve_capsule(
     repo: &Path,
     name: &str,
     prefer_wasm: bool,
     entity_label: &str,
 ) -> Result<(String, PathBuf), String> {
+    validate_capsule_kind_against_ssot(repo, name, entity_label)?;
     let wasm = capsule_paths::resolve_capsule_wasm(repo, name);
     let native = match capsule_paths::resolve_capsule_native_checked(repo, name) {
         Ok(p) => Some(p),
@@ -754,5 +795,57 @@ mod tests {
         let wasm_err = shell_wasm_marker_err("wasm", blob).expect("wasm sí reescribe blob");
         assert_ne!(wasm_err, SHELL_EXECUTOR_WASM_FALLBACK_MARKER);
         assert!(wasm_err.contains("executable not found on path"));
+    }
+
+    #[test]
+    fn aut118_resolve_capsule_rejects_kind_mismatch() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::create_dir_all(repo.join("SddIA/skills")).unwrap();
+        std::fs::create_dir_all(repo.join("SddIA/tools")).unwrap();
+        std::fs::create_dir_all(repo.join("SddIA/target/wasm32-wasip1/release")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"compiled_capsules":{"wasm_root":"SddIA/target/wasm32-wasip1","native_root":"SddIA/target","profiles":["release"]}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            repo.join("SddIA/skills/index.md"),
+            "| `git-manager` | uuid | 1.0.0 | cat | desc |\n",
+        )
+        .unwrap();
+        std::fs::write(
+            repo.join("SddIA/tools/index.md"),
+            "| `send-telegram-notification` | uuid | 1.0.0 | cat | desc |\n",
+        )
+        .unwrap();
+        std::fs::write(
+            repo.join("SddIA/target/wasm32-wasip1/release/send-telegram-notification.wasm"),
+            b"wasm",
+        )
+        .unwrap();
+        std::fs::write(
+            repo.join("SddIA/target/wasm32-wasip1/release/git-manager.wasm"),
+            b"wasm",
+        )
+        .unwrap();
+
+        let err_tool_as_skill = resolve_capsule(repo, "send-telegram-notification", false, "skill")
+            .expect_err("tool invocada como skill debe fallar con CapsuleKindMismatch");
+        assert!(
+            err_tool_as_skill.contains("CapsuleKindMismatch"),
+            "error inesperado: {err_tool_as_skill}"
+        );
+
+        let err_skill_as_tool = resolve_capsule(repo, "git-manager", false, "tool")
+            .expect_err("skill invocada como tool debe fallar con CapsuleKindMismatch");
+        assert!(
+            err_skill_as_tool.contains("CapsuleKindMismatch"),
+            "error inesperado: {err_skill_as_tool}"
+        );
+
+        assert!(resolve_capsule(repo, "send-telegram-notification", false, "tool").is_ok());
+        assert!(resolve_capsule(repo, "git-manager", false, "skill").is_ok());
     }
 }
