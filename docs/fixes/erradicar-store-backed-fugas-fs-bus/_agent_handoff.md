@@ -128,3 +128,39 @@ notes: "idempotent-hit"
 - F2 heredado APTO · F3 proxy APTO · F4 Cerbero APTO (PPR ∉ revoked) · F5 APTO.
 - `accept_pr_handoff: pending` (L-HANDOFF-F5). Residuales: residual `{eid}.json`, oracle-red ausente, workspace vacío.
 ```
+
+## 2026-11-23T15:43:13Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `fdae33c0-b4f0-4381-bf8c-a73883509e1c`
+- correlation_id: `2ee3e03e-1b17-432e-a0f4-f90c77c52460`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residuales no bloqueantes: `{eid}.json` en `load_ecst_for_handler`, `oracle-red.log` ausente, fósil evolution `a6faf8ca…`, `accept_pr_handoff: pending`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success`)
+
+- Tocados: `docs/fixes/erradicar-store-backed-fugas-fs-bus/validacion.md` (Veredicto y bloqueo).
+- R1/R2: bridge `native_state`/`idempotent-hit` → TECH/GIT **APTO**; Shell `git-manager` Rejected (sin stdout inventado).
+- F2–F5 APTO; F4 PPR ∉ revoked; R3 KM APTO (0 writes `docs/todos/**`).
+- Branch FS = inject `fix/erradicar-store-backed-fugas-fs-bus` @ `91f74995…`.
+- Residuales no bloqueantes: `{eid}.json` en `load_ecst_for_handler`, `oracle-red.log` ausente, fósil evolution `a6faf8ca…`, `accept_pr_handoff: pending`.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-23T15:43:31Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```

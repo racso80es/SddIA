@@ -3,13 +3,15 @@
 
 
 
+
+
 feature_name: erradicar-store-backed-fugas-fs-bus
 created: "2026-11-23"
 process: bug-fix
 branch_name: fix/erradicar-store-backed-fugas-fs-bus
 persist_ref: docs/fixes/erradicar-store-backed-fugas-fs-bus
 tracker_ref: AUT-114
-execution_id: "4b8e4543-d8d2-45aa-97af-b3ee5b35b3b3"
+execution_id: "f954cde9-5fd1-44a8-94d6-1d9581f97697"
 ---
 # Registro de Ejecución — erradicar-store-backed-fugas-fs-bus (`AUT-114`)
 
