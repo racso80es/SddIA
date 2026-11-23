@@ -31,16 +31,16 @@ rg -q 'gemini-http-infer' "$ROOT/SddIA/scripts/build-release-bundle.sh" \
   || fail "CONSUMER_BINS sin gemini-http-infer"
 rg -q 'antigravity-cli-executor' "$ROOT/SddIA/scripts/build-release-bundle.sh" \
   || fail "CONSUMER_BINS sin antigravity-cli-executor"
-rg -q 'thought-graph-access' "$ROOT/SddIA/scripts/build-release-bundle.sh" \
-  || fail "CONSUMER_BINS sin thought-graph-access"
+rg -q 'lancedb-memory-adapter' "$ROOT/SddIA/scripts/build-release-bundle.sh" \
+  || fail "CONSUMER_BINS sin lancedb-memory-adapter"
 
 test -f "$tmp/stage/SddIA/tools/llm-router.md" || fail "llm-router.md ausente"
 test -f "$tmp/stage/SddIA/tools/gemini-http-infer.md" || fail "gemini-http-infer.md ausente"
-test -f "$tmp/stage/SddIA/tools/thought-graph-access.md" || fail "thought-graph-access.md ausente"
+test -f "$tmp/stage/SddIA/tools/lancedb-memory-adapter.md" || fail "lancedb-memory-adapter.md ausente"
 test -f "$tmp/stage/SddIA/skills/antigravity-cli-executor.md" || fail "antigravity-cli-executor.md ausente"
 test -f "$tmp/stage/SddIA/conscience/aiua_core.md" || fail "conscience/aiua_core.md ausente"
 
-for elf in llm-router gemini-http-infer antigravity-cli-executor thought-graph-access; do
+for elf in llm-router gemini-http-infer antigravity-cli-executor lancedb-memory-adapter; do
   if [[ -x "$tmp/stage/SddIA/target/release/$elf" ]]; then
     echo "OK elf $elf"
   else

@@ -60,6 +60,18 @@ catalog:
     contract: "memory.pref_query"
     version: "1.0.0"
     description: "Consulta opt-in de preferencias activas del usuario vía user-preference-store."
+  - id: "memory:evolution-store"
+    contract: "memory.evolution_store"
+    version: "1.0.0"
+    description: "Persistencia y consulta vectorial de EvolutionEvent en LanceDB vía proveedor DI."
+  - id: "memory:pref-vector"
+    contract: "memory.pref_vector"
+    version: "1.0.0"
+    description: "Réplica y consulta vectorial de preferencias en LanceDB vía proveedor DI."
+  - id: "memory:thought-graph"
+    contract: "memory.thought_graph"
+    version: "1.0.0"
+    description: "Búsqueda y persistencia de ThoughtNode en LanceDB vía proveedor DI."
   - id: "tracker:lifecycle"
     contract: "tracker.lifecycle"
     version: "1.0.0"
@@ -95,6 +107,9 @@ Alta y mutación del `catalog` (incluido bump de versión por capacidad): única
 | `agenda:persist` | `agenda.persist` | 1.0.0 | Agenda local de instancia vía agenda-manager |
 | `memory:pref-write` | `memory.pref_write` | 1.0.0 | Escritura preferencias usuario (store local) |
 | `memory:pref-query` | `memory.pref_query` | 1.0.0 | Consulta opt-in preferencias activas |
+| `memory:evolution-store` | `memory.evolution_store` | 1.0.0 | Persistencia vectorial EvolutionEvent (LanceDB) |
+| `memory:pref-vector` | `memory.pref_vector` | 1.0.0 | Réplica y consulta vectorial de preferencias (LanceDB) |
+| `memory:thought-graph` | `memory.thought_graph` | 1.0.0 | Búsqueda y persistencia de ThoughtNode (LanceDB) |
 | `tracker:lifecycle` | `tracker.lifecycle` | 1.0.0 | Ciclo de vida de un ítem de gestión; stdout `emit_v2` |
 | `eda:event-manager` | `eda.event_manager` | 2.0.0 | EventManagerPort 2.0 / host Redb (MAN-43) |
 

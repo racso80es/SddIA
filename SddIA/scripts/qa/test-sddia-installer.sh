@@ -73,7 +73,7 @@ rm -rf "$SMOKE_ROOT"
 
 # 5) full-node discovery ⊇ CONSUMER_BINS + crate extra
 caps="$("$ROOT/SddIA/scripts/build-release-bundle.sh" --profile full-node --list-capsules)"
-for must in execute-process kalma2-bridge event-watcher llm-router thought-graph-access; do
+for must in execute-process kalma2-bridge event-watcher llm-router lancedb-memory-adapter; do
   echo "$caps" | grep -qx "$must" || fail "full-node sin $must"
 done
 echo "$caps" | grep -qx "sddia-qa" || echo "$caps" | grep -qx "github-bridge-watcher" \

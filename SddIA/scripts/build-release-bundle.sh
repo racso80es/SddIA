@@ -62,7 +62,7 @@ CONSUMER_BINS=(
   llm-router
   gemini-http-infer
   antigravity-cli-executor
-  thought-graph-access
+  lancedb-memory-adapter
 )
 
 # Capsules tool extraídas del códice / grafo eferente (F-06).
@@ -348,7 +348,7 @@ for name in "${!CAPSULE_SET[@]}"; do
   _copy_bin "$name" || MISSING=$((MISSING + 1))
 done
 # Núcleo operativo + cadena Tormentosa (fail-closed en build real; skip-build incompleto = WARN).
-for must in execute-process kalma2-bridge event-watcher send-telegram-notification llm-router thought-graph-access; do
+for must in execute-process kalma2-bridge event-watcher send-telegram-notification llm-router lancedb-memory-adapter; do
   if [[ ! -x "$STAGE/SddIA/target/release/$must" ]]; then
     if [[ "$SKIP_BUILD" -eq 1 ]]; then
       echo "[WARN] binario obligatorio ausente en skip-build: $must" >&2

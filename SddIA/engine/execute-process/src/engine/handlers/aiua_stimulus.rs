@@ -111,13 +111,13 @@ fn extract_infer_text(result: &Value) -> String {
 
 fn invoke_thought_graph(repo: &Path, request: Value) -> Result<Value, String> {
     let payload = json!({ "request": request });
-    let cap = invoke_tool_capsule_json(repo, "thought-graph-access", &payload, false)?;
+    let cap = invoke_tool_capsule_json(repo, "lancedb-memory-adapter", &payload, false)?;
     if cap.exit_code != 0 || cap.body.get("success") == Some(&json!(false)) {
         return Err(cap
             .body
             .get("error")
             .and_then(|v| v.as_str())
-            .unwrap_or("thought-graph-access failed")
+            .unwrap_or("lancedb-memory-adapter failed")
             .to_string());
     }
     Ok(unwrap_tool_result(&cap.body))
@@ -129,7 +129,7 @@ pub fn retrieve_active_context(repo: &Path, inputs: &Value) -> Result<Value, Str
     let result = invoke_thought_graph(
         repo,
         json!({
-            "operation": "search",
+            "operation": "thought.search",
             "query_text": query,
             "limit": limit,
             "repository_path": repo.display().to_string(),
@@ -218,9 +218,9 @@ pub fn persist_thought_record(repo: &Path, inputs: &Value) -> Result<Value, Stri
     let result = invoke_thought_graph(
         repo,
         json!({
-            "operation": "store",
+            "operation": "thought.store",
             "content": content,
-            "metadata": metadata,
+            "metadata": metadata.clone(),
             "repository_path": repo.display().to_string(),
         }),
     )?;
@@ -229,6 +229,33 @@ pub fn persist_thought_record(repo: &Path, inputs: &Value) -> Result<Value, Stri
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
+    let status = metadata
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("ACTIVE");
+    let store_path = crate::engine::memory_evolution_ingest_core::lancedb_uri(repo)
+        .to_string_lossy()
+        .into_owned();
+    let mut stamped = json!({
+        "event_id": uuid::Uuid::new_v4().to_string(),
+        "event_type": "Thought_Persisted",
+        "event_family": "domain",
+        "timestamp": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+        "emitter_agent": "aiua-stimulus-processing",
+        "payload": {
+            "node_id": thought_id,
+            "parent_id": "",
+            "status": status,
+            "store_path": store_path,
+        },
+        "delivery_state": {},
+    });
+    let _ = sddia_eda_catalog::stamp_published_event(repo, &mut stamped);
+    let _ = crate::engine::eda_port::with_productive_port(repo, "thought_publish", |port| {
+        sddia_core::ports::event_manager::publish_ecst(port, repo, "pending", &stamped)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    });
     Ok(json!({
         "success": true,
         "thought_id": thought_id,
@@ -619,7 +646,7 @@ mod tests {
     #[test]
     fn lab_mock_empty_memories_yields_duration_and_thought_id() {
         let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
-        let Some(graph) = workspace_debug_bin("thought-graph-access") else {
+        let Some(graph) = workspace_debug_bin("lancedb-memory-adapter") else {
             return;
         };
         let dir = tempdir().unwrap();
@@ -638,7 +665,7 @@ mod tests {
         )
         .unwrap();
         fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
-        copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
+        copy_bin(&graph, &repo.join("SddIA/target/debug"), "lancedb-memory-adapter");
         if !copy_router_stack(repo) {
             return;
         }
@@ -682,7 +709,7 @@ mod tests {
                 let body: Value =
                     serde_json::from_str(&fs::read_to_string(entry.path()).unwrap()).unwrap();
                 assert_eq!(body["event_type"], "Thought_Persisted");
-                assert_eq!(body["emitter_agent"], "lancedb-thought-repo");
+                assert_eq!(body["emitter_agent"], "aiua-stimulus-processing");
             }
         }
         assert!(data.get("intent_dispatched").is_none());
@@ -695,7 +722,7 @@ mod tests {
     #[test]
     fn lab_mock_overlay_intent_dispatches_domain_without_tqm() {
         let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
-        let Some(graph) = workspace_debug_bin("thought-graph-access") else {
+        let Some(graph) = workspace_debug_bin("lancedb-memory-adapter") else {
             return;
         };
         let dir = tempdir().unwrap();
@@ -723,7 +750,7 @@ mod tests {
         )
         .unwrap();
         fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
-        copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
+        copy_bin(&graph, &repo.join("SddIA/target/debug"), "lancedb-memory-adapter");
         if !copy_router_stack(repo) {
             return;
         }
@@ -760,7 +787,7 @@ mod tests {
     #[test]
     fn lab_mock_overlay_delegar_habito_does_not_join_ingest() {
         let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
-        let Some(graph) = workspace_debug_bin("thought-graph-access") else {
+        let Some(graph) = workspace_debug_bin("lancedb-memory-adapter") else {
             return;
         };
         let dir = tempdir().unwrap();
@@ -787,7 +814,7 @@ mod tests {
         )
         .unwrap();
         fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
-        copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
+        copy_bin(&graph, &repo.join("SddIA/target/debug"), "lancedb-memory-adapter");
         if !copy_router_stack(repo) {
             return;
         }
@@ -833,7 +860,7 @@ mod tests {
     #[test]
     fn lab_rate_limited_primary_falls_back_to_gemini() {
         let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
-        let Some(graph) = workspace_debug_bin("thought-graph-access") else {
+        let Some(graph) = workspace_debug_bin("lancedb-memory-adapter") else {
             return;
         };
         let Some(router) = workspace_debug_bin("llm-router") else {
@@ -855,7 +882,7 @@ mod tests {
         )
         .unwrap();
         fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
-        copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
+        copy_bin(&graph, &repo.join("SddIA/target/debug"), "lancedb-memory-adapter");
         copy_bin(&router, &repo.join("SddIA/target/debug"), "llm-router");
         write_lab_registry(repo);
         write_adapter_stub(
@@ -897,8 +924,8 @@ mod tests {
             "SddIA/actions/retrieve-active-context.md",
             "SddIA/actions/invoke-aiua-core.md",
             "SddIA/actions/persist-thought-record.md",
-            "SddIA/tools/thought-graph-access.md",
-            "SddIA/tools/thought-graph-access/src/main.rs",
+            "SddIA/tools/lancedb-memory-adapter.md",
+            "SddIA/tools/lancedb-memory-adapter/src/main.rs",
         ] {
             let text = fs::read_to_string(root.join(rel)).unwrap_or_default().to_lowercase();
             assert!(

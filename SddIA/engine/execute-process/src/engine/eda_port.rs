@@ -15,8 +15,9 @@ use sddia_core::ports::event_manager::{
     EventManagerPort, GetDltSealRequest, GetDltSealResult, ListDlqRequest, ListEventsRequest,
     SealDltRequest, VerifyInlineEcstRequest, PublishSeal,
 };
+pub use sddia_event_manager_host::with_productive_port;
 use sddia_event_manager_host::{
-    productive_store_present, resolve_productive_port, with_productive_port,
+    productive_store_present, resolve_productive_port,
 };
 
 /// Ruta de directorio (no fichero `.redb`).

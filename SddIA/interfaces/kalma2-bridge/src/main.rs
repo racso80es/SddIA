@@ -3699,7 +3699,7 @@ mod tests {
             "SddIA/actions/retrieve-active-context.md",
             "SddIA/actions/invoke-aiua-core.md",
             "SddIA/actions/persist-thought-record.md",
-            "SddIA/tools/thought-graph-access.md",
+            "SddIA/tools/lancedb-memory-adapter.md",
         ] {
             let text = std::fs::read_to_string(repo.join(rel))
                 .unwrap_or_else(|_| panic!("leer {rel}"));

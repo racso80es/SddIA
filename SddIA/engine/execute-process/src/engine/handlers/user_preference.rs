@@ -1,34 +1,60 @@
 //! Memoria soberana de preferencias — ingest/fractal en execute-process; store en `user-preference-core`.
 
+use crate::engine::capsules::invoke_tool_capsule_json;
 use crate::engine::memory_evolution_ingest_core::lancedb_uri;
 use crate::envelope::OrchestratorEnvelope;
 use chrono::Utc;
 use serde_json::{json, Value};
-use sddia_infrastructure_lancedb_preferences::LanceDbPreferenceAdapter;
 use std::path::Path;
 
 pub use user_preference_core::*;
 
+const LANCEDB_ADAPTER_TOOL: &str = "lancedb-memory-adapter";
+
 fn prefs_table_exists(repo: &Path) -> bool {
-    LanceDbPreferenceAdapter::table_exists(lancedb_uri(repo))
+    lancedb_uri(repo).join("user_preferences.lance").is_dir()
+}
+
+fn invoke_lancedb_prefs(repo: &Path, request: Value) -> Result<Value, String> {
+    let payload = json!({ "request": request });
+    let cap = invoke_tool_capsule_json(repo, LANCEDB_ADAPTER_TOOL, &payload, false)?;
+    if cap.exit_code != 0 || cap.body.get("success") == Some(&json!(false)) {
+        return Err(cap
+            .body
+            .get("error")
+            .and_then(|v| v.as_str())
+            .unwrap_or("lancedb-memory-adapter failed")
+            .to_string());
+    }
+    Ok(cap.body.get("result").cloned().unwrap_or_else(|| json!({})))
 }
 
 fn replica_put(repo: &Path, pref: &UserPreference) {
     if !prefs_table_exists(repo) {
         return;
     }
-    if let Ok(adapter) = LanceDbPreferenceAdapter::open(lancedb_uri(repo)) {
-        let _ = UserPreferenceStore::put_revision(&adapter, pref.clone());
-    }
+    let _ = invoke_lancedb_prefs(
+        repo,
+        json!({
+            "operation": "preferences.put_revision",
+            "repository_path": repo.display().to_string(),
+            "revision": pref,
+        }),
+    );
 }
 
 fn replica_purge(repo: &Path, preference_id: &str) {
     if !prefs_table_exists(repo) {
         return;
     }
-    if let Ok(adapter) = LanceDbPreferenceAdapter::open(lancedb_uri(repo)) {
-        let _ = UserPreferenceStore::purge_preference(&adapter, preference_id);
-    }
+    let _ = invoke_lancedb_prefs(
+        repo,
+        json!({
+            "operation": "preferences.purge",
+            "repository_path": repo.display().to_string(),
+            "preference_id": preference_id,
+        }),
+    );
 }
 
 pub fn put_revision_durable(repo: &Path, pref: UserPreference) -> Result<UserPreference, String> {
@@ -68,10 +94,18 @@ pub fn build_pref_context_hint(repo: &Path) -> String {
 
 pub fn query_context_block_with_capsule_fallback(repo: &Path, spec: &QuerySpec) -> Value {
     if prefs_table_exists(repo) {
-        return match LanceDbPreferenceAdapter::open(lancedb_uri(repo))
-            .and_then(|adapter| UserPreferenceStore::query_context_block(&adapter, spec))
-        {
-            Ok(block) => block,
+        return match invoke_lancedb_prefs(
+            repo,
+            json!({
+                "operation": "preferences.query_context",
+                "repository_path": repo.display().to_string(),
+                "spec": spec,
+            }),
+        ) {
+            Ok(res) => res
+                .get("context_block")
+                .cloned()
+                .unwrap_or_else(empty_context_block),
             Err(_) => empty_context_block(),
         };
     }

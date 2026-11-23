@@ -61,6 +61,15 @@ pub fn default_lancedb_uri(repo: &Path) -> PathBuf {
     let Ok(cfg) = serde_json::from_str::<Value>(&text) else {
         return fallback;
     };
+    if let Some(lance_rel) = cfg
+        .get("paths")
+        .and_then(|p| p.get("lancedbStore"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        return repo.join(lance_rel.trim_start_matches("./"));
+    }
     cfg.get("paths")
         .and_then(|p| p.get("vectorStore"))
         .and_then(|v| v.as_str())

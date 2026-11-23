@@ -1906,8 +1906,6 @@ dependencies = [
  "sddia-ecosystem-health",
  "sddia-eda-catalog",
  "sddia-event-manager-host",
- "sddia-infrastructure-lancedb-evolution",
- "sddia-infrastructure-lancedb-preferences",
  "sddia-io",
  "sddia-runtime-parity",
  "serde",
@@ -3614,6 +3612,20 @@ dependencies = [
  "tokio",
  "url",
  "uuid",
+]
+
+[[package]]
+name = "lancedb-memory-adapter"
+version = "0.1.0"
+dependencies = [
+ "sddia-core-memory",
+ "sddia-infrastructure-lancedb-evolution",
+ "sddia-infrastructure-lancedb-preferences",
+ "sddia-infrastructure-lancedb-thought",
+ "sddia-io",
+ "serde_json",
+ "tempfile",
+ "user-preference-core",
 ]
 
 [[package]]
@@ -5352,18 +5364,12 @@ dependencies = [
 name = "sddia-infrastructure-lancedb-thought"
 version = "0.1.0"
 dependencies = [
- "chrono",
  "futures",
  "lancedb",
- "sddia-core",
  "sddia-core-memory",
- "sddia-eda-catalog",
- "sddia-event-manager-host",
- "sddia-infrastructure-redb-event",
  "serde_json",
  "tempfile",
  "tokio",
- "uuid",
 ]
 
 [[package]]
@@ -5982,19 +5988,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.3",
-]
-
-[[package]]
-name = "thought-graph-access"
-version = "0.1.0"
-dependencies = [
- "sddia-core",
- "sddia-core-memory",
- "sddia-event-manager-host",
- "sddia-infrastructure-lancedb-thought",
- "sddia-io",
- "serde_json",
- "tempfile",
 ]
 
 [[package]]
