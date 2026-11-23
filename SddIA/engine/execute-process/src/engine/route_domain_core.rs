@@ -1879,7 +1879,6 @@ pub(crate) fn dispatch_subscriber_with_ports(
                     if let Some(head) = resolve_ppr_head_commit(repo, branch) {
                         match try_acquire_ppr_dedupe(repo, branch, &head, event) {
                             Ok(Some(hex)) => {
-                                std::env::set_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0");
                                 let (status, exit_code) = ports.dispatch_process(
                                     repo,
                                     process_key,
@@ -1899,7 +1898,6 @@ pub(crate) fn dispatch_subscriber_with_ports(
                     }
                 }
 
-                std::env::set_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0");
                 let (status, exit_code) = ports.dispatch_process(
                     repo,
                     process_key,
@@ -4557,7 +4555,60 @@ mod tier_dispatch {
 
     #[test]
     fn aut114_pull_request_merged_from_store_invokes_notify_humanized() {
-        let _lock = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
+        use crate::engine::notify_humanized_pr_merged::{
+            run_from_event_with_port, HumanizedNotifyPort, NotifyOutcome, SynthesisOutcome,
+        };
+        use serde_json::Value;
+        use std::sync::Mutex;
+
+        struct MockNotifyPort {
+            sent: Mutex<Vec<String>>,
+        }
+
+        impl HumanizedNotifyPort for MockNotifyPort {
+            fn infer_synthesis(&self, _repo: &Path, _event: &Value) -> SynthesisOutcome {
+                SynthesisOutcome::Ready("Síntesis hermética DI".into())
+            }
+            fn send_telegram(&self, _repo: &Path, message: &str) -> Result<(), String> {
+                self.sent.lock().unwrap().push(message.to_string());
+                Ok(())
+            }
+        }
+
+        struct DiNotifyDispatchPort {
+            notify: MockNotifyPort,
+        }
+
+        impl super::SubscriberDispatchPort for DiNotifyDispatchPort {
+            fn has_orchestrator_bin(&self, _repo: &Path) -> bool {
+                false
+            }
+            fn dispatch_cognitive(
+                &self,
+                _repo: &Path,
+                sid: &str,
+                _agent_name: &str,
+                _event: &Value,
+            ) -> (String, String, Option<String>, i32) {
+                (sid.to_string(), "failed".into(), Some("unexpected".into()), 1)
+            }
+            fn dispatch_process(
+                &self,
+                _repo: &Path,
+                _process_key: &str,
+                _inputs: Value,
+            ) -> (String, i32) {
+                ("failed".into(), 1)
+            }
+            fn run_notify_humanized_pr_merged(
+                &self,
+                repo: &Path,
+                event: &Value,
+            ) -> Result<NotifyOutcome, String> {
+                run_from_event_with_port(repo, event, &self.notify)
+            }
+        }
+
         let tmp = tempfile::tempdir().unwrap();
         let root = tmp.path();
         fs::create_dir_all(root.join("SddIA/core")).unwrap();
@@ -4586,20 +4637,23 @@ mod tier_dispatch {
         let mut loaded = crate::engine::eda_port::load_dispatched(root, event_id, Path::new(""))
             .unwrap()
             .expect("evento cargado desde EventManagerPort");
-        let prev_skip = std::env::var("SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM").ok();
-        std::env::set_var("SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM", "1");
+        let port = DiNotifyDispatchPort {
+            notify: MockNotifyPort {
+                sent: Mutex::new(Vec::new()),
+            },
+        };
         let sub = json!({
             "agent": "argos",
             "action": "notify-humanized-pr-merged"
         });
         let (_sid, status, err, code) =
-            dispatch_subscriber(root, &sub, &mut loaded, false);
-        match prev_skip {
-            Some(v) => std::env::set_var("SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM", v),
-            None => std::env::remove_var("SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM"),
-        }
+            super::dispatch_subscriber_with_ports(root, &sub, &mut loaded, false, &port);
         assert_eq!(status, "success", "err={err:?} code={code}");
         assert_eq!(code, 0);
+        let sent = port.notify.sent.lock().unwrap();
+        assert_eq!(sent.len(), 1);
+        assert!(sent[0].contains("feat/aut-114-oracle"));
+        assert!(sent[0].contains("Síntesis hermética DI"));
     }
 }
 
