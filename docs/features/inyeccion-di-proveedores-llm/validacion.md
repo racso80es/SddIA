@@ -1,7 +1,7 @@
 ---
 feature_name: inyeccion-di-proveedores-llm
-created: "2026-11-23"
-updated: "2026-11-23T19:40:00Z"
+created: 2026-11-23
+updated: 2026-11-23T19:40:00Z
 process: feature
 phase: Verificación
 agent: argos
@@ -115,7 +115,11 @@ git_changes:
   - docs/features/inyeccion-di-proveedores-llm/
 blocking_findings: []
 non_blocking_findings: []
-execution_id: "f1220000-2026-4123-8122-000000000122"
+execution_id: f1220000-2026-4123-8122-000000000122
+validated_base_sha: 2a30f46d0f31a38a92e73b89c71056d650db5986
+validated_head_sha: a9ad7d0072d4c1d29b162f0a463093a86b0bc282
+validated_tree_sha: 632f74cdf747264949433eba5bf5080cea8b1f18
+diff_digest: sha256:d437fb9ac97656595f7e40cab09a9dc8349b82d289c787f0947d8cefdc66b74a
 ---
 
 # Validación — inyeccion-di-proveedores-llm (`AUT-122`)
