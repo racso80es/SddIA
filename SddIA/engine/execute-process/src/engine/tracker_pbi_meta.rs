@@ -151,6 +151,22 @@ fn tracker_ref_of_presented(event: &Value, branch: &str) -> Option<String> {
         .map(str::to_string)
 }
 
+/// Fallback cuando el store no retiene `PullRequest_Presented` tras sweep (AUT-126 / reseal pre-push).
+pub fn presented_event_id_from_validacion(repo: &Path, persist_ref: &str) -> Option<String> {
+    let path = resolve_repo_path(repo, persist_ref).join("validacion.md");
+    let text = fs::read_to_string(path).ok()?;
+    for key in [
+        "pr_presented_event_id",
+        "audit_event_reference",
+        "correlation_id",
+    ] {
+        if let Some(v) = yaml_field(&text, key) {
+            return Some(v);
+        }
+    }
+    None
+}
+
 /// `event_id` del `PullRequest_Presented` más reciente para `branch` (store).
 pub fn presented_event_id_for_branch(repo: &Path, branch: &str) -> Option<String> {
     let mut best: Option<(String, String)> = None;

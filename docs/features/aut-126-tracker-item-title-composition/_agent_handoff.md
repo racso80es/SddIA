@@ -316,3 +316,215 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 notes: "handoff-formal-scan; idempotent-hit"
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-26T19:05:18Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-26T19:06:29Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `b1a23fec-d589-4d83-84a2-6d2788d2a7e4`
+- correlation_id: `be0d6451-5d22-4dcd-bab7-053b7b21e9c9`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residuales no bloqueantes: workspace `b1a23fec…` vacío, oracle-red ausente, sin gitStdout sesión
+
+### Transcript (tail)
+
+```
+**ok** — Triaje documental cerrado.
+
+- Tocado: `docs/features/aut-126-tracker-item-title-composition/validacion.md`
+- R1/R2: copia Evidence Bridge `native_state` → `TECH_FORMAL`/`GIT_EVIDENCE` **APTO** (sin inventar stdout; Shell Rejected)
+- R3 KM: **APTO** — 0 writes bajo `docs/todos/**`; pending vacío; Linear
+- F2: cascada objectives→execution + YAML + evolution `6d2f31c6…` + AC1–AC5 → `PASS_F2_DOC`
+- `global: APTO` · `branch`/`git_changes` APTO (path-assert FS @ `d47b888a…`)
+- Residuales no bloqueantes: workspace `b1a23fec…` vacío, oracle-red ausente, sin gitStdout sesión
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-26T19:06:29Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-26T19:06:37Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `8b9cb460-0ea6-4434-bef9-2b193625d13c`
+- correlation_id: `8fc8a380-38c7-431b-ba8e-ea7c57d83b94`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residuales no bloqueantes: workspace `8b9cb460…` vacío, oracle-red ausente, sin gitStdout sesión
+
+### Transcript (tail)
+
+```
+**ok** — Triaje documental cerrado.
+
+- Tocado: `docs/features/aut-126-tracker-item-title-composition/validacion.md`
+- R1/R2: copia Evidence Bridge `native_state` → `TECH_FORMAL`/`GIT_EVIDENCE` **APTO** (sin inventar stdout; Shell git-manager Rejected)
+- R3 KM: **APTO** — 0 writes bajo `docs/todos/**`; pending vacío; Linear
+- F2: cascada objectives→execution + YAML + evolution `6d2f31c6…` + AC1–AC5 → `PASS_F2_DOC`
+- `global: APTO` · `branch`/`git_changes` APTO (path-assert FS @ `d47b888a…`)
+- Residuales no bloqueantes: workspace `8b9cb460…` vacío, oracle-red ausente, sin gitStdout sesión
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-26T19:06:37Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-26T19:07:32Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `8b9cb460-0ea6-4434-bef9-2b193625d13c`
+- correlation_id: `8fc8a380-38c7-431b-ba8e-ea7c57d83b94`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Veredicto: **ok**
+
+### Transcript (tail)
+
+```
+**ok** — Veredicto sellado.
+
+- Tocado: `docs/features/aut-126-tracker-item-title-composition/validacion.md`
+- R1/R2: copia Evidence Bridge `native_state` → TECH/GIT **APTO** (sin inventar stdout; Shell git-manager Rejected)
+- R3 KM: **APTO** — 0 writes `docs/todos/**`; pending vacío; Linear
+- F2–F4 APTO → F5 `PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success`
+- `global: APTO` · `branch`/`git_changes` APTO (path-assert FS @ `d47b888a…`)
+- Residuales no bloqueantes: workspace vacío, oracle-red ausente, `ACCEPT_PR_HANDOFF` pending
+- Veredicto: **ok**
+```
+
+## 2026-11-26T19:08:04Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `b1a23fec-d589-4d83-84a2-6d2788d2a7e4`
+- correlation_id: `be0d6451-5d22-4dcd-bab7-053b7b21e9c9`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Veredicto: **ok**
+
+### Transcript (tail)
+
+```
+**ok** — Veredicto sellado.
+
+- Tocado: `docs/features/aut-126-tracker-item-title-composition/validacion.md`
+- R1/R2: copia Evidence Bridge `native_state` → TECH/GIT **APTO** (sin inventar stdout; Shell Rejected)
+- R3 KM: **APTO** — 0 writes `docs/todos/**`; pending vacío; Linear
+- F2–F4 APTO → F5 `PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success`
+- `global: APTO` · `branch`/`git_changes` APTO (path-assert FS @ `d47b888a…`)
+- Residuales no bloqueantes: workspace vacío, oracle-red ausente, `ACCEPT_PR_HANDOFF` pending
+- Veredicto: **ok**
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-26T19:08:21Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-26T19:09:25Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `ff6e6868-36a5-4cef-a75a-ea2dbfdc4bcd`
+- correlation_id: `f1ce790e-d1e7-404f-b333-8bf4219317a2`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residuales no bloqueantes: workspace `ff6e6868…` vacío, oracle-red ausente, sin gitStdout sesión
+
+### Transcript (tail)
+
+```
+**ok** — Triaje documental cerrado.
+
+- Tocado: `docs/features/aut-126-tracker-item-title-composition/validacion.md`
+- R1/R2: copia Evidence Bridge `native_state` → `TECH_FORMAL`/`GIT_EVIDENCE` **APTO** (sin inventar stdout; Shell git-manager Rejected)
+- R3 KM: **APTO** — 0 writes bajo `docs/todos/**`; pending vacío; Linear
+- F2: cascada objectives→execution + YAML + evolution `6d2f31c6…` + AC1–AC5 → `PASS_F2_DOC`
+- `global: APTO` · `branch`/`git_changes` APTO (path-assert FS @ `36db95e3…`)
+- Residuales no bloqueantes: workspace `ff6e6868…` vacío, oracle-red ausente, sin gitStdout sesión
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-26T19:09:25Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-26T19:10:23Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `ff6e6868-36a5-4cef-a75a-ea2dbfdc4bcd`
+- correlation_id: `f1ce790e-d1e7-404f-b333-8bf4219317a2`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Veredicto: **ok**
+
+### Transcript (tail)
+
+```
+**ok** — Veredicto sellado.
+
+- Tocado: `docs/features/aut-126-tracker-item-title-composition/validacion.md`
+- R1/R2: copia Evidence Bridge `native_state` → TECH/GIT **APTO** (sin inventar stdout; Shell Rejected)
+- R3 KM: **APTO** — 0 writes `docs/todos/**`; pending vacío; Linear
+- F2–F4 APTO → F5 `PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success`
+- `global: APTO` · `branch`/`git_changes` APTO (path-assert FS @ `36db95e3…`)
+- Residuales no bloqueantes: workspace vacío, oracle-red ausente, `ACCEPT_PR_HANDOFF` pending
+- Veredicto: **ok**
+```
