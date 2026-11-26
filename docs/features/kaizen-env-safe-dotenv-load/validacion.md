@@ -1,8 +1,7 @@
 ---
-
 feature_name: kaizen-env-safe-dotenv-load
 created: 2026-11-26
-updated: 2026-11-26T18:56:00Z
+updated: 2026-11-26T18:05:00Z
 process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
@@ -16,10 +15,10 @@ persist_ref_injected: docs/features/kaizen-env-safe-dotenv-load
 pbi_ref: ''
 tracker_provider: linear
 tracker_ref: AUT-120
-correlation_id: b1222391-2e27-4224-bcd7-cd86e2fbf48a
-pr_presented_event_id: b1222391-2e27-4224-bcd7-cd86e2fbf48a
-audit_event_reference: b1222391-2e27-4224-bcd7-cd86e2fbf48a
-workspace_path_injected: /home/racso/Proyectos/SddIA/.SddIA/workspaces/pull-request-review/f8cd9845-38a9-4173-a15a-5aa0287f212f/
+correlation_id: 0097acbb-a961-4fac-8941-621bcc44b546
+pr_presented_event_id: 0097acbb-a961-4fac-8941-621bcc44b546
+audit_event_reference: 0097acbb-a961-4fac-8941-621bcc44b546
+workspace_path_injected: /home/racso/Proyectos/SddIA/.SddIA/workspaces/pull-request-review/03d488c1-e45f-4ac2-9110-5c2fe35adb06/
 workspace_materialized: absent
 norm_ref: features-documentation-pattern@1.3.3
 source_process: feature
@@ -36,12 +35,12 @@ git_manager_invoked: false
 git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected / sin stdout físico sobre ./sddia-run.sh --tool git-manager); R2 = copia Evidence Bridge session+machine native_state; git_changes = path-assert FS (sin inventar gitStdout)
 git_evidence_source: evidence-bridge-session-native_state+handoff-machine+path-assert-fs
 formal_execute_process: true
-formal_evidence_detail: session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-26T17:54:44Z TECH/GIT APTO notes=idempotent-hit git_manager_invoked=true
+formal_evidence_detail: session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-26T18:00:24Z TECH/GIT APTO notes=idempotent-hit git_manager_invoked=true
 handoff_machine_file: present
 handoff_evidence_block_pre: present
-evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit + machine native_state @ 2026-11-26T17:54:44Z); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; sin stdout inventado
-shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID b1222391… · exec f8cd9845…
-scope: PPR Veredicto y bloqueo — F5 + Evidence Bridge R1/R2/R3 + gates F2/F3/F4 (CID b1222391… · exec f8cd9845…)
+evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit + machine native_state @ 2026-11-26T18:00:24Z); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; sin stdout inventado
+shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 0097acbb… · exec 03d488c1…
+scope: PPR Veredicto y bloqueo — F5 + Evidence Bridge R1/R2/R3 + gates F2/F3/F4 (CID 0097acbb… · exec 03d488c1…)
 checks:
   KA-ENV-1: APTO
   KA-ENV-2: APTO
@@ -65,7 +64,7 @@ checks:
   DOC_IMPLEMENTATION: APTO
   DOC_EXECUTION: APTO
   DOC_FRONTMATTER_YAML: APTO
-  DOC_EVOLUTION: NO_APTO
+  DOC_EVOLUTION: APTO
   DOC_AC_CASCADE: APTO
   DOC_ORACLE_RED_FILE: APTO
   PERSIST_REF_RESOLVED: APTO
@@ -104,44 +103,46 @@ git_changes:
   - .dev/.env.example
   - SddIA/scripts/starter-kit/.dev/.env.example
   - SddIA/scripts/starter-kit/.SddIA/.dev/.env.example
+  - SddIA/evolution/7cddbb7d-caa0-435d-b181-90c2d19170a3.md
+  - SddIA/evolution/Evolution_log.md
   - docs/features/kaizen-env-safe-dotenv-load/
 blocking_findings: []
 non_blocking_findings:
-- DOC_EVOLUTION
 - GIT_EVIDENCE_SESSION_SHELL
 - GIT_EVIDENCE_NATIVE_PPR
 - WSPACE_MATERIALIZED
 - MERGE_ALREADY_OBSERVED
 - ACCEPT_PR_HANDOFF
 situational_notes:
-- Fase Veredicto y bloqueo · CID b1222391-2e27-4224-bcd7-cd86e2fbf48a · exec f8cd9845-38a9-4173-a15a-5aa0287f212f
+- Fase Veredicto y bloqueo · CID 0097acbb-a961-4fac-8941-621bcc44b546 · exec 03d488c1-e45f-4ac2-9110-5c2fe35adb06
 - 'Evidence Bridge session: source=native_state · TECH/GIT APTO · notes=idempotent-hit'
-- 'Evidence Bridge machine: source=native_state @ 2026-11-26T17:54:44Z · TECH/GIT APTO · notes=idempotent-hit · git_manager_invoked=true (copia; sin stdout inventado)'
+- 'Evidence Bridge machine: source=native_state @ 2026-11-26T18:00:24Z · TECH/GIT APTO · notes=idempotent-hit · git_manager_invoked=true (copia; sin stdout inventado)'
 - persist_ref inject = docs/features/kaizen-env-safe-dotenv-load (PERSIST_REF_INJECTED APTO)
-- F2 heredado Triaje documental PASS_F2_DOC — cascada objectives→execution + YAML + AC KA-ENV-1…5 + oracle-red → APTO
+- F2 heredado Triaje documental PASS_F2_DOC — cascada objectives→execution + YAML + KA-ENV-1…5 + evolution 7cddbb7d… + oracle-red → APTO
 - F3_TECH_GATE APTO — proxy TECH_FORMAL_EXECUTE_PROCESS APTO + execution.md tests/gates narrados; KA-GATE-TRUNK-2 prohíbe F3=NO_APTO con global APTO
-- F4_CERBERO_RBAC APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked/permanent
+- F4_CERBERO_RBAC / F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked/permanent
 - ROOT_TOPOLOGY_CLEAN APTO — path-assert FS: raíz sin .events (Glob 0)
 - Shell ./sddia-run.sh --tool git-manager → Rejected / no stdout; sin gitStdout de esta sesión Argos
-- GIT_EVIDENCE_NATIVE_PPR NO_APTO — workspace exec f8cd9845… ausente/vacío; sin prep-branch propio
-- git_changes = path-assert FS (touchpoints + cascada persist_ref); no es gitStdout sesión
-- WSPACE_MATERIALIZED NO_APTO — workspace inject f8cd9845… ausente; no bloquea F5
-- DOC_EVOLUTION NO_APTO — sin hito/fila AUT-120 bajo SddIA/evolution/; residual no bloqueante F5
+- GIT_EVIDENCE_NATIVE_PPR NO_APTO — workspace exec 03d488c1… ausente/vacío; sin prep-branch propio
+- git_changes = path-assert FS (touchpoints + cascada persist_ref + evolution); no es gitStdout sesión
+- WSPACE_MATERIALIZED NO_APTO — workspace inject 03d488c1… ausente; no bloquea F5
+- DOC_EVOLUTION APTO — hito 7cddbb7d… + fila Evolution_log.md AUT-120
 - DOC_ORACLE_RED_FILE APTO — oracle-red.log presente (Ola 0 AUT-120)
-- KA-ENV-1…5 APTO — path-assert: smoke + gate Rust + wire main.rs/CI + helpers quote/write
+- KA-ENV-1…5 APTO — path-assert: smoke + gate Rust + wire CI + helpers quote/write
 - Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO; pending/ vacío; tracker.provider=linear; 0 hits AUT-120 bajo docs/todos/
-- BRANCH_WORKTREE_SYNC APTO — .git/HEAD → refs/heads/feat/kaizen-env-safe-dotenv-load @ 304d4c7c… = inject
+- BRANCH_WORKTREE_SYNC APTO — .git/HEAD → refs/heads/feat/kaizen-env-safe-dotenv-load @ 5385e615… = inject
 - BRANCH_REF_LOCAL APTO — refs/heads/feat/kaizen-env-safe-dotenv-load presente
 - accept_pr_handoff pending — L-HANDOFF-F5; MERGE/pr_url ausentes
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (sin gitStdout; sin inventar SHAs)
-head_commit_sha_fs: 304d4c7ca649d1c2c661fbaf9e06bdcc06bd96de
+head_commit_sha_fs: 5385e61562ed6ab6be26e4dc5c02a236efef14f8
+execution_id: 03d488c1-e45f-4ac2-9110-5c2fe35adb06
 validated_base_sha: b0715db6e22f9fec25b18a49d0a486560ba31925
-validated_head_sha: 07be3461e693f4826204071b649e02a8098a51ad
-validated_tree_sha: 0911a30b4701fc4a2b6d456df5ecb354162c84d9
-diff_digest: sha256:10efe30e54621ea9cafd09b30454073fe5c77c19e25371ccb3a0de095df0d8d4
-execution_id: "bb822335-7431-4f45-8145-11b8f1e837d3"
+validated_head_sha: 5385e61562ed6ab6be26e4dc5c02a236efef14f8
+validated_tree_sha: 0b373c00a03309617399afaafc650ec58b9a1020
+diff_digest: sha256:f502316bf0e67fedf0118b6148d03437c8a5af7b2786ed1cd506e53e41b05799
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
@@ -150,7 +151,7 @@ execution_id: "bb822335-7431-4f45-8145-11b8f1e837d3"
 
 | Gate | Delegado | Estado | Criterio |
 |------|----------|--------|----------|
-| F2 | Argos (doc, heredado) | **APTO** | cascada + YAML + KA-ENV-1…5 (`PASS_F2_DOC`) |
+| F2 | Argos (doc, heredado) | **APTO** | cascada + YAML + KA-ENV-1…5 + evolution + oracle-red (`PASS_F2_DOC`) |
 | F3 | Triaje técnico (proxy) | **APTO** | TECH_FORMAL + `execution.md` tests/gates; **KA-GATE-TRUNK-2** |
 | F4 | Cerbero / RBAC | **APTO** | PPR ∉ revoked/permanent; R3 KM APTO |
 | F5 | Argos (veredicto) | **APTO** | R1/R2/R3 APTO · F2–F4 APTO · `ROOT_TOPOLOGY_CLEAN` · sin blocking |
@@ -166,18 +167,18 @@ Copia literal session + machine — **no** stdout Shell inventado:
 |-------|-------|
 | `schema` | `kalma2-agent-runtime-evidence/v1` |
 | `source` (session) | `native_state` |
-| `source` (machine handoff) | `native_state` @ `2026-11-26T17:54:44Z` |
+| `source` (machine handoff) | `native_state` @ `2026-11-26T18:00:24Z` |
 | `notes` (session/machine) | `idempotent-hit` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
 | `formal_execute_process` | `true` |
 | `git_manager_invoked` (machine) | `true` |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — Shell Rejected; sin `gitStdout` |
-| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** — workspace `f8cd9845…` ausente |
+| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** — workspace `03d488c1…` ausente |
 | `HANDOFF_MACHINE_FILE` | **APTO** — `_agent_handoff.md` presente |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**`; `pending/` vacío |
 
-Fuente: prompt Runtime evidence (session) + `docs/features/kaizen-env-safe-dotenv-load/_agent_handoff.md` § Runtime evidence (machine) @ `2026-11-26T17:54:44Z`.
+Fuente: prompt Runtime evidence (session) + `docs/features/kaizen-env-safe-dotenv-load/_agent_handoff.md` § Runtime evidence (machine) @ `2026-11-26T18:00:24Z`.
 
 ## Ingesta
 
@@ -186,61 +187,55 @@ Fuente: prompt Runtime evidence (session) + `docs/features/kaizen-env-safe-doten
 | `persist_ref` (inyectado) | `docs/features/kaizen-env-safe-dotenv-load` |
 | `persist_ref` (resuelto) | `docs/features/kaizen-env-safe-dotenv-load` |
 | `pbi_ref` (inyectado) | vacío · tracker Linear `AUT-120` |
-| `correlation_id` | `b1222391-2e27-4224-bcd7-cd86e2fbf48a` |
-| `execution_id` | `f8cd9845-38a9-4173-a15a-5aa0287f212f` |
+| `correlation_id` | `0097acbb-a961-4fac-8941-621bcc44b546` |
+| `execution_id` | `03d488c1-e45f-4ac2-9110-5c2fe35adb06` |
 | `branch_name` (runtime) | `feat/kaizen-env-safe-dotenv-load` |
-| Worktree HEAD (FS) | `refs/heads/feat/kaizen-env-safe-dotenv-load` @ `304d4c7c…` (**= inject**) |
+| Worktree HEAD (FS) | `refs/heads/feat/kaizen-env-safe-dotenv-load` @ `5385e615…` (**= inject**) |
 | `source_process` | `feature` |
 | Tracker | `linear` · sin fichero KM AUT-120 |
 | Workspace inject | ausente (0 ficheros) |
 
-## Cascada documental (F2 heredado)
+## Cascada F2 (documental, heredada)
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
 | `DOC_OBJECTIVES` | **APTO** | `objectives.md` + frontmatter + KA-ENV-1…5 |
-| `DOC_CLARIFY` | **APTO** | `clarify.md` + frontmatter + D-LOAD…D-TEST |
+| `DOC_CLARIFY` | **APTO** | `clarify.md` + frontmatter |
 | `DOC_SPEC` | **APTO** | `spec.md` + frontmatter + touchpoints |
 | `DOC_PLAN` | **APTO** | `plan.md` + frontmatter |
 | `DOC_IMPLEMENTATION` | **APTO** | `implementation.md` + frontmatter |
 | `DOC_EXECUTION` | **APTO** | `execution.md` + frontmatter |
-| `DOC_FRONTMATTER_YAML` | **APTO** | `---` YAML en objectives/clarify/spec/plan/implementation/execution |
-| `DOC_EVOLUTION` | **NO_APTO** | sin hito AUT-120 en `SddIA/evolution/` · no bloquea F5 |
-| `DOC_AC_CASCADE` | **APTO** | KA-ENV-1…5 en `objectives.md` ↔ touchpoints `spec.md` |
+| `DOC_FRONTMATTER_YAML` | **APTO** | `---` YAML en cascada |
+| `DOC_EVOLUTION` | **APTO** | `SddIA/evolution/7cddbb7d-caa0-435d-b181-90c2d19170a3.md` + fila `Evolution_log.md` |
+| `DOC_AC_CASCADE` | **APTO** | KA-ENV-1…5 en `objectives.md` ↔ touchpoints |
 | `DOC_ORACLE_RED_FILE` | **APTO** | `oracle-red.log` Ola 0 presente |
 | `CODE_TOUCHPOINT_PRESENT` | **APTO** | shell_lib / gate Rust / smoke / CI |
-| `F2_DOC_GATE` | **APTO** | → `PASS_F2_DOC` heredado |
+| `F2_DOC_GATE` | **APTO** | heredado → `PASS_F2_DOC` |
 
 ## Matriz de Criterios (AC) — path-assert documental + código
 
 | Criterio | Estado | Evidencia |
 |----------|--------|-----------|
 | KA-ENV-1 | **APTO** | `SddIA/scripts/qa/test-vault-literal-dotenv-load.sh` presente |
-| KA-ENV-2 | **APTO** | `gate_env_dotenv_shell_hazard.rs` + CLI en `main.rs` |
+| KA-ENV-2 | **APTO** | `gate_env_dotenv_shell_hazard.rs` + wire CI `gate-env-dotenv-shell-hazard` |
 | KA-ENV-3 | **APTO** | mismo gate (audit scripts `source`/`.` sobre `.env`) |
 | KA-ENV-4 | **APTO** | `_sddia_quote_dotenv_value` / `_sddia_write_dotenv_kv` en `sddia_shell_lib.sh` |
 | KA-ENV-5 | **APTO** | wire `sddia-index-qa.yml` job integrity (gate + smoke) |
 
-Sin filas `PARCIAL` / `FAIL` / `NO_APTO` / `ABIERTO` / `PENDIENTE` en matriz de peaje F5 (KA-ENV-1…5).
+Sin filas `PARCIAL` / `FAIL` / `NO_APTO` / `ABIERTO` / `PENDIENTE` en matriz AC F5 (KA-ENV-1…5). Sin cargo/sddia-qa stdout físico esta sesión (Veredicto = path-assert + bridge + proxy F3). **KZ-PRM-06:** sin degradar F3 ni ACs.
 
-## F3 / F4 / topología
-
-| Check | Estado | Evidencia |
-|-------|--------|-----------|
-| `F3_TECH_GATE` | **APTO** | proxy `TECH_FORMAL_EXECUTE_PROCESS` APTO + `execution.md` tests/gates narrados; **no** NO_APTO (veto troncal KA-GATE-TRUNK-2) |
-| `F4_RBAC_GATE` / `F4_CERBERO_RBAC` | **APTO** | `pull-request-review` ∉ `revoked`/`permanent` |
-| `ROOT_TOPOLOGY_CLEAN` | **APTO** | FS: sin `.events` en raíz (Glob 0) |
-| `F5_VERDICT` / `F5_VERDICT_GATE` | **APTO** | `blocking_findings=[]` → `PASS_F5_VERDICT` · `verdict: aprobado` |
-
-## branch / git_changes / KM
+## F3 / F4 / F5 / branch / git_changes / KM
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
+| `F3_TECH_GATE` | **APTO** | proxy `TECH_FORMAL_EXECUTE_PROCESS` APTO + `execution.md`; **no** NO_APTO (veto troncal KA-GATE-TRUNK-2) |
+| `F4_RBAC_GATE` / `F4_CERBERO_RBAC` | **APTO** | PPR ∉ revoked/permanent |
+| `F5_VERDICT` / `F5_VERDICT_GATE` | **APTO** | R1/R2/R3 + F2–F4 + `ROOT_TOPOLOGY_CLEAN` → `PASS_F5_VERDICT` |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Evidence Bridge session+machine `native_state` (copia) |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** | Shell Rejected; sin `gitStdout` |
-| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** | workspace `f8cd9845…` ausente |
+| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** | workspace `03d488c1…` ausente |
 | `BRANCH_RUNTIME_INJECT` | **APTO** | inject = `feat/kaizen-env-safe-dotenv-load` |
-| `BRANCH_WORKTREE_SYNC` | **APTO** | HEAD → misma ref @ `304d4c7c…` |
+| `BRANCH_WORKTREE_SYNC` | **APTO** | HEAD → misma ref @ `5385e615…` |
 | `BRANCH_REF_LOCAL` | **APTO** | ref local presente |
 | `branch` | **APTO** | worktree = inject |
 | `git_changes` | **APTO** | path-assert FS (no `gitStdout` cápsula) |
@@ -248,9 +243,9 @@ Sin filas `PARCIAL` / `FAIL` / `NO_APTO` / `ABIERTO` / `PENDIENTE` en matriz de 
 | `PBI_PENDING_ABSENT` | **APTO** | `docs/todos/pending/` vacío |
 | `ROOT_TOPOLOGY_CLEAN` | **APTO** | FS: sin `.events` en raíz (Glob 0) |
 | `WSPACE_MATERIALIZED` | **NO_APTO** | workspace ausente; **no bloquea** F5 |
-| `ACCEPT_PR_HANDOFF` | **NO_APTO** | `pending` (L-HANDOFF-F5); merge soberano fuera de esta fase |
+| `MERGE_ALREADY_OBSERVED` / `ACCEPT_PR_HANDOFF` | **NO_APTO** | L-HANDOFF-F5 · pending |
 
-`git_changes.paths` = path-assert FS (touchpoints + persist_ref). Sin bypass raw destructivo. Sin `validated_base_sha` / `diff_digest` inventados (cápsula git-manager no ejecutada aquí).
+`git_changes.paths` = path-assert FS (touchpoints + persist_ref + evolution). Sin bypass raw destructivo. Sin `validated_base_sha` / `diff_digest` inventados (cápsula git-manager no ejecutada aquí).
 
 ## R3 — KM (`RBAC_AUTHORING_KM_POLICY`)
 
@@ -266,31 +261,33 @@ Sin filas `PARCIAL` / `FAIL` / `NO_APTO` / `ABIERTO` / `PENDIENTE` en matriz de 
   "resolution": "PASS_F5_VERDICT",
   "verdict": "aprobado",
   "delivery_state": "success",
+  "approval_status": "aprobado",
   "accept_pr_handoff": false,
   "accept_pr_handoff_status": "pending",
   "pbi_archived": false,
   "branch": "feat/kaizen-env-safe-dotenv-load",
   "branch_worktree_observed": "feat/kaizen-env-safe-dotenv-load",
-  "head_commit_sha_fs": "304d4c7ca649d1c2c661fbaf9e06bdcc06bd96de",
+  "head_commit_sha_fs": "5385e61562ed6ab6be26e4dc5c02a236efef14f8",
   "persist_ref": "docs/features/kaizen-env-safe-dotenv-load",
   "tracker_ref": "AUT-120",
-  "correlation_id": "b1222391-2e27-4224-bcd7-cd86e2fbf48a",
-  "execution_id": "f8cd9845-38a9-4173-a15a-5aa0287f212f",
+  "correlation_id": "0097acbb-a961-4fac-8941-621bcc44b546",
+  "execution_id": "03d488c1-e45f-4ac2-9110-5c2fe35adb06",
   "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
   "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
   "RBAC_AUTHORING_KM_POLICY": "APTO",
   "F2_DOC_GATE": "APTO",
   "F3_TECH_GATE": "APTO",
   "F4_RBAC_GATE": "APTO",
-  "ROOT_TOPOLOGY_CLEAN": "APTO",
   "F5_VERDICT": "APTO",
+  "ROOT_TOPOLOGY_CLEAN": "APTO",
+  "BRANCH_WORKTREE_SYNC": "APTO",
   "blocking": []
 }
 ```
 
 ## Alcance
 
-Veredicto y bloqueo **aprueba** peaje F5 (`PASS_F5_VERDICT`). Residuales no bloqueantes: `DOC_EVOLUTION`, workspace PPR ausente, Shell git-manager sin stdout, `ACCEPT_PR_HANDOFF` pending. Downstream: Cosecha Kaizen → Handoff materialización (`accept-pr`; sin merge directo en aduana). Argos **no** escribe bajo `docs/todos/` ni reescribe `_agent_handoff.md`.
+Veredicto y bloqueo **aprueba** peaje F5 (`PASS_F5_VERDICT`). Residuales no bloqueantes: workspace PPR ausente, Shell git-manager Rejected, sin `gitStdout` nativo PPR, `ACCEPT_PR_HANDOFF` pending (L-HANDOFF-F5). Downstream: Cosecha Kaizen → Handoff materialización (`accept-pr`; sin merge directo en aduana). Argos **no** escribe bajo `docs/todos/` ni reescribe `_agent_handoff.md`.
 
 ## approval_status
 
