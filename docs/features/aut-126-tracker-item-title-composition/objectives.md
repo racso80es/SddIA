@@ -8,6 +8,9 @@
 
 
 
+
+
+
 feature_name: aut-126-tracker-item-title-composition
 created: "2026-11-26"
 process: feature
@@ -15,7 +18,7 @@ branch_name: feat/aut-126-tracker-item-title-composition
 persist_ref: docs/features/aut-126-tracker-item-title-composition
 pbi_ref: AUT-126
 tracker_ref: AUT-126
-execution_id: "ff6e6868-36a5-4cef-a75a-ea2dbfdc4bcd"
+execution_id: "7185f5c5-b812-4745-9185-f6648bc8f131"
 ---
 # Objetivos — AUT-126
 

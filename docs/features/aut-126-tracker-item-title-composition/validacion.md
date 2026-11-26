@@ -1,4 +1,5 @@
 ---
+
 feature_name: aut-126-tracker-item-title-composition
 created: 2026-11-26
 updated: 2026-11-26T19:20:00Z
@@ -15,9 +16,9 @@ persist_ref_injected: docs/features/aut-126-tracker-item-title-composition
 pbi_ref: ''
 tracker_provider: linear
 tracker_ref: AUT-126
-correlation_id: ebf0639b-93a2-4591-b49e-ac6e37bc5736
-pr_presented_event_id: ebf0639b-93a2-4591-b49e-ac6e37bc5736
-audit_event_reference: ebf0639b-93a2-4591-b49e-ac6e37bc5736
+correlation_id: a9612263-b259-4b2e-b3c9-aceeef2c2482
+pr_presented_event_id: a9612263-b259-4b2e-b3c9-aceeef2c2482
+audit_event_reference: a9612263-b259-4b2e-b3c9-aceeef2c2482
 workspace_path_injected: /home/racso/Proyectos/SddIA/.SddIA/workspaces/pull-request-review/565e3cdd-15c5-41af-ad7f-3350a50d35fd/
 workspace_materialized: absent
 norm_ref: features-documentation-pattern@1.3.3
@@ -137,13 +138,12 @@ situational_notes:
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs)
 head_commit_sha_fs: a86e1c53dec8f62db2b70dcd778752cfb59a5128
-execution_id: 565e3cdd-15c5-41af-ad7f-3350a50d35fd
 validated_base_sha: 5c10732324208e21a9f02f4d2e2092b9a5b6131b
 validated_head_sha: a86e1c53dec8f62db2b70dcd778752cfb59a5128
 validated_tree_sha: 79b59b4276ace96289ce8ced966120a041c5bfc1
 diff_digest: sha256:ce9be4fa2c8516e78f38fc7951ec541812322a394da3d6535e9dca49d03ec6c0
+execution_id: "7185f5c5-b812-4745-9185-f6648bc8f131"
 ---
-
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
