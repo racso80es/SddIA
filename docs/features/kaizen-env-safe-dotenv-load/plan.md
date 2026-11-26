@@ -16,4 +16,4 @@ execution_id: "bb822335-7431-4f45-8145-11b8f1e837d3"
 | 2 | Helpers quote/write + comentarios `_sddia_load_vault` | forjada |
 | 3 | Smoke `test-vault-literal-dotenv-load.sh` + CI | forjada |
 | 4 | Documentación persist_ref + README | forjada |
-| 5 | `validacion.md` + `delivery-close-cycle` | pendiente post-QA |
+| 5 | `validacion.md` + `delivery-close-cycle` | forjada (PR #478, CI verde) |
