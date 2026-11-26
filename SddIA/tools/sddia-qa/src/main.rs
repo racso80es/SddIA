@@ -1,5 +1,6 @@
 mod gate_allowlist_ratchet;
 mod gate_capsule_kind;
+mod gate_env_dotenv_shell_hazard;
 mod gate_no_env_bypass;
 mod gate_evolution;
 mod gate_event_manager_port;
@@ -53,6 +54,7 @@ Comandos:\n\
   gate-event-manager-port [--json]\n\
   gate-capsule-kind [--json]\n\
   gate-no-env-bypass [--json]\n\
+  gate-env-dotenv-shell-hazard [--json] [--include-local-vault]\n\
   gate-eda-unit-no-real-backend [--json]\n\
   gate-allowlist-ratchet [--json] [--base REF]\n\
   verify-hooks [--json] [--fix]\n\
@@ -243,6 +245,11 @@ fn main() {
         }
         "gate-capsule-kind" => gate_capsule_kind::run(&repo, has_flag(rest, "--json")),
         "gate-no-env-bypass" => gate_no_env_bypass::run(&repo, has_flag(rest, "--json")),
+        "gate-env-dotenv-shell-hazard" => gate_env_dotenv_shell_hazard::run(
+            &repo,
+            has_flag(rest, "--json"),
+            has_flag(rest, "--include-local-vault"),
+        ),
         "gate-eda-unit-no-real-backend" => {
             gate_eda_unit_no_real_backend::run(&repo, has_flag(rest, "--json"))
         }

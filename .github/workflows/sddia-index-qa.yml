@@ -177,6 +177,8 @@ jobs:
           SddIA/target/debug/sddia-qa verify-compiled-capsules
           SddIA/target/debug/sddia-qa gate-event-manager-port --json
           SddIA/target/debug/sddia-qa gate-eda-unit-no-real-backend --json
+          SddIA/target/debug/sddia-qa gate-env-dotenv-shell-hazard --json
+          bash SddIA/scripts/qa/test-vault-literal-dotenv-load.sh
 
       - uses: dtolnay/rust-toolchain@stable
 

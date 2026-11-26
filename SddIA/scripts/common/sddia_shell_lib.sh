@@ -103,6 +103,34 @@ _sddia_require_protoc() {
   return 1
 }
 
+# Entrecomilla un valor para escritura segura en ficheros .env (KA-ENV-4 / AUT-120).
+_sddia_quote_dotenv_value() {
+  local v="${1-}"
+  v="${v//\\/\\\\}"
+  v="${v//\"/\\\"}"
+  printf '"%s"' "$v"
+}
+
+# Escribe o sustituye KEY= en un fichero dotenv usando comillas seguras.
+_sddia_write_dotenv_kv() {
+  local file="$1" key="$2" value="$3"
+  local quoted
+  quoted="$(_sddia_quote_dotenv_value "$value")"
+  if [[ ! -f "$file" ]]; then
+    printf '%s=%s\n' "$key" "$quoted" >>"$file"
+    return 0
+  fi
+  if grep -qE "^[[:space:]]*${key}[[:space:]]*=" "$file"; then
+    local tmp
+    tmp="$(mktemp)"
+    sed -E "s|^[[:space:]]*${key}[[:space:]]*=.*|${key}=${quoted}|" "$file" >"$tmp"
+    mv "$tmp" "$file"
+  else
+    printf '%s=%s\n' "$key" "$quoted" >>"$file"
+  fi
+}
+
+# Carga jerarquía .dev/.env → .SddIA/.dev/.env sin `source` ni `eval` (AUT-120).
 _sddia_load_vault() {
   local repo_root="$1"
   local global="$repo_root/.dev/.env"

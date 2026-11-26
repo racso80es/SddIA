@@ -137,6 +137,8 @@ Si existen **ambas** bóvedas, el runtime registra en stderr: `[CONFIG] Jerarqu�
 
 > **Nota EDA:** `PYTHONUTF8=1` u otras variables en la bóveda global **no sustituyen** el flujo canónico de presentación/merge (`delivery-close-cycle` → `PullRequest_Presented` → `accept-pr` → `PullRequest_Merged`). Ver `SddIA/norms/pull-request-orchestration.md`.
 
+**Carga en shell (AUT-120):** usar `_sddia_load_vault` en `SddIA/scripts/common/sddia_shell_lib.sh`. **Prohibido** `source` / `.` sobre `.dev/.env` o `.SddIA/.dev/.env` (metacaracteres sin comillas ejecutarían pipelines o bloquearían `stdin`). Valores con `|`, `&`, `;`, `$()`, espacios, etc. deben ir **entrecomillados** en el fichero; escritura automática vía `_sddia_quote_dotenv_value` / `_sddia_write_dotenv_kv`. Diagnóstico: `sddia-qa gate-env-dotenv-shell-hazard` (solo `archivo:línea:CLAVE`, sin secretos).
+
 **Entrypoints que cargan la jerarquía** (bóveda bash en `sddia_shell_lib.sh` / `execute-process`) **antes** de invocar cápsulas:
 
 | Entrypoint | Punto de carga |
