@@ -353,4 +353,18 @@ mod tests {
         let got = super::dedupe_consecutive_title_h1(body, Some("Foo"));
         assert_eq!(got.matches("# Foo").count(), 1);
     }
+
+    #[test]
+    fn aut125_witness_duplicate_h1_canonicalized() {
+        let title = "[KAIZEN] Auditoría pre-merge dotenv shell";
+        let raw = format!(
+            "---\ntracker_ref: AUT-125\n---\n\n# {title}\n\n# {title}\n\n## Impacto\n"
+        );
+        let out = canonicalize_local_markdown(&raw, Some(title)).unwrap();
+        assert_eq!(out.matches(&format!("# {title}")).count(), 1);
+        let linear = parse_item_description(&out).unwrap();
+        let rendered =
+            render_item_description(&linear, TrackerDescriptionDialect::LinearDescription).unwrap();
+        assert!(!rendered.contains(&format!("# {title}")));
+    }
 }
