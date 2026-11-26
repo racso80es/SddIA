@@ -1,5 +1,4 @@
 ---
-
 feature_name: kaizen-env-safe-dotenv-load
 created: 2026-11-26
 updated: 2026-11-26T18:56:00Z
@@ -36,7 +35,7 @@ git_manager_invoked: false
 git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected / sin stdout físico sobre ./sddia-run.sh --tool git-manager); R2 = copia Evidence Bridge session+machine native_state; git_changes = path-assert FS (sin inventar gitStdout)
 git_evidence_source: evidence-bridge-session-native_state+handoff-machine+path-assert-fs
 formal_execute_process: true
-formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-26T17:54:44Z TECH/GIT APTO notes=idempotent-hit git_manager_invoked=true'
+formal_evidence_detail: session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff native_state @ 2026-11-26T17:54:44Z TECH/GIT APTO notes=idempotent-hit git_manager_invoked=true
 handoff_machine_file: present
 handoff_evidence_block_pre: present
 evidence_bridge_notes: R1/R2 copia Runtime evidence (session native_state notes=idempotent-hit + machine native_state @ 2026-11-26T17:54:44Z); TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; sin stdout inventado
@@ -136,12 +135,13 @@ situational_notes:
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (sin gitStdout; sin inventar SHAs)
 head_commit_sha_fs: 304d4c7ca649d1c2c661fbaf9e06bdcc06bd96de
-validated_base_sha: ''
-validated_head_sha: ''
-validated_tree_sha: ''
-diff_digest: ''
-execution_id: "f8cd9845-38a9-4173-a15a-5aa0287f212f"
+validated_base_sha: b0715db6e22f9fec25b18a49d0a486560ba31925
+validated_head_sha: 07be3461e693f4826204071b649e02a8098a51ad
+validated_tree_sha: 0911a30b4701fc4a2b6d456df5ecb354162c84d9
+diff_digest: sha256:10efe30e54621ea9cafd09b30454073fe5c77c19e25371ccb3a0de095df0d8d4
+execution_id: f8cd9845-38a9-4173-a15a-5aa0287f212f
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
