@@ -152,8 +152,46 @@ pub fn pre_push_check(repo: &Path, persist_ref: Option<&str>) -> Result<(), Stri
     if read_tracker_done_proof(repo, &tracker_ref).is_some() {
         return Ok(());
     }
+    let slug = project_slug_from_persist(repo, persist_ref);
+    let inputs = json!({ "project_slug": slug });
+    let tc = project_binding::tracker_config_for_inputs(repo, &inputs)?;
+    match fetch_issue(
+        repo,
+        &tracker_ref,
+        "pre-push-done-gate",
+        tc.as_ref().and_then(|t| t.project_id.as_deref()),
+    ) {
+        Ok(issue) => {
+            let linear_state = issue.get("state").and_then(|v| v.as_str()).unwrap_or("");
+            let canon = tc
+                .as_ref()
+                .map(|t| linear_to_canonical(linear_state, t))
+                .unwrap_or_else(|| linear_state.to_ascii_lowercase().replace(' ', "_"));
+            if !canonical_is_done(&canon) {
+                eprintln!(
+                    "warn: pre-push sin proof Done — ciclo abierto (tracker_ref={tracker_ref}, state={linear_state})"
+                );
+                return Ok(());
+            }
+        }
+        Err(e) => {
+            let lab = std::env::var("SDDIA_LAB_MOCK_OUTBOUND")
+                .map(|v| {
+                    matches!(
+                        v.trim().to_ascii_lowercase().as_str(),
+                        "1" | "true" | "yes" | "on"
+                    )
+                })
+                .unwrap_or(false);
+            if lab {
+                eprintln!("warn: pre-push done_gate fetch falló en lab: {e}");
+                return Ok(());
+            }
+            return Err(format!("DONE_GATE_LINEAR: fetch_issue falló: {e}"));
+        }
+    }
     Err(format!(
-        "DONE_GATE_LINEAR: falta evidencia local {} para tracker_ref {}",
+        "DONE_GATE_LINEAR: falta evidencia local {} para tracker_ref {} (issue en Done)",
         proof_path(repo, &tracker_ref).display(),
         tracker_ref
     ))
