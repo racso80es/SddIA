@@ -1,0 +1,40 @@
+{
+  "schema": "dlq-kaizen-alerts/1.0",
+  "signatures": {
+    "4740a4a99b5d27e0088c62d2eaced92f77abdaaab1d4ce25e4cd53d59c82391e": {
+      "alerted_at": "2026-11-26T17:43:54.997973419+00:00",
+      "error_trace": "storage error: storage error: redb open: Database already open. Cannot acquire lock.",
+      "event_type": "PBI_Refined",
+      "first_event_id": "b3a5bc2b-fb08-4e88-be54-db083588a150",
+      "subscriber_id": "tekton.tracker-stamp"
+    },
+    "498dd933c00aeee9f014e805f60d61bd4bceeef8bf24b9c36b90c04ef0e70e2b": {
+      "alerted_at": "2026-11-26T17:43:41.026968877+00:00",
+      "error_trace": "process sin despacho ECST: feature",
+      "event_type": "PBI_Forged",
+      "first_event_id": "5eaa1b3b-4096-4044-aeb3-0ba5d3ebc61d",
+      "subscriber_id": "tekton.feature"
+    },
+    "659f86f4647c109ce0f084f341079b6b14a5c77a1c97fd2865371319f5dfd087": {
+      "alerted_at": "2026-11-26T17:43:54.584192376+00:00",
+      "error_trace": "LINEAR_GRAPHQL_ERROR: {\"data\":null,\"errors\":[{\"extensions\":{\"code\":\"INPUT_ERROR\",\"statusCode\":400,\"type\":\"invalid input\",\"userError\":true,\"userPresentableMessage\":\"Could not find referenced Issue.\"},\"locations\":[{\"column\":3,\"line\":2}],\"mess",
+      "event_type": "PBI_Cancelled",
+      "first_event_id": "b1bbc203-444c-419a-94b2-76f53077457a",
+      "subscriber_id": "tekton.tracker-stamp"
+    },
+    "6acf888039e1abd7f9cc43caff2d4d6da1dae01f671852214213b9836b026327": {
+      "alerted_at": "2026-11-26T17:43:37.547600267+00:00",
+      "error_trace": "fase \"Preparación de rama\" failed",
+      "event_type": "PullRequest_Presented",
+      "first_event_id": "56c97b49-c459-45c5-bcea-4883dbb3bc75",
+      "subscriber_id": "argos.pull-request-review"
+    },
+    "8c84634d2eae6f8244c921feaf73abb535f3dbab02e34207ea5d2ed0d76680e1": {
+      "alerted_at": "2026-11-26T17:43:48.851519164+00:00",
+      "error_trace": "TRACKER_UNCONFIGURED: sin tracker.provider resuelto; no se escribe backlog local",
+      "event_type": "Tracker_Sync_Failed",
+      "first_event_id": "96ba89a2-70bd-4573-8d9a-42d142137c5a",
+      "subscriber_id": "tekton.tracker-sync-replay"
+    }
+  }
+}

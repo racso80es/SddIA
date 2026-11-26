@@ -1,11 +1,12 @@
 ---
+
+
 feature_name: kaizen-env-safe-dotenv-load
 created: "2026-11-26"
 process: feature
 tracker_ref: AUT-120
-execution_id: "246ab6e5-e75c-40f2-82e8-8385f3bbc040"
+execution_id: "f8cd9845-38a9-4173-a15a-5aa0287f212f"
 ---
-
 # Spec — AUT-120
 
 ## Touchpoints
