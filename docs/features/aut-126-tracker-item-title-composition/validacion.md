@@ -133,8 +133,8 @@ situational_notes:
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs); head_commit_sha_fs = lectura FS actual
 head_commit_sha_fs: 2950da9edd5f54f94a5f78de6ba62b4089f7ccc4
 validated_base_sha: 5c10732324208e21a9f02f4d2e2092b9a5b6131b
-validated_head_sha: 24f38f63bfac7ca74b959cb753688ae619526dc6
-validated_tree_sha: 46f4006b14b66eda7fe8c9058f03d99d87cbdfc2
+validated_head_sha: 059f11f1ce7f8f252c364a118d37bb1b1d28f2de
+validated_tree_sha: fdb66ec3d1eeb39e496ff9e435edc2a24060e5d1
 diff_digest: sha256:d069bcb345592fcb566530525ea649bd5c228aaf86d9b6bea01597f6ab1a56e4
 execution_id: 41070450-5ada-491c-ae27-12373c428979
 ---
