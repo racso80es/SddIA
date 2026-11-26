@@ -99,8 +99,13 @@ situational_notes:
 - Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO; pending/ vacío; tracker.provider=linear
 - Workspace inject c8242b6c… presente (capsule-invoke JSON)
 - Sin reescritura de _agent_handoff.md
-execution_id: "c8242b6c-0ea9-4797-a4f4-a211a3c0d5a3"
+execution_id: c8242b6c-0ea9-4797-a4f4-a211a3c0d5a3
+validated_base_sha: b0715db6e22f9fec25b18a49d0a486560ba31925
+validated_head_sha: 3868c4b88e78b05a93713a8d894c207f00439443
+validated_tree_sha: e8ca74a32a3c3b1c5b427cb3a2a3f8176b006314
+diff_digest: sha256:50c70af09c59e56ae12b61d52dfcd0302403f54f6dc96385f78c1ddf0d3d4712
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
