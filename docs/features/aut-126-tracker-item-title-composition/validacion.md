@@ -30,7 +30,7 @@ delivery_state: success
 resolution: PASS_F5_VERDICT
 accept_pr_handoff: false
 accept_pr_handoff_status: pending
-accept_pr_block_reason: pr_url/MERGE ausentes este CID; L-HANDOFF-F5 — prohibido accept_pr_handoff true sin vía de merge soberano
+accept_pr_block_reason: "pr_url/MERGE ausentes este CID; L-HANDOFF-F5 — prohibido accept_pr_handoff true sin vía de merge soberano"
 git_manager_invoked: false
 git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge session+machine native_state; git_changes = path-assert FS (sin inventar gitStdout)
 git_evidence_source: evidence-bridge-session-native_state+machine-native_state+path-assert-fs
