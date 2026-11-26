@@ -1,0 +1,4 @@
+=== Ola 0 — AUT-120 ===
+rg 'source.*\.env' --glob '*.sh' => 0 (pre)
+python scan .env.example metachar unquoted => 0 (pre)
+gate-env-dotenv-shell-hazard => ausente pre-implementación (comando desconocido en binario release 2026-11-23)
