@@ -1,4 +1,5 @@
 ---
+
 feature_name: aut-126-tracker-item-title-composition
 created: 2026-11-26
 updated: 2026-11-26T20:05:00Z
@@ -137,13 +138,12 @@ situational_notes:
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - validated_*/diff_digest no rematerializados esta sesión (Shell Rejected; sin inventar SHAs)
 head_commit_sha_fs: 715a333a57e6b6645f3efe35146f14dba26ecb43
-execution_id: 29254311-b9f3-4b5e-a6d3-eb3ac305bbb0
 validated_base_sha: 5c10732324208e21a9f02f4d2e2092b9a5b6131b
 validated_head_sha: 43861956cf3a3493515da29cd0bc735ab5a85d37
 validated_tree_sha: 9ee43bde814ae011b246158dc96e54ba67e3c661
 diff_digest: sha256:01fcd0fb894c40ad597c6e5b9d2cbdf7f1fdf1e67bdce907c2744206cf3a1e5d
+execution_id: "8b9cb460-0ea6-4434-bef9-2b193625d13c"
 ---
-
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
