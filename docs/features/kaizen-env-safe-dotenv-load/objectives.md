@@ -1,6 +1,7 @@
 ---
 
 
+
 feature_name: kaizen-env-safe-dotenv-load
 created: "2026-11-26"
 process: feature
@@ -9,7 +10,7 @@ persist_ref: docs/features/kaizen-env-safe-dotenv-load
 pbi_ref: AUT-120
 tracker_ref: AUT-120
 document_id: PBI-KAIZEN-ENV-SAFE-LOAD-01
-execution_id: "f8cd9845-38a9-4173-a15a-5aa0287f212f"
+execution_id: "bb822335-7431-4f45-8145-11b8f1e837d3"
 ---
 # Objetivos — kaizen-env-safe-dotenv-load (AUT-120)
 

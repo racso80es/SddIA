@@ -1,4 +1,5 @@
 ---
+
 feature_name: kaizen-env-safe-dotenv-load
 created: 2026-11-26
 updated: 2026-11-26T18:56:00Z
@@ -139,9 +140,8 @@ validated_base_sha: b0715db6e22f9fec25b18a49d0a486560ba31925
 validated_head_sha: 07be3461e693f4826204071b649e02a8098a51ad
 validated_tree_sha: 0911a30b4701fc4a2b6d456df5ecb354162c84d9
 diff_digest: sha256:10efe30e54621ea9cafd09b30454073fe5c77c19e25371ccb3a0de095df0d8d4
-execution_id: f8cd9845-38a9-4173-a15a-5aa0287f212f
+execution_id: "bb822335-7431-4f45-8145-11b8f1e837d3"
 ---
-
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase

@@ -160,3 +160,16 @@ notes: "idempotent-hit"
 
 **Residuales no bloqueantes:** `DOC_EVOLUTION`, workspace PPR ausente, Shell git-manager sin stdout, `ACCEPT_PR_HANDOFF` pending.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-26T17:56:48Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
