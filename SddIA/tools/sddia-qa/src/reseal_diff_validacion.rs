@@ -49,6 +49,7 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
                     branch,
                     validated_head_sha,
                     diff_digest,
+                    Some(persist_ref),
                 ) {
                     eprintln!("reseal-diff-validacion: emit PullRequest_Resealed: {e}");
                     return 2;

@@ -278,8 +278,13 @@ pub fn emit_pr_resealed_after_branch_reseal(
     branch: &str,
     validated_head_sha: &str,
     diff_digest: &str,
+    persist_ref: Option<&str>,
 ) -> Result<Value, String> {
     let correlation_id = super::tracker_pbi_meta::presented_event_id_for_branch(repo, branch)
+        .or_else(|| {
+            persist_ref
+                .and_then(|p| super::tracker_pbi_meta::presented_event_id_from_validacion(repo, p))
+        })
         .ok_or_else(|| format!("PullRequest_Presented ausente para rama {branch}"))?;
     emit_pr_resealed(
         repo,
@@ -563,6 +568,7 @@ mod tests {
             "feat/reseal-ev",
             "def456",
             "sha256:cafe",
+            None,
         )
         .expect("after branch");
         let rid2 = via_branch.get("event_id").and_then(|v| v.as_str()).unwrap();

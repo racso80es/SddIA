@@ -13,6 +13,8 @@ pub struct FetchSnapshot {
     pub state_name: String,
     pub labels: Vec<String>,
     pub updated_at: String,
+    /// Título nativo del issue (campo `title` en Linear; vacío en file).
+    pub native_title: Option<String>,
 }
 
 pub fn column_from_linear_state(tc: &TrackerConfig, state_name: &str) -> String {
@@ -59,7 +61,10 @@ pub fn ensure_canonical_markdown(
     if let Ok(canonical) =
         crate::engine::item_lifecycle_frontmatter::normalize_item_markdown(raw_description)
     {
-        return Ok(canonical);
+        return crate::engine::tracker_item_document::canonicalize_local_markdown(
+            &canonical,
+            snap.native_title.as_deref(),
+        );
     }
     let body = raw_description.trim();
     let uuid = Uuid::new_v4();
@@ -79,6 +84,9 @@ pub fn ensure_canonical_markdown(
     let fm = lines.join("\n");
     if body.is_empty() {
         Ok(format!("---\n{fm}\n---\n"))
+    } else if let Some(t) = snap.native_title.as_deref().filter(|s| !s.is_empty()) {
+        let stripped = crate::engine::tracker_item_document::strip_leading_title_h1(body, t);
+        Ok(format!("---\n{fm}\n---\n\n# {t}\n\n{stripped}\n"))
     } else {
         Ok(format!("---\n{fm}\n---\n\n{body}\n"))
     }
@@ -106,6 +114,7 @@ mod tests {
             state_name: "Todo".into(),
             labels: vec!["pbi".into()],
             updated_at: "t".into(),
+            native_title: Some("Solo cuerpo".into()),
         };
         let out = ensure_canonical_markdown(&snap.description, &snap, "core", None).unwrap();
         assert!(out.starts_with("---\n"));

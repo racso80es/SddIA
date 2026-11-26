@@ -137,11 +137,20 @@ pub fn normalize_item_markdown(raw: &str) -> Result<String, String> {
 
 /// Fusiona `patch` en el frontmatter y elimina `status` legado (pending / refinado / refinada).
 pub fn seal_markdown(raw: &str, patch: &YamlValue) -> Result<String, String> {
-    super::tracker_item_document::seal_item_description(
+    seal_markdown_with_dialect(
         raw,
         patch,
         super::tracker_item_document::TrackerDescriptionDialect::FileMarkdown,
     )
+}
+
+/// Igual que `seal_markdown` con proyección explícita por proveedor (AUT-126).
+pub fn seal_markdown_with_dialect(
+    raw: &str,
+    patch: &YamlValue,
+    dialect: super::tracker_item_document::TrackerDescriptionDialect,
+) -> Result<String, String> {
+    super::tracker_item_document::seal_item_description(raw, patch, dialect)
 }
 
 #[cfg(test)]
@@ -175,12 +184,14 @@ mod tests {
 
     #[test]
     fn seal_markdown_accepts_linear_yaml_fence() {
-        let raw = "```yaml\ndocument_id: X\ntracker_column: backlog\nrefinement: pending\n```\n\n# cuerpo\n";
+        let raw = "```yaml\ndocument_id: X\ntracker_column: backlog\nrefinement: pending\n```\n\n# Título\n\nPárrafo.\n";
         let patch = yaml_patch_refinement_refined("2026-10-26");
         let out = seal_markdown(raw, &patch).unwrap();
         assert!(out.starts_with("---"));
         assert!(out.contains("tracker_column: todo"));
         assert!(out.contains("refinement: refined"));
-        assert!(out.contains("# cuerpo"));
+        assert!(out.contains("# Título"));
+        assert!(out.contains("Párrafo."));
+        assert_eq!(out.matches("# Título").count(), 1);
     }
 }

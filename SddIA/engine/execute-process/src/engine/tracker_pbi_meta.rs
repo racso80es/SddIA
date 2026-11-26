@@ -151,6 +151,35 @@ fn tracker_ref_of_presented(event: &Value, branch: &str) -> Option<String> {
         .map(str::to_string)
 }
 
+/// Fallback cuando el store no retiene `PullRequest_Presented` tras sweep (AUT-126 / reseal pre-push).
+pub fn presented_event_id_from_validacion(repo: &Path, persist_ref: &str) -> Option<String> {
+    let path = resolve_repo_path(repo, persist_ref).join("validacion.md");
+    let text = fs::read_to_string(&path).ok()?;
+    const KEYS: [&str; 3] = [
+        "pr_presented_event_id",
+        "audit_event_reference",
+        "correlation_id",
+    ];
+    for key in KEYS {
+        if let Some(v) = yaml_field(&text, key).filter(|v| !v.is_empty()) {
+            return Some(v);
+        }
+    }
+    if let Ok(fm) = crate::core::parser::load_frontmatter_yaml(&path) {
+        for key in KEYS {
+            if let Some(v) = fm
+                .get(key)
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|v| !v.is_empty())
+            {
+                return Some(v.to_string());
+            }
+        }
+    }
+    None
+}
+
 /// `event_id` del `PullRequest_Presented` más reciente para `branch` (store).
 pub fn presented_event_id_for_branch(repo: &Path, branch: &str) -> Option<String> {
     let mut best: Option<(String, String)> = None;
@@ -462,5 +491,21 @@ mod tests {
         );
         assert!(presented_event_id_for_branch(&dir, "feat/other").is_none());
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn presented_event_id_from_validacion_reads_frontmatter() {
+        let repo = match crate::core::repo::find_repo_root() {
+            Ok(r) => r,
+            Err(_) => return,
+        };
+        let persist = "docs/features/aut-126-tracker-item-title-composition";
+        if !repo.join(persist).join("validacion.md").is_file() {
+            return;
+        }
+        assert!(
+            presented_event_id_from_validacion(&repo, persist).is_some(),
+            "validacion.md debe exponer pr_presented_event_id o correlation_id"
+        );
     }
 }

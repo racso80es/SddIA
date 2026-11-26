@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `6d2f31c6-f200-47ca-8b38-f2391fb67e28` | 2026-11-26 | AUT-126: codec título/cuerpo tracker file/linear sin H1 duplicado | CANONICO | `SddIA/evolution/6d2f31c6-f200-47ca-8b38-f2391fb67e28.md` |
 | `7cddbb7d-caa0-435d-b181-90c2d19170a3` | 2026-11-26 | AUT-120: carga dotenv segura, gate QA y pre-push con ciclo Linear abierto | CANONICO | `SddIA/evolution/7cddbb7d-caa0-435d-b181-90c2d19170a3.md` |
 | `d122a000-2026-4123-8122-000000000122` | 2026-11-23 | AUT-122: Inyección de Dependencias de proveedores LLM (agent:runtime, AgentRuntimePort, AgentRuntimeDiFactory perezosa), taxonomía cerrada thinking_profile en agents-contract v1.3.0 y 7 agentes Core, configuración local no versionada .SddIA/llm-runtime.local.json con action:switch-llm-provider sin auto-failover y trazabilidad en phase_reports.json y llm_interaction_audit.rs. | CANONICO | `SddIA/evolution/d122a000-2026-4123-8122-000000000122.md` |
 | `bab6e051-04bd-4d83-b73e-267189430e37` | 2026-11-23 | AUT-119: Desacople DI de memoria vectorial LanceDB respecto a execute-process hacia satélite nativo unificado tool:lancedb-memory-adapter, retirada de thought-graph-access, purga Redb en lancedb_thought_repo, SSOT paths.lancedbStore, default-members en Cargo.toml y ajuste CI. | CANONICO | `SddIA/evolution/bab6e051-04bd-4d83-b73e-267189430e37.md` |
