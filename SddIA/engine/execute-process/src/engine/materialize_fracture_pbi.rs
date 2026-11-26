@@ -426,7 +426,7 @@ fn run_remote(
     } else {
         format!("PBI-FIX-FRACTURE-{trace_hash}")
     };
-    let body = build_pbi_body(
+    let body_raw = build_pbi_body(
         process_name,
         error_trace,
         agent_emitter,
@@ -442,6 +442,13 @@ fn run_remote(
         Some("backlog"),
         Some("pending"),
     );
+    let body = if super::project_binding::tracker_provider_for_inputs(repo, inputs)?
+        == Some("linear")
+    {
+        super::tracker_item_document::strip_leading_title_h1(&body_raw, &title)
+    } else {
+        body_raw
+    };
     let label_pbi = super::project_binding::tracker_label_for_inputs(repo, inputs, "pbi")?
         .unwrap_or_else(|| "pbi".into());
     let label_fix = super::project_binding::tracker_label_for_inputs(repo, inputs, "fix")?

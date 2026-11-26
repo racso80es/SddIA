@@ -721,7 +721,18 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         fm_lines.push_str(&format!("\nhistoria_ref: \"{href}\""));
     }
     fm_lines.push_str(&format!("\nforge_key: \"{forge_key}\""));
-    let draft = format!("---\n{fm_lines}\n---\n\n# {title}\n\n{raw_idea}\n");
+    let provider = project_binding::tracker_provider_for_inputs(repo, inputs)
+        .ok()
+        .flatten()
+        .unwrap_or("file");
+    let forge_dialect =
+        super::super::tracker_item_document::dialect_for_tracker_provider(provider);
+    let draft = super::super::tracker_item_document::compose_item_markdown(
+        &fm_lines,
+        &title,
+        raw_idea,
+        forge_dialect,
+    );
     let tracker = if prior.is_some() {
         TrackerPhase {
             tracker_ref: prior.as_ref().map(|p| p.tracker_ref.clone()),
@@ -776,7 +787,12 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     }
     let body = if let Some(tr) = &tracker.tracker_ref {
         let with_ref = format!("{fm_lines}\ntracker_ref: \"{tr}\"");
-        format!("---\n{with_ref}\n---\n\n# {title}\n\n{raw_idea}\n")
+        super::super::tracker_item_document::compose_item_markdown(
+            &with_ref,
+            &title,
+            raw_idea,
+            forge_dialect,
+        )
     } else {
         draft.clone()
     };

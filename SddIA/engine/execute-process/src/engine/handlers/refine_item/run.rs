@@ -5,8 +5,8 @@ use super::tracker_ref::{resolve_remote_tracker_ref, RemoteTrackerRefResolution}
 use super::prepare::{
     ensure_canonical_markdown, item_type_from_fm, parse_properties, FetchSnapshot,
 };
-use crate::engine::item_lifecycle_frontmatter;
 use crate::engine::project_binding;
+use crate::engine::tracker_item_document::TrackerDescriptionDialect;
 use crate::engine::tracker_lifecycle_port;
 use crate::engine::agent_runtime::invoke_agent_phase;
 use crate::engine::item_lifecycle_frontmatter::{
@@ -197,12 +197,19 @@ fn snapshot_from_fetch(body: &Value) -> Result<FetchSnapshot, String> {
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
+    let native_title = body
+        .get("title")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
     Ok(FetchSnapshot {
         description: description.to_string(),
         identifier,
         state_name,
         labels,
         updated_at,
+        native_title,
     })
 }
 
@@ -254,6 +261,10 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                 })
                 .unwrap_or_default(),
             updated_at: updated.clone(),
+            native_title: brief
+                .get("title")
+                .and_then(|v| v.as_str())
+                .map(str::to_string),
         };
         (raw, snap, updated)
     } else {
@@ -439,8 +450,18 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
             );
             let patch = serde_yaml::from_str(&format!("{FM_REFINEMENT}: {REFINEMENT_PENDING}"))
                 .expect("patch");
-            let sealed =
-                item_lifecycle_frontmatter::seal_markdown(&canonical, &patch)?;
+            let dialect = if remote {
+                TrackerDescriptionDialect::LinearDescription
+            } else {
+                TrackerDescriptionDialect::FileMarkdown
+            };
+            let sealed = crate::engine::tracker_item_document::seal_with_refined_body(
+                &canonical,
+                &patch,
+                &body,
+                snap.native_title.as_deref(),
+                dialect,
+            )?;
             tracker_lifecycle_port::invoke(
                 repo,
                 inputs,
@@ -499,10 +520,19 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         .replace("<!-- refined:mayeuta -->", "")
         .trim()
         .to_string();
-    let sealed_fm =
-        item_lifecycle_frontmatter::seal_markdown(&canonical, &patch)?;
-    let (fm_text, _) = split_frontmatter(&sealed_fm)?;
-    let sealed = format!("---\n{fm_text}---\n\n{body_clean}\n");
+    let dialect = if remote {
+        TrackerDescriptionDialect::LinearDescription
+    } else {
+        TrackerDescriptionDialect::FileMarkdown
+    };
+    let sealed = crate::engine::tracker_item_document::seal_with_refined_body(
+        &canonical,
+        &patch,
+        &body_clean,
+        snap.native_title.as_deref(),
+        dialect,
+    )?;
+    let (fm_text, _) = split_frontmatter(&sealed)?;
 
     if remote {
         tracker_lifecycle_port::invoke(

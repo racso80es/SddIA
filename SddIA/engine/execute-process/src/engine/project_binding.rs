@@ -640,6 +640,26 @@ fn manifest_frontmatter_for_slug(repo: &Path, slug: &str) -> Result<YamlValue, S
 }
 
 /// Tracker del manifiesto del proyecto (`project_slug` en inputs). Sin slug → `None` (Core-self).
+/// `file` | `linear` cuando el manifiesto define `tracker`; si no, `None`.
+pub fn tracker_provider_for_inputs(repo: &Path, inputs: &Value) -> Result<Option<&'static str>, String> {
+    let Some(slug) = inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return Ok(None);
+    };
+    if slug.contains('/') || slug.contains("..") {
+        return Err(format!("PROJECT_CONFIG_INVALID: project_slug '{slug}'"));
+    }
+    let fm = manifest_frontmatter_for_slug(repo, slug)?;
+    let Some(tracker) = fm.get("tracker") else {
+        return Ok(None);
+    };
+    effective_provider(tracker).map(Some)
+}
+
 pub fn tracker_config_for_inputs(repo: &Path, inputs: &Value) -> Result<Option<TrackerConfig>, String> {
     let Some(slug) = inputs
         .get("project_slug")

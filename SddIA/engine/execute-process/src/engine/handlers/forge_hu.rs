@@ -48,9 +48,20 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     let bound = project_binding::bind(repo, inputs)?
         .ok_or("project_slug requerido para forge-hu")?;
     let created = Utc::now().format("%Y-%m-%d").to_string();
-    let description = format!(
-        "---\nprocess: feature\ntype: hu\ncreated: \"{created}\"\nproject_slug: {}\n---\n\n# {title}\n\n{raw_idea}\n",
+    let fm = format!(
+        "process: feature\ntype: hu\ncreated: \"{created}\"\nproject_slug: {}",
         bound.slug
+    );
+    let provider = project_binding::tracker_provider_for_inputs(repo, inputs)
+        .ok()
+        .flatten()
+        .unwrap_or("file");
+    let dialect = super::super::tracker_item_document::dialect_for_tracker_provider(provider);
+    let description = super::super::tracker_item_document::compose_item_markdown(
+        &fm,
+        &title,
+        raw_idea,
+        dialect,
     );
 
     if tracker_unconfigured(repo, inputs) {
