@@ -96,6 +96,7 @@ fn with_forge_seed_optionals(mut out: Value, seed: &Value) -> Value {
             "implementation_source_git_apply",
             "daemon_declaration_patch",
             "tactical_norm_version",
+            "entity_uuid_migrate",
         ] {
             if let Some(v) = seed.get(key) {
                 map.insert(key.into(), v.clone());
@@ -304,17 +305,20 @@ fn creator_inputs_from_entity(
             }
             merge_maps(&base, fields)
         }
-        "suite" => merge_maps(
-            &base,
-            Map::from_iter([
+        "suite" => {
+            let mut fields = Map::from_iter([
                 ("suite_name".into(), seed_field(seed, "suite_name", json!(entity_name))),
                 ("suite_context".into(), seed_field(seed, "suite_context", json!("chaos-engineering"))),
                 ("execution_strategy".into(), seed_field(seed, "execution_strategy", json!("run_all"))),
                 ("atomic_nodes".into(), seed_field(seed, "atomic_nodes", json!([]))),
                 ("suite_version".into(), seed_field(seed, "suite_version", json!("1.0.0"))),
                 ("suites_contract_version".into(), seed_field(seed, "suites_contract_version", json!("1.0.0"))),
-            ]),
-        ),
+            ]);
+            if let Some(v) = seed.get("markdown_body_replacements") {
+                fields.insert("markdown_body_replacements".into(), v.clone());
+            }
+            merge_maps(&base, fields)
+        }
         "daemon" => merge_maps(
             &base,
             Map::from_iter([
@@ -768,6 +772,21 @@ mod tests {
         }
         assert_eq!(inputs["action_name"], "demo");
         assert!(inputs.get("action_body").is_some());
+    }
+
+    #[test]
+    fn suite_update_forwards_markdown_body_replacements() {
+        let inputs = creator_inputs_from_entity(
+            "suite",
+            "core-full-stress",
+            "update",
+            &json!({"markdown_body_replacements": [{"from": "a", "to": "b"}]}),
+        )
+        .unwrap();
+        assert_eq!(
+            inputs["markdown_body_replacements"],
+            json!([{"from": "a", "to": "b"}])
+        );
     }
 
     #[test]

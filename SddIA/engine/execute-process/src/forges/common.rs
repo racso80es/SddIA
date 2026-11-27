@@ -311,7 +311,7 @@ pub fn bump_semver_patch(version: &str) -> String {
 }
 
 fn split_md_frontmatter(text: &str) -> Result<(String, String), String> {
-    let trimmed = text.trim_start();
+    let trimmed = text.strip_prefix('\u{feff}').unwrap_or(text).trim_start();
     if !trimmed.starts_with("---") {
         return Err("frontmatter ausente (sin delimitador inicial)".to_string());
     }
@@ -658,9 +658,153 @@ fn contract_semver(contract: &str) -> Option<String> {
         .filter(|v| !v.is_empty())
 }
 
+fn contract_slug(contract: &str) -> &str {
+    contract
+        .split_whitespace()
+        .next()
+        .unwrap_or(contract)
+        .trim()
+}
+
+/// Resuelve la versión del contrato de acciones: input explícito, sufijo SemVer en FM, o SSOT `actions-contract.md`.
+fn resolve_actions_contract_version(
+    repo: &Path,
+    map: &serde_json::Map<String, Value>,
+    inputs: &Value,
+) -> Result<Option<String>, String> {
+    if let Some(v) = optional_str(inputs, "actions_contract_version") {
+        return Ok(Some(v));
+    }
+    if let Some(cv) = map
+        .get("contract")
+        .and_then(|v| v.as_str())
+        .and_then(contract_semver)
+    {
+        return Ok(Some(cv));
+    }
+    let slug = map
+        .get("contract")
+        .and_then(|v| v.as_str())
+        .map(contract_slug)
+        .unwrap_or("");
+    if slug == "actions-contract" {
+        let contract_path = repo.join("SddIA/actions/actions-contract.md");
+        let text = fs::read_to_string(&contract_path)
+            .map_err(|e| format!("actions-contract.md: {e}"))?;
+        let (yaml, _) = split_md_frontmatter(&text)?;
+        let fm: Value = serde_yaml::from_str(&yaml).map_err(|e| e.to_string())?;
+        if let Some(ver) = fm
+            .get("contract_version")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            return Ok(Some(ver.to_string()));
+        }
+    }
+    Ok(None)
+}
+
+fn is_uuid_v4(raw: &str) -> bool {
+    let s = raw.trim().trim_matches(|c| c == '"' || c == '\'');
+    uuid::Uuid::parse_str(s).map(|u| u.get_version_num() == 4).unwrap_or(false)
+}
+
+/// Migra el UUID de una entidad en disco: frontmatter, fila de índice y matriz `eda-coverage.json`.
+pub fn migrate_entity_uuid_record(
+    repo: &Path,
+    index_path: &Path,
+    entity_name: &str,
+    artifact_path: &Path,
+    new_uuid: &str,
+) -> Result<Value, String> {
+    if !is_uuid_v4(new_uuid) {
+        return Err(format!(
+            "entity_uuid_migrate debe ser UUID v4: {new_uuid}"
+        ));
+    }
+    let text = fs::read_to_string(artifact_path).map_err(|e| e.to_string())?;
+    let (yaml, body) = split_md_frontmatter(&text)?;
+    let fm: Value = serde_yaml::from_str(&yaml).map_err(|e| e.to_string())?;
+    let old_uuid = fm
+        .get("uuid")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .trim_matches(|c| c == '"' || c == '\'')
+        .to_string();
+    if old_uuid.is_empty() {
+        return Err("uuid ausente en frontmatter para migración".into());
+    }
+    if old_uuid == new_uuid {
+        return Ok(json!({
+            "entity_uuid_old": old_uuid,
+            "entity_uuid_new": new_uuid,
+            "skipped": true,
+        }));
+    }
+    let new_yaml = replace_yaml_key_block(&yaml, "uuid", &format!("uuid: \"{new_uuid}\""));
+    let body_joined = if body.is_empty() {
+        String::new()
+    } else if body.ends_with('\n') {
+        body
+    } else {
+        format!("{body}\n")
+    };
+    fs::write(artifact_path, join_md_frontmatter(&new_yaml, &body_joined))
+        .map_err(|e| e.to_string())?;
+    sync_action_index_entity_uuid(index_path, entity_name, new_uuid)?;
+    crate::engine::eda_coverage::transfer_entity_coverage(repo, &old_uuid, new_uuid)?;
+    Ok(json!({
+        "entity_uuid_old": old_uuid,
+        "entity_uuid_new": new_uuid,
+    }))
+}
+
+/// Sustituye la celda UUID de una fila de `actions/index.md` para `name`.
+pub fn sync_action_index_entity_uuid(
+    index_path: &Path,
+    name: &str,
+    new_uuid: &str,
+) -> Result<(), String> {
+    if !index_path.is_file() {
+        return Ok(());
+    }
+    let idx = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
+    let mut changed = false;
+    let mut lines: Vec<String> = Vec::with_capacity(idx.lines().count());
+    for line in idx.lines() {
+        let cols: Vec<&str> = line.split('|').collect();
+        if line.starts_with('|') && cols.len() == 8 && cols[1].trim() == name {
+            let new_row = format!(
+                "| {name} | `{new_uuid}` | {} | {} | {} | {} |",
+                cols[3].trim(),
+                cols[4].trim(),
+                cols[5].trim(),
+                cols[6].trim()
+            );
+            if line != new_row {
+                changed = true;
+            }
+            lines.push(new_row);
+            continue;
+        }
+        lines.push(line.to_string());
+    }
+    if changed {
+        let mut out = lines.join("\n");
+        if idx.ends_with('\n') {
+            out.push('\n');
+        }
+        fs::write(index_path, out).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 /// Update canónico de acción: aplica solo los campos presentes en `inputs` y conserva el resto del
 /// frontmatter existente (inputs/outputs/context/contract/capabilities y claves adicionales).
 pub fn patch_action_content_update(
+    repo: &Path,
     action_path: &Path,
     inputs: &Value,
 ) -> Result<ActionContentPatchResult, String> {
@@ -710,16 +854,14 @@ pub fn patch_action_content_update(
         .clone()
         .or(existing_context)
         .ok_or("context ausente en frontmatter y no aportado en action_context")?;
-    let new_contract_ver = optional_str(inputs, "actions_contract_version");
-    if new_contract_ver.is_none()
-        && map
-            .get("contract")
-            .and_then(|v| v.as_str())
-            .and_then(contract_semver)
-            .is_none()
-    {
-        return Err("contract ausente en frontmatter y no aportado en actions_contract_version".into());
+    let resolved_contract_ver =
+        resolve_actions_contract_version(repo, &map, inputs)?;
+    if resolved_contract_ver.is_none() {
+        return Err(
+            "contract ausente en frontmatter y no aportado en actions_contract_version".into(),
+        );
     }
+    let new_contract_ver = resolved_contract_ver;
 
     let new_inputs = inputs.get("action_inputs").cloned();
     let new_outputs = inputs.get("action_outputs").cloned();
@@ -1771,6 +1913,96 @@ mod tests {
     }
 
     #[test]
+    fn split_md_frontmatter_strips_utf8_bom() {
+        let raw = "\u{feff}---\nuuid: \"x\"\n---\n\n# body\n";
+        let (yaml, body) = split_md_frontmatter(raw).expect("split");
+        assert!(yaml.contains("uuid"));
+        assert!(body.contains("# body"));
+    }
+
+    #[test]
+    fn action_update_resolves_actions_contract_slug_without_semver() {
+        let tmp = tempfile::tempdir().unwrap();
+        let actions = tmp.path().join("SddIA/actions");
+        fs::create_dir_all(&actions).unwrap();
+        fs::write(
+            actions.join("actions-contract.md"),
+            "---\ncontract_version: \"1.3.0\"\n---\n\n# c\n",
+        )
+        .unwrap();
+        let path = actions.join("download-remote-asset.md");
+        fs::write(
+            &path,
+            "---\nuuid: \"11111111-1111-4111-8111-111111111111\"\nname: \"download-remote-asset\"\nversion: \"1.0.0\"\ncontract: \"actions-contract\"\ncontext: \"filesystem-ops\"\ncapabilities: []\ninputs: []\noutputs: []\nhash_signature: \"sha256:00\"\n---\n\n## Propósito\n\nX.\n\n## Límites\n\nY.\n",
+        )
+        .unwrap();
+        patch_action_content_update(
+            tmp.path(),
+            &path,
+            &json!({"action_body": "## Propósito\n\nOk.\n\n## Límites\n\nZ."}),
+        )
+        .unwrap();
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(text.contains("contract: \"actions-contract v1.3.0\""), "{text}");
+    }
+
+    #[test]
+    fn migrate_entity_uuid_syncs_index_and_coverage() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../..")
+            .canonicalize()
+            .expect("repo root");
+        let actions = tmp.path().join("SddIA/actions");
+        let core = tmp.path().join("SddIA/core");
+        fs::create_dir_all(&actions).unwrap();
+        fs::create_dir_all(&core).unwrap();
+        fs::copy(
+            repo_root.join("SddIA/core/cumulo.paths.json"),
+            core.join("cumulo.paths.json"),
+        )
+        .unwrap();
+        let old = "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a";
+        let new = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+        fs::write(
+            actions.join("demo.md"),
+            format!(
+                "---\nuuid: \"{old}\"\nname: \"demo\"\nversion: \"1.0.0\"\ncontract: \"actions-contract v1.3.0\"\ncontext: \"filesystem-ops\"\ncapabilities: []\ninputs: []\noutputs: []\nhash_signature: \"sha256:00\"\n---\n\n## Propósito\n\nX.\n\n## Límites\n\nY.\n"
+            ),
+        )
+        .unwrap();
+        fs::write(
+            actions.join("index.md"),
+            format!(
+                "## Catálogo\n\n| Name | UUID | Versión | Context | Descripción | Capabilities |\n|------|------|---------|---------|-------------|--------------|\n| demo | `{old}` | 1.0.0 | filesystem-ops | X. | |\n"
+            ),
+        )
+        .unwrap();
+        fs::write(
+            core.join("eda-coverage.json"),
+            format!(
+                "{{\"version\":\"1.0.0\",\"coverage_matrix\":{{\"{old}\":{{\"is_covered\":true,\"last_hash\":\"sha256:ab\"}}}}}}"
+            ),
+        )
+        .unwrap();
+        migrate_entity_uuid_record(
+            tmp.path(),
+            &actions.join("index.md"),
+            "demo",
+            &actions.join("demo.md"),
+            new,
+        )
+        .unwrap();
+        let text = fs::read_to_string(actions.join("demo.md")).unwrap();
+        assert!(text.contains(new));
+        let idx = fs::read_to_string(actions.join("index.md")).unwrap();
+        assert!(idx.contains(new));
+        let cov: Value = serde_json::from_str(&fs::read_to_string(core.join("eda-coverage.json")).unwrap()).unwrap();
+        assert!(cov["coverage_matrix"].get(new).is_some());
+        assert!(cov["coverage_matrix"].get(old).is_none());
+    }
+
+    #[test]
     fn split_md_frontmatter_preserves_capability_taxonomy_catalog() {
         let repo = crate::core::repo::find_repo_root().expect("repo");
         let path = repo.join("SddIA/library/norms/capability-taxonomy.md");
@@ -1972,7 +2204,9 @@ mod aut131_forge_integrity_tests {
         let tmp = tempfile::tempdir().unwrap();
         let path = tmp.path().join("demo.md");
         fs::write(&path, ACTION).unwrap();
+        let repo = tmp.path();
         let patch = patch_action_content_update(
+            repo,
             &path,
             &json!({"action_body": "## Propósito\n\nPurga demo v2.\n\n## Límites\n\nSolo /tmp."}),
         )
@@ -1996,6 +2230,7 @@ mod aut131_forge_integrity_tests {
         let path = tmp.path().join("demo.md");
         fs::write(&path, ACTION).unwrap();
         patch_action_content_update(
+            tmp.path(),
             &path,
             &json!({
                 "action_body": "## Propósito\n\nX.\n\n## Límites\n\nY.",
