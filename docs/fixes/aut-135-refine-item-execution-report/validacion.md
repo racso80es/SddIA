@@ -8,7 +8,7 @@ persist_ref: docs/fixes/aut-135-refine-item-execution-report
 pbi_ref: AUT-135
 tracker_ref: AUT-135
 document_id: PBI-a54a09c6
-execution_id: "68aebeb8-47ed-4a62-842e-13ad36b1643c"
+execution_id: 68aebeb8-47ed-4a62-842e-13ad36b1643c
 tracker_provider: linear
 global: APTO
 checks:
@@ -30,12 +30,16 @@ git_changes:
   branch: fix/aut-135-refine-item-execution-report
   base: main
   paths:
-    - SddIA/engine/execute-process/src/engine/handlers/refine_item/run.rs
-    - SddIA/evolution/e563c318-7bc7-4940-ac8f-44262d3da19a.md
-    - SddIA/evolution/Evolution_log.md
-    - docs/fixes/aut-135-refine-item-execution-report/
+  - SddIA/engine/execute-process/src/engine/handlers/refine_item/run.rs
+  - SddIA/evolution/e563c318-7bc7-4940-ac8f-44262d3da19a.md
+  - SddIA/evolution/Evolution_log.md
+  - docs/fixes/aut-135-refine-item-execution-report/
 blocking_findings: []
 non_blocking_findings: []
+validated_base_sha: d7b8fc02e7782759e8a7b163706f6db8d88559e4
+validated_head_sha: 32bddd1135da437b17ee2250555e94286cc2958f
+validated_tree_sha: 0844d08b2b3fc480d5ddcadce58c9d50ae4ee642
+diff_digest: sha256:a41e16dacc25b6d7f66ee9342b9142af2e4a334056e1c1fa2d3a913cd64a2c1a
 ---
 
 # Validación — AUT-135
