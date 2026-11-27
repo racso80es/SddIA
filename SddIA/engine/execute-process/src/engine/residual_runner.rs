@@ -1072,6 +1072,17 @@ fn run_generic(
             phase_t0.elapsed().as_millis() as i64,
         ));
         if process_name == "pull-request-review" && phase_name == "Veredicto y bloqueo" {
+            let veredicto_entry = phase_reports
+                .last()
+                .cloned()
+                .unwrap_or_else(|| json!({}));
+            super::pull_request_review::promote_ppr_verdict_after_veredicto(
+                repo,
+                &mut state,
+                &inputs_mut,
+                &phase_reports,
+                &veredicto_entry,
+            );
             super::pull_request_review::maybe_emit_qa_attestation_before_handoff(
                 repo,
                 &mut state,
