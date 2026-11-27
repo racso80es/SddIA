@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `7862a7dc-7624-4eff-bc4d-cf68db4ea714` | 2026-11-27 | AUT-131: regresiones forja — preservación contrato update, índice sin truncar, rollback acción/suite/agente (KA-FORGE). | CANONICO | `SddIA/evolution/7862a7dc-7624-4eff-bc4d-cf68db4ea714.md` |
 | `a8f3c2e1-9d4b-4f7a-b6e5-1c2d3e4f5a6b` | 2026-11-27 | AUT-125: gate anti-anemia endurecido (ratchet --if-touched), forjas con preservación de frontmatter y rollback; remediación cosmética revertida tras auditoría REJECT. | CANONICO | `SddIA/evolution/a8f3c2e1-9d4b-4f7a-b6e5-1c2d3e4f5a6b.md` |
 | `6d2f31c6-f200-47ca-8b38-f2391fb67e28` | 2026-11-26 | AUT-126: codec título/cuerpo tracker file/linear sin H1 duplicado | CANONICO | `SddIA/evolution/6d2f31c6-f200-47ca-8b38-f2391fb67e28.md` |
 | `7cddbb7d-caa0-435d-b181-90c2d19170a3` | 2026-11-26 | AUT-120: carga dotenv segura, gate QA y pre-push con ciclo Linear abierto | CANONICO | `SddIA/evolution/7cddbb7d-caa0-435d-b181-90c2d19170a3.md` |

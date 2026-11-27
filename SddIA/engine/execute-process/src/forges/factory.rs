@@ -3376,7 +3376,8 @@ NOTA_BACKFILL
 }
 
 #[cfg(test)]
-mod aut125_forge_rollback_tests {
+/// Regresiones AUT-131 (KA-FORGE-1..5).
+mod aut131_forge_rollback_tests {
     use super::*;
 
     const ACTION: &str = "---\nuuid: \"11111111-1111-4111-8111-111111111111\"\nname: \"demo\"\nversion: \"1.0.0\"\ncontract: \"actions-contract v1.3.0\"\ncontext: \"filesystem-ops\"\ncapabilities:\n  - \"demo_cap\"\ninputs:\n  - \"path\": \"Ruta objetivo\"\noutputs: []\nhash_signature: \"sha256:00\"\n---\n\n## Propósito\n\nPurga demo.\n\n## Límites\n\nSolo /tmp.\n";
