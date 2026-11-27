@@ -154,9 +154,9 @@ head_commit_sha_fs: d66faccfb9f600c181273c41d78f8baf448f5238
 base_commit_sha_fs: fd7ef31b51e795d1aaea2aba53b7cae693a019db
 execution_id: 982404c8-5fc6-49c1-94ac-4a66ee48dc56
 validated_base_sha: fd7ef31b51e795d1aaea2aba53b7cae693a019db
-validated_head_sha: a062b1ede966c64157648db71a399b4b85c62f8f
-validated_tree_sha: d1817108472fdca87c48f034a2f856049865ff3c
-diff_digest: sha256:53c339dfcb1d06ba87d1a6b3b1b05fd9814ecc8411c33251f78735b7413dacb6
+validated_head_sha: 1d008fa0af12d9089701a2064b4853cd73b882c4
+validated_tree_sha: 51fc44246244c05c72da8041cd0dd7180d34a545
+diff_digest: sha256:8492c4fb105dc7927f8db5f3f419f5bc0cd48cbd977319bf609b70f0d7ca431d
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
