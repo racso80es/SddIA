@@ -1,10 +1,12 @@
 ---
+
 feature_name: gate-anti-anemia-entidades-dominio
 created: "2026-11-26"
 process: refactorization
 branch_name: refactor/gate-anti-anemia-entidades-dominio
 persist_ref: docs/refactors/gate-anti-anemia-entidades-dominio
 tracker_ref: AUT-125
+execution_id: "982404c8-5fc6-49c1-94ac-4a66ee48dc56"
 ---
 # Ejecución — AUT-125
 
