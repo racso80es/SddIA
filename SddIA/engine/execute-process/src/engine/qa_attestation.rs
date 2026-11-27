@@ -302,7 +302,7 @@ fn yaml_frontmatter_field(text: &str, key: &str) -> Option<String> {
 }
 
 /// PPR full-profile: Argos sella `validacion.md` pero no siempre propaga `state.verdict`.
-fn ppr_verdict_aprobado(repo: &Path, state: &Value, inputs: &Value) -> bool {
+pub(crate) fn ppr_verdict_aprobado(repo: &Path, state: &Value, inputs: &Value) -> bool {
     if state.get("verdict").and_then(|v| v.as_str()) == Some("aprobado") {
         return true;
     }

@@ -44,6 +44,77 @@ pub(crate) fn resolve_accept_pr_author(inputs: &Value, state: &Value) -> String 
         .unwrap_or_else(|| "integration-operator".to_string())
 }
 
+fn phase_report_name(r: &Value) -> &str {
+    r.get("phase_name")
+        .or_else(|| r.get("phase_id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+}
+
+fn ppr_prior_phases_clear(phase_reports: &[Value]) -> bool {
+    for r in phase_reports {
+        if phase_report_name(r) == "Veredicto y bloqueo" {
+            break;
+        }
+        let st = r.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        let fail_soft = r.get("fail_soft").and_then(|v| v.as_bool()).unwrap_or(false);
+        if (st == "failed" || st == "blocked") && !fail_soft {
+            return false;
+        }
+    }
+    true
+}
+
+fn veredicto_phase_indicates_approval(entry: &Value) -> bool {
+    if entry.get("status").and_then(|v| v.as_str()) != Some("executed") {
+        return false;
+    }
+    if entry.get("argos_verdict").and_then(|v| v.as_str()) == Some("block") {
+        return false;
+    }
+    let msg = entry
+        .get("message")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_lowercase();
+    !(msg.contains("rechaz")
+        || msg.contains("no apto")
+        || msg.contains("bloque")
+        || msg.contains("fail_"))
+}
+
+/// AUT-136: alinear `state.verdict` tras Fase 5 executed y sin bloqueos previos, antes de F7.
+pub fn promote_ppr_verdict_after_veredicto(
+    repo: &Path,
+    state: &mut Value,
+    inputs: &Value,
+    phase_reports: &[Value],
+    veredicto_entry: &Value,
+) -> bool {
+    if state.get("argos_verdict") == Some(&json!("block")) {
+        return false;
+    }
+    if truthy_flag(state, "documental_triage_blocked") {
+        return false;
+    }
+    if !ppr_prior_phases_clear(phase_reports) {
+        return false;
+    }
+    if state.get("verdict").and_then(|v| v.as_str()) == Some("aprobado") {
+        return true;
+    }
+    let approved = super::qa_attestation::ppr_verdict_aprobado(repo, state, inputs)
+        || veredicto_phase_indicates_approval(veredicto_entry);
+    if !approved {
+        return false;
+    }
+    if let Some(obj) = state.as_object_mut() {
+        obj.insert("verdict".into(), json!("aprobado"));
+        obj.insert("argos_verdict".into(), json!("pass"));
+    }
+    true
+}
+
 /// AC-2 (AUT-134): atestación antes de Fase 7 Handoff materialización.
 pub fn maybe_emit_qa_attestation_before_handoff(
     repo: &Path,
@@ -581,6 +652,77 @@ mod tests {
             resolve_accept_pr_author(&json!({}), &json!({})),
             "integration-operator"
         );
+    }
+
+    #[test]
+    fn promote_verdict_after_veredicto_enables_pre_handoff_attestation() {
+        let dir = std::env::temp_dir().join(format!("sddia-ppr-prom-{}", uuid::Uuid::new_v4()));
+        let persist = dir.join("docs/fixes/f-promote");
+        std::fs::create_dir_all(&persist).unwrap();
+        std::fs::write(
+            persist.join("validacion.md"),
+            "---\nglobal: APTO\n---\n\n# v\n",
+        )
+        .unwrap();
+        std::fs::write(
+            persist.join("execution.md"),
+            "---\nverdict: ok\nstatus: complete\n---\n\n# e\n",
+        )
+        .unwrap();
+        let run_git = |args: &[&str]| {
+            let status = Command::new("git")
+                .args(args)
+                .current_dir(&dir)
+                .status()
+                .expect("git");
+            assert!(status.success(), "git {args:?} failed");
+        };
+        run_git(&["init", "-q"]);
+        run_git(&["config", "user.email", "test@example.com"]);
+        run_git(&["config", "user.name", "Test"]);
+        std::fs::write(persist.join("README.md"), "x").unwrap();
+        run_git(&["add", "."]);
+        run_git(&["commit", "-q", "-m", "init"]);
+        run_git(&["branch", "-m", "fix/promote"]);
+
+        let mut state = json!({});
+        let inputs = json!({
+            "pr_branch": "fix/promote",
+            "persist_ref": "docs/fixes/f-promote"
+        });
+        let reports = vec![
+            json!({"phase_name": "Preparación de rama", "status": "executed"}),
+            json!({"phase_name": "Veredicto y bloqueo", "status": "executed", "message": "Veredicto fase: ok"}),
+        ];
+        let veredicto = reports.last().cloned().unwrap();
+        assert!(promote_ppr_verdict_after_veredicto(
+            &dir, &mut state, &inputs, &reports, &veredicto
+        ));
+        assert_eq!(state["verdict"], "aprobado");
+        let path = maybe_emit_qa_attestation_before_handoff(&dir, &mut state, &inputs);
+        assert!(path.is_some(), "attestation expected after promote");
+        let out = handoff_accept_pr(&dir, &inputs, &mut state).unwrap();
+        assert_ne!(out.get("reason"), Some(&json!("verdict_not_aprobado")));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn promote_skips_when_veredicto_blocked() {
+        let repo = std::env::temp_dir().join(format!("sddia-ppr-noprom-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&repo).unwrap();
+        let mut state = json!({ "argos_verdict": "block" });
+        let inputs = json!({"pr_branch": "fix/x"});
+        let reports = vec![json!({
+            "phase_name": "Veredicto y bloqueo",
+            "status": "executed",
+            "message": "ok"
+        })];
+        let veredicto = reports[0].clone();
+        assert!(!promote_ppr_verdict_after_veredicto(
+            &repo, &mut state, &inputs, &reports, &veredicto
+        ));
+        assert!(state.get("verdict").is_none());
+        let _ = std::fs::remove_dir_all(&repo);
     }
 
     #[test]
