@@ -1,7 +1,7 @@
 ---
 feature_name: aut-136-ppr-verdict-qa-attestation-pre-handoff
 created: 2026-11-27
-updated: 2026-11-27T18:36:00Z
+updated: 2026-11-27T18:42:00Z
 process: pull-request-review
 phase: Triaje documental
 agent: argos
@@ -17,10 +17,10 @@ tracker_provider: linear
 tracker_ref: AUT-136
 document_id: PBI-1cad2c43
 uuid: 81c6cb32-626e-4b7b-9ffe-bd3262d2c007
-correlation_id: bc7b66c4-d37c-4df6-a8a4-dbe2d0f199d3
-pr_presented_event_id: bc7b66c4-d37c-4df6-a8a4-dbe2d0f199d3
-audit_event_reference: bc7b66c4-d37c-4df6-a8a4-dbe2d0f199d3
-workspace_path_injected: /home/racso/Proyectos/SddIA/.SddIA/workspaces/pull-request-review/0f320f70-80d1-4ebb-8a47-07ea43628b37/
+correlation_id: 451C4ZEbJ4797T6tQmzEEPDrpdB1e3JJoWn2VfQnVQNp
+pr_presented_event_id: 451C4ZEbJ4797T6tQmzEEPDrpdB1e3JJoWn2VfQnVQNp
+audit_event_reference: 451C4ZEbJ4797T6tQmzEEPDrpdB1e3JJoWn2VfQnVQNp
+workspace_path_injected: /home/racso/Proyectos/SddIA/.SddIA/workspaces/pull-request-review/35bad104-f2d5-4581-9023-61fb49f5c9f9/
 workspace_materialized: absent
 norm_ref: features-documentation-pattern
 source_process: bug-fix
@@ -33,15 +33,15 @@ resolution: PASS_F2_DOC
 accept_pr_handoff: false
 accept_pr_handoff_status: pending
 git_manager_invoked: false
-git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge prosthesis_subprocess; git_changes = path-assert FS (sin inventar gitStdout)
-git_evidence_source: evidence-bridge-session-prosthesis_subprocess+handoff-machine+path-assert-fs
+git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected); sin stdout físico; R2 = copia Evidence Bridge native_state; git_changes = path-assert FS (sin inventar gitStdout)
+git_evidence_source: evidence-bridge-session-native_state+handoff-machine+path-assert-fs
 formal_execute_process: true
-formal_evidence_detail: 'session Runtime evidence source=prosthesis_subprocess TECH/GIT APTO notes=(none); machine handoff prosthesis_subprocess @ 2026-11-27T17:36:55Z TECH/GIT APTO formal_evidence_detail=verify-process-integrity: OK git_manager_invoked=true; workspace inject 0f320f70… vacío'
+formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=handoff-formal-scan; idempotent-hit; machine handoff native_state @ 2026-11-27T17:42:10Z TECH/GIT APTO git_manager_invoked=true; workspace inject 35bad104… vacío'
 handoff_machine_file: present
 handoff_evidence_block_pre: present
-evidence_bridge_notes: R1/R2 copia Runtime evidence (session + machine prosthesis_subprocess TECH/GIT APTO); Shell git-manager Rejected esta sesión Argos Triaje — sin stdout inventado
-shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Triaje documental CID bc7b66c4… · exec 0f320f70…
-scope: PPR Triaje documental — F2_DOC + Evidence Bridge R1/R2/R3 (CID bc7b66c4… · exec 0f320f70…)
+evidence_bridge_notes: R1/R2 copia Runtime evidence (session + machine native_state TECH/GIT APTO); Shell Rejected esta sesión Argos Triaje — sin stdout inventado
+shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Triaje documental CID 451C4ZEb… · exec 35bad104…
+scope: PPR Triaje documental — F2_DOC + Evidence Bridge R1/R2/R3 (CID 451C4ZEb… · exec 35bad104…)
 checks:
   AC-1: APTO
   AC-2: APTO
@@ -90,9 +90,10 @@ git_changes:
   - SddIA/engine/execute-process/src/engine/pull_request_review.rs
   - SddIA/engine/execute-process/src/engine/residual_runner.rs
   - SddIA/engine/execute-process/src/engine/qa_attestation.rs
-  - SddIA/evolution/b2a7f91e-4c3d-5e6f-8a9b-0c1d2e3f4a5b.md
+  - SddIA/evolution/8cc2a86d-a2fc-49f0-b18d-dc4d92a54f4b.md
   - SddIA/evolution/Evolution_log.md
   - docs/fixes/aut-136-ppr-verdict-qa-attestation-pre-handoff/
+  - docs/audits/AUT-136.md
 blocking_findings: []
 non_blocking_findings:
 - DOC_CLARIFY
@@ -101,20 +102,20 @@ non_blocking_findings:
 - GIT_EVIDENCE_NATIVE_PPR
 - WSPACE_MATERIALIZED
 situational_notes:
-- Fase Triaje documental · CID bc7b66c4-d37c-4df6-a8a4-dbe2d0f199d3 · exec 0f320f70-80d1-4ebb-8a47-07ea43628b37
-- 'Evidence Bridge session: source=prosthesis_subprocess · TECH/GIT APTO · notes=(none)'
-- 'Evidence Bridge machine: source=prosthesis_subprocess @ 2026-11-27T17:36:55Z · TECH/GIT APTO · formal_evidence_detail=verify-process-integrity: OK · git_manager_invoked=true (copia; sin stdout inventado)'
+- Fase Triaje documental · CID 451C4ZEbJ4797T6tQmzEEPDrpdB1e3JJoWn2VfQnVQNp · exec 35bad104-f2d5-4581-9023-61fb49f5c9f9
+- 'Evidence Bridge session: source=native_state · TECH/GIT APTO · notes=handoff-formal-scan; idempotent-hit'
+- 'Evidence Bridge machine: source=native_state @ 2026-11-27T17:42:10Z · TECH/GIT APTO · git_manager_invoked=true (copia; sin stdout inventado)'
 - F2 bug-fix cascada — objectives+spec+plan+implementation+execution (+ YAML) + evolution → PASS_F2_DOC
 - Shell ./sddia-run.sh --tool git-manager → Rejected; sin gitStdout de esta sesión Argos
-- GIT_EVIDENCE_NATIVE_PPR NO_APTO — workspace exec 0f320f70… ausente/vacío; sin prep-branch stdout propio
+- GIT_EVIDENCE_NATIVE_PPR NO_APTO — workspace exec 35bad104… ausente/vacío; sin prep-branch stdout propio
 - git_changes = path-assert FS (touchpoints + cascada + evolution canónico); no es gitStdout sesión
-- WSPACE_MATERIALIZED NO_APTO — workspace inject 0f320f70… ausente/vacío; no bloquea F2
-- DOC_EVOLUTION APTO — hito canónico b2a7f91e-4c3d-5e6f-8a9b-0c1d2e3f4a5b.md + fila Evolution_log AUT-136
+- WSPACE_MATERIALIZED NO_APTO — workspace inject 35bad104… ausente/vacío; no bloquea F2
+- DOC_EVOLUTION APTO — hito canónico 8cc2a86d-a2fc-49f0-b18d-dc4d92a54f4b.md + fila Evolution_log AUT-136
 - DOC_ORACLE_RED_FILE NO_APTO — oracle-red.log ausente bajo persist_ref; no bloquea F2
 - DOC_CLARIFY NO_APTO — clarify.md ausente (opcional; no bloquea)
 - AC-1…AC-6 APTO — path-assert: promote_ppr_verdict_after_veredicto; hook residual promote→maybe_emit; ppr_verdict_aprobado pub(crate); tests negativos/bloqueo; cargo narrado en execution.md (sin cargo stdout físico esta sesión)
 - Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO; pending/ vacío; tracker.provider=linear; 0 hits AUT-136 bajo docs/todos/
-- BRANCH_WORKTREE_SYNC APTO — .git/HEAD → refs/heads/fix/aut-136-ppr-verdict-qa-attestation-pre-handoff @ 329b43b7… = inject
+- BRANCH_WORKTREE_SYNC APTO — .git/HEAD → refs/heads/fix/aut-136-ppr-verdict-qa-attestation-pre-handoff @ 547c7e12… = inject
 - branch APTO — worktree = inject
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - Sellos validated_*/diff_digest retenidos del frontmatter previo (bug-fix Verificación); no inventados esta sesión Argos
@@ -122,8 +123,8 @@ validated_base_sha: 3aaaa2668bfb040bf6cce37a9b145b7ca8e4dbcd
 validated_head_sha: 5922c5d2565c8394e082df85e43dc5e958b92fe2
 validated_tree_sha: 6870fc87753124c2abada03f89b536092ff1c050
 diff_digest: sha256:39cf02e6b2fe1645084bbf6e431f917dc6a66bf3afbc9c496d727a3dc7ae953f
-head_commit_sha_fs: 329b43b7348b05b1b0a89a6ed610681e4a655455
-execution_id: 0f320f70-80d1-4ebb-8a47-07ea43628b37
+head_commit_sha_fs: 547c7e12f4e4bf05cfa893793f812337c741bd3a
+execution_id: 35bad104-f2d5-4581-9023-61fb49f5c9f9
 ---
 
 # Validación — Triaje documental (Argos · pull-request-review)
@@ -135,7 +136,7 @@ execution_id: 0f320f70-80d1-4ebb-8a47-07ea43628b37
 | Gate | Delegado | Estado | Criterio |
 |------|----------|--------|----------|
 | F2 | Argos (doc) | **APTO** | `PASS_F2_DOC` · bug-fix cascada + YAML + evolution |
-| R1 TECH_FORMAL | Evidence Bridge | **APTO** | copia session/machine `prosthesis_subprocess` |
+| R1 TECH_FORMAL | Evidence Bridge | **APTO** | copia session/machine `native_state` |
 | R2 GIT_EVIDENCE | Evidence Bridge | **APTO** | copia bridge; sin stdout inventado |
 | R3 KM | Argos | **APTO** | 0 writes ilegítimos bajo `docs/todos/**` |
 
@@ -146,19 +147,18 @@ Copia literal machine/session — **no** stdout Shell inventado:
 | Campo | Valor |
 |-------|-------|
 | `schema` | `kalma2-agent-runtime-evidence/v1` |
-| `source` (session) | `prosthesis_subprocess` |
-| `source` (machine handoff) | `prosthesis_subprocess` @ `2026-11-27T17:36:55Z` |
-| `notes` (session) | `(none)` |
+| `source` (session) | `native_state` |
+| `source` (machine handoff) | `native_state` @ `2026-11-27T17:42:10Z` |
+| `notes` (session/machine) | `handoff-formal-scan; idempotent-hit` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
 | `formal_execute_process` | `true` |
-| `formal_evidence_detail` | `verify-process-integrity: OK` |
 | `git_manager_invoked` (machine) | `true` |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — Shell Rejected; sin `gitStdout` |
-| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** — workspace `0f320f70…` ausente/vacío |
+| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** — workspace `35bad104…` ausente/vacío |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**`; `pending/` vacío |
 
-Fuente: prompt Runtime evidence (session) + `docs/fixes/aut-136-ppr-verdict-qa-attestation-pre-handoff/_agent_handoff.md` § Runtime evidence (machine) @ `2026-11-27T17:36:55Z`.
+Fuente: prompt Runtime evidence (session) + `docs/fixes/aut-136-ppr-verdict-qa-attestation-pre-handoff/_agent_handoff.md` § Runtime evidence (machine) @ `2026-11-27T17:42:10Z`.
 
 ## Ingesta
 
@@ -166,10 +166,10 @@ Fuente: prompt Runtime evidence (session) + `docs/fixes/aut-136-ppr-verdict-qa-a
 |-------|------------|
 | `persist_ref` | `docs/fixes/aut-136-ppr-verdict-qa-attestation-pre-handoff` — presente |
 | `pbi_ref` (inyectado) | vacío · tracker Linear `AUT-136` / `PBI-1cad2c43` |
-| `correlation_id` | `bc7b66c4-d37c-4df6-a8a4-dbe2d0f199d3` |
-| `execution_id` | `0f320f70-80d1-4ebb-8a47-07ea43628b37` |
+| `correlation_id` | `451C4ZEbJ4797T6tQmzEEPDrpdB1e3JJoWn2VfQnVQNp` |
+| `execution_id` | `35bad104-f2d5-4581-9023-61fb49f5c9f9` |
 | `branch_name` (runtime) | `fix/aut-136-ppr-verdict-qa-attestation-pre-handoff` |
-| Worktree HEAD (FS) | `refs/heads/fix/aut-136-ppr-verdict-qa-attestation-pre-handoff` @ `329b43b7…` (= inject) |
+| Worktree HEAD (FS) | `refs/heads/fix/aut-136-ppr-verdict-qa-attestation-pre-handoff` @ `547c7e12…` (= inject) |
 | Ref local inject | presente |
 | `source_process` | `bug-fix` |
 | Tracker | `linear` · sin fichero KM AUT-136 |
@@ -183,10 +183,10 @@ Fuente: prompt Runtime evidence (session) + `docs/fixes/aut-136-ppr-verdict-qa-a
 | `DOC_SPEC` | **APTO** | `spec.md` + frontmatter + AC-1…AC-6 con oráculos |
 | `DOC_PLAN` | **APTO** | `plan.md` + frontmatter + T1–T5 |
 | `DOC_IMPLEMENTATION` | **APTO** | `implementation.md` + frontmatter |
-| `DOC_EXECUTION` | **APTO** | `execution.md` + frontmatter + T1–T4 |
+| `DOC_EXECUTION` | **APTO** | `execution.md` + frontmatter + T1–T5 |
 | `DOC_FRONTMATTER_YAML` | **APTO** | `---` YAML en objectives/spec/plan/implementation/execution |
 | `DOC_CLARIFY` | **NO_APTO** | ausente · opcional · no bloquea |
-| `DOC_EVOLUTION` | **APTO** | canónico `b2a7f91e-…` + `Evolution_log` AUT-136 |
+| `DOC_EVOLUTION` | **APTO** | canónico `8cc2a86d-…` + `Evolution_log` AUT-136 |
 | `DOC_AC_CASCADE` | **APTO** | AC-1…AC-6 en `spec.md` |
 | `DOC_ORACLE_RED_FILE` | **NO_APTO** | `oracle-red.log` ausente · no bloquea F2 |
 | `CODE_TOUCHPOINT_PRESENT` | **APTO** | `pull_request_review.rs` / `residual_runner.rs` / `qa_attestation.rs` |
@@ -207,19 +207,19 @@ Fuente: prompt Runtime evidence (session) + `docs/fixes/aut-136-ppr-verdict-qa-a
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
-| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Evidence Bridge `prosthesis_subprocess` (copia) |
+| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Evidence Bridge `native_state` (copia) |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** | Shell Rejected; sin `gitStdout` |
-| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** | workspace `0f320f70…` sin prep-branch stdout |
+| `GIT_EVIDENCE_NATIVE_PPR` | **NO_APTO** | workspace `35bad104…` sin prep-branch stdout |
 | `BRANCH_RUNTIME_INJECT` | **APTO** | inject = `fix/aut-136-ppr-verdict-qa-attestation-pre-handoff` |
-| `BRANCH_WORKTREE_SYNC` | **APTO** | HEAD → misma ref @ `329b43b7…` |
+| `BRANCH_WORKTREE_SYNC` | **APTO** | HEAD → misma ref @ `547c7e12…` |
 | `branch` | **APTO** | worktree = inject |
 | `git_changes` | **APTO** | path-assert FS (no `gitStdout` cápsula) |
 | `TRACKER_LINEAR_NO_KM_FILE` | **APTO** | provider `linear` · 0 ficheros AUT-136 bajo `docs/todos/` |
 | `PBI_PENDING_ABSENT` | **APTO** | `docs/todos/pending/` vacío |
-| `ROOT_TOPOLOGY_CLEAN` | **APTO** | FS: sin `.events` en raíz |
+| `ROOT_TOPOLOGY_CLEAN` | **APTO** | FS: sin `.events` en raíz (Glob/Read; Shell Rejected) |
 | `WSPACE_MATERIALIZED` | **NO_APTO** | workspace ausente/vacío; **no bloquea** F2 |
 
-`git_changes.paths` = path-assert FS (touchpoints + evolution canónico + persist_ref). Sin bypass raw destructivo. Sellos `validated_*` / `diff_digest` retenidos del frontmatter previo (no inventados aquí).
+`git_changes.paths` = path-assert FS (touchpoints + evolution canónico + persist_ref + audit). Sin bypass raw destructivo. Sellos `validated_*` / `diff_digest` retenidos del frontmatter previo (no inventados aquí).
 
 ## R3 — KM (`RBAC_AUTHORING_KM_POLICY`)
 
@@ -235,11 +235,11 @@ Fuente: prompt Runtime evidence (session) + `docs/fixes/aut-136-ppr-verdict-qa-a
   "resolution": "PASS_F2_DOC",
   "persist_ref": "docs/fixes/aut-136-ppr-verdict-qa-attestation-pre-handoff",
   "tracker_ref": "AUT-136",
-  "correlation_id": "bc7b66c4-d37c-4df6-a8a4-dbe2d0f199d3",
-  "execution_id": "0f320f70-80d1-4ebb-8a47-07ea43628b37",
+  "correlation_id": "451C4ZEbJ4797T6tQmzEEPDrpdB1e3JJoWn2VfQnVQNp",
+  "execution_id": "35bad104-f2d5-4581-9023-61fb49f5c9f9",
   "branch": "fix/aut-136-ppr-verdict-qa-attestation-pre-handoff",
   "branch_worktree_observed": "fix/aut-136-ppr-verdict-qa-attestation-pre-handoff",
-  "head_commit_sha_fs": "329b43b7348b05b1b0a89a6ed610681e4a655455",
+  "head_commit_sha_fs": "547c7e12f4e4bf05cfa893793f812337c741bd3a",
   "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
   "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
   "RBAC_AUTHORING_KM_POLICY": "APTO",
