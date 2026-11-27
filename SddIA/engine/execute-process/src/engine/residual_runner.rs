@@ -1055,6 +1055,10 @@ fn run_generic(
         .filter(|s| !s.is_empty());
     let mut phase_reports = Vec::new();
     for phase in phases {
+        let phase_name = phase
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
         let phase_t0 = Instant::now();
         phase_reports.push(execution_workspace_report::inject_elapsed_ms(
             execute_phase(
@@ -1067,6 +1071,13 @@ fn run_generic(
             ),
             phase_t0.elapsed().as_millis() as i64,
         ));
+        if process_name == "pull-request-review" && phase_name == "Veredicto y bloqueo" {
+            super::pull_request_review::maybe_emit_qa_attestation_before_handoff(
+                repo,
+                &mut state,
+                &inputs_mut,
+            );
+        }
         // Exponer reports acumulados para barrier Veredicto (ADU-CA1).
         state["phase_reports"] = json!(phase_reports);
     }
@@ -1165,9 +1176,42 @@ fn run_generic(
                 obj.insert("verdict".into(), json!("aprobado"));
             }
         }
-        if let Ok(path) = super::qa_attestation::try_write_from_ppr(repo, &state, &inputs_mut) {
-            if let Some(obj) = data.as_object_mut() {
-                obj.insert("attestation_path".into(), json!(path.to_string_lossy()));
+        if let Some(persist) = inputs_mut
+            .get("persist_ref")
+            .or_else(|| state.get("persist_ref"))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            match super::pull_request_review::restore_persist_ref_worktree(repo, persist) {
+                Ok(rep) => {
+                    if let Some(obj) = data.as_object_mut() {
+                        obj.insert("persist_worktree_restore".into(), rep);
+                    }
+                }
+                Err(e) => {
+                    verdict.success = false;
+                    verdict.error = Some(e.clone());
+                    status_code = 1;
+                    if let Some(obj) = data.as_object_mut() {
+                        obj.insert("persist_worktree_restore_error".into(), json!(e));
+                    }
+                }
+            }
+        }
+        let attestation_written = state
+            .get("qa_attestation_written")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        if !attestation_written {
+            if let Ok(path) = super::qa_attestation::try_write_from_ppr(repo, &state, &inputs_mut) {
+                if let Some(obj) = data.as_object_mut() {
+                    obj.insert("attestation_path".into(), json!(path.to_string_lossy()));
+                }
+            }
+        } else if let Some(obj) = data.as_object_mut() {
+            if let Some(p) = state.get("attestation_path") {
+                obj.insert("attestation_path".into(), p.clone());
             }
         }
     }

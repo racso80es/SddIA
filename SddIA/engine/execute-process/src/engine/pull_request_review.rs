@@ -5,7 +5,8 @@ use super::invoke_orchestrator;
 use super::qa_profile::{is_docs_only_profile, PROFILE_DOCS_ONLY};
 use super::verify_process_integrity;
 use serde_json::{json, Value};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 fn str_field(v: &Value, key: &str) -> Option<String> {
     v.get(key)
@@ -32,6 +33,92 @@ fn truthy_flag(v: &Value, key: &str) -> bool {
         Some(Value::String(s)) => matches!(s.to_lowercase().as_str(), "true" | "1" | "yes" | "on"),
         _ => false,
     }
+}
+
+/// `author` contractual de `accept-pr` v2.0.0 (no está en DEFAULTABLE del resolver).
+pub(crate) fn resolve_accept_pr_author(inputs: &Value, state: &Value) -> String {
+    str_field(inputs, "author")
+        .or_else(|| str_field(state, "author"))
+        .or_else(|| str_field(inputs, "emitter_agent"))
+        .or_else(|| str_field(state, "emitter_agent"))
+        .unwrap_or_else(|| "integration-operator".to_string())
+}
+
+/// AC-2 (AUT-134): atestación antes de Fase 7 Handoff materialización.
+pub fn maybe_emit_qa_attestation_before_handoff(
+    repo: &Path,
+    state: &mut Value,
+    inputs: &Value,
+) -> Option<PathBuf> {
+    if state
+        .get("qa_attestation_written")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
+        return state
+            .get("attestation_path")
+            .and_then(|v| v.as_str())
+            .map(PathBuf::from);
+    }
+    match super::qa_attestation::try_write_from_ppr(repo, state, inputs) {
+        Ok(path) => {
+            if let Some(obj) = state.as_object_mut() {
+                obj.insert("qa_attestation_written".into(), json!(true));
+                obj.insert(
+                    "attestation_path".into(),
+                    json!(path.to_string_lossy().to_string()),
+                );
+            }
+            Some(path)
+        }
+        Err(_) => None,
+    }
+}
+
+/// AC-3 (AUT-134): PPR es auditoría de solo lectura sobre PR sellado — revertir mutaciones locales.
+pub fn restore_persist_ref_worktree(repo: &Path, persist_ref: &str) -> Result<Value, String> {
+    let rel = persist_ref
+        .trim()
+        .trim_start_matches("./")
+        .trim_end_matches('/');
+    if rel.is_empty() {
+        return Ok(json!({"skipped": true, "reason": "persist_ref_empty"}));
+    }
+    let restore = Command::new("git")
+        .args([
+            "restore",
+            "--source=HEAD",
+            "--worktree",
+            "--",
+            rel,
+        ])
+        .current_dir(repo)
+        .output()
+        .map_err(|e| format!("git restore persist_ref: {e}"))?;
+    if !restore.status.success() {
+        let stderr = String::from_utf8_lossy(&restore.stderr);
+        return Err(format!("git restore persist_ref falló: {stderr}"));
+    }
+    let handoff = repo.join(rel).join("_agent_handoff.md");
+    let mut removed_handoff = false;
+    if handoff.is_file() {
+        let porcelain = Command::new("git")
+            .args(["status", "--porcelain", "--", &format!("{rel}/_agent_handoff.md")])
+            .current_dir(repo)
+            .output()
+            .map_err(|e| format!("git status handoff: {e}"))?;
+        let line = String::from_utf8_lossy(&porcelain.stdout);
+        if line.trim_start().starts_with("??") || line.trim_start().starts_with("!!") {
+            let _ = std::fs::remove_file(&handoff);
+            removed_handoff = true;
+        }
+    }
+    Ok(json!({
+        "status": "executed",
+        "handler": "ppr-restore-persist-worktree",
+        "persist_ref": rel,
+        "removed_untracked_handoff": removed_handoff,
+    }))
 }
 
 /// Fricción no causal de sub-fase PPR (API externa, timeout, bridge git soft).
@@ -366,6 +453,7 @@ fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
     let mut child = json!({
         "source_branch": branch,
         "correlation_id": inputs.get("correlation_id").cloned().unwrap_or(json!("")),
+        "author": resolve_accept_pr_author(inputs, state),
     });
     if let Some(url) = str_field(inputs, "pr_url") {
         child["pr_url"] = json!(url);
@@ -377,6 +465,20 @@ fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
         child["merge_already_done"] = json!(true);
     }
 
+    // AC-3 (AUT-134): limpiar mutaciones locales de persist_ref tras apto_coherence y qa-attestation,
+    // antes de invocar accept-pr (evita que `git checkout main` en Fusión Soberana aborte por worktree sucio).
+    let pre_handoff_restore = if let Some(p) =
+        str_field(inputs, "persist_ref").or_else(|| str_field(state, "persist_ref"))
+    {
+        let rep = restore_persist_ref_worktree(repo, &p)?;
+        if let Some(obj) = state.as_object_mut() {
+            obj.insert("pre_handoff_worktree_restore".into(), rep.clone());
+        }
+        Some(rep)
+    } else {
+        None
+    };
+
     match invoke_orchestrator::invoke_process(repo, "accept-pr", &child) {
         Ok(data) => {
             // L-HANDOFF-STATUS: true solo si status == consumed.
@@ -385,13 +487,17 @@ fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
                 obj.insert("accept_pr_handoff_status".into(), json!("consumed"));
                 obj.insert("accept_pr".into(), data.clone());
             }
-            Ok(json!({
+            let mut out = json!({
                 "status": "executed",
                 "handler": "ppr-handoff-accept-pr",
                 "accept_pr_handoff": true,
                 "accept_pr_handoff_status": "consumed",
                 "accept_pr": data,
-            }))
+            });
+            if let Some(rep) = pre_handoff_restore {
+                out["pre_handoff_worktree_restore"] = rep;
+            }
+            Ok(out)
         }
         Err(e) if is_accept_pr_block_err(&e) => {
             if let Some(obj) = state.as_object_mut() {
@@ -461,6 +567,20 @@ mod tests {
     fn resolve_pr_branch_falls_back_to_branch_name() {
         let v = json!({"branch_name": "fix/x"});
         assert_eq!(resolve_pr_branch(&v).as_deref(), Some("fix/x"));
+    }
+
+    #[test]
+    fn resolve_accept_pr_author_prefers_inputs_then_default() {
+        let inputs = json!({"author": "racso"});
+        let state = json!({});
+        assert_eq!(resolve_accept_pr_author(&inputs, &state), "racso");
+        let inputs = json!({});
+        let state = json!({"emitter_agent": "pull-request-review"});
+        assert_eq!(resolve_accept_pr_author(&inputs, &state), "pull-request-review");
+        assert_eq!(
+            resolve_accept_pr_author(&json!({}), &json!({})),
+            "integration-operator"
+        );
     }
 
     #[test]
@@ -551,6 +671,44 @@ mod tests {
         assert_eq!(out["accept_pr_handoff"], false);
         assert_eq!(out["accept_pr_handoff_status"], "blocked");
         assert_eq!(out["friction_id"], "apto_coherence_trunk_gate");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn restore_persist_ref_worktree_cleans_dirty_tracked_files_before_handoff() {
+        let dir = std::env::temp_dir().join(format!("sddia-ppr-restore-{}", uuid::Uuid::new_v4()));
+        let persist = dir.join("docs/fixes/f-restore");
+        std::fs::create_dir_all(&persist).unwrap();
+        let run_git = |args: &[&str]| {
+            let status = Command::new("git")
+                .args(args)
+                .current_dir(&dir)
+                .status()
+                .expect("git");
+            assert!(status.success(), "git {args:?} failed");
+        };
+        run_git(&["init", "-q"]);
+        run_git(&["config", "user.email", "test@example.com"]);
+        run_git(&["config", "user.name", "Test"]);
+        std::fs::write(persist.join("validacion.md"), "sealed-v1\n").unwrap();
+        std::fs::write(persist.join("_agent_handoff.md"), "handoff-v1\n").unwrap();
+        run_git(&["add", "."]);
+        run_git(&["commit", "-q", "-m", "init"]);
+
+        // Simular mutaciones locales de Argos antes de Fase 7
+        std::fs::write(persist.join("validacion.md"), "dirty-argos\n").unwrap();
+        std::fs::write(persist.join("_agent_handoff.md"), "dirty-handoff\n").unwrap();
+
+        let rep = restore_persist_ref_worktree(&dir, "docs/fixes/f-restore").expect("restore");
+        assert_eq!(rep["status"], "executed");
+        assert_eq!(
+            std::fs::read_to_string(persist.join("validacion.md")).unwrap(),
+            "sealed-v1\n"
+        );
+        assert_eq!(
+            std::fs::read_to_string(persist.join("_agent_handoff.md")).unwrap(),
+            "handoff-v1\n"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

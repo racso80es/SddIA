@@ -1787,19 +1787,22 @@ pub fn invoke_agent_phase(
 
     let execution_id = resolve_execution_id(inputs, state);
     let persist_ref_val = resolve_persist_ref_value(inputs, state);
-    if let (Some(live_id), Some(persist)) = (
-        execution_id.as_deref(),
-        resolve_persist_dir_for_guard(repo, inputs, state),
-    ) {
-        reconcile_persist_execution_id_for_reentry(repo, &persist, live_id);
-        if let Err(conflicts) = check_persist_execution_id_conflict(repo, &persist, live_id) {
-            entry["status"] = json!("failed");
-            entry["error"] = json!("persist-execution-id-conflict");
-            entry["conflict_paths"] = json!(conflicts);
-            entry["llm_provider"] = json!("cursor");
-            entry["resolved_model"] = Value::Null;
-            entry["provider_mode"] = json!(ProviderMode::InteractiveRelay.as_str());
-            return finish_agent_entry(entry, process_name, phase_name);
+  // AUT-134: PPR audita PR sellado; prohibido mutar cascada en disco (reconcile execution_id).
+    if process_name != "pull-request-review" {
+        if let (Some(live_id), Some(persist)) = (
+            execution_id.as_deref(),
+            resolve_persist_dir_for_guard(repo, inputs, state),
+        ) {
+            reconcile_persist_execution_id_for_reentry(repo, &persist, live_id);
+            if let Err(conflicts) = check_persist_execution_id_conflict(repo, &persist, live_id) {
+                entry["status"] = json!("failed");
+                entry["error"] = json!("persist-execution-id-conflict");
+                entry["conflict_paths"] = json!(conflicts);
+                entry["llm_provider"] = json!("cursor");
+                entry["resolved_model"] = Value::Null;
+                entry["provider_mode"] = json!(ProviderMode::InteractiveRelay.as_str());
+                return finish_agent_entry(entry, process_name, phase_name);
+            }
         }
     }
 
