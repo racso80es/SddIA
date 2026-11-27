@@ -1,4 +1,5 @@
 ---
+
 feature_name: aut-134-ppr-handoff-qa-worktree
 created: "2026-11-27"
 process: bug-fix
@@ -10,14 +11,13 @@ pbi_ref: AUT-134
 tracker_ref: AUT-134
 document_id: PBI-62095c41
 uuid: ff0bfa1e-9de5-4841-940b-0f7496144737
-execution_id: b6b262ed-c04e-429e-b23e-cb908eb3d70d
 global: APTO
 checks:
-  ac1_handoff_author: APTO
-  ac2_qa_attestation_order: APTO
-  ac3_persist_worktree: APTO
-  ac5_unit_tests: APTO
-  evolution_gate_range: APTO
+  AC-1: APTO
+  AC-2: APTO
+  AC-3: APTO
+  AC-4: APTO
+  AC-5: APTO
 git_changes:
   - SddIA/engine/execute-process/src/engine/pull_request_review.rs
   - SddIA/engine/execute-process/src/engine/residual_runner.rs
@@ -25,8 +25,8 @@ git_changes:
   - SddIA/evolution/c4e8a901-2f3d-4b5a-9c6e-7d8e9f0a1b2c.md
   - SddIA/evolution/Evolution_log.md
   - docs/fixes/aut-134-ppr-handoff-qa-worktree/
+execution_id: "71b46eba-9aea-4564-b0c9-602fe70e993d"
 ---
-
 # Validación — AUT-134
 
 ## Veredicto Argos (relevo IDE)
