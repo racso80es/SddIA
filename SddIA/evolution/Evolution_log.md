@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `c4e8a901-2f3d-4b5a-9c6e-7d8e9f0a1b2c` | 2026-11-27 | AUT-134: PPR propaga author a accept-pr, qa-attestation pre-handoff, worktree persist_ref sin reconcile en auditoría. | CANONICO | `SddIA/evolution/c4e8a901-2f3d-4b5a-9c6e-7d8e9f0a1b2c.md` |
 | `f4d5b853-ebfe-4411-b86a-fc13f667fb7f` | 2026-11-27 | AUT-132: cierre peaje gate-entity-no-anemia — regresiones contractuales, scan_changed, CLI JSON, in-process (KA-GATE). | CANONICO | `SddIA/evolution/f4d5b853-ebfe-4411-b86a-fc13f667fb7f.md` |
 | `7862a7dc-7624-4eff-bc4d-cf68db4ea714` | 2026-11-27 | AUT-131: regresiones forja — preservación contrato update, índice sin truncar, rollback acción/suite/agente (KA-FORGE). | CANONICO | `SddIA/evolution/7862a7dc-7624-4eff-bc4d-cf68db4ea714.md` |
 | `a8f3c2e1-9d4b-4f7a-b6e5-1c2d3e4f5a6b` | 2026-11-27 | AUT-125: gate anti-anemia endurecido (ratchet --if-touched), forjas con preservación de frontmatter y rollback; remediación cosmética revertida tras auditoría REJECT. | CANONICO | `SddIA/evolution/a8f3c2e1-9d4b-4f7a-b6e5-1c2d3e4f5a6b.md` |
