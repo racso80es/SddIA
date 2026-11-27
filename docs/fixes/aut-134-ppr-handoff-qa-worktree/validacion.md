@@ -1,7 +1,6 @@
 ---
-
 feature_name: aut-134-ppr-handoff-qa-worktree
-created: "2026-11-27"
+created: 2026-11-27
 process: bug-fix
 source_process: bug-fix
 branch: fix/aut-134-ppr-handoff-qa-worktree
@@ -19,14 +18,19 @@ checks:
   AC-4: APTO
   AC-5: APTO
 git_changes:
-  - SddIA/engine/execute-process/src/engine/pull_request_review.rs
-  - SddIA/engine/execute-process/src/engine/residual_runner.rs
-  - SddIA/engine/execute-process/src/engine/agent_runtime.rs
-  - SddIA/evolution/c4e8a901-2f3d-4b5a-9c6e-7d8e9f0a1b2c.md
-  - SddIA/evolution/Evolution_log.md
-  - docs/fixes/aut-134-ppr-handoff-qa-worktree/
-execution_id: "71b46eba-9aea-4564-b0c9-602fe70e993d"
+- SddIA/engine/execute-process/src/engine/pull_request_review.rs
+- SddIA/engine/execute-process/src/engine/residual_runner.rs
+- SddIA/engine/execute-process/src/engine/agent_runtime.rs
+- SddIA/evolution/c4e8a901-2f3d-4b5a-9c6e-7d8e9f0a1b2c.md
+- SddIA/evolution/Evolution_log.md
+- docs/fixes/aut-134-ppr-handoff-qa-worktree/
+execution_id: 71b46eba-9aea-4564-b0c9-602fe70e993d
+validated_base_sha: ef55dc66d331df11d4c0d6ebf12e2fca90eddaec
+validated_head_sha: 2c4cd929e7ac043f106da9688c9785069591f8e7
+validated_tree_sha: 5e7f06dd177b080cebc3370890564b29e46495bf
+diff_digest: sha256:ebda1c3cc6bc80eb51525bc7134435f378880a82e11a6a693cd4ed8d110c8089
 ---
+
 # Validación — AUT-134
 
 ## Veredicto Argos (relevo IDE)
