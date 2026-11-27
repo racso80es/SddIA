@@ -5,7 +5,7 @@ process: refactorization
 persist_ref: docs/refactors/gate-anti-anemia-entidades-dominio
 tracker_ref: AUT-125
 branch: refactor/gate-anti-anemia-entidades-dominio
-global: APTO
+global: NO_APTO
 pbi_archived: false
 ---
 
