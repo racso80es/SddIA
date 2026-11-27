@@ -5,6 +5,7 @@ process: refactorization
 persist_ref: docs/refactors/gate-anti-anemia-entidades-dominio
 tracker_ref: AUT-125
 branch: refactor/gate-anti-anemia-entidades-dominio
+pr_url: https://github.com/racso80es/SddIA/pull/480
 global: NO_APTO
 pbi_archived: false
 ---
