@@ -484,9 +484,37 @@ fn resolve_sddia_qa_bin(repo: &Path) -> Result<PathBuf, String> {
     Err("sddia-qa no encontrado (compilar: cd SddIA && cargo build -p sddia-qa)".into())
 }
 
+/// Peaje anti-anemia in-process sobre entidades tocadas en `base_ref...HEAD`; `Some` = bloqueo.
+fn index_anemia_gate(repo: &Path, base_ref: &str, state: &mut Value) -> Option<Value> {
+    let detail = match super::entity_no_anemia::scan_changed(repo, base_ref) {
+        Ok(rep) if rep.ok => return None,
+        Ok(rep) => json!({
+            "failed_command": "gate-entity-no-anemia --if-touched",
+            "base_ref": base_ref,
+            "violation_count": rep.violation_count,
+            "violations": rep.violations.iter().take(20).collect::<Vec<_>>(),
+        }),
+        Err(e) => json!({
+            "failed_command": "gate-entity-no-anemia --if-touched",
+            "base_ref": base_ref,
+            "error": e,
+        }),
+    };
+    if let Some(obj) = state.as_object_mut() {
+        obj.insert("index_integrity_gate".into(), detail);
+    }
+    Some(json!({
+        "status": "blocked",
+        "handler": "index-integrity-audit",
+        "exitCode": 1,
+        "message": "gate-entity-no-anemia failed",
+        "friction_id": "F-DCC-INDEX-INTEGRITY",
+    }))
+}
+
 pub fn capsule_index_integrity_audit_gate(
     repo: &Path,
-    _inputs: &Value,
+    inputs: &Value,
     state: &mut Value,
 ) -> Result<Value, String> {
     if env_truthy("SDDIA_LAB_SKIP_INDEX_INTEGRITY") {
@@ -497,19 +525,15 @@ pub fn capsule_index_integrity_audit_gate(
             "skipped": true,
         }));
     }
+    let base_ref = str_field(inputs, "base_ref")
+        .unwrap_or_else(|| super::entity_no_anemia::default_base_ref(repo));
+    if let Some(blocked) = index_anemia_gate(repo, &base_ref, state) {
+        return Ok(blocked);
+    }
     let bin = resolve_sddia_qa_bin(repo)?;
-    for cmd in [
-        "verify-process-integrity",
-        "verify-tools-index",
-        "gate-entity-no-anemia",
-    ] {
-        let mut qa_args: Vec<&str> = vec![cmd];
-        if cmd == "gate-entity-no-anemia" {
-            qa_args.push("--if-touched");
-            qa_args.push("--json");
-        }
+    for cmd in ["verify-process-integrity", "verify-tools-index"] {
         let out = std::process::Command::new(&bin)
-            .args(qa_args)
+            .arg(cmd)
             .current_dir(repo)
             .output()
             .map_err(|e| format!("{cmd} spawn: {e}"))?;
@@ -538,7 +562,7 @@ pub fn capsule_index_integrity_audit_gate(
     if let Some(obj) = state.as_object_mut() {
         obj.insert(
             "index_integrity_gate".into(),
-            json!({"status": "pass", "commands": ["verify-process-integrity", "verify-tools-index", "gate-entity-no-anemia --if-touched"]}),
+            json!({"status": "pass", "commands": ["gate-entity-no-anemia --if-touched", "verify-process-integrity", "verify-tools-index"], "base_ref": base_ref}),
         );
     }
     Ok(json!({
@@ -2348,8 +2372,9 @@ mod index_integrity_audit_tests {
             .join("\n");
         fs::write(&dcc, text).expect("write corrupt hash");
         let mut state = json!({});
-        let result = capsule_index_integrity_audit_gate(&wt, &json!({}), &mut state)
-            .expect("gate veredicto");
+        let result =
+            capsule_index_integrity_audit_gate(&wt, &json!({"base_ref": "HEAD"}), &mut state)
+                .expect("gate veredicto");
         let _ = Command::new("git")
             .args(["worktree", "remove", "-f"])
             .arg(&wt)
@@ -2364,6 +2389,37 @@ mod index_integrity_audit_tests {
             result.get("friction_id").and_then(|v| v.as_str()),
             Some("F-DCC-INDEX-INTEGRITY")
         );
+        assert_eq!(
+            state["index_integrity_gate"]["failed_command"],
+            "verify-process-integrity",
+            "state={state}"
+        );
+    }
+
+    #[test]
+    fn index_anemia_gate_blocks_on_unresolvable_base() {
+        let repo = repo_root();
+        let mut state = json!({});
+        let result = super::index_anemia_gate(&repo, "refs/heads/aut125-no-existe", &mut state)
+            .expect("bloqueo");
+        assert_eq!(result["status"], "blocked", "result={result}");
+        assert_eq!(result["friction_id"], "F-DCC-INDEX-INTEGRITY");
+        assert_eq!(
+            state["index_integrity_gate"]["failed_command"],
+            "gate-entity-no-anemia --if-touched"
+        );
+        assert!(state["index_integrity_gate"]["error"]
+            .as_str()
+            .unwrap_or("")
+            .contains("no resoluble"));
+    }
+
+    #[test]
+    fn index_anemia_gate_passes_on_empty_range() {
+        let repo = repo_root();
+        let mut state = json!({});
+        assert!(super::index_anemia_gate(&repo, "HEAD", &mut state).is_none());
+        assert!(state.get("index_integrity_gate").is_none());
     }
 }
 

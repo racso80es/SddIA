@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - external-ingest
 contract: process-contract v1.4.0
-hash_signature: "sha256:59cfd7bd2cdab434720bdc30ca79a74f08991dbbd5310b4c509307ed187f5681"
+hash_signature: sha256:59cfd7bd2cdab434720bdc30ca79a74f08991dbbd5310b4c509307ed187f5681
 inputs:
 - 'text: Texto plano (XOR con callback_data)'
 - 'callback_data: Payload de botón inline ≤ 64 bytes (XOR con text)'
@@ -46,10 +46,3 @@ Proveedor DI: fase Transmutación con `requires_capability` → `channel:ingest`
 | `chat_id` | No (callback) |
 | `message_id` | No (callback) |
 
-## Propósito
-
-Aduana cognitiva del canal aferente Telegram. XOR `text` / `callback_data`. No realiza long polling ni filtra chat_id (eso es el watcher).
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

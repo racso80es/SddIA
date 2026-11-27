@@ -1,13 +1,13 @@
 ---
 uuid: "4c448c82-de41-460f-b24f-82a84fa5ed69"
 name: "features-documentation-pattern"
-version: "1.0.0"
+version: "1.3.3"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
 category: "workflow"
 dependencies: []
-hash_signature: "sha256:717862057c9a28d7881d0d6f340fbe5cf885ba1c846dee3e3d607336d25b2470"
+hash_signature: "sha256:d87f2d748d327157295b0ce1608921c313f4fca06632db335248e8f2563b1699"
 ---
 
 ## Directriz Core
@@ -124,7 +124,3 @@ Cuando una feature muta entidades bajo `SddIA/` (skills, events, process, agents
 - Forja directa de `.md` sin pasar por `entity-manager` → huérfana EDA hasta backfill Fase C o emit con sello.
 
 Referencia implementación: `docs/features/eda-coverage-ssot-bus-isolation/` (2026-05-25).
-
-## Propósito (complemento)
-
-Entidad `features-documentation-pattern` del Core SddIA.

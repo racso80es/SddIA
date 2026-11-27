@@ -22,7 +22,7 @@ outputs:
   - "success": "boolean"
   - "exitCode": "integer"
   - "error": "string; diagnóstico si aplica"
-hash_signature: "sha256:2f3b6790328d6f93a656027fd124a7f03aacce978ca0616f7f676fdebd855821"
+hash_signature: "sha256:84e5c9b0042f59f078f17db02478b1bbd2d716d18cb0f024b08502aa49a3a629"
 implementation_path_ref: "SddIA/tools/schema-corruptor"
 ---
 
@@ -35,11 +35,3 @@ Proveedor de capacidad `qa:probe` (PBI-043 H9 · Caos).
 ## Interface
 
 stdin JSON: `corruption_mode` — `empty` | `invalid_json` | `partial`.
-
-## Propósito
-
-Declara `telemetry_provided: true` pero emite envelope stdout sin recibo válido. Vector para `telemetry-compliance-audit` → `Telemetry_Compliance_Breached`.
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

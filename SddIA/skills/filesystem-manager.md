@@ -1,5 +1,5 @@
 ---
-uuid: "c24f4d18-4919-4f02-a657-1f4a0e68f030"
+uuid: "f4a5b6c7-d8e9-4f0a-1b2c-3d4e5f6a7b8c"
 name: "filesystem-manager"
 version: "2.0.0"
 contract: "skills-contract v1.1.0"
@@ -29,7 +29,6 @@ outputs:
   - "exitCode": "0 para éxito, 1 para error"
   - "data": "Contenido del archivo (READ_FILE) o array de strings (LIST_DIR)"
   - "error_log": "Descripción detallada si exitCode es 1"
-hash_signature: "sha256:3951ff276258e2180cee6c6941dbee14e84b7760439812b7c71fa5441f7d7120"
 ---
 
 # Skill: Filesystem Manager (cápsula física)

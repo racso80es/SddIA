@@ -1,5 +1,5 @@
 ---
-uuid: "f9a74561-e700-4479-a39f-f738d59fc4d0"
+uuid: "4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f8a"
 name: "radamanto"
 version: "1.1.0"
 contract: "agents-contract v1.0.0"

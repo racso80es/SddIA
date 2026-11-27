@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - external-ingest
 contract: process-contract v1.4.0
-hash_signature: "sha256:4aba293e56f7c2089608ee267bb47a07fa9dbbb736ef807a1e1c698c81cc7235"
+hash_signature: sha256:4aba293e56f7c2089608ee267bb47a07fa9dbbb736ef807a1e1c698c81cc7235
 inputs:
 - text: Texto del mensaje Telegram (payload.text)
 - chat_id: Chat destino para respuesta eferente
@@ -45,7 +45,7 @@ phases:
   name: Materialización
   id: materializacion
 porcentaje_de_exito: null
-uuid: "2b2796ca-40c7-4660-b447-9429ca198898"
+uuid: c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f
 version: 1.0.2
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
@@ -73,7 +73,3 @@ Prompt inyectado literalmente a Mayeuta:
 ## Fase 3 — Materialización
 
 Invocar **`send-telegram-notification`** con `message` = output Fase 2. Destino: `chat_id` del payload (fallback env `TELEGRAM_ALLOWED_CHAT_ID`).
-
-## Propósito (complemento)
-
-Red de seguridad sensorial: **triaje inverso** para entropía conversacional no estructurada en Telegram.

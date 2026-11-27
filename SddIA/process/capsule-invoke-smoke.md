@@ -2,7 +2,7 @@
 context:
 - quality-assurance
 contract: process-contract v1.4.0
-hash_signature: "sha256:6b61755dd588327bfcec63cc567ce2d68082c6e80b264a0f85d8a6dff819d6f3"
+hash_signature: sha256:6b61755dd588327bfcec63cc567ce2d68082c6e80b264a0f85d8a6dff819d6f3
 inputs: []
 minteo_maximo: null
 name: capsule-invoke-smoke
@@ -27,11 +27,3 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # capsule-invoke-smoke
 
 Proceso mínimo de laboratorio para verificar invocación nativa de cápsulas `tool:` vía orquestador Rust (P5 / D-P5.2).
-
-## Propósito
-
-Proceso mínimo de laboratorio para verificar invocación nativa de cápsulas `tool:` vía orquestador Rust (P5 / D-P5.2).
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

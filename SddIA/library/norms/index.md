@@ -21,7 +21,7 @@ Contrato normativo de la familia: `norms-contract.md` (no constituye una norma t
 | `todos-jurisdiction.md` | `f0b8ce4a-2f79-4516-bee0-acfe0d25bd58` | todos-jurisdiction | 1.1.1 | agnostic | workflow |
 | `email-triage-matrix.md` | `3d8c7e09-6d98-422d-909f-5b233ba7fcf2` | email-triage-matrix | 1.1.0 | agnostic | workflow |
 | `capability-taxonomy.md` | `e9c66ec6-5b59-4aae-b9f2-91cc313fe295` | capability-taxonomy | 1.0.13 | agnostic | architecture |
-| `features-documentation-pattern.md` | `4c448c82-de41-460f-b24f-82a84fa5ed69` | features-documentation-pattern | 1.0.0 | agnostic | workflow |
+| `features-documentation-pattern.md` | `4c448c82-de41-460f-b24f-82a84fa5ed69` | features-documentation-pattern | 1.3.3 | agnostic | workflow |
 | `patterns-in-planning-implementation-execution.md` | `1c6af49c-3091-4648-aa54-bbf6bcb90f82` | patterns-in-planning-implementation-execution | 1.0.0 | agnostic | workflow |
 | `pr-acceptance-protocol.md` | `7c18fe07-9567-4f06-8d2b-a58e04608171` | pr-acceptance-protocol | 1.0.0 | agnostic | workflow |
 | `nextjs-hydration-client-state.md` | `86a2f359-8137-43e4-b5ff-61d235ef3cde` | nextjs-hydration-client-state | 1.0.0 | frontend | architecture |

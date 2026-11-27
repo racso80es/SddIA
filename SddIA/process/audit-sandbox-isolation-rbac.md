@@ -3,7 +3,7 @@ context:
 - chaos-engineering
 - quality-assurance
 contract: process-contract v1.4.0
-hash_signature: "sha256:ec6e7a26f1255006c6881b23e0e889fd878b2aefcb6aba32422ffa02e9249934"
+hash_signature: sha256:ec6e7a26f1255006c6881b23e0e889fd878b2aefcb6aba32422ffa02e9249934
 inputs: []
 minteo_maximo: null
 name: audit-sandbox-isolation-rbac
@@ -43,11 +43,3 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # audit-sandbox-isolation-rbac
 
 Proceso audit atómico **Fase 2 Caos**: intenta escape vía `sandbox-breacher` y certifica bloqueo Inocuidad (`assert_workspace_bound`) sin escritura fuera del `workspace_path`.
-
-## Propósito
-
-Proceso audit atómico **Fase 2 Caos**: intenta escape vía `sandbox-breacher` y certifica bloqueo Inocuidad (`assert_workspace_bound`) sin escritura fuera del `workspace_path`.
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

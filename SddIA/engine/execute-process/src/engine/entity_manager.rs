@@ -165,23 +165,30 @@ fn creator_inputs_from_entity(
             merge_maps(&base, fields)
         }
         "action" => {
-            let mut fields: Map<String, Value> = Map::from_iter([
-                ("action_name".into(), seed_field(seed, "action_name", json!(entity_name))),
-                ("action_context".into(), seed_field(seed, "action_context", json!("ecosystem-evolution"))),
-                ("action_inputs".into(), seed_field(seed, "action_inputs", json!([]))),
-                ("action_outputs".into(), seed_field(seed, "action_outputs", json!([]))),
-                (
-                    "orchestration_logic".into(),
-                    seed_field(seed, "orchestration_logic", json!(format!("Acción {entity_name}"))),
-                ),
-                ("actions_contract_version".into(), seed_field(seed, "actions_contract_version", json!("1.2.0"))),
-            ]);
+            // En update solo viajan los campos de la semilla: un default aquí sobrescribiría
+            // context/inputs/outputs/contract vigentes del frontmatter.
+            let mut fields: Map<String, Value> = if lifecycle == "update" {
+                Map::from_iter([(
+                    "action_name".into(),
+                    seed_field(seed, "action_name", json!(entity_name)),
+                )])
+            } else {
+                Map::from_iter([
+                    ("action_name".into(), seed_field(seed, "action_name", json!(entity_name))),
+                    ("action_context".into(), seed_field(seed, "action_context", json!("ecosystem-evolution"))),
+                    ("action_inputs".into(), seed_field(seed, "action_inputs", json!([]))),
+                    ("action_outputs".into(), seed_field(seed, "action_outputs", json!([]))),
+                    ("actions_contract_version".into(), seed_field(seed, "actions_contract_version", json!("1.2.0"))),
+                ])
+            };
             for optional_key in [
                 "action_version",
                 "action_body",
                 "action_capabilities",
                 "action_inputs",
                 "action_outputs",
+                "action_context",
+                "actions_contract_version",
                 "orchestration_logic",
             ] {
                 if let Some(value) = seed.get(optional_key) {
@@ -740,6 +747,36 @@ pub fn run(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn action_update_inputs_carry_only_seed_fields() {
+        let inputs = creator_inputs_from_entity(
+            "action",
+            "demo",
+            "update",
+            &json!({"action_body": "## Propósito\n\nX.\n"}),
+        )
+        .unwrap();
+        for absent in [
+            "action_context",
+            "action_inputs",
+            "action_outputs",
+            "actions_contract_version",
+            "orchestration_logic",
+        ] {
+            assert!(inputs.get(absent).is_none(), "{absent} no debe inyectarse: {inputs}");
+        }
+        assert_eq!(inputs["action_name"], "demo");
+        assert!(inputs.get("action_body").is_some());
+    }
+
+    #[test]
+    fn action_create_inputs_keep_defaults() {
+        let inputs = creator_inputs_from_entity("action", "demo", "create", &json!({})).unwrap();
+        assert_eq!(inputs["action_context"], "ecosystem-evolution");
+        assert_eq!(inputs["actions_contract_version"], "1.2.0");
+        assert!(inputs.get("orchestration_logic").is_none());
+    }
 
     #[test]
     fn process_creator_inputs_include_declared_jurisdiction_fields() {

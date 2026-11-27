@@ -172,20 +172,9 @@ fn tech_triage(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, 
         Err(errs) => (false, json!({"ok": false, "errors": errs})),
     };
 
-    let anemia = super::entity_no_anemia::scan_changed(repo, "origin/main");
-    let (anemia_ok, anemia_detail) = match anemia {
-        Ok(rep) if rep.ok => (true, json!({"ok": true, "scanned": rep.scanned})),
-        Ok(rep) => (
-            false,
-            json!({
-                "ok": false,
-                "scanned": rep.scanned,
-                "violation_count": rep.violation_count,
-                "violations": rep.violations.iter().take(20).collect::<Vec<_>>(),
-            }),
-        ),
-        Err(e) => (false, json!({"ok": false, "error": e})),
-    };
+    let base_ref = str_field(inputs, "base_ref")
+        .unwrap_or_else(|| super::entity_no_anemia::default_base_ref(repo));
+    let (anemia_ok, anemia_detail) = anemia_triage(repo, &base_ref);
 
     let mut checks = json!({
         "TECH_FORMAL_EXECUTE_PROCESS": if integrity_ok { "APTO" } else { "NO_APTO" },
@@ -250,8 +239,27 @@ fn tech_triage(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, 
         "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
         "checks": checks,
         "verify_process_integrity": integrity_detail,
+        "gate_entity_no_anemia": anemia_detail,
         "persist_ref": str_field(inputs, "persist_ref"),
     }))
+}
+
+/// Peaje anti-anemia sobre las entidades de genoma tocadas en `base_ref...HEAD`.
+fn anemia_triage(repo: &Path, base_ref: &str) -> (bool, Value) {
+    match super::entity_no_anemia::scan_changed(repo, base_ref) {
+        Ok(rep) if rep.ok => (true, json!({"ok": true, "base_ref": base_ref, "scanned": rep.scanned})),
+        Ok(rep) => (
+            false,
+            json!({
+                "ok": false,
+                "base_ref": base_ref,
+                "scanned": rep.scanned,
+                "violation_count": rep.violation_count,
+                "violations": rep.violations.iter().take(20).collect::<Vec<_>>(),
+            }),
+        ),
+        Err(e) => (false, json!({"ok": false, "base_ref": base_ref, "error": e})),
+    }
 }
 
 /// True si el error de invoke accept-pr es bloqueo Cerbero/revoked/forbidden (L-HANDOFF-RUNTIME).
@@ -420,6 +428,28 @@ fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn tech_triage_blocks_when_anemia_base_unresolvable() {
+        let repo = crate::core::repo::find_repo_root().expect("repo");
+        let mut state = json!({});
+        let inputs = json!({"base_ref": "refs/heads/aut125-no-existe"});
+        let err = tech_triage(&repo, &inputs, &mut state).unwrap_err();
+        assert!(err.contains("gate-entity-no-anemia"), "{err}");
+        assert_eq!(state["tech_checks"]["gate_entity_no_anemia"], "NO_APTO");
+    }
+
+    #[test]
+    fn tech_triage_reports_anemia_detail_on_success() {
+        let repo = crate::core::repo::find_repo_root().expect("repo");
+        let mut state = json!({});
+        let inputs = json!({"base_ref": "HEAD"});
+        let out = tech_triage(&repo, &inputs, &mut state).expect("triage");
+        assert_eq!(out["checks"]["gate_entity_no_anemia"], "APTO");
+        assert_eq!(out["gate_entity_no_anemia"]["ok"], true);
+        assert_eq!(out["gate_entity_no_anemia"]["base_ref"], "HEAD");
+        assert_eq!(out["gate_entity_no_anemia"]["scanned"], 0);
+    }
 
     #[test]
     fn resolve_pr_branch_prefers_pr_branch() {

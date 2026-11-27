@@ -11,7 +11,7 @@ capabilities:
   - "capsule-json-io"
 io_mode: "capsule-json-io"
 implementation_path_ref: "SddIA/tools/linear-tracker-adapter"
-hash_signature: "sha256:0adaf4346584dd03396849b1c3ea1fad0b18bc9c8f3a9e3b5e460585915b33be"
+hash_signature: "sha256:1bd7831d684544bc82d443f85a4a1be049730d9604238cdb99a8ac83a5a7424d"
 outputs:
   - success: boolean
   - exitCode: integer
@@ -26,11 +26,3 @@ provides:
 # linear-tracker-adapter
 
 Proveedor canónico de `tracker:lifecycle`. Cápsula ciega GraphQL → Linear. Operaciones: `fetch_issue`, `list_issues`, `update_issue_state`, `create_issue`, `create_comment`, `update_issue_description`. `create_issue`: `team_key`, `title`, `description`, `labels[]`, opcionales `parent_ref`, `project_id`, `state_name`, `priority` → `issue_ref`, `id`, `url`. Mutaciones `issueUpdate`: variables `$id` y `stateId` como `String`/`String!` según esquema Linear actual (paridad con `UpdateDesc`). Errores: `LINEAR_LABEL_UNKNOWN`, `LINEAR_PARENT_NOT_FOUND` (+ códigos existentes). Token `LINEAR_API_TOKEN`. Endpoint `SDDIA_LINEAR_API_URL` (default `https://api.linear.app/graphql`). Lab: `SDDIA_LAB_MOCK_OUTBOUND`, `SDDIA_LAB_MOCK_LINEAR_URL`. Desviación §8 tools-contract: binario nativo (`ureq`).
-
-## Propósito
-
-Proveedor canónico de `tracker:lifecycle`. Cápsula ciega GraphQL → Linear. Operaciones: `fetch_issue`, `list_issues`, `update_issue_state`, `create_issue`, `create_comment`, `update_issue_description`. `create_issue`: `team_key`, `title`, `description`, `labels[]`, opcionales `parent_ref`, `project_id`, `state_name`, `priority` → `issue_ref`, `id`, `url`. Mutaciones `issueUpdate`: variables `$id` y `stateId` como `String`/`String!` según esquema Linear actual (paridad con `UpdateDesc`). Errores:
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

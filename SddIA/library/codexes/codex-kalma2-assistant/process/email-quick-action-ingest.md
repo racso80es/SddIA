@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:07dc774c719fc5bf37c6402f5bb21fb0de368295ca5619d9f33aca4098f30e1c"
+hash_signature: sha256:07dc774c719fc5bf37c6402f5bb21fb0de368295ca5619d9f33aca4098f30e1c
 inputs:
 - 'event_uri: Ruta de la instancia ECST Email_Quick_Action_Requested'
 name: email-quick-action-ingest
@@ -28,11 +28,3 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # email-quick-action-ingest
 
 Consume Email_Quick_Action_Requested: valida acción, persiste proof de intención. No muta IMAP. No SMTP.
-
-## Propósito
-
-Consume Email_Quick_Action_Requested: valida acción, persiste proof de intención. No muta IMAP. No SMTP.
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

@@ -614,9 +614,52 @@ pub struct ActionContentPatchResult {
     pub new_hash: String,
     pub old_version: String,
     pub new_version: String,
+    pub context: String,
+    pub capabilities: Value,
 }
 
-/// Update canónico de acción: reemplaza inputs/outputs/capabilities y cuerpo MD; preserva uuid.
+fn is_top_level_yaml_key(line: &str, key: &str) -> bool {
+    line.strip_prefix(key)
+        .map_or(false, |rest| rest.starts_with(':'))
+}
+
+/// Sustituye el bloque de la clave raíz `key` (línea `key:` + líneas indentadas o `- ` de lista)
+/// por `block`; si la clave no existe, la añade al final. El resto del YAML queda intacto.
+pub fn replace_yaml_key_block(yaml: &str, key: &str, block: &str) -> String {
+    let block = block.trim_end_matches('\n');
+    let mut out: Vec<String> = Vec::new();
+    let mut replaced = false;
+    let mut in_block = false;
+    for line in yaml.lines() {
+        if in_block {
+            if line.starts_with(' ') || line.starts_with('\t') || line.starts_with("- ") || line == "-" {
+                continue;
+            }
+            in_block = false;
+        }
+        if !replaced && is_top_level_yaml_key(line, key) {
+            out.extend(block.lines().map(str::to_string));
+            replaced = true;
+            in_block = true;
+            continue;
+        }
+        out.push(line.to_string());
+    }
+    if !replaced {
+        out.extend(block.lines().map(str::to_string));
+    }
+    out.join("\n")
+}
+
+fn contract_semver(contract: &str) -> Option<String> {
+    contract
+        .rsplit_once(" v")
+        .map(|(_, v)| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+}
+
+/// Update canónico de acción: aplica solo los campos presentes en `inputs` y conserva el resto del
+/// frontmatter existente (inputs/outputs/context/contract/capabilities y claves adicionales).
 pub fn patch_action_content_update(
     action_path: &Path,
     inputs: &Value,
@@ -661,23 +704,36 @@ pub fn patch_action_content_update(
         .map(str::to_string)
         .unwrap_or_else(|| hash_from_existing_action(&text));
 
-    let context = optional_str(inputs, "action_context")
-        .or_else(|| map.get("context").and_then(|v| v.as_str()).map(str::to_string))
-        .unwrap_or_else(|| "ecosystem-evolution".to_string());
-    let contract_ver = optional_str(inputs, "actions_contract_version")
-        .unwrap_or_else(|| "1.2.0".to_string());
+    let existing_context = map.get("context").and_then(|v| v.as_str()).map(str::to_string);
+    let new_context = optional_str(inputs, "action_context");
+    let context = new_context
+        .clone()
+        .or(existing_context)
+        .ok_or("context ausente en frontmatter y no aportado en action_context")?;
+    let new_contract_ver = optional_str(inputs, "actions_contract_version");
+    if new_contract_ver.is_none()
+        && map
+            .get("contract")
+            .and_then(|v| v.as_str())
+            .and_then(contract_semver)
+            .is_none()
+    {
+        return Err("contract ausente en frontmatter y no aportado en actions_contract_version".into());
+    }
 
-    let action_inputs = inputs
-        .get("action_inputs")
-        .cloned()
+    let new_inputs = inputs.get("action_inputs").cloned();
+    let new_outputs = inputs.get("action_outputs").cloned();
+    let new_capabilities = inputs.get("action_capabilities").cloned();
+    let action_inputs = new_inputs
+        .clone()
+        .or_else(|| map.get("inputs").cloned())
         .unwrap_or_else(|| json!([]));
-    let action_outputs = inputs
-        .get("action_outputs")
-        .cloned()
+    let action_outputs = new_outputs
+        .clone()
+        .or_else(|| map.get("outputs").cloned())
         .unwrap_or_else(|| json!([]));
-    let capabilities = inputs
-        .get("action_capabilities")
-        .cloned()
+    let capabilities = new_capabilities
+        .clone()
         .or_else(|| map.get("capabilities").cloned())
         .unwrap_or_else(|| json!([]));
 
@@ -698,47 +754,34 @@ pub fn patch_action_content_update(
         &body,
     );
 
-    let minteo = map
-        .get("minteo_maximo")
-        .map(|v| {
-            if v.is_null() {
-                "null".to_string()
-            } else {
-                v.to_string()
-            }
-        })
-        .unwrap_or_else(|| "null".to_string());
-    let pct = map
-        .get("porcentaje_de_exito")
-        .map(|v| {
-            if v.is_null() {
-                "null".to_string()
-            } else {
-                v.to_string()
-            }
-        })
-        .unwrap_or_else(|| "null".to_string());
-
-    let fm_block = format!(
-        r#"---
-uuid: "{entity_uuid}"
-name: "{name}"
-version: "{new_version}"
-contract: "actions-contract v{contract_ver}"
-context: "{context}"
-{capabilities_yaml}{inputs_yaml}{outputs_yaml}hash_signature: "{new_hash}"
-minteo_maximo: {minteo}
-porcentaje_de_exito: {pct}
----
-
-{body}
-"#,
-        capabilities_yaml = format_capabilities_yaml(&capabilities),
-        inputs_yaml = format_action_io_yaml("inputs", &action_inputs),
-        outputs_yaml = format_action_io_yaml("outputs", &action_outputs),
+    let mut new_yaml = replace_yaml_key_block(&yaml, "version", &format!("version: \"{new_version}\""));
+    if let Some(ctx) = &new_context {
+        new_yaml = replace_yaml_key_block(&new_yaml, "context", &format!("context: \"{ctx}\""));
+    }
+    if let Some(cv) = &new_contract_ver {
+        new_yaml = replace_yaml_key_block(
+            &new_yaml,
+            "contract",
+            &format!("contract: \"actions-contract v{cv}\""),
+        );
+    }
+    if let Some(caps) = &new_capabilities {
+        new_yaml = replace_yaml_key_block(&new_yaml, "capabilities", &format_capabilities_yaml(caps));
+    }
+    if let Some(v) = &new_inputs {
+        new_yaml = replace_yaml_key_block(&new_yaml, "inputs", &format_action_io_yaml("inputs", v));
+    }
+    if let Some(v) = &new_outputs {
+        new_yaml = replace_yaml_key_block(&new_yaml, "outputs", &format_action_io_yaml("outputs", v));
+    }
+    new_yaml = replace_yaml_key_block(
+        &new_yaml,
+        "hash_signature",
+        &format!("hash_signature: \"{new_hash}\""),
     );
 
-    fs::write(action_path, fm_block).map_err(|e| e.to_string())?;
+    fs::write(action_path, join_md_frontmatter(&new_yaml, &format!("{body}\n")))
+        .map_err(|e| e.to_string())?;
 
     Ok(ActionContentPatchResult {
         entity_uuid,
@@ -746,66 +789,55 @@ porcentaje_de_exito: {pct}
         new_hash,
         old_version,
         new_version,
+        context,
+        capabilities,
     })
 }
 
 /// Resumen de una línea para `actions/index.md` (evita celdas multilínea en tablas MD).
-pub fn sanitize_action_index_description(orchestration: &str) -> String {
-    let text = orchestration.trim();
-    let purpose_block = text
-        .split("##")
-        .find(|chunk| {
-            let t = chunk.trim().to_lowercase();
-            t.starts_with("propósito") || t.starts_with("proposito") || t.starts_with("1. propósito")
-        })
-        .unwrap_or(text);
-    let mut lines = purpose_block.lines();
-    if let Some(first) = lines.next() {
-        let title = first.trim().to_lowercase();
-        if title.starts_with("propósito") || title.starts_with("proposito") || title.starts_with('1') {
-            // cuerpo bajo el heading
-        } else {
-            lines = purpose_block.lines();
-        }
-    }
-    let para: String = lines
-        .map(str::trim)
-        .filter(|s| !s.is_empty() && !s.starts_with('#'))
-        .take(3)
-        .collect::<Vec<_>>()
-        .join(" ");
-    let para = if para.is_empty() {
-        text.lines()
+/// Toma el primer párrafo de la sección `## …Propósito…`; si no existe, el primer párrafo de prosa.
+/// `None` si el texto no aporta prosa: el llamador conserva la descripción vigente.
+pub fn sanitize_action_index_description(orchestration: &str) -> Option<String> {
+    fn first_paragraph<'a>(lines: impl Iterator<Item = &'a str>) -> String {
+        lines
             .map(str::trim)
-            .find(|s| !s.is_empty() && !s.starts_with('#'))
-            .unwrap_or("Acción del Core SddIA.")
-            .to_string()
-    } else {
-        para
+            .skip_while(|l| l.is_empty())
+            .take_while(|l| !l.is_empty() && !l.starts_with('#'))
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+    let lines: Vec<&str> = orchestration.lines().collect();
+    let purpose_at = lines.iter().position(|l| {
+        l.trim_start()
+            .strip_prefix("## ")
+            .map_or(false, |t| {
+                let t = t.to_lowercase();
+                t.contains("propósito") || t.contains("proposito") || t.contains("purpose")
+            })
+    });
+    let mut para = match purpose_at {
+        Some(i) => first_paragraph(lines[i + 1..].iter().copied()),
+        None => String::new(),
     };
-    let collapsed: String = para.split_whitespace().collect::<Vec<_>>().join(" ");
-    let no_pipes = collapsed.replace('|', "/");
-    if no_pipes.chars().count() <= 220 {
-        no_pipes
+    if para.is_empty() {
+        let start = lines
+            .iter()
+            .position(|l| {
+                let t = l.trim();
+                !t.is_empty() && !t.starts_with('#')
+            })
+            .unwrap_or(lines.len());
+        para = first_paragraph(lines[start..].iter().copied());
+    }
+    let collapsed = para.split_whitespace().collect::<Vec<_>>().join(" ").replace('|', "/");
+    if collapsed.is_empty() {
+        return None;
+    }
+    Some(if collapsed.chars().count() <= 220 {
+        collapsed
     } else {
-        no_pipes.chars().take(217).collect::<String>() + "..."
-    }
-}
-
-fn is_action_catalog_row(line: &str) -> bool {
-    if !line.starts_with('|') {
-        return false;
-    }
-    let cols: Vec<&str> = line.split('|').collect();
-    if cols.len() < 7 {
-        return false;
-    }
-    let name = cols[1].trim();
-    !name.is_empty()
-        && name != "Name"
-        && !name.starts_with('-')
-        && !name.contains('\n')
-        && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+        collapsed.chars().take(217).collect::<String>() + "..."
+    })
 }
 
 fn format_index_capabilities(capabilities: &Value) -> String {
@@ -821,57 +853,63 @@ fn format_index_capabilities(capabilities: &Value) -> String {
         .unwrap_or_default()
 }
 
-/// Sincroniza fila completa en `actions/index.md` (Name, UUID, Versión, Context, Descripción, Capabilities).
+/// Sincroniza la fila de `name` en `actions/index.md` (Versión, Context, Descripción, Capabilities).
+/// Solo reescribe esa fila: conserva la celda UUID existente y el resto del fichero.
+/// Con `description: None` mantiene la descripción vigente. Sin fila previa no hace nada.
 pub fn sync_action_index_row(
     index_path: &Path,
     name: &str,
-    uuid: &str,
     version: &str,
     context: &str,
-    description: &str,
+    description: Option<&str>,
     capabilities: &Value,
 ) -> Result<(), String> {
     if !index_path.is_file() {
         return Ok(());
     }
     let caps = format_index_capabilities(capabilities);
-    let new_row = format!(
-        "| {name} | {uuid} | {version} | {context} | {description} | {caps} |"
-    );
     let idx = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
     let mut changed = false;
-    let mut lines: Vec<String> = Vec::new();
-    let mut skip_garbage = false;
+    let mut lines: Vec<String> = Vec::with_capacity(idx.lines().count());
     for line in idx.lines() {
-        if skip_garbage {
-            if is_action_catalog_row(line) {
-                skip_garbage = false;
-            } else {
+        let cols: Vec<&str> = line.split('|').collect();
+        if line.starts_with('|') && cols.len() == 8 && cols[1].trim() == name {
+            let desc = description.unwrap_or_else(|| cols[5].trim());
+            let new_row = format!(
+                "| {name} | {} | {version} | {context} | {desc} | {caps} |",
+                cols[2].trim()
+            );
+            if line != new_row {
                 changed = true;
-                continue;
             }
-        }
-        if is_action_catalog_row(line) {
-            let cols: Vec<&str> = line.split('|').collect();
-            if cols[1].trim() == name {
-                if line != new_row {
-                    changed = true;
-                }
-                lines.push(new_row.clone());
-                skip_garbage = true;
-                continue;
-            }
+            lines.push(new_row);
+            continue;
         }
         lines.push(line.to_string());
     }
     if changed {
         let mut out = lines.join("\n");
-        if idx.ends_with('\n') && !out.ends_with('\n') {
+        if idx.ends_with('\n') {
             out.push('\n');
         }
         fs::write(index_path, out).map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+/// Ejecuta `f` y, si devuelve `Err`, restaura `path` a su contenido previo byte a byte.
+pub fn with_file_rollback<T>(
+    path: &Path,
+    f: impl FnOnce() -> Result<T, String>,
+) -> Result<T, String> {
+    let original = fs::read(path).map_err(|e| format!("rollback snapshot {}: {e}", path.display()))?;
+    match f() {
+        Ok(v) => Ok(v),
+        Err(e) => match fs::write(path, &original) {
+            Ok(()) => Err(e),
+            Err(w) => Err(format!("{e}; rollback de {} falló: {w}", path.display())),
+        },
+    }
 }
 
 /// Actualiza columna Versión en `actions/index.md` para `name`.
@@ -1906,5 +1944,118 @@ phases:
         assert!(text.contains("f995cc89-22a7-488d-9b25-ddb1e5e3a4a4"));
         let idx = fs::read_to_string(&index).unwrap();
         assert!(idx.contains("| 1.2.0 |"));
+    }
+}
+
+#[cfg(test)]
+mod aut125_forge_integrity_tests {
+    use super::*;
+
+    const ACTION: &str = "---\nuuid: \"11111111-1111-4111-8111-111111111111\"\nname: \"demo\"\nversion: \"1.0.0\"\ncontract: \"actions-contract v1.3.0\"\ncontext: \"filesystem-ops\"\ncapabilities:\n  - \"demo_cap\"\ninputs:\n  - \"path\": \"Ruta objetivo\"\noutputs:\n  - \"removed\": \"Entradas borradas\"\ngate: \"^/tmp/cursor-sandbox-cache(/.*)?$\"\nhash_signature: \"sha256:00\"\n---\n\n## Propósito\n\nPurga demo.\n\n## Límites\n\nSolo /tmp.\n";
+
+    const INDEX: &str = "# Índice\n\n## Catálogo\n\n| Name | UUID | Versión | Context | Descripción | Capabilities |\n|------|------|---------|---------|-------------|--------------|\n| other | `u0` | 1.0.0 | x | Otra. | `o` |\n| demo | `11111111-1111-4111-8111-111111111111` | 1.0.0 | filesystem-ops | Purga demo. | `demo_cap` |\n\n## Archivos en carpeta no catalogados como acción\n\n- ninguno\n\n## Integridad (última pasada)\n\nok\n";
+
+    #[test]
+    fn replace_yaml_key_block_swaps_lists_and_keeps_rest() {
+        let yaml = "a: 1\ninputs:\n  - \"x\": \"y\"\n- \"z\": \"w\"\nb: 2";
+        let out = replace_yaml_key_block(yaml, "inputs", "inputs: []");
+        assert_eq!(out, "a: 1\ninputs: []\nb: 2");
+        let appended = replace_yaml_key_block("a: 1", "gate", "gate: \"g\"");
+        assert_eq!(appended, "a: 1\ngate: \"g\"");
+        let no_prefix_clash = replace_yaml_key_block("inputs_extra: 1\ninputs: []", "inputs", "inputs: [1]");
+        assert_eq!(no_prefix_clash, "inputs_extra: 1\ninputs: [1]");
+    }
+
+    #[test]
+    fn action_update_preserves_frontmatter_not_in_payload() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("demo.md");
+        fs::write(&path, ACTION).unwrap();
+        let patch = patch_action_content_update(
+            &path,
+            &json!({"action_body": "## Propósito\n\nPurga demo v2.\n\n## Límites\n\nSolo /tmp."}),
+        )
+        .unwrap();
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(text.contains("contract: \"actions-contract v1.3.0\""), "{text}");
+        assert!(text.contains("context: \"filesystem-ops\""), "{text}");
+        assert!(text.contains("  - \"path\": \"Ruta objetivo\""), "{text}");
+        assert!(text.contains("  - \"removed\": \"Entradas borradas\""), "{text}");
+        assert!(text.contains("gate: \"^/tmp/cursor-sandbox-cache(/.*)?$\""), "{text}");
+        assert!(text.contains("version: \"1.0.1\""), "{text}");
+        assert!(text.contains(&format!("hash_signature: \"{}\"", patch.new_hash)));
+        assert!(text.contains("Purga demo v2."));
+        assert_eq!(patch.context, "filesystem-ops");
+        assert_eq!(patch.capabilities, json!(["demo_cap"]));
+    }
+
+    #[test]
+    fn action_update_applies_explicit_fields() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("demo.md");
+        fs::write(&path, ACTION).unwrap();
+        patch_action_content_update(
+            &path,
+            &json!({
+                "action_body": "## Propósito\n\nX.\n\n## Límites\n\nY.",
+                "action_context": "knowledge-management",
+                "actions_contract_version": "1.4.0",
+                "action_inputs": [{"target": "Destino"}],
+            }),
+        )
+        .unwrap();
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(text.contains("context: \"knowledge-management\""));
+        assert!(text.contains("contract: \"actions-contract v1.4.0\""));
+        assert!(text.contains("  - \"target\": \"Destino\""));
+        assert!(!text.contains("Ruta objetivo"));
+        assert!(text.contains("  - \"removed\": \"Entradas borradas\""));
+    }
+
+    #[test]
+    fn sync_action_index_row_last_row_keeps_trailing_sections() {
+        let tmp = tempfile::tempdir().unwrap();
+        let idx = tmp.path().join("index.md");
+        fs::write(&idx, INDEX).unwrap();
+        sync_action_index_row(&idx, "demo", "1.0.1", "filesystem-ops", Some("Purga demo v2."), &json!(["demo_cap"]))
+            .unwrap();
+        let text = fs::read_to_string(&idx).unwrap();
+        assert!(text.contains("| demo | `11111111-1111-4111-8111-111111111111` | 1.0.1 | filesystem-ops | Purga demo v2. | `demo_cap` |"), "{text}");
+        assert!(text.contains("## Archivos en carpeta no catalogados como acción\n\n- ninguno"));
+        assert!(text.contains("## Integridad (última pasada)\n\nok\n"));
+        assert!(text.contains("| other | `u0` |"));
+    }
+
+    #[test]
+    fn sync_action_index_row_none_keeps_description() {
+        let tmp = tempfile::tempdir().unwrap();
+        let idx = tmp.path().join("index.md");
+        fs::write(&idx, INDEX).unwrap();
+        sync_action_index_row(&idx, "demo", "1.0.1", "filesystem-ops", None, &json!(["demo_cap"])).unwrap();
+        let text = fs::read_to_string(&idx).unwrap();
+        assert!(text.contains("| 1.0.1 | filesystem-ops | Purga demo. |"), "{text}");
+    }
+
+    #[test]
+    fn sanitize_description_uses_purpose_without_filler() {
+        let s = sanitize_action_index_description(
+            "## 1. Propósito\n\nPurga la caché | efímera\ndel sandbox.\n\nSegundo párrafo.\n\n## Límites\n\nX.",
+        );
+        assert_eq!(s.as_deref(), Some("Purga la caché / efímera del sandbox."));
+        assert_eq!(sanitize_action_index_description("## Solo heading\n"), None);
+        assert_eq!(sanitize_action_index_description(""), None);
+    }
+
+    #[test]
+    fn with_file_rollback_restores_on_error() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("f.md");
+        fs::write(&path, "original").unwrap();
+        let r: Result<(), String> = with_file_rollback(&path, || {
+            fs::write(&path, "mutado").unwrap();
+            Err("fallo".into())
+        });
+        assert_eq!(r.unwrap_err(), "fallo");
+        assert_eq!(fs::read_to_string(&path).unwrap(), "original");
     }
 }

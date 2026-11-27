@@ -4,7 +4,7 @@ context:
 - filesystem-ops
 - tracker-operations
 contract: process-contract v1.4.0
-hash_signature: "sha256:39b03aef55a3c7c1c17a9e0f75a56d02c4b6743ce28c5ba60eafe8d0b1758ee4"
+hash_signature: sha256:39b03aef55a3c7c1c17a9e0f75a56d02c4b6743ce28c5ba60eafe8d0b1758ee4
 inputs:
 - item_ref: Referencia opaca del ítem en el gestor activo
 - project_slug: Slug registrado
@@ -44,11 +44,3 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # refine-item
 
 Refinamiento unificado de ítems de backlog: preparación YAML, Mayeuta, DoR, sellado tracker_ref desde issue leído (sin alta remota), sellado y evento PBI_Refined/HU_Refined. Salida: `event_uri` / sello vía `EventManagerPort` (`events-contract.md` §4).
-
-## Propósito
-
-Refinamiento unificado de ítems de backlog: preparación YAML, Mayeuta, DoR, sellado tracker_ref desde issue leído (sin alta remota), sellado y evento PBI_Refined/HU_Refined. Salida: `event_uri` / sello vía `EventManagerPort` (`events-contract.md` §4).
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

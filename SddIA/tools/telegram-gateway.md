@@ -7,7 +7,7 @@ context: ecosystem-evolution
 contract: tools-contract v1.3.0
 contract_ref: SddIA/tools/tools-contract.md
 domain_origin: SddIA
-hash_signature: "sha256:86ca2ba671d7f153678b27f40046311889b70e733642930c41dc5c5ffb67ee4d"
+hash_signature: sha256:3a6e746d459f7ee428388e810a78fcaccb07cc27bada571d4b4020eb6b89490a
 implementation_path_ref: SddIA/tools/telegram-gateway
 name: telegram-gateway
 outputs:
@@ -30,11 +30,3 @@ version: 1.0.0
 Tool de aduana aferente Telegram. XOR: `text` → `Kaizen_Idea_Captured` / `Manual_Task_Requested`; `callback_data` → `TelegramCallback_Received`.
 
 Proveedor canónico de `channel:ingest`. Implementación Rust bajo `implementation_path_ref`.
-
-## Propósito
-
-Tool de aduana aferente Telegram. XOR: `text` → `Kaizen_Idea_Captured` / `Manual_Task_Requested`; `callback_data` → `TelegramCallback_Received`.
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

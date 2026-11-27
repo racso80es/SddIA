@@ -1,7 +1,7 @@
 ---
 context: quality-assurance
 contract: process-contract v1.4.0
-hash_signature: "sha256:53c6fcafebe88740a46c870aa8d97a5ce26e7059a8c25b385131e4c19b524564"
+hash_signature: sha256:53c6fcafebe88740a46c870aa8d97a5ce26e7059a8c25b385131e4c19b524564
 inputs:
 - description: Boolean; default true — escribe ecosystem-health.json.
   name: persist
@@ -31,11 +31,3 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # query-ecosystem-health
 
 Fusiona map-snapshot × territorio Argos/Radamanto/Cerbero y persiste ecosystem-health.json.
-
-## Propósito
-
-Fusiona map-snapshot × territorio Argos/Radamanto/Cerbero y persiste ecosystem-health.json.
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

@@ -4,9 +4,10 @@ use crate::core::paths::load_paths_config;
 use regex::Regex;
 use serde::Serialize;
 use serde_yaml::Value as YamlValue;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Violation {
@@ -24,37 +25,76 @@ pub struct ScanReport {
     pub violations: Vec<Violation>,
 }
 
+impl ScanReport {
+    fn from_violations(scanned: u64, violations: Vec<Violation>) -> Self {
+        Self {
+            ok: violations.is_empty(),
+            scanned,
+            violation_count: violations.len() as u64,
+            violations,
+        }
+    }
+}
+
+fn uuid_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+            .expect("uuid re")
+    })
+}
+
+fn uuid_v4_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
+            .expect("uuid v4 re")
+    })
+}
+
+fn semver_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"^\d+\.\d+\.\d+").expect("semver re"))
+}
+
 fn uuid_present_ok(raw: &str) -> (bool, bool) {
     let s = raw.trim().trim_matches(|c| c == '"' || c == '\'');
-    let any = Regex::new(
-        r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-    )
-    .expect("uuid re");
-    let v4 = Regex::new(
-        r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-    )
-    .expect("uuid v4 re");
-    (any.is_match(s), v4.is_match(s))
+    (uuid_re().is_match(s), uuid_v4_re().is_match(s))
 }
 
-fn semver_ok(raw: &str) -> bool {
-    let s = raw.trim();
-  let re = Regex::new(r"^\d+\.\d+\.\d+").expect("semver re");
-    re.is_match(s)
-}
-
-fn split_frontmatter(raw: &str) -> Option<(String, String)> {
-    let parts: Vec<&str> = raw.split("---").collect();
-    if parts.len() < 3 {
-        return None;
+/// Separa frontmatter YAML y cuerpo. Exige `---` como primera línea (BOM tolerado) y una línea
+/// de cierre `---`; cualquier otro formato no tiene frontmatter.
+pub fn split_frontmatter(raw: &str) -> Option<(String, String)> {
+    let raw = raw.strip_prefix('\u{feff}').unwrap_or(raw);
+    let rest = raw
+        .strip_prefix("---\n")
+        .or_else(|| raw.strip_prefix("---\r\n"))?;
+    let mut offset = 0usize;
+    for line in rest.split_inclusive('\n') {
+        if line.trim_end_matches(['\n', '\r']) == "---" {
+            let fm = rest[..offset].to_string();
+            let body = rest[offset + line.len()..].to_string();
+            return Some((fm, body));
+        }
+        offset += line.len();
     }
-    let fm = parts[1].trim().to_string();
-    let body = parts[2..].join("---").trim_start_matches('\n').to_string();
-    Some((fm, body))
+    None
+}
+
+/// Líneas fuera de bloques de código cercados (```).
+fn prose_lines(text: &str) -> impl Iterator<Item = &str> {
+    let mut in_fence = false;
+    text.lines().filter(move |line| {
+        if line.trim_start().starts_with("```") {
+            in_fence = !in_fence;
+            return false;
+        }
+        !in_fence
+    })
 }
 
 fn stub_tokens_in_text(text: &str) -> Option<String> {
-    for line in text.lines() {
+    for line in prose_lines(text) {
         let t = line.trim();
         if matches!(t, "TODO" | "TBD" | "FIXME" | "..." | "…") {
             return Some(t.to_string());
@@ -159,16 +199,25 @@ fn parse_sections(body: &str) -> Vec<(String, String)> {
     let mut sections = Vec::new();
     let mut current_title = String::new();
     let mut current_body = String::new();
+    let mut in_fence = false;
     for line in body.lines() {
-        if let Some(rest) = line.strip_prefix("## ") {
-            if !current_title.is_empty() {
-                sections.push((current_title.clone(), current_body.trim().to_string()));
+        if line.trim_start().starts_with("```") {
+            in_fence = !in_fence;
+        }
+        if !in_fence {
+            if let Some(rest) = line.strip_prefix("## ") {
+                if !current_title.is_empty() {
+                    sections.push((current_title.clone(), current_body.trim().to_string()));
+                }
+                current_title = rest.trim().to_string();
+                current_body.clear();
+                continue;
             }
-            current_title = rest.trim().to_string();
-            current_body.clear();
-        } else if line.starts_with('#') && !line.starts_with("##") {
-            continue;
-        } else if !current_title.is_empty() {
+            if line.starts_with("# ") {
+                continue;
+            }
+        }
+        if !current_title.is_empty() {
             if !current_body.is_empty() {
                 current_body.push('\n');
             }
@@ -182,47 +231,57 @@ fn parse_sections(body: &str) -> Vec<(String, String)> {
 }
 
 fn duplicate_h1(body: &str, name: &str) -> bool {
-    let mut seen = 0usize;
     let needle = name.to_lowercase();
-    for line in body.lines() {
-        let l = line.trim();
-        if l.starts_with("# ") && !l.starts_with("##") {
-            let title = l.trim_start_matches('#').trim().to_lowercase();
-            if title.contains(&needle) || title.contains("acción:") && title.contains(&needle) {
-                seen += 1;
-                if seen >= 2 {
-                    return true;
-                }
-            }
-        }
-    }
-    false
+    prose_lines(body)
+        .map(str::trim)
+        .filter(|l| l.starts_with("# "))
+        .filter(|l| l[2..].trim().to_lowercase().contains(&needle))
+        .count()
+        >= 2
 }
 
+fn is_prose_line(line: &str) -> bool {
+    let t = line.trim_start();
+    let list_item = t.starts_with("- ")
+        || t.starts_with("* ")
+        || t.starts_with("+ ")
+        || t.split_once(". ")
+            .map_or(false, |(n, _)| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()));
+    !(t.is_empty() || t.starts_with('#') || t.starts_with('|') || t.starts_with('>') || list_item)
+}
+
+/// Firmas mecánicas de truncado (no estilo): bloque de código sin cerrar, o fichero sin salto
+/// final cuya última línea es prosa sin puntuación de cierre. Las forjas escriben siempre `\n`
+/// final, así que un corte de escritura deja esa firma; prosa o listas sin punto final con
+/// salto de línea no se consideran truncadas.
 fn truncated_tail(body: &str) -> bool {
-    let last = body
+    let fences = body
         .lines()
-        .map(str::trim)
-        .filter(|l| !l.is_empty() && !l.starts_with('#'))
-        .last()
-        .unwrap_or("");
-    if last.len() < 12 {
+        .filter(|l| l.trim_start().starts_with("```"))
+        .count();
+    if fences % 2 == 1 {
+        return true;
+    }
+    if body.ends_with('\n') {
         return false;
     }
-    let ends_word = last
+    let Some(last) = body.lines().map(str::trim).filter(|l| !l.is_empty()).last() else {
+        return false;
+    };
+    let terminal = last
         .chars()
         .last()
-        .map(|c| c.is_alphanumeric() && c != '.' && c != ')' && c != ']')
-        .unwrap_or(false);
-    let vowel_cut = last
-        .chars()
-        .rev()
-        .take(4)
-        .collect::<String>()
-        .chars()
-        .rev()
-        .collect::<String>();
-    vowel_cut.len() >= 4 && !vowel_cut.contains('.') && ends_word && !last.ends_with('`')
+        .map_or(true, |c| ".!?:;)]}`\"'»*_".contains(c));
+    is_prose_line(last) && !terminal
+}
+
+fn violation(rel: &str, family: &str, code: &str, detail: impl Into<String>) -> Violation {
+    Violation {
+        path: rel.to_string(),
+        family: family.to_string(),
+        code: code.to_string(),
+        detail: detail.into(),
+    }
 }
 
 pub fn validate_entity_file(repo: &Path, path: &Path, family: &str) -> Vec<Violation> {
@@ -242,183 +301,139 @@ pub fn validate_entity_file(repo: &Path, path: &Path, family: &str) -> Vec<Viola
 
     let raw = match fs::read_to_string(path) {
         Ok(s) => s,
-        Err(e) => {
-            return vec![Violation {
-                path: rel,
-                family: family.into(),
-                code: "READ_ERROR".into(),
-                detail: e.to_string(),
-            }];
-        }
+        Err(e) => return vec![violation(&rel, family, "READ_ERROR", e.to_string())],
     };
 
     let Some((fm_raw, body)) = split_frontmatter(&raw) else {
-        return vec![Violation {
-            path: rel,
-            family: family.into(),
-            code: "NO_FRONTMATTER".into(),
-            detail: "falta bloque YAML ---".into(),
-        }];
+        return vec![violation(
+            &rel,
+            family,
+            "NO_FRONTMATTER",
+            "falta bloque YAML delimitado por --- en la primera línea",
+        )];
     };
 
     let mut viols = Vec::new();
-    let fm_yaml: YamlValue = serde_yaml::from_str(&fm_raw).unwrap_or(YamlValue::Null);
+    let fm_yaml = match serde_yaml::from_str::<YamlValue>(&fm_raw) {
+        Ok(v @ YamlValue::Mapping(_)) => v,
+        Ok(_) => {
+            viols.push(violation(&rel, family, "FRONTMATTER_YAML_INVALID", "frontmatter no es un mapa YAML"));
+            YamlValue::Null
+        }
+        Err(e) => {
+            viols.push(violation(&rel, family, "FRONTMATTER_YAML_INVALID", e.to_string()));
+            YamlValue::Null
+        }
+    };
     let uuid = fm_yaml.get("uuid").and_then(|v| v.as_str()).unwrap_or("");
     let version = fm_yaml.get("version").and_then(|v| v.as_str()).unwrap_or("");
     let name_fm = fm_yaml.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let (uuid_ok, uuid_v4) = uuid_present_ok(uuid);
     if !uuid_ok {
-        viols.push(Violation {
-            path: rel.clone(),
-            family: family.into(),
-            code: "UUID_INVALID".into(),
-            detail: format!("uuid inválido: {uuid}"),
-        });
+        viols.push(violation(&rel, family, "UUID_INVALID", format!("uuid inválido: {uuid}")));
     } else if !uuid_v4 {
-        viols.push(Violation {
-            path: rel.clone(),
-            family: family.into(),
-            code: "UUID_NOT_V4".into(),
-            detail: format!("uuid presente pero no v4: {uuid}"),
-        });
+        viols.push(violation(&rel, family, "UUID_NOT_V4", format!("uuid presente pero no v4: {uuid}")));
     }
-    if !semver_ok(version) {
-        viols.push(Violation {
-            path: rel.clone(),
-            family: family.into(),
-            code: "VERSION_INVALID".into(),
-            detail: format!("version inválida: {version}"),
-        });
+    if !semver_re().is_match(version.trim()) {
+        viols.push(violation(&rel, family, "VERSION_INVALID", format!("version inválida: {version}")));
     }
     if !name_fm.is_empty() && name_fm != name && family != "codex" {
-        viols.push(Violation {
-            path: rel.clone(),
-            family: family.into(),
-            code: "NAME_FILENAME_MISMATCH".into(),
-            detail: format!("name={name_fm} filename={name}"),
-        });
+        viols.push(violation(
+            &rel,
+            family,
+            "NAME_FILENAME_MISMATCH",
+            format!("name={name_fm} filename={name}"),
+        ));
     }
 
     if body.trim().is_empty() {
-        viols.push(Violation {
-            path: rel.clone(),
-            family: family.into(),
-            code: "BODY_EMPTY".into(),
-            detail: "cuerpo vacío tras frontmatter".into(),
-        });
+        viols.push(violation(&rel, family, "BODY_EMPTY", "cuerpo vacío tras frontmatter"));
         return viols;
     }
 
     if duplicate_h1(&body, &name) {
-        viols.push(Violation {
-            path: rel.clone(),
-            family: family.into(),
-            code: "DUPLICATE_H1".into(),
-            detail: "H1 duplicado de título".into(),
-        });
+        viols.push(violation(&rel, family, "DUPLICATE_H1", "H1 duplicado de título"));
     }
-
     if truncated_tail(&body) {
-        viols.push(Violation {
-            path: rel.clone(),
-            family: family.into(),
-            code: "BODY_TRUNCATED".into(),
-            detail: "cierre de cuerpo truncado".into(),
-        });
+        viols.push(violation(&rel, family, "BODY_TRUNCATED", "cierre de cuerpo truncado"));
     }
-
     if let Some(tok) = stub_tokens_in_text(&body) {
-        viols.push(Violation {
-            path: rel.clone(),
-            family: family.into(),
-            code: "STUB_MARKER".into(),
-            detail: format!("marcador stub: {tok}"),
-        });
+        viols.push(violation(&rel, family, "STUB_MARKER", format!("marcador stub: {tok}")));
     }
 
     let sections = parse_sections(&body);
     if sections.len() < 2 {
-        viols.push(Violation {
-            path: rel.clone(),
-            family: family.into(),
-            code: "SECTIONS_INSUFFICIENT".into(),
-            detail: format!("secciones ## < 2 (tiene {})", sections.len()),
-        });
+        viols.push(violation(
+            &rel,
+            family,
+            "SECTIONS_INSUFFICIENT",
+            format!("secciones ## < 2 (tiene {})", sections.len()),
+        ));
     }
     for (title, content) in &sections {
-        let non_ws: String = content.chars().filter(|c| !c.is_whitespace()).collect();
-        if non_ws.is_empty() {
-            viols.push(Violation {
-                path: rel.clone(),
-                family: family.into(),
-                code: "SECTION_EMPTY".into(),
-                detail: format!("sección vacía: ## {title}"),
-            });
+        if content.chars().all(char::is_whitespace) {
+            viols.push(violation(&rel, family, "SECTION_EMPTY", format!("sección vacía: ## {title}")));
         }
     }
 
     if let Some(rule) = rule_for(family) {
-        let has_purpose = sections.iter().any(|(t, c)| {
-            !c.is_empty() && heading_matches_any(t, rule.purpose_kw)
-        }) || sections.first().map_or(false, |(_, c)| {
-            c.chars().filter(|ch| !ch.is_whitespace()).count() >= 40
-        });
-        let has_second = sections.iter().any(|(t, c)| {
-            !c.is_empty() && heading_matches_any(t, rule.second_kw)
-        }) || sections.len() >= 2;
-        if !has_purpose {
-            viols.push(Violation {
-                path: rel.clone(),
-                family: family.into(),
-                code: "CONTRACT_SECTION_MISSING".into(),
-                detail: "falta sección de propósito (contractual)".into(),
-            });
+        let matching = |kws: &[&str]| -> Vec<usize> {
+            sections
+                .iter()
+                .enumerate()
+                .filter(|(_, (t, c))| !c.trim().is_empty() && heading_matches_any(t, kws))
+                .map(|(i, _)| i)
+                .collect()
+        };
+        let purpose = matching(rule.purpose_kw);
+        let second = matching(rule.second_kw);
+        if purpose.is_empty() {
+            viols.push(violation(
+                &rel,
+                family,
+                "CONTRACT_SECTION_MISSING",
+                format!("falta sección ## de propósito (heading con: {})", rule.purpose_kw.join(" | ")),
+            ));
         }
-        if !has_second {
-            viols.push(Violation {
-                path: rel,
-                family: family.into(),
-                code: "CONTRACT_SECTION_MISSING".into(),
-                detail: "falta sección operativa secundaria (orquestación/interfaz/límites)".into(),
-            });
+        let distinct_pair = second
+            .iter()
+            .any(|s| purpose.iter().any(|p| p != s) || purpose.is_empty());
+        if !distinct_pair {
+            viols.push(violation(
+                &rel,
+                family,
+                "CONTRACT_SECTION_MISSING",
+                format!(
+                    "falta sección ## operativa distinta del propósito (heading con: {})",
+                    rule.second_kw.join(" | ")
+                ),
+            ));
         }
     }
 
     viols
 }
 
-fn walk_md_files(dir: &Path, skip_names: &HashSet<&str>, out: &mut Vec<PathBuf>) {
-    let Ok(rd) = fs::read_dir(dir) else {
-        return;
-    };
-    for entry in rd.flatten() {
-        let p = entry.path();
+fn walk_md_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
+    let rd = fs::read_dir(dir).map_err(|e| format!("read_dir {}: {e}", dir.display()))?;
+    for entry in rd {
+        let p = entry
+            .map_err(|e| format!("read_dir {}: {e}", dir.display()))?
+            .path();
         if p.is_dir() {
-            walk_md_files(&p, skip_names, out);
+            walk_md_files(&p, out)?;
             continue;
         }
         if p.extension().and_then(|x| x.to_str()) != Some("md") {
             continue;
         }
         let fname = p.file_name().and_then(|s| s.to_str()).unwrap_or("");
-        if skip_names.contains(fname) || fname.ends_with("-contract.md") {
+        if fname == "index.md" || fname.ends_with("-contract.md") {
             continue;
         }
         out.push(p);
     }
-}
-
-fn collect_family_files(repo: &Path, rel_dir: &str, family: &str, out: &mut Vec<(String, PathBuf)>) {
-    let root = repo.join(rel_dir);
-    if !root.is_dir() {
-        return;
-    }
-    let skip_names: HashSet<&str> = HashSet::from(["index.md"]);
-    let mut paths = Vec::new();
-    walk_md_files(&root, &skip_names, &mut paths);
-    for p in paths {
-        out.push((family.into(), p));
-    }
+    Ok(())
 }
 
 pub fn genome_entity_dirs(cfg: &serde_json::Value) -> Vec<(&'static str, String)> {
@@ -434,124 +449,129 @@ pub fn genome_entity_dirs(cfg: &serde_json::Value) -> Vec<(&'static str, String)
         ("daemon", "daemons"),
         ("norm", "library_norms"),
         ("codex", "library_codexes"),
+        ("process", "process"),
     ];
     for (family, key) in pairs {
         if let Some(d) = dirs.get(key).and_then(|x| x.as_str()) {
             v.push((family, d.trim_end_matches('/').to_string()));
         }
     }
-    if let Some(d) = dirs.get("process").and_then(|x| x.as_str()) {
-        v.push(("process", d.trim_end_matches('/').to_string()));
-    }
-    if let Some(arr) = dirs.get("process_domain_roots").and_then(|x| x.as_array()) {
-        for item in arr {
-            if let Some(s) = item.as_str() {
-                v.push(("process", s.trim_end_matches('/').to_string()));
-            }
-        }
-    }
-    if let Some(arr) = dirs.get("events_domain_roots").and_then(|x| x.as_array()) {
-        for item in arr {
-            if let Some(s) = item.as_str() {
-                v.push(("event", s.trim_end_matches('/').to_string()));
+    for (family, key) in [("process", "process_domain_roots"), ("event", "events_domain_roots")] {
+        if let Some(arr) = dirs.get(key).and_then(|x| x.as_array()) {
+            for s in arr.iter().filter_map(|i| i.as_str()) {
+                v.push((family, s.trim_end_matches('/').to_string()));
             }
         }
     }
     v
 }
 
+fn family_rank(fam: &str) -> u8 {
+    match fam {
+        "event" | "process" => 3,
+        "action" | "agent" | "skill" | "tool" | "suite" | "daemon" | "norm" => 2,
+        _ => 1,
+    }
+}
+
+/// Familia de una ruta relativa: entre los directorios que la contienen (límite `/`), gana el
+/// de mayor rango y, a igual rango, el prefijo más largo. Procesos y eventos de dominio bajo
+/// `library/codexes/` se clasifican como `process` / `event`, no como `codex`.
+pub fn classify_entity_path(rel: &str, dirs: &[(&'static str, String)]) -> Option<&'static str> {
+    dirs.iter()
+        .filter(|(_, d)| rel.starts_with(&format!("{d}/")))
+        .max_by_key(|(f, d)| (family_rank(f), d.len()))
+        .map(|(f, _)| *f)
+}
+
+fn is_candidate(rel: &str) -> bool {
+    rel.ends_with(".md") && !rel.ends_with("-contract.md") && !rel.ends_with("/index.md")
+}
+
 pub fn scan_all(repo: &Path) -> Result<ScanReport, String> {
     let cfg = load_paths_config(repo)?;
-    let mut files = Vec::new();
-    for (family, dir) in genome_entity_dirs(&cfg) {
-        collect_family_files(repo, &dir, family, &mut files);
-    }
-    let mut by_path: std::collections::HashMap<String, (String, PathBuf)> =
-        std::collections::HashMap::new();
-    let rank = |fam: &str| -> u8 {
-        match fam {
-            "event" => 3,
-            "process" => 3,
-            "action" | "agent" | "skill" | "tool" | "suite" | "daemon" | "norm" => 2,
-            _ => 1,
+    let dirs = genome_entity_dirs(&cfg);
+    let mut by_path: HashMap<String, (&'static str, PathBuf)> = HashMap::new();
+    for (_, dir) in &dirs {
+        let root = repo.join(dir);
+        if !root.is_dir() {
+            continue;
         }
-    };
-    for (family, path) in files {
-        let rel = path
-            .strip_prefix(repo)
-            .unwrap_or(&path)
-            .to_string_lossy()
-            .replace('\\', "/");
-        match by_path.get(&rel) {
-            None => {
-                by_path.insert(rel, (family, path));
+        let mut paths = Vec::new();
+        walk_md_files(&root, &mut paths)?;
+        for p in paths {
+            let rel = p
+                .strip_prefix(repo)
+                .unwrap_or(&p)
+                .to_string_lossy()
+                .replace('\\', "/");
+            if let Some(family) = classify_entity_path(&rel, &dirs) {
+                by_path.insert(rel, (family, p));
             }
-            Some((prev_fam, _)) if rank(&family) > rank(prev_fam) => {
-                by_path.insert(rel, (family, path));
-            }
-            _ => {}
         }
     }
     let mut entries: Vec<_> = by_path.into_values().collect();
     entries.sort_by(|a, b| a.1.cmp(&b.1));
-    let mut violations = Vec::new();
     let scanned = entries.len() as u64;
-    for (family, path) in entries {
-        violations.extend(validate_entity_file(repo, &path, family.as_str()));
-    }
-    let ok = violations.is_empty();
-    let violation_count = violations.len() as u64;
-    Ok(ScanReport {
-        ok,
-        scanned,
-        violation_count,
-        violations,
-    })
+    let violations = entries
+        .into_iter()
+        .flat_map(|(family, path)| validate_entity_file(repo, &path, family))
+        .collect();
+    Ok(ScanReport::from_violations(scanned, violations))
 }
 
-pub fn scan_changed(repo: &Path, base_ref: &str) -> Result<ScanReport, String> {
-    let out = std::process::Command::new("git")
-        .args(["diff", "--name-only", base_ref, "HEAD", "--"])
+fn git(repo: &Path, args: &[&str]) -> Result<std::process::Output, String> {
+    std::process::Command::new("git")
+        .args(args)
         .current_dir(repo)
         .output()
-        .map_err(|e| format!("git diff: {e}"))?;
+        .map_err(|e| format!("git {}: {e}", args.join(" ")))
+}
+
+/// Entidades `.md` de genoma añadidas o modificadas en la rama respecto a `base_ref`
+/// (`base_ref...HEAD`, desde el merge-base). Las borradas no se validan.
+pub fn scan_changed(repo: &Path, base_ref: &str) -> Result<ScanReport, String> {
+    let verify = git(repo, &["rev-parse", "--verify", "--quiet", &format!("{base_ref}^{{commit}}")])?;
+    if !verify.status.success() {
+        return Err(format!("base ref no resoluble: {base_ref}"));
+    }
+    let range = format!("{base_ref}...HEAD");
+    let out = git(repo, &["diff", "--name-only", "--diff-filter=d", &range, "--"])?;
     if !out.status.success() {
-        return Err(String::from_utf8_lossy(&out.stderr).into_owned());
+        return Err(String::from_utf8_lossy(&out.stderr).trim().to_string());
     }
     let cfg = load_paths_config(repo)?;
-    let dirs: Vec<String> = genome_entity_dirs(&cfg)
-        .into_iter()
-        .map(|(_, d)| d)
-        .collect();
+    let dirs = genome_entity_dirs(&cfg);
     let mut violations = Vec::new();
     let mut scanned = 0u64;
-    for line in String::from_utf8_lossy(&out.stdout).lines() {
-        let p = line.trim();
-        if !p.ends_with(".md") {
+    for rel in String::from_utf8_lossy(&out.stdout).lines().map(str::trim) {
+        if !is_candidate(rel) {
             continue;
         }
-        if !dirs.iter().any(|d| p.starts_with(d)) || p.ends_with("-contract.md") || p.ends_with("/index.md")
-        {
+        let Some(family) = classify_entity_path(rel, &dirs) else {
             continue;
-        }
-        let path = repo.join(p);
+        };
+        let path = repo.join(rel);
         if !path.is_file() {
             continue;
         }
-        let family = genome_entity_dirs(&cfg)
-            .into_iter()
-            .find(|(_, d)| p.starts_with(d))
-            .map(|(f, _)| f)
-            .unwrap_or("unknown");
         scanned += 1;
         violations.extend(validate_entity_file(repo, &path, family));
     }
-    Ok(ScanReport {
-        ok: violations.is_empty(),
-        scanned,
-        violation_count: violations.len() as u64,
-        violations,
-    })
+    Ok(ScanReport::from_violations(scanned, violations))
+}
+
+/// Ref base por defecto: `origin/{default_branch}` según `.SddIA/project.md` de la instancia;
+/// `origin/main` si el manifiesto no existe o no declara `default_branch`.
+pub fn default_base_ref(repo: &Path) -> String {
+    let branch = fs::read_to_string(repo.join(".SddIA/project.md"))
+        .ok()
+        .and_then(|raw| split_frontmatter(&raw))
+        .and_then(|(fm, _)| serde_yaml::from_str::<YamlValue>(&fm).ok())
+        .and_then(|v| v.get("default_branch").and_then(|b| b.as_str()).map(str::to_string))
+        .filter(|b| !b.trim().is_empty())
+        .unwrap_or_else(|| "main".to_string());
+    format!("origin/{}", branch.trim())
 }
 
 #[cfg(test)]
@@ -559,80 +579,270 @@ mod tests {
     use super::*;
     use crate::core::repo::find_repo_root;
 
+    const FM: &str = "---\nuuid: \"11111111-1111-4111-8111-111111111111\"\nname: NAME\nversion: \"1.0.0\"\n---\n";
+
+    fn fixture(dir: &Path, name: &str, body: &str) -> PathBuf {
+        let path = dir.join(format!("{name}.md"));
+        fs::write(&path, format!("{}{}", FM.replace("NAME", name), body)).unwrap();
+        path
+    }
+
+    fn codes(v: &[Violation]) -> Vec<&str> {
+        v.iter().map(|x| x.code.as_str()).collect()
+    }
+
     #[test]
     fn aut125_witness_truncated_switch_llm_fixture_rejected() {
-        let repo = find_repo_root().expect("repo");
-        let dir = std::env::temp_dir().join(format!("aut125-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
-        fs::create_dir_all(&dir).unwrap();
-        let path = dir.join("switch-llm-provider.md");
-        let witness = fs::read_to_string(repo.join("SddIA/actions/switch-llm-provider.md"))
-            .expect("remediated witness on disk");
-        let stub = format!(
-            "---\n{}\n---\n\n# Acción: switch-llm-provider\n\n# Acción: switch-llm-provider\n\nConmutación explícita y determinista del proveedo\n",
-            witness
-                .split("---")
-                .nth(1)
-                .unwrap_or("uuid: \"a6f5e0a4-ccc5-4076-bf8a-b60cfe1fa684\"\nname: switch-llm-provider\nversion: \"1.0.0\"")
+        let tmp = tempfile::tempdir().unwrap();
+        let path = fixture(
+            tmp.path(),
+            "switch-llm-provider",
+            "\n# Acción: switch-llm-provider\n\n# Acción: switch-llm-provider\n\nConmutación explícita y determinista del proveedo\n",
         );
-        fs::write(&path, stub).unwrap();
-        let v = validate_entity_file(&dir, &path, "action");
-        assert!(
-            v.iter().any(|x| {
-                matches!(
-                    x.code.as_str(),
-                    "DUPLICATE_H1" | "BODY_TRUNCATED" | "SECTIONS_INSUFFICIENT"
-                )
-            }),
-            "estado histórico testigo debe fallar: {:?}",
-            v
-        );
-        let _ = fs::remove_dir_all(&dir);
+        let v = validate_entity_file(tmp.path(), &path, "action");
+        let c = codes(&v);
+        assert!(c.contains(&"DUPLICATE_H1"), "{v:?}");
+        assert!(c.contains(&"SECTIONS_INSUFFICIENT"), "{v:?}");
+        assert!(c.contains(&"CONTRACT_SECTION_MISSING"), "{v:?}");
     }
 
     #[test]
     fn aut125_witness_switch_llm_provider_passes_after_remediation() {
         let repo = find_repo_root().expect("repo");
         let path = repo.join("SddIA/actions/switch-llm-provider.md");
-        let blockers: Vec<_> = validate_entity_file(&repo, &path, "action")
-            .into_iter()
-            .filter(|v| v.code != "UUID_NOT_V4")
-            .collect();
-        assert!(blockers.is_empty(), "{blockers:?}");
+        let v = validate_entity_file(&repo, &path, "action");
+        assert!(v.is_empty(), "{v:?}");
     }
 
     #[test]
-    fn conforming_action_execute_process_passes() {
-        let repo = find_repo_root().expect("repo");
-        let path = repo.join("SddIA/actions/execute-process.md");
-        let v = validate_entity_file(&repo, &path, "action");
-        let blockers: Vec<_> = v
-            .iter()
-            .filter(|x| x.code != "STUB_MARKER")
-            .collect();
-        if blockers.is_empty() {
-            return;
-        }
-        if v.iter().all(|x| x.code == "STUB_MARKER") {
-            return;
-        }
-        panic!("execute-process no debería fallar secciones: {:?}", v);
+    fn conforming_action_fixture_passes() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = fixture(
+            tmp.path(),
+            "demo-action",
+            "\n## Propósito\n\nHace algo concreto.\n\n## Orquestación\n\n- paso uno\n- paso dos\n",
+        );
+        let v = validate_entity_file(tmp.path(), &path, "action");
+        assert!(v.is_empty(), "{v:?}");
     }
 
     #[test]
     fn stub_fixture_empty_sections_rejected() {
-        let dir = std::env::temp_dir().join(format!("entity-no-anemia-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
-        fs::create_dir_all(&dir).unwrap();
-        let path = dir.join("stub-action.md");
+        let tmp = tempfile::tempdir().unwrap();
+        let path = fixture(tmp.path(), "stub-action", "\n# Acción: stub-action\n\nTODO\n");
+        let v = validate_entity_file(tmp.path(), &path, "action");
+        let c = codes(&v);
+        assert!(c.contains(&"STUB_MARKER"));
+        assert!(c.contains(&"SECTIONS_INSUFFICIENT"));
+    }
+
+    #[test]
+    fn purpose_kw_enforced_even_with_long_first_section() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = fixture(
+            tmp.path(),
+            "no-purpose",
+            "\n## Contexto\n\nUn bloque largo de texto que supera de sobra los cuarenta caracteres sin ser propósito.\n\n## Orquestación\n\nPasos.\n",
+        );
+        let v = validate_entity_file(tmp.path(), &path, "action");
+        assert!(
+            v.iter().any(|x| x.code == "CONTRACT_SECTION_MISSING" && x.detail.contains("propósito")),
+            "{v:?}"
+        );
+    }
+
+    #[test]
+    fn second_kw_enforced_with_two_sections() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = fixture(
+            tmp.path(),
+            "no-second",
+            "\n## Propósito\n\nHace algo.\n\n## Notas\n\nComentarios.\n",
+        );
+        let v = validate_entity_file(tmp.path(), &path, "action");
+        assert!(
+            v.iter().any(|x| x.code == "CONTRACT_SECTION_MISSING" && x.detail.contains("operativa")),
+            "{v:?}"
+        );
+    }
+
+    #[test]
+    fn second_kw_must_be_distinct_section_from_purpose() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = fixture(
+            tmp.path(),
+            "codex-x",
+            "\n## Dominio\n\nTexto.\n\n## Notas\n\nMás.\n",
+        );
+        let v = validate_entity_file(tmp.path(), &path, "codex");
+        assert!(
+            v.iter().any(|x| x.code == "CONTRACT_SECTION_MISSING" && x.detail.contains("operativa")),
+            "{v:?}"
+        );
+    }
+
+    #[test]
+    fn truncated_tail_ignores_lists_and_prose_without_period() {
+        assert!(!truncated_tail("## A\n\n- uno\n- dos sin punto\n"));
+        assert!(!truncated_tail("## A\n\nProsa válida sin punto final\n"));
+        assert!(!truncated_tail("## A\n\n1. paso numerado sin punto"));
+        assert!(!truncated_tail("## A\n\n| a | b |"));
+    }
+
+    #[test]
+    fn truncated_tail_detects_mechanical_cuts() {
+        assert!(truncated_tail("## A\n\nConmutación explícita y determinista del proveedo"));
+        assert!(truncated_tail("## A\n\n```rust\nfn main() {}\n"));
+        assert!(!truncated_tail("## A\n\nFrase completa."));
+    }
+
+    #[test]
+    fn split_frontmatter_requires_leading_delimiter() {
+        assert!(split_frontmatter("texto\n---\nuuid: x\n---\ncuerpo").is_none());
+        assert!(split_frontmatter("---\nuuid: x\nsin cierre\n").is_none());
+        let (fm, body) = split_frontmatter("---\nuuid: x\n---\n\n## A\n\nuno --- dos\n").unwrap();
+        assert_eq!(fm, "uuid: x\n");
+        assert!(body.contains("uno --- dos"));
+        assert!(split_frontmatter("\u{feff}---\na: 1\n---\nb").is_some());
+    }
+
+    #[test]
+    fn frontmatter_yaml_error_is_reported() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("bad-yaml.md");
+        fs::write(&path, "---\nuuid: [sin cerrar\n---\n\n## Propósito\n\nX.\n\n## Orquestación\n\nY.\n").unwrap();
+        let v = validate_entity_file(tmp.path(), &path, "action");
+        assert!(codes(&v).contains(&"FRONTMATTER_YAML_INVALID"), "{v:?}");
+    }
+
+    #[test]
+    fn missing_leading_delimiter_is_no_frontmatter() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("late-fm.md");
+        fs::write(&path, "# Título\n---\nuuid: x\n---\n").unwrap();
+        let v = validate_entity_file(tmp.path(), &path, "action");
+        assert_eq!(codes(&v), vec!["NO_FRONTMATTER"]);
+    }
+
+    fn dirs_fixture() -> Vec<(&'static str, String)> {
+        genome_entity_dirs(&serde_json::json!({
+            "directories": {
+                "actions": "SddIA/actions",
+                "events": "SddIA/events",
+                "library_codexes": "SddIA/library/codexes/",
+                "process": "SddIA/process",
+                "process_domain_roots": ["SddIA/library/codexes/codex-a/process"],
+                "events_domain_roots": ["SddIA/library/codexes/codex-a/events"]
+            }
+        }))
+    }
+
+    #[test]
+    fn classify_prefers_rank_over_config_order() {
+        let dirs = dirs_fixture();
+        assert_eq!(
+            classify_entity_path("SddIA/library/codexes/codex-a/process/p.md", &dirs),
+            Some("process")
+        );
+        assert_eq!(
+            classify_entity_path("SddIA/library/codexes/codex-a/events/e.md", &dirs),
+            Some("event")
+        );
+        assert_eq!(classify_entity_path("SddIA/library/codexes/codex-a.md", &dirs), Some("codex"));
+    }
+
+    #[test]
+    fn classify_respects_directory_boundary() {
+        let dirs = dirs_fixture();
+        assert_eq!(classify_entity_path("SddIA/actionsX/foo.md", &dirs), None);
+        assert_eq!(classify_entity_path("SddIA/actions/foo.md", &dirs), Some("action"));
+    }
+
+    fn run_git(dir: &Path, args: &[&str]) {
+        let out = std::process::Command::new("git")
+            .args(args)
+            .current_dir(dir)
+            .output()
+            .expect("git");
+        assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+    }
+
+    fn git_fixture_repo() -> tempfile::TempDir {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+        fs::create_dir_all(root.join("SddIA/core")).unwrap();
+        fs::create_dir_all(root.join("SddIA/actions")).unwrap();
+        fs::create_dir_all(root.join("SddIA/actionsX")).unwrap();
+        fs::create_dir_all(root.join("SddIA/library/codexes/codex-a/process")).unwrap();
         fs::write(
-            &path,
-            "---\nuuid: \"11111111-1111-4111-8111-111111111111\"\nname: stub-action\nversion: \"1.0.0\"\ncontract: \"actions-contract v1.2.0\"\ncontext: ecosystem-evolution\ncapabilities:\n  - x\n---\n\n# Acción: stub-action\n\nTODO\n",
+            root.join("SddIA/core/cumulo.paths.json"),
+            serde_json::json!({
+                "directories": {
+                    "actions": "SddIA/actions",
+                    "library_codexes": "SddIA/library/codexes/",
+                    "process_domain_roots": ["SddIA/library/codexes/codex-a/process"]
+                }
+            })
+            .to_string(),
         )
         .unwrap();
-        let v = validate_entity_file(&dir, &path, "action");
-        assert!(v.iter().any(|x| x.code == "STUB_MARKER"));
-        assert!(v.iter().any(|x| x.code == "SECTIONS_INSUFFICIENT"));
-        let _ = fs::remove_dir_all(&dir);
+        run_git(root, &["init", "-q", "-b", "main"]);
+        run_git(root, &["config", "user.email", "t@example.invalid"]);
+        run_git(root, &["config", "user.name", "t"]);
+        run_git(root, &["add", "."]);
+        run_git(root, &["commit", "-q", "--allow-empty", "-m", "base"]);
+        tmp
+    }
+
+    #[test]
+    fn scan_changed_uses_merge_base_and_rank() {
+        let tmp = git_fixture_repo();
+        let root = tmp.path();
+        run_git(root, &["checkout", "-q", "-b", "feature"]);
+        fixture(&root.join("SddIA/library/codexes/codex-a/process"), "proc-a", "\n## Notas\n\nX.\n");
+        fixture(&root.join("SddIA/actionsX"), "outside", "\nTODO\n");
+        run_git(root, &["add", "."]);
+        run_git(root, &["commit", "-q", "-m", "feature"]);
+        run_git(root, &["checkout", "-q", "main"]);
+        fixture(&root.join("SddIA/actions"), "main-only", "\nTODO\n");
+        run_git(root, &["add", "."]);
+        run_git(root, &["commit", "-q", "-m", "main advances"]);
+        run_git(root, &["checkout", "-q", "feature"]);
+
+        let rep = scan_changed(root, "main").unwrap();
+        assert_eq!(rep.scanned, 1, "{rep:?}");
+        assert!(rep.violations.iter().all(|v| v.family == "process"), "{rep:?}");
+        assert!(rep.violations.iter().all(|v| !v.path.contains("main-only")));
+    }
+
+    #[test]
+    fn scan_changed_skips_deleted_files() {
+        let tmp = git_fixture_repo();
+        let root = tmp.path();
+        fixture(&root.join("SddIA/actions"), "doomed", "\nTODO\n");
+        run_git(root, &["add", "."]);
+        run_git(root, &["commit", "-q", "-m", "add doomed"]);
+        run_git(root, &["checkout", "-q", "-b", "feature"]);
+        run_git(root, &["rm", "-q", "SddIA/actions/doomed.md"]);
+        run_git(root, &["commit", "-q", "-m", "rm"]);
+        let rep = scan_changed(root, "main").unwrap();
+        assert_eq!(rep.scanned, 0);
+        assert!(rep.ok);
+    }
+
+    #[test]
+    fn scan_changed_rejects_unknown_base() {
+        let tmp = git_fixture_repo();
+        let err = scan_changed(tmp.path(), "origin/no-existe").unwrap_err();
+        assert!(err.contains("no resoluble"), "{err}");
+    }
+
+    #[test]
+    fn default_base_ref_reads_instance_manifest() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert_eq!(default_base_ref(tmp.path()), "origin/main");
+        fs::create_dir_all(tmp.path().join(".SddIA")).unwrap();
+        fs::write(tmp.path().join(".SddIA/project.md"), "---\ndefault_branch: trunk\n---\n").unwrap();
+        assert_eq!(default_base_ref(tmp.path()), "origin/trunk");
     }
 }

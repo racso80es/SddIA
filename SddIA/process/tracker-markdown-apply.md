@@ -4,7 +4,7 @@ context:
 - filesystem-ops
 - source-control
 contract: process-contract v1.4.0
-hash_signature: "sha256:80125c4bf6325b71178206e9103334913a9c754f11f4b63d690245700adf0b41"
+hash_signature: sha256:80125c4bf6325b71178206e9103334913a9c754f11f4b63d690245700adf0b41
 inputs:
 - event_uri: Ruta relativa al JSON ECST Tracker_Issue_Changed en pending
 minteo_maximo: null
@@ -27,11 +27,3 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # tracker-markdown-apply
 
 Suscriptor de `Tracker_Issue_Changed`. Handler nativo (sin LLM). La réplica al sumidero la hace la implementación de `tracker:lifecycle`. Fail-soft con `Tracker_Sync_Failed` si divergencia.
-
-## Propósito
-
-Suscriptor de `Tracker_Issue_Changed`. Handler nativo (sin LLM). La réplica al sumidero la hace la implementación de `tracker:lifecycle`. Fail-soft con `Tracker_Sync_Failed` si divergencia.
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

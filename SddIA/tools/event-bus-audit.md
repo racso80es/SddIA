@@ -15,7 +15,7 @@ outputs:
   - "success": "boolean"
   - "exitCode": "integer"
   - "error": "string; diagnóstico si aplica"
-hash_signature: "sha256:73a5c08b382adbf003c2612cc80e17694b031a05a6864d36f705ef88b02e8084"
+hash_signature: "sha256:aaac9d073c2e3c5a39a561f322b8645fade507e790ac9226ea98ee5c3a34aa83"
 implementation_path_ref: "SddIA/tools/event-bus-audit"
 ---
 
@@ -30,11 +30,3 @@ Emisión `Kaizen_Alert_Required`: `stamp_published_event` + `record_ecst` cuando
 Cubre además el cruce catálogo `SddIA/events/{family}/` ↔ registros Cúmulo (`EMPTY_SUBSCRIBERS`, `FAMILY_MISMATCH`, `ORPHAN_REGISTRY_KEY`, `PURGE_BLACKHOLE`). Umbral orchestration/blackhole → `Kaizen_Alert_Required` sin fallar el audit (`success` se mantiene).
 
 Proveedor canónico de capacidad `qa:probe` en bindings (PBI-043 H9).
-
-## Propósito
-
-Auditoría empírica del bus EDA: escaneo .events, validación ECST, informe y emisión `Kaizen_Alert_Required` **solo** si `needs_kaizen` es accionable.
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

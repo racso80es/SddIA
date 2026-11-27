@@ -2,7 +2,7 @@
 context:
 - quality-assurance
 contract: process-contract v1.4.0
-hash_signature: "sha256:2450e36cabfe73ebd61ba86f8b7971da9e1d921d212a08eb6d822fd06568ac4b"
+hash_signature: sha256:2450e36cabfe73ebd61ba86f8b7971da9e1d921d212a08eb6d822fd06568ac4b
 inputs: []
 minteo_maximo: null
 name: workspace-smoke
@@ -25,11 +25,3 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # workspace-smoke
 
 Proceso mínimo de laboratorio para **AC2.1** (Fase 2): verifica instanciación de workspace dinámico sin depender de rutas `docs/features/{slug}`.
-
-## Propósito
-
-Proceso mínimo de laboratorio para **AC2.1** (Fase 2): verifica instanciación de workspace dinámico sin depender de rutas `docs/features/{slug}`.
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

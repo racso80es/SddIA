@@ -1,5 +1,5 @@
 ---
-uuid: "13c61cbc-45d6-46bb-9f6b-3d1a9a1298d0"
+uuid: "9c3d4e5f-6a7b-4c8d-0e1f-2a3b4c5d6e7f"
 name: "domain-entity-deprecated"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
@@ -9,7 +9,7 @@ context: "quality-assurance"
 capabilities:
   - "domain_entity_deprecated"
   - "self_healing_death"
-hash_signature: "sha256:048c28ea34d55de71c8d3404003e198e499f6f1e9ce0ca67de12180c3d656bc1"
+hash_signature: "sha256:879c5ff4604412f4fa266004bb79a50a946a664772059715250e5f9cfac20c9d"
 ---
 
 # Event: Domain_Entity_Deprecated
@@ -41,7 +41,3 @@ Muerte definitiva de entidad tras superar `max_recovery_attempts`.
 ## Suscripciones
 
 Cerbero bloqueo permanente.
-
-## Propósito (complemento)
-
-Muerte definitiva de entidad tras superar `max_recovery_attempts`.

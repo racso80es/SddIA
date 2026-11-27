@@ -1,5 +1,5 @@
 ---
-uuid: "50917b69-aeaa-4f1b-992e-db5847cba07a"
+uuid: "b3a4c5d6-7e8f-9a0b-1c2d-3e4f5a6b7c8d"
 name: "tekton"
 version: "1.2.0"
 contract: "agents-contract v1.1.0"

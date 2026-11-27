@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:6a0c3601b4db08b7c218035c101046ca8530d1e204c2d440b4b77cd38d357cf5"
+hash_signature: sha256:6a0c3601b4db08b7c218035c101046ca8530d1e204c2d440b4b77cd38d357cf5
 inputs:
 - since: RFC3339 inclusivo
 - until: RFC3339 exclusivo
@@ -28,11 +28,3 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # email-noise-digest
 
 Digest batch determinista de ruido Triaje-C desde proofs email-triaged. Cero LLM. Cero IMAP.
-
-## Propósito
-
-Digest batch determinista de ruido Triaje-C desde proofs email-triaged. Cero LLM. Cero IMAP.
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

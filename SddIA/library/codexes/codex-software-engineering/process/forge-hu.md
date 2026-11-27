@@ -1,7 +1,7 @@
 ---
 context: knowledge-management,filesystem-ops,tracker-operations
 contract: process-contract v1.4.0
-hash_signature: "sha256:c4c3ad4b344a52847b0f6c06096951962fda1a0c49fd3d2e40add65aad511f07"
+hash_signature: sha256:c4c3ad4b344a52847b0f6c06096951962fda1a0c49fd3d2e40add65aad511f07
 name: forge-hu
 phases:
 - intent: Validar raw_idea y destilar titulo.
@@ -21,11 +21,3 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # forge-hu
 
 Alta de HU raíz en tracker (labels hu, sin parent_ref). Cierra hueco AUT-19 slice 2 / AUT-50.
-
-## Propósito
-
-Alta de HU raíz en tracker (labels hu, sin parent_ref). Cierra hueco AUT-19 slice 2 / AUT-50.
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

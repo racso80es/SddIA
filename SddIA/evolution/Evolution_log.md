@@ -9,7 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
-| `a8f3c2e1-9d4b-4f7a-b6e5-1c2d3e4f5a6b` | 2026-11-27 | AUT-125: gate anti-anemia entidades dominio, forja yaml-only y remediación genoma. | CANONICO | `SddIA/evolution/a8f3c2e1-9d4b-4f7a-b6e5-1c2d3e4f5a6b.md` |
+| `a8f3c2e1-9d4b-4f7a-b6e5-1c2d3e4f5a6b` | 2026-11-27 | AUT-125: gate anti-anemia endurecido (ratchet --if-touched), forjas con preservación de frontmatter y rollback; remediación cosmética revertida tras auditoría REJECT. | CANONICO | `SddIA/evolution/a8f3c2e1-9d4b-4f7a-b6e5-1c2d3e4f5a6b.md` |
 | `6d2f31c6-f200-47ca-8b38-f2391fb67e28` | 2026-11-26 | AUT-126: codec título/cuerpo tracker file/linear sin H1 duplicado | CANONICO | `SddIA/evolution/6d2f31c6-f200-47ca-8b38-f2391fb67e28.md` |
 | `7cddbb7d-caa0-435d-b181-90c2d19170a3` | 2026-11-26 | AUT-120: carga dotenv segura, gate QA y pre-push con ciclo Linear abierto | CANONICO | `SddIA/evolution/7cddbb7d-caa0-435d-b181-90c2d19170a3.md` |
 | `d122a000-2026-4123-8122-000000000122` | 2026-11-23 | AUT-122: Inyección de Dependencias de proveedores LLM (agent:runtime, AgentRuntimePort, AgentRuntimeDiFactory perezosa), taxonomía cerrada thinking_profile en agents-contract v1.3.0 y 7 agentes Core, configuración local no versionada .SddIA/llm-runtime.local.json con action:switch-llm-provider sin auto-failover y trazabilidad en phase_reports.json y llm_interaction_audit.rs. | CANONICO | `SddIA/evolution/d122a000-2026-4123-8122-000000000122.md` |

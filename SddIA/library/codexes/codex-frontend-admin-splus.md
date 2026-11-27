@@ -17,7 +17,6 @@ composition:
     path: "../norms/nextjs-hydration-client-state.md"
   - norm: "c93387f0-d4c8-41ae-8d1a-12f2239d2710"
     path: "../norms/openapi-contract-rest-admin-frontend.md"
-hash_signature: "sha256:aa18e9dab5d79eb2b66f02e78d452a52a251a2ca64a121cb907b9f472cb91d04"
 ---
 
 ## Estrategia de Dominio
@@ -31,7 +30,3 @@ Gestión de estado pesada y validación de contratos administrativos con Next.js
 3. **`pr-acceptance-protocol`**: bloquea merge y `finalize-process` si fallan checks obligatorios.
 4. **`features-documentation-pattern`**: SSOT de artefactos de tarea; sin JSON duplicado.
 5. **`patterns-in-planning-implementation-execution`**: desempate de diseño por `pattern_id` referenciado en plan/IMPL/execution.
-
-## Propósito (complemento)
-
-Entidad `codex-frontend-admin-splus` del Core SddIA.

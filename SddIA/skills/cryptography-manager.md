@@ -1,5 +1,5 @@
 ---
-uuid: "73d41efc-abe4-4aa9-91fa-19e14d2e1728"
+uuid: "a1f2e3d4-c5b6-4789-a012-3456789abc0"
 name: "cryptography-manager"
 version: "1.0.0"
 contract: "skills-contract v1.1.0"
@@ -8,7 +8,7 @@ capabilities:
   - "sha256-generation"
   - "hash-validation"
   - "uuid-generation"
-hash_signature: "sha256:678bdfc4ce4e5934a2c8c98d8b7cbcf4d9e75a0412f73b15420611c7075dfb74"
+hash_signature: "sha256:4d514fe72a5d3ac15ad193a162cd84def3b8db1bccf9ca1190dd97a6e920180c"
 inputs:
   - "operation": "Enum: [GENERATE_SHA256, VALIDATE_HASH, GENERATE_UUID]"
   - "target_type": "Enum: [STRING, FILE_PATH]; omitido o ignorado cuando operation es GENERATE_UUID"

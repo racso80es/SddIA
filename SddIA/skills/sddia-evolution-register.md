@@ -7,7 +7,7 @@ context: "ecosystem-evolution"
 capabilities:
   - "evolution-verdict"
   - "evolution-record-compute"
-hash_signature: "sha256:9e882ac24e8cd04d2d749d0ab6fba014a7feeefbf82ab3b4d39f69cd44c82d4e"
+hash_signature: "sha256:ace41f8c47670326616113de0055c27d7859c1537cd7935a770324d16dbf44be"
 inputs:
   - "operation": "verdict | alta | modificacion | baja | rehash"
   - "diff": "object inyectado por CLI nativo (paths+status); obligatorio en verdict. La cápsula no calcula Git."
@@ -42,11 +42,3 @@ Ejemplo mínimo CLI (`sddia-qa`):
 ```bash
 sddia-qa evolution-register --json --dry-run --request-file request.json
 ```
-
-## Propósito
-
-Cápsula **WASI** (`wasm32-wasip1`) de dominio evolution.
-
-## Operación
-
-Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.
