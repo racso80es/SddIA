@@ -26,8 +26,8 @@ git_changes:
 - docs/fixes/aut-134-ppr-handoff-qa-worktree/
 execution_id: 71b46eba-9aea-4564-b0c9-602fe70e993d
 validated_base_sha: ef55dc66d331df11d4c0d6ebf12e2fca90eddaec
-validated_head_sha: 2c4cd929e7ac043f106da9688c9785069591f8e7
-validated_tree_sha: 5e7f06dd177b080cebc3370890564b29e46495bf
+validated_head_sha: f258df88e3b2676f3ba4ccc87495fcc48f9b2f78
+validated_tree_sha: 0bf3eb77b53f2f1e31b15072a8597340e6b9a5c3
 diff_digest: sha256:ebda1c3cc6bc80eb51525bc7134435f378880a82e11a6a693cd4ed8d110c8089
 ---
 
