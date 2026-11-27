@@ -17,7 +17,10 @@ tracker_provider: linear
 tracker_ref: AUT-125
 correlation_id: 415375d4-a786-49b1-ae94-e883ab4b097e
 pr_presented_event_id: 415375d4-a786-49b1-ae94-e883ab4b097e
-audit_event_reference: 415375d4-a786-49b1-ae94-e883ab4b097e
+audit_event_reference: bb83a08c-9a2a-41e8-becf-50d6fcd5786b
+pr_audited_event_id: d2f96dc4-32e8-498f-8bed-4d10d24d050b
+pr_audited_event_uri: eda://domain/d2f96dc4-32e8-498f-8bed-4d10d24d050b
+pr_audited_resolution: PASS
 pr_url: https://github.com/racso80es/SddIA/pull/480
 workspace_path_injected: /home/racso/Proyectos/SddIA/.SddIA/workspaces/pull-request-review/982404c8-5fc6-49c1-94ac-4a66ee48dc56/
 workspace_materialized: absent
@@ -36,7 +39,7 @@ git_manager_invoked: false
 git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge session+machine native_state; git_changes = path-assert FS (sin inventar gitStdout)
 git_evidence_source: evidence-bridge-session-native_state+machine-native_state+path-assert-fs
 formal_execute_process: true
-formal_evidence_detail: "session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff _agent_handoff.md native_state @ 2026-11-27T07:22:49Z TECH/GIT APTO notes=idempotent-hit git_manager_invoked=true; prior prosthesis_subprocess @ 2026-11-27T07:20:52Z formal_evidence_detail=verify-process-integrity: OK; workspace inject 982404c8… vacío"
+formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=idempotent-hit; machine handoff _agent_handoff.md native_state @ 2026-11-27T07:22:49Z TECH/GIT APTO notes=idempotent-hit git_manager_invoked=true; prior prosthesis_subprocess @ 2026-11-27T07:20:52Z formal_evidence_detail=verify-process-integrity: OK; workspace inject 982404c8… vacío'
 handoff_machine_file: present
 handoff_evidence_block_pre: present
 evidence_bridge_notes: R1/R2 copia Runtime evidence TECH/GIT APTO; Shell git-manager Rejected esta sesión Argos Veredicto y bloqueo
@@ -149,8 +152,13 @@ situational_notes:
 - head_commit_sha_fs = lectura FS actual; validated_*/diff_digest no inventados
 head_commit_sha_fs: d66faccfb9f600c181273c41d78f8baf448f5238
 base_commit_sha_fs: fd7ef31b51e795d1aaea2aba53b7cae693a019db
-execution_id: "982404c8-5fc6-49c1-94ac-4a66ee48dc56"
+execution_id: 982404c8-5fc6-49c1-94ac-4a66ee48dc56
+validated_base_sha: fd7ef31b51e795d1aaea2aba53b7cae693a019db
+validated_head_sha: a062b1ede966c64157648db71a399b4b85c62f8f
+validated_tree_sha: d1817108472fdca87c48f034a2f856049865ff3c
+diff_digest: sha256:53c339dfcb1d06ba87d1a6b3b1b05fd9814ecc8411c33251f78735b7413dacb6
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
