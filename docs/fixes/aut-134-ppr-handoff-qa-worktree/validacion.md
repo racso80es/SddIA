@@ -118,9 +118,9 @@ situational_notes:
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - Sellos validated_*/diff_digest retenidos del frontmatter previo (DCC); no inventados esta sesión Argos
 validated_base_sha: ef55dc66d331df11d4c0d6ebf12e2fca90eddaec
-validated_head_sha: 11a852db4986bacdeef365fa9585214a75b7baa4
-validated_tree_sha: 7469b0bf7fc32416adcda374ed07f412145b0eb8
-diff_digest: sha256:ebda1c3cc6bc80eb51525bc7134435f378880a82e11a6a693cd4ed8d110c8089
+validated_head_sha: ce39876d470ca351d82832c77c95d6cbacbac074
+validated_tree_sha: 32110fa08418b060e6f0465b98662e20cf20d074
+diff_digest: sha256:fde5ad55818ea735b1a9fe23438b7b2bcb87de592d8010fc63ce8d9e44115a7b
 head_commit_sha_fs: 2c4cd929e7ac043f106da9688c9785069591f8e7
 execution_id: 71b46eba-9aea-4564-b0c9-602fe70e993d
 ---
