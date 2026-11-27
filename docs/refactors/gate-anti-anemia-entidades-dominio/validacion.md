@@ -107,6 +107,16 @@ HEAD `e040895a`. Este bloque no altera `global`: el veredicto vigente es `REJECT
 | `sddia-qa gate-evolution --json --range --require-synced-base` | `EVOL_CUMULO` en local (ref `origin/main` con mtime antiguo); con `--sync-base`: `EVOL_OK` |
 | `sddia-qa gate-evolution --json --all` | `EVOL_OK` |
 
+## Desbloqueo contractual ratchet (no es veredicto)
+
+Laudo Racso 2026-11-27. `refine-item` `c3a91e04-7b2d-4f58-9a16-8e0d5c4b7a21` selló AUT-125 en Linear (`status: refined`, `eda://domain/b7529cd9-ae9c-4351-91a3-55e5b08ad7a6`).
+
+AC-1 vigente: `gate-entity-no-anemia --if-touched --base origin/main` con `violation_count: 0` en CI y PPR. Línea base heredada fijada en **322**, sin incremento en este cierre. La bajada a 0 global es AUT-133. AUT-131 (forjas) y AUT-132 (gate) siguen como hijos de la auditoría.
+
+El oráculo anterior (`gate-entity-no-anemia --json` → 0 global) queda retirado de AUT-125. `checks.AC-1: NO_APTO` de este expediente mide ese oráculo retirado y el `REJECT` de `3899742f…`; no se reescribe aquí. `global` sigue `NO_APTO` hasta la pasada de Argos sobre el HEAD de este contrato.
+
+Atestación `.SddIA/proofs/qa-attestations/gate-anti-anemia-entidades-dominio.json` del run `b06a8f82` (`verdict: aprobado` con fases `simulated`) eliminada. No habilita `accept-pr`.
+
 ## approval_status
 
 ```text

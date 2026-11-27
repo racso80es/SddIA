@@ -31,7 +31,7 @@ El primer ciclo (commits `983e8bb8`…`9d7b7172`) declaró `violation_count=0` t
 
 | AC | Estado | Nota |
 |----|--------|------|
-| AC-1 gate global `violation_count: 0` | **abierto** | Inalcanzable sin remediación real de 142 entidades (AUT-133). No se recorta sin `refine-item` y laudo humano. |
+| AC-1 ratchet `--if-touched` = 0; línea base 322 sin incremento | **reformulado** | `refine-item` `c3a91e04-7b2d-4f58-9a16-8e0d5c4b7a21`, evento `b7529cd9-ae9c-4351-91a3-55e5b08ad7a6`. El oráculo global a 0 pasa a AUT-133. AUT-131 y AUT-132 permanecen como hijos de la auditoría. |
 | AC-2 tests `entity_no_anemia` | cumplido localmente | ver `validacion.md` § Evidencia local |
 | AC-3 peaje DCC/PPR `--if-touched` | cumplido localmente | in-process, `base_ref` configurable |
 | AC-4 forja create/update acción | cumplido localmente | create exige secciones; update valida con rollback |

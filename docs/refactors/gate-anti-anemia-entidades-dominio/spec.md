@@ -13,12 +13,12 @@ tracker_ref: AUT-125
 
 | ID | Oráculo | Comando |
 | --- | --- | --- |
-| AC-1 | Gate global dominio .md | `sddia-qa gate-entity-no-anemia --json` → `violation_count: 0` |
+| AC-1 | Ratchet anti-anemia | CI y PPR: `sddia-qa gate-entity-no-anemia --if-touched --base origin/main --json` → `violation_count: 0` en el delta. Línea base heredada fijada en **322** (`audit-inventory.json`); este cierre no admite incremento. El oráculo global a 0 queda fuera de AUT-125. |
 | AC-2 | Contrafactual testigo | `cargo test -p execute-process entity_no_anemia` |
 | AC-3 | Peaje DCC/PPR si toca genoma | `gate-entity-no-anemia --if-touched` en índices (phase_capsules + PPR) |
 | AC-4 | Forja create/update acción | `orchestration_logic` con ≥2 `##` + post-validación anti-anemia con rollback |
 
-AC-1 sigue abierto tras la auditoría `REJECT` (`3899742f…`): la única vía honesta es la remediación real de AUT-133; mientras tanto el CI aplica el gate en modo ratchet (`--if-touched`).
+AC-1 reformulado por laudo Racso (2026-11-27) vía `refine-item` `c3a91e04-7b2d-4f58-9a16-8e0d5c4b7a21` (`PBI_Refined` `eda://domain/b7529cd9-ae9c-4351-91a3-55e5b08ad7a6`). Sustituye el oráculo global `violation_count: 0`. La remediación de la línea base hasta 0 es **AUT-133**. **AUT-131** (forjas) y **AUT-132** (gate) son los otros hijos de la auditoría `REJECT` `3899742f…`.
 
 ## Validador `entity_no_anemia`
 
