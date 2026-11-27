@@ -36,7 +36,7 @@ git_manager_invoked: false
 git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected); sin stdout físico; R2 = copia Evidence Bridge native_state; git_changes = path-assert FS (sin inventar gitStdout)
 git_evidence_source: evidence-bridge-session-native_state+handoff-machine+path-assert-fs
 formal_execute_process: true
-formal_evidence_detail: 'session Runtime evidence source=native_state TECH/GIT APTO notes=handoff-formal-scan; idempotent-hit; machine handoff native_state @ 2026-11-27T17:42:10Z TECH/GIT APTO git_manager_invoked=true; workspace inject 35bad104… vacío'
+formal_evidence_detail: session Runtime evidence source=native_state TECH/GIT APTO notes=handoff-formal-scan; idempotent-hit; machine handoff native_state @ 2026-11-27T17:42:10Z TECH/GIT APTO git_manager_invoked=true; workspace inject 35bad104… vacío
 handoff_machine_file: present
 handoff_evidence_block_pre: present
 evidence_bridge_notes: R1/R2 copia Runtime evidence (session + machine native_state TECH/GIT APTO); Shell Rejected esta sesión Argos Triaje — sin stdout inventado
@@ -120,9 +120,9 @@ situational_notes:
 - pbi_archived false — provider linear; sin fichero nuevo pending/done/
 - Sellos validated_*/diff_digest retenidos del frontmatter previo (bug-fix Verificación); no inventados esta sesión Argos
 validated_base_sha: 3aaaa2668bfb040bf6cce37a9b145b7ca8e4dbcd
-validated_head_sha: 5922c5d2565c8394e082df85e43dc5e958b92fe2
-validated_tree_sha: 6870fc87753124c2abada03f89b536092ff1c050
-diff_digest: sha256:39cf02e6b2fe1645084bbf6e431f917dc6a66bf3afbc9c496d727a3dc7ae953f
+validated_head_sha: e3b3e015e12c2af43562bbfb16814d5fe9feef9a
+validated_tree_sha: b4cba41875b8627f75c0dd41242d7d8091fc28fc
+diff_digest: sha256:2b38a50049dcbfddb74ebd1a6848304941c0b2a6a374f67af793d224ce4d2481
 head_commit_sha_fs: 547c7e12f4e4bf05cfa893793f812337c741bd3a
 execution_id: 35bad104-f2d5-4581-9023-61fb49f5c9f9
 ---
