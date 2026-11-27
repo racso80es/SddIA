@@ -3,8 +3,8 @@
 use super::common::{
     append_row, apply_implementation_source_git_apply, apply_markdown_body_replacements,
     capability_name, dependencies_from_inputs,
-    format_dependencies_yaml, handoff_create, idempotent_forge_handoff, optional_str,
-    parse_frontmatter, patch_action_content_update, merge_daemon_capabilities,
+    format_dependencies_yaml, handoff_create, idempotent_forge_handoff, migrate_entity_uuid_record,
+    optional_str, parse_frontmatter, patch_action_content_update, merge_daemon_capabilities,
     patch_daemon_declaration,
     patch_artifact_body_replacements, patch_artifact_yaml_replacements,
     patch_hash_signature_refresh, patch_norm_content_update,
@@ -348,16 +348,40 @@ pub fn run_action_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
         )
         .iter()
         .any(|v| v.code == "UUID_NOT_V4");
-        let (patch, warnings) = with_file_rollback(&action_path, || {
+        let pre_existing_uuid_invalid = crate::engine::entity_no_anemia::validate_entity_file(
+            repo,
+            &action_path,
+            "action",
+        )
+        .iter()
+        .any(|v| v.code == "UUID_INVALID");
+        let migrate_target = optional_str(inputs, "entity_uuid_migrate");
+        let (patch, warnings, migration_meta) = with_file_rollback(&action_path, || {
             if let Some(replacements) = inputs.get("artifact_yaml_replacements") {
                 patch_artifact_yaml_replacements(&action_path, replacements)?;
             }
-            let patch = patch_action_content_update(&action_path, inputs)?;
-            // UUID_NOT_V4 heredado no bloquea: el uuid es inmutable y su migración vive en AUT-133.
+            let patch = patch_action_content_update(repo, &action_path, inputs)?;
+            let migration_meta = if let Some(new_uuid) = migrate_target.as_deref() {
+                Some(migrate_entity_uuid_record(
+                    repo,
+                    &repo.join("SddIA/actions/index.md"),
+                    &name,
+                    &action_path,
+                    &new_uuid,
+                )?)
+            } else {
+                None
+            };
+            // UUID legacy heredado: tolerancia solo si ya existía o si hay migración explícita.
             let (warnings, blockers): (Vec<_>, Vec<_>) =
                 crate::engine::entity_no_anemia::validate_entity_file(repo, &action_path, "action")
                     .into_iter()
-                    .partition(|v| v.code == "UUID_NOT_V4" && pre_existing_uuid_not_v4);
+                    .partition(|v| {
+                        (v.code == "UUID_NOT_V4" && pre_existing_uuid_not_v4)
+                            || (v.code == "UUID_INVALID" && pre_existing_uuid_invalid)
+                            || (migration_meta.is_some()
+                                && matches!(v.code.as_str(), "UUID_NOT_V4" | "UUID_INVALID"))
+                    });
             if !blockers.is_empty() {
                 return Err(format!(
                     "action update anti-anemia: {}",
@@ -381,15 +405,23 @@ pub fn run_action_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 description.as_deref(),
                 &patch.capabilities,
             )?;
-            Ok((patch, warnings))
+            Ok((patch, warnings, migration_meta))
         })?;
-        return Ok(json!({
-            "handoff_entity_uuid": patch.entity_uuid,
+        let handoff_uuid = migration_meta
+            .as_ref()
+            .and_then(|m| m.get("entity_uuid_new").and_then(|v| v.as_str()))
+            .unwrap_or(&patch.entity_uuid);
+        let mut out = json!({
+            "handoff_entity_uuid": handoff_uuid,
             "handoff_hash_signature_new": patch.new_hash,
             "handoff_hash_signature_old": patch.old_hash,
             "handoff_version": patch.new_version,
             "anemia_warnings": warnings,
-        }));
+        });
+        if let Some(m) = migration_meta {
+            out["entity_uuid_migration"] = m;
+        }
+        return Ok(out);
     }
 
     if let Some(skip) = idempotent_forge_handoff(&action_path, &lifecycle)? {

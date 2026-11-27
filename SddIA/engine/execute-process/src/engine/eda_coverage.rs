@@ -241,6 +241,22 @@ pub fn scan_orphans(repo: &Path) -> Result<Value, String> {
     }))
 }
 
+pub fn transfer_entity_coverage(repo: &Path, old_uuid: &str, new_uuid: &str) -> Result<(), String> {
+    if old_uuid == new_uuid {
+        return Ok(());
+    }
+    let mut data = load_coverage(repo)?;
+    let matrix = data
+        .as_object_mut()
+        .and_then(|o| o.get_mut("coverage_matrix"))
+        .and_then(|v| v.as_object_mut())
+        .ok_or("coverage_matrix invalid")?;
+    if let Some(entry) = matrix.remove(old_uuid) {
+        matrix.insert(new_uuid.to_string(), entry);
+    }
+    save_coverage(repo, &data)
+}
+
 pub fn remove_entity_coverage(repo: &Path, entity_uuid: &str) -> Result<(), String> {
     let mut data = load_coverage(repo)?;
     if let Some(matrix) = data
