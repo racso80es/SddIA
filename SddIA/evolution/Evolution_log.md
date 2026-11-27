@@ -9,7 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
-| `b2a7f91e-4c3d-5e6f-8a9b-0c1d2e3f4a5b` | 2026-11-27 | AUT-136: PPR promueve verdict y qa-attestation antes de handoff F7 tras Veredicto y bloqueo | CANONICO | `SddIA/evolution/b2a7f91e-4c3d-5e6f-8a9b-0c1d2e3f4a5b.md` |
+| `8cc2a86d-a2fc-49f0-b18d-dc4d92a54f4b` | 2026-11-27 | AUT-136: PPR promueve verdict y qa-attestation antes de handoff F7 tras Veredicto y bloqueo | CANONICO | `SddIA/evolution/8cc2a86d-a2fc-49f0-b18d-dc4d92a54f4b.md` |
 | `e563c318-7bc7-4940-ac8f-44262d3da19a` | 2026-11-27 | AUT-135: refine-item execution_report.phases alineado con data.status | CANONICO | `SddIA/evolution/e563c318-7bc7-4940-ac8f-44262d3da19a.md` |
 | `c4e8a901-2f3d-4b5a-9c6e-7d8e9f0a1b2c` | 2026-11-27 | AUT-134: PPR propaga author a accept-pr, qa-attestation pre-handoff, worktree persist_ref sin reconcile en auditoría. | CANONICO | `SddIA/evolution/c4e8a901-2f3d-4b5a-9c6e-7d8e9f0a1b2c.md` |
 | `f4d5b853-ebfe-4411-b86a-fc13f667fb7f` | 2026-11-27 | AUT-132: cierre peaje gate-entity-no-anemia — regresiones contractuales, scan_changed, CLI JSON, in-process (KA-GATE). | CANONICO | `SddIA/evolution/f4d5b853-ebfe-4411-b86a-fc13f667fb7f.md` |

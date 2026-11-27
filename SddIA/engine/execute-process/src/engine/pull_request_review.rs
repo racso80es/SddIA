@@ -66,7 +66,11 @@ fn ppr_prior_phases_clear(phase_reports: &[Value]) -> bool {
 }
 
 fn veredicto_phase_indicates_approval(entry: &Value) -> bool {
-    if entry.get("status").and_then(|v| v.as_str()) != Some("executed") {
+    let status = entry.get("status").and_then(|v| v.as_str()).unwrap_or("");
+    if status == "blocked" || status == "failed" {
+        return false;
+    }
+    if status != "executed" && status != "simulated" {
         return false;
     }
     if entry.get("argos_verdict").and_then(|v| v.as_str()) == Some("block") {
@@ -95,6 +99,13 @@ pub fn promote_ppr_verdict_after_veredicto(
         return false;
     }
     if truthy_flag(state, "documental_triage_blocked") {
+        return false;
+    }
+    let veredicto_status = veredicto_entry
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if veredicto_status == "blocked" || veredicto_status == "failed" {
         return false;
     }
     if !ppr_prior_phases_clear(phase_reports) {
@@ -716,6 +727,47 @@ mod tests {
             "phase_name": "Veredicto y bloqueo",
             "status": "executed",
             "message": "ok"
+        })];
+        let veredicto = reports[0].clone();
+        assert!(!promote_ppr_verdict_after_veredicto(
+            &repo, &mut state, &inputs, &reports, &veredicto
+        ));
+        assert!(state.get("verdict").is_none());
+        let _ = std::fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn promote_skips_when_documental_triage_blocked() {
+        let repo = std::env::temp_dir().join(format!("sddia-ppr-docblock-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&repo).unwrap();
+        let mut state = json!({ "documental_triage_blocked": true });
+        let inputs = json!({"pr_branch": "fix/x"});
+        let reports = vec![
+            json!({"phase_name": "Triaje documental", "status": "blocked"}),
+            json!({
+                "phase_name": "Veredicto y bloqueo",
+                "status": "executed",
+                "message": "barrier"
+            }),
+        ];
+        let veredicto = reports[1].clone();
+        assert!(!promote_ppr_verdict_after_veredicto(
+            &repo, &mut state, &inputs, &reports, &veredicto
+        ));
+        assert!(state.get("verdict").is_none());
+        let _ = std::fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn promote_skips_when_veredicto_status_blocked() {
+        let repo = std::env::temp_dir().join(format!("sddia-ppr-f5block-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&repo).unwrap();
+        let mut state = json!({});
+        let inputs = json!({"pr_branch": "fix/x"});
+        let reports = vec![json!({
+            "phase_name": "Veredicto y bloqueo",
+            "status": "blocked",
+            "message": "blocked"
         })];
         let veredicto = reports[0].clone();
         assert!(!promote_ppr_verdict_after_veredicto(

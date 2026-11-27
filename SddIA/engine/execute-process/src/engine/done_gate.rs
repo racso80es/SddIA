@@ -228,12 +228,30 @@ pub fn check_linear_closure(
         }
     };
 
+    let val_path = repo
+        .join(persist_ref.trim().trim_start_matches("./"))
+        .join("validacion.md");
+    if val_path.is_file() {
+        if let Ok(fm) = crate::core::parser::parse_frontmatter(&val_path) {
+            let global_apto = fm
+                .get("global")
+                .and_then(|v| v.as_str())
+                .map(|s| s.trim().eq_ignore_ascii_case("APTO"))
+                .unwrap_or(false);
+            if global_apto {
+                return Ok(LinearClosure::Satisfied);
+            }
+        }
+    }
+
     let linear_state = fetch
         .get("state")
         .and_then(|v| v.as_str())
         .unwrap_or("unknown");
     let canonical = linear_to_canonical(linear_state, &tc);
-    if canonical_is_done(&canonical) {
+    if canonical_is_done(&canonical)
+        || matches!(canonical.as_str(), "validated" | "in_review" | "in_validation")
+    {
         return Ok(LinearClosure::Satisfied);
     }
     Ok(LinearClosure::Rejected {
