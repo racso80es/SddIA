@@ -24,6 +24,61 @@ use uuid::Uuid;
 
 const PROCESS: &str = "refine-item";
 const PHASE_MAYEUTA: &str = "Refinamiento Mayeuta";
+const PHASE_PREP: &str = "Preparación";
+const PHASE_DOR: &str = "Validación DoR";
+const PHASE_SEAL: &str = "Sellado Argos";
+
+/// Progreso de Mayeuta al construir el informe de fases.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum MayeutaPhaseReport {
+    NotReached,
+    Skipped,
+    WithStatus(&'static str),
+}
+
+fn phase_entry(phase_name: &str, status: &str) -> Value {
+    json!({
+        "phase_name": phase_name,
+        "status": status,
+        "handler": PROCESS,
+    })
+}
+
+fn sellado_phase_entry() -> Value {
+    json!({
+        "phase_name": PHASE_SEAL,
+        "status": "executed",
+        "handler": PROCESS,
+        "seal_mode": "handler_deterministic",
+    })
+}
+
+/// Construye `execution_report.phases` coherente con `data.status` (AUT-135).
+pub(crate) fn phases_for_terminal(
+    envelope_status: &str,
+    mayeuta: MayeutaPhaseReport,
+    dor_status: Option<&str>,
+    seal_executed: bool,
+) -> Vec<Value> {
+    let mut phases = vec![phase_entry(PHASE_PREP, "executed")];
+    match mayeuta {
+        MayeutaPhaseReport::NotReached => {}
+        MayeutaPhaseReport::Skipped => {
+            phases.push(phase_entry(PHASE_MAYEUTA, "skipped"));
+        }
+        MayeutaPhaseReport::WithStatus(st) => {
+            phases.push(phase_entry(PHASE_MAYEUTA, st));
+        }
+    }
+    if let Some(dor) = dor_status {
+        phases.push(phase_entry(PHASE_DOR, dor));
+    }
+    if seal_executed {
+        phases.push(sellado_phase_entry());
+    }
+    let _ = envelope_status; // reservado para extensiones / trazabilidad
+    phases
+}
 
 fn agent_entry_detail(entry: &Value) -> &str {
     entry
@@ -308,6 +363,12 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                     &[],
                     None,
                     false,
+                    phases_for_terminal(
+                        "conflict",
+                        MayeutaPhaseReport::NotReached,
+                        None,
+                        false,
+                    ),
                 ));
             }
             RemoteTrackerRefResolution::Seal(tr) => tracker_ref = Some(tr),
@@ -341,6 +402,11 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
             .and_then(|v| v.as_str())
             .unwrap_or("failed");
         if status == "simulated" || status == "awaiting_agents" {
+            let mayeuta_st = if status == "simulated" {
+                "simulated"
+            } else {
+                "awaiting_agents"
+            };
             return Ok(envelope_status(
                 &item_ref,
                 &item_type,
@@ -351,6 +417,12 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                 &[],
                 None,
                 false,
+                phases_for_terminal(
+                    "awaiting_agents",
+                    MayeutaPhaseReport::WithStatus(mayeuta_st),
+                    None,
+                    false,
+                ),
             ));
         }
         if status == "blocked" || status == "failed" {
@@ -377,9 +449,21 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                 &[],
                 None,
                 false,
+                phases_for_terminal(
+                    "awaiting_agents",
+                    MayeutaPhaseReport::WithStatus("awaiting_agents"),
+                    None,
+                    false,
+                ),
             ));
         }
     }
+
+    let mayeuta_for_terminal = if skip_mayeuta {
+        MayeutaPhaseReport::Skipped
+    } else {
+        MayeutaPhaseReport::WithStatus("executed")
+    };
 
     if remote && !reentry {
         let fresh = fetch_issue(repo, inputs, &item_ref, &bound.slug)?;
@@ -398,6 +482,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                 &[],
                 None,
                 false,
+                phases_for_terminal("conflict", mayeuta_for_terminal, None, false),
             ));
         }
     }
@@ -495,6 +580,12 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
             &open_questions,
             None,
             false,
+            phases_for_terminal(
+                "needs_clarification",
+                mayeuta_for_terminal,
+                Some("needs_clarification"),
+                false,
+            ),
         ));
     }
 
@@ -609,6 +700,12 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         &[],
         event_path,
         refined_event_pending,
+        phases_for_terminal(
+            "refined",
+            mayeuta_for_terminal,
+            Some("executed"),
+            remote,
+        ),
     ))
 }
 
@@ -622,6 +719,7 @@ fn envelope_status(
     open_questions: &[String],
     event_path: Option<String>,
     refined_event_pending: bool,
+    phases: Vec<Value>,
 ) -> OrchestratorEnvelope {
     let mut data = json!({
         "item_ref": item_ref,
@@ -641,14 +739,89 @@ fn envelope_status(
         status_code: 0,
         data: Some(data),
         error: None,
-        execution_report: Some(json!({
-            "phases": [
-                {"phase_name": "Preparación", "status": "executed", "handler": PROCESS},
-                {"phase_name": PHASE_MAYEUTA, "status": "executed", "handler": PROCESS},
-                {"phase_name": "Validación DoR", "status": "executed", "handler": PROCESS},
-                {"phase_name": "Sellado Argos", "status": "executed", "handler": PROCESS},
-            ]
-        })),
+        execution_report: Some(json!({ "phases": phases })),
         exit_code: 0,
+    }
+}
+
+#[cfg(test)]
+mod envelope_phases_tests {
+    use super::*;
+
+    fn phase_names(phases: &[Value]) -> Vec<&str> {
+        phases
+            .iter()
+            .filter_map(|p| p.get("phase_name").and_then(|v| v.as_str()))
+            .collect()
+    }
+
+    fn phase_status<'a>(phases: &'a [Value], name: &str) -> Option<&'a str> {
+        phases
+            .iter()
+            .find(|p| p.get("phase_name") == Some(&json!(name)))
+            .and_then(|p| p.get("status").and_then(|v| v.as_str()))
+    }
+
+    #[test]
+    fn awaiting_agents_mayeuta_simulated_omits_dor_and_seal() {
+        let phases = phases_for_terminal(
+            "awaiting_agents",
+            MayeutaPhaseReport::WithStatus("simulated"),
+            None,
+            false,
+        );
+        assert_eq!(phase_names(&phases), vec![PHASE_PREP, PHASE_MAYEUTA]);
+        assert_eq!(phase_status(&phases, PHASE_MAYEUTA), Some("simulated"));
+        assert!(phase_status(&phases, PHASE_DOR).is_none());
+    }
+
+    #[test]
+    fn conflict_early_only_preparation() {
+        let phases = phases_for_terminal(
+            "conflict",
+            MayeutaPhaseReport::NotReached,
+            None,
+            false,
+        );
+        assert_eq!(phase_names(&phases), vec![PHASE_PREP]);
+    }
+
+    #[test]
+    fn needs_clarification_no_sellado() {
+        let phases = phases_for_terminal(
+            "needs_clarification",
+            MayeutaPhaseReport::WithStatus("executed"),
+            Some("needs_clarification"),
+            false,
+        );
+        assert_eq!(phase_status(&phases, PHASE_DOR), Some("needs_clarification"));
+        assert!(phase_status(&phases, PHASE_SEAL).is_none());
+    }
+
+    #[test]
+    fn refined_remote_includes_handler_deterministic_seal() {
+        let phases = phases_for_terminal(
+            "refined",
+            MayeutaPhaseReport::WithStatus("executed"),
+            Some("executed"),
+            true,
+        );
+        let seal = phases
+            .iter()
+            .find(|p| p.get("phase_name") == Some(&json!(PHASE_SEAL)))
+            .expect("sellado");
+        assert_eq!(seal.get("seal_mode").and_then(|v| v.as_str()), Some("handler_deterministic"));
+    }
+
+    #[test]
+    fn refined_local_omits_sellado() {
+        let phases = phases_for_terminal(
+            "refined",
+            MayeutaPhaseReport::Skipped,
+            Some("executed"),
+            false,
+        );
+        assert_eq!(phase_status(&phases, PHASE_MAYEUTA), Some("skipped"));
+        assert!(phase_status(&phases, PHASE_SEAL).is_none());
     }
 }
