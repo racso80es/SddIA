@@ -1,7 +1,7 @@
 ---
 feature_name: aut-132-gate-anti-anemia-reglas-contractuales
-created: "2026-11-27"
-updated: "2026-11-27T09:00:00Z"
+created: 2026-11-27
+updated: 2026-11-27T09:00:00Z
 process: refactorization
 branch: refactor/aut-132-gate-anti-anemia-reglas-contractuales
 branch_name: refactor/aut-132-gate-anti-anemia-reglas-contractuales
@@ -25,7 +25,12 @@ checks:
   branch: APTO
   F3_TECH_GATE: APTO
   DOC_EVOLUTION: APTO
+validated_base_sha: a6ada07d2f282964eede3e634781b89d220a5fd7
+validated_head_sha: 0813debb
+validated_tree_sha: 31e9d413ee1268d10cd13fb0f9d52593a49d9ebb
+diff_digest: sha256:a055d6787e802534cea4f8e9e1675a0ff48ae1ef89a833d68f092f0bf3640d00
 ---
+
 # Validación — AUT-132
 
 ## Resumen
