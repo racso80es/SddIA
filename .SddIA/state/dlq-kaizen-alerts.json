@@ -29,6 +29,13 @@
       "first_event_id": "56c97b49-c459-45c5-bcea-4883dbb3bc75",
       "subscriber_id": "argos.pull-request-review"
     },
+    "729fa77db53df686c9d4b21685cdd579a11d4fdd435fe0ac89a050f36017db99": {
+      "alerted_at": "2026-11-27T07:48:30.157104580+00:00",
+      "error_trace": "fase \"Triaje documental\" failed",
+      "event_type": "Local_QA_Requested",
+      "first_event_id": "029311f3-7eff-4512-b4a0-234948a0337a",
+      "subscriber_id": "argos.pull-request-review"
+    },
     "8c84634d2eae6f8244c921feaf73abb535f3dbab02e34207ea5d2ed0d76680e1": {
       "alerted_at": "2026-11-26T17:43:48.851519164+00:00",
       "error_trace": "TRACKER_UNCONFIGURED: sin tracker.provider resuelto; no se escribe backlog local",
