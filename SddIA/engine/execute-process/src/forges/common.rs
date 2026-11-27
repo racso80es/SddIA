@@ -1948,7 +1948,8 @@ phases:
 }
 
 #[cfg(test)]
-mod aut125_forge_integrity_tests {
+/// Regresiones AUT-131 (KA-FORGE-1, KA-FORGE-2, KA-FORGE-6 parcial).
+mod aut131_forge_integrity_tests {
     use super::*;
 
     const ACTION: &str = "---\nuuid: \"11111111-1111-4111-8111-111111111111\"\nname: \"demo\"\nversion: \"1.0.0\"\ncontract: \"actions-contract v1.3.0\"\ncontext: \"filesystem-ops\"\ncapabilities:\n  - \"demo_cap\"\ninputs:\n  - \"path\": \"Ruta objetivo\"\noutputs:\n  - \"removed\": \"Entradas borradas\"\ngate: \"^/tmp/cursor-sandbox-cache(/.*)?$\"\nhash_signature: \"sha256:00\"\n---\n\n## Propósito\n\nPurga demo.\n\n## Límites\n\nSolo /tmp.\n";
