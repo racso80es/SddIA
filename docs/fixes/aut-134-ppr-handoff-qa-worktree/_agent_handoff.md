@@ -28,3 +28,16 @@ execution_id: "b6b262ed-c04e-429e-b23e-cb908eb3d70d"
 - Sin `plan.md` (no hay blueprint de proceso nuevo).
 - No toqué `_agent_handoff.md`.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-27T10:21:09Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```

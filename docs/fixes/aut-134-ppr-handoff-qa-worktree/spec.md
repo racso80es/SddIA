@@ -1,4 +1,5 @@
 ---
+
 feature_name: aut-134-ppr-handoff-qa-worktree
 created: "2026-11-27"
 process: bug-fix
@@ -10,9 +11,8 @@ document_id: PBI-62095c41
 uuid: ff0bfa1e-9de5-4841-940b-0f7496144737
 tracker_ref: AUT-134
 historia_ref: AUT-131
-execution_id: "b6b262ed-c04e-429e-b23e-cb908eb3d70d"
+execution_id: "71b46eba-9aea-4564-b0c9-602fe70e993d"
 ---
-
 # Spec — AUT-134 PPR handoff / qa-attestation / worktree
 
 ## Misión

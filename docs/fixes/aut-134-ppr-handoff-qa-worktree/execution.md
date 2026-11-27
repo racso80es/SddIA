@@ -1,13 +1,13 @@
 ---
+
 feature_name: aut-134-ppr-handoff-qa-worktree
 created: "2026-11-27"
 process: bug-fix
 branch_name: fix/aut-134-ppr-handoff-qa-worktree
 persist_ref: docs/fixes/aut-134-ppr-handoff-qa-worktree
 tracker_ref: AUT-134
-execution_id: "b6b262ed-c04e-429e-b23e-cb908eb3d70d"
+execution_id: "71b46eba-9aea-4564-b0c9-602fe70e993d"
 ---
-
 # Ejecución — AUT-134
 
 ## Workspace
