@@ -90,6 +90,23 @@ Emitido vía `./sddia-run.sh --action emit-pr-audited-event` (`emitter_agent: ar
 }
 ```
 
+## Evidencia local post-remediación (Tekton, no veredicto)
+
+HEAD `e040895a`. Este bloque no altera `global`: el veredicto vigente es `REJECT` hasta una nueva pasada de `pull-request-review`.
+
+| Comando | Resultado |
+|---------|-----------|
+| `cargo test -p execute-process entity_no_anemia` | 18 passed |
+| `cargo test -p execute-process pull_request_review` | 10 passed |
+| `cargo test -p execute-process forges` | 65 passed, 1 ignored |
+| `cargo test -p sddia-qa` | 47 passed, 1 failed (`repo_capability_contracts_pass_qa_gate`: 3 contratos `memory.*` declarados en `capability-taxonomy.md` ausentes en disco; idéntico en `main`, fuera de AUT-125) |
+| `sddia-qa verify-process-integrity` | OK |
+| `sddia-qa verify-tools-index` | OK |
+| `sddia-qa gate-entity-no-anemia --json` | FAIL esperado: 207 escaneadas, 322 hallazgos (deuda AUT-133, `audit-inventory.json`) |
+| `sddia-qa gate-entity-no-anemia --if-touched --base origin/main --json` | OK (1 escaneada, 0 hallazgos) |
+| `sddia-qa gate-evolution --json --range --require-synced-base` | `EVOL_CUMULO` en local (ref `origin/main` con mtime antiguo); con `--sync-base`: `EVOL_OK` |
+| `sddia-qa gate-evolution --json --all` | `EVOL_OK` |
+
 ## approval_status
 
 ```text
