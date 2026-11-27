@@ -1,7 +1,7 @@
 ---
 feature_name: aut-136-ppr-verdict-qa-attestation-pre-handoff
-created: "2026-11-27"
-updated: "2026-11-27T18:40:00Z"
+created: 2026-11-27
+updated: 2026-11-27T18:40:00Z
 process: bug-fix
 phase: Verificación
 agent: argos
@@ -12,7 +12,7 @@ tracker_provider: linear
 tracker_ref: AUT-136
 document_id: PBI-1cad2c43
 uuid: 81c6cb32-626e-4b7b-9ffe-bd3262d2c007
-execution_id: "f3c98fff-6b95-4122-85b8-7c64463f3f5d"
+execution_id: f3c98fff-6b95-4122-85b8-7c64463f3f5d
 global: APTO
 pbi_archived: false
 approval_status: aprobado
@@ -38,14 +38,18 @@ git_changes:
   base: main
   head: 968feb36
   paths:
-    - SddIA/engine/execute-process/src/engine/pull_request_review.rs
-    - SddIA/engine/execute-process/src/engine/residual_runner.rs
-    - SddIA/engine/execute-process/src/engine/qa_attestation.rs
-    - SddIA/evolution/b2a7f91e-4c3d-5e6f-8a9b-0c1d2e3f4a5b.md
-    - SddIA/evolution/Evolution_log.md
-    - docs/fixes/aut-136-ppr-verdict-qa-attestation-pre-handoff/
+  - SddIA/engine/execute-process/src/engine/pull_request_review.rs
+  - SddIA/engine/execute-process/src/engine/residual_runner.rs
+  - SddIA/engine/execute-process/src/engine/qa_attestation.rs
+  - SddIA/evolution/b2a7f91e-4c3d-5e6f-8a9b-0c1d2e3f4a5b.md
+  - SddIA/evolution/Evolution_log.md
+  - docs/fixes/aut-136-ppr-verdict-qa-attestation-pre-handoff/
 blocking_findings: []
 non_blocking_findings: []
+validated_base_sha: 3aaaa2668bfb040bf6cce37a9b145b7ca8e4dbcd
+validated_head_sha: 8c2d48071fe50e967884a6f0b3e4b31fac67fb76
+validated_tree_sha: 0516bb98cb53e4f7696d2a76147e92f71745880f
+diff_digest: sha256:a0361d0fc6a8754d4ac8efe9e7055ec2554cee21f4846065b489943f1ae5c476
 ---
 
 # Validación — AUT-136
