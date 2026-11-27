@@ -16,7 +16,7 @@ Contrato normativo de la familia: `actions-contract.md` (no constituye una acci�
 
 | Name | UUID | Versión | Context | Descripción | Capabilities |
 |------|------|---------|---------|-------------|--------------|
-| switch-llm-provider | `a6f5e0a4-ccc5-4076-bf8a-b60cfe1fa684` | 1.0.0 | ecosystem-evolution | Conmutación explícita y determinista del proveedor LLM activo en instancia local. | `switch_llm_provider` |
+| switch-llm-provider | `a6f5e0a4-ccc5-4076-bf8a-b60cfe1fa684` | 1.0.1 | ecosystem-evolution | Conmuta de forma explícita el proveedor LLM activo de la instancia escribiendo `active_provider` en el fichero de runtime local (`instance.llm_runtime_local` de `cumulo.paths.json`). No existe auto-failover: el cambio... | `switch_llm_provider` |
 | purge-repo-retention | `e4b84b41-c804-4c34-8fea-8b0f6bbcb573` | 1.0.0 | filesystem-ops | Dos tiempos sobre tool:repo-retention-purger. simulate_only → plan JSON; si no,  | `purge_repo_retention` |
 | dispatch-aiua-intent | a1086194-e19c-49b1-88e1-bd828211b3a8 | 2.0.0 | ecosystem-evolution | Acción dispatch-aiua-intent | `dispatch_aiua_intent` |
 | purge-sandbox-cache | 37454c3a-4590-4dfb-a439-2014876a0138 | 1.0.1 | filesystem-ops | Acción purge-sandbox-cache | `purge_sandbox_cache`, `delegate-ephemeral-cache-purger` |

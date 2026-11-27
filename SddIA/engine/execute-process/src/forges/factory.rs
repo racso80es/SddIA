@@ -6,12 +6,14 @@ use super::common::{
     format_dependencies_yaml, handoff_create, idempotent_forge_handoff, optional_str,
     parse_frontmatter, patch_action_content_update, merge_daemon_capabilities,
     patch_daemon_declaration,
-    patch_artifact_body_replacements, patch_hash_signature_refresh, patch_norm_content_update,
+    patch_artifact_body_replacements, patch_artifact_yaml_replacements,
+    patch_hash_signature_refresh, patch_norm_content_update,
     patch_process_outputs_update, patch_process_phases_update, refresh_process_hash, repo_tool_base,
     required_str, resolve_lifecycle_operation, sha256_canon, sha256_text,
-    str_field, sync_action_index_row, sync_daemons_index_census, sync_event_family_class_count,
-    sync_events_root_family_count, update_library_norm_index_version, update_process_index_version,
-    norm_integrity_hash, generate_uuid,
+    sanitize_action_index_description, str_field, sync_action_index_row, sync_daemons_index_census,
+    sync_event_family_class_count, sync_events_root_family_count, update_library_norm_index_version,
+    update_process_index_version,
+    norm_integrity_hash, generate_uuid, with_file_rollback,
 };
 use crate::core::paths::load_paths_config;
 use crate::core::resolver::{process_search_roots, resolve_event_contract, resolve_process_path};
@@ -339,31 +341,54 @@ pub fn run_action_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "handoff_version": patch.version,
             }));
         }
-        let patch = patch_action_content_update(&action_path, inputs)?;
-        let context = str_field(inputs, "action_context", "ecosystem-evolution");
-        let description = inputs
-            .get("orchestration_logic")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        let capabilities = inputs
-            .get("action_capabilities")
-            .cloned()
-            .unwrap_or_else(|| json!([]));
-        sync_action_index_row(
-            &repo.join("SddIA/actions/index.md"),
-            &name,
-            &patch.entity_uuid,
-            &patch.new_version,
-            &context,
-            &description,
-            &capabilities,
-        )?;
+        let pre_existing_uuid_not_v4 = crate::engine::entity_no_anemia::validate_entity_file(
+            repo,
+            &action_path,
+            "action",
+        )
+        .iter()
+        .any(|v| v.code == "UUID_NOT_V4");
+        let (patch, warnings) = with_file_rollback(&action_path, || {
+            if let Some(replacements) = inputs.get("artifact_yaml_replacements") {
+                patch_artifact_yaml_replacements(&action_path, replacements)?;
+            }
+            let patch = patch_action_content_update(&action_path, inputs)?;
+            // UUID_NOT_V4 heredado no bloquea: el uuid es inmutable y su migración vive en AUT-133.
+            let (warnings, blockers): (Vec<_>, Vec<_>) =
+                crate::engine::entity_no_anemia::validate_entity_file(repo, &action_path, "action")
+                    .into_iter()
+                    .partition(|v| v.code == "UUID_NOT_V4" && pre_existing_uuid_not_v4);
+            if !blockers.is_empty() {
+                return Err(format!(
+                    "action update anti-anemia: {}",
+                    blockers
+                        .iter()
+                        .map(|v| format!("{}:{}", v.code, v.detail))
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                ));
+            }
+            let description = inputs
+                .get("action_body")
+                .or_else(|| inputs.get("orchestration_logic"))
+                .and_then(|v| v.as_str())
+                .and_then(sanitize_action_index_description);
+            sync_action_index_row(
+                &repo.join("SddIA/actions/index.md"),
+                &name,
+                &patch.new_version,
+                &patch.context,
+                description.as_deref(),
+                &patch.capabilities,
+            )?;
+            Ok((patch, warnings))
+        })?;
         return Ok(json!({
             "handoff_entity_uuid": patch.entity_uuid,
             "handoff_hash_signature_new": patch.new_hash,
             "handoff_hash_signature_old": patch.old_hash,
             "handoff_version": patch.new_version,
+            "anemia_warnings": warnings,
         }));
     }
 
@@ -374,13 +399,17 @@ pub fn run_action_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let context = str_field(inputs, "action_context", "ecosystem-evolution");
     let version = str_field(inputs, "action_version", "1.0.0");
     let contract_ver = str_field(inputs, "actions_contract_version", "1.2.0");
-    let desc = inputs
+    let orchestration = inputs
         .get("orchestration_logic")
         .and_then(|v| v.as_str())
-        .unwrap_or(&format!("Acción {name}"))
-        .chars()
-        .take(80)
-        .collect::<String>();
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            "action create: orchestration_logic requerido con secciones ## contractuales (propósito + orquestación/límites)"
+                .to_string()
+        })?;
+    let index_blurb = sanitize_action_index_description(orchestration)
+        .ok_or("action create: orchestration_logic sin prosa para la descripción del índice")?;
     let action_uuid = generate_uuid(repo)?;
     let cap = capability_name(&name);
     let hash_sig = sha256_canon(repo, &json!({"action_name": name, "action_context": context}))?;
@@ -399,13 +428,25 @@ hash_signature: "{hash_sig}"
 
 # Acción: {name}
 
-{desc}
+{orchestration}
 "#
     );
     fs::create_dir_all(action_path.parent().unwrap()).map_err(|e| e.to_string())?;
     fs::write(&action_path, body).map_err(|e| e.to_string())?;
+    let viols = crate::engine::entity_no_anemia::validate_entity_file(repo, &action_path, "action");
+    if !viols.is_empty() {
+        let _ = fs::remove_file(&action_path);
+        return Err(format!(
+            "action forge anti-anemia: {}",
+            viols
+                .iter()
+                .map(|v| format!("{}:{}", v.code, v.detail))
+                .collect::<Vec<_>>()
+                .join("; ")
+        ));
+    }
     let row = format!(
-        "| {name} | `{action_uuid}` | {version} | {context} | {desc} | `{cap}` |"
+        "| {name} | `{action_uuid}` | {version} | {context} | {index_blurb} | `{cap}` |"
     );
     append_row(&repo.join("SddIA/actions/index.md"), &row, &name)?;
     Ok(handoff_create(&action_uuid, &hash_sig, &version, json!({})))
@@ -636,6 +677,48 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 root_rel: root_rel.clone(),
                 jurisdiction: jurisdiction.into(),
             };
+            let yaml_only = inputs.get("artifact_yaml_replacements").is_some()
+                && inputs.get("markdown_body_replacements").is_none()
+                && inputs.get("process_phases").is_none()
+                && inputs.get("process_outputs").is_none()
+                && inputs.get("outputs").is_none();
+            if yaml_only {
+                let (fm, (old_hash, new_hash)) = with_file_rollback(&process_path, || {
+                    patch_artifact_yaml_replacements(
+                        &process_path,
+                        &inputs["artifact_yaml_replacements"],
+                    )?;
+                    let fm = parse_frontmatter(&process_path)?;
+                    Ok((fm, refresh_process_hash(&process_path)?))
+                })?;
+                let version = fm
+                    .get("version")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("1.0.0")
+                    .to_string();
+                let entity_uuid = fm
+                    .get("uuid")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let mut out = json!({
+                    "handoff_entity_uuid": entity_uuid,
+                    "handoff_hash_signature_new": new_hash,
+                    "handoff_hash_signature_old": old_hash,
+                    "handoff_version": version,
+                });
+                if let (Value::Object(base), Value::Object(ext)) =
+                    (&mut out, forge_outputs_extra(&dest, &name))
+                {
+                    for (k, v) in ext {
+                        base.insert(k, v);
+                    }
+                }
+                return Ok(out);
+            }
+            if let Some(replacements) = inputs.get("artifact_yaml_replacements") {
+                patch_artifact_yaml_replacements(&process_path, replacements)?;
+            }
             if let Some(replacements) = inputs.get("markdown_body_replacements") {
                 let (entity_uuid, body_old_hash, _, version) =
                     patch_artifact_body_replacements(&process_path, replacements)?;
@@ -992,42 +1075,58 @@ pub fn run_agent_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "handoff_version": patch.version,
             }));
         }
-        if let Some(descriptor) = inputs
+        let descriptor = inputs
             .get("cognitive_role_descriptor")
             .and_then(|v| v.as_str())
             .map(str::trim)
-            .filter(|s| !s.is_empty())
-        {
-            let text = fs::read_to_string(&agent_path).map_err(|e| e.to_string())?;
-            let (yaml, body) =
-                split_md_frontmatter(&text).ok_or("frontmatter ausente en agente")?;
-            let new_yaml = upsert_yaml_line(&yaml, "cognitive_role_descriptor", descriptor);
-            fs::write(&agent_path, format!("---\n{new_yaml}---\n{body}"))
-                .map_err(|e| e.to_string())?;
-            upsert_cognitive_role_index(&repo.join("SddIA/agents/index.md"), &name, descriptor)?;
+            .filter(|s| !s.is_empty());
+        let yaml_replacements = inputs.get("artifact_yaml_replacements");
+        let body_replacements = inputs.get("markdown_body_replacements");
+        if descriptor.is_none() && yaml_replacements.is_none() && body_replacements.is_none() {
+            return Err(
+                "agent update requiere markdown_body_replacements, artifact_yaml_replacements o cognitive_role_descriptor"
+                    .into(),
+            );
         }
-        if let Some(replacements) = inputs.get("markdown_body_replacements") {
-            let (entity_uuid, old_hash, new_hash, version) =
-                patch_artifact_body_replacements(&agent_path, replacements)?;
-            return Ok(json!({
-                "handoff_entity_uuid": entity_uuid,
-                "handoff_hash_signature_new": new_hash,
-                "handoff_hash_signature_old": old_hash,
-                "handoff_version": version,
-            }));
-        }
-        if inputs.get("cognitive_role_descriptor").is_some() {
+        let index_path = repo.join("SddIA/agents/index.md");
+        let index_snapshot = fs::read(&index_path).ok();
+        let result = with_file_rollback(&agent_path, || {
+            if let Some(descriptor) = descriptor {
+                let text = fs::read_to_string(&agent_path).map_err(|e| e.to_string())?;
+                let (yaml, body) =
+                    split_md_frontmatter(&text).ok_or("frontmatter ausente en agente")?;
+                let new_yaml = upsert_yaml_line(&yaml, "cognitive_role_descriptor", descriptor);
+                fs::write(&agent_path, format!("---\n{new_yaml}---\n{body}"))
+                    .map_err(|e| e.to_string())?;
+                upsert_cognitive_role_index(&index_path, &name, descriptor)?;
+            }
+            if let Some(replacements) = yaml_replacements {
+                patch_artifact_yaml_replacements(&agent_path, replacements)?;
+            }
+            if let Some(replacements) = body_replacements {
+                let (entity_uuid, old_hash, new_hash, version) =
+                    patch_artifact_body_replacements(&agent_path, replacements)?;
+                return Ok(json!({
+                    "handoff_entity_uuid": entity_uuid,
+                    "handoff_hash_signature_new": new_hash,
+                    "handoff_hash_signature_old": old_hash,
+                    "handoff_version": version,
+                }));
+            }
             let patch = refresh_agent_hash_line_delimited(&agent_path)?;
-            return Ok(json!({
+            Ok(json!({
                 "handoff_entity_uuid": patch.entity_uuid,
                 "handoff_hash_signature_new": patch.new_hash,
                 "handoff_hash_signature_old": patch.old_hash,
                 "handoff_version": patch.version,
-            }));
+            }))
+        });
+        if result.is_err() {
+            if let Some(snapshot) = index_snapshot {
+                let _ = fs::write(&index_path, snapshot);
+            }
         }
-        return Err(
-            "agent update requiere markdown_body_replacements o cognitive_role_descriptor".into(),
-        );
+        return result;
     }
 
     let policies = inputs
@@ -1349,15 +1448,31 @@ pub fn run_suite_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "handoff_version": patch.version,
             }));
         }
-        if let Some(replacements) = inputs.get("markdown_body_replacements") {
-            let (entity_uuid, old_hash, new_hash, version) =
-                patch_artifact_body_replacements(&suite_path, replacements)?;
-            return Ok(json!({
-                "handoff_entity_uuid": entity_uuid,
-                "handoff_hash_signature_new": new_hash,
-                "handoff_hash_signature_old": old_hash,
-                "handoff_version": version,
-            }));
+        let yaml_replacements = inputs.get("artifact_yaml_replacements");
+        let body_replacements = inputs.get("markdown_body_replacements");
+        if yaml_replacements.is_some() || body_replacements.is_some() {
+            return with_file_rollback(&suite_path, || {
+                if let Some(replacements) = yaml_replacements {
+                    patch_artifact_yaml_replacements(&suite_path, replacements)?;
+                }
+                if let Some(replacements) = body_replacements {
+                    let (entity_uuid, old_hash, new_hash, version) =
+                        patch_artifact_body_replacements(&suite_path, replacements)?;
+                    return Ok(json!({
+                        "handoff_entity_uuid": entity_uuid,
+                        "handoff_hash_signature_new": new_hash,
+                        "handoff_hash_signature_old": old_hash,
+                        "handoff_version": version,
+                    }));
+                }
+                let patch = patch_hash_signature_refresh(&suite_path)?;
+                Ok(json!({
+                    "handoff_entity_uuid": patch.entity_uuid,
+                    "handoff_hash_signature_new": patch.new_hash,
+                    "handoff_hash_signature_old": patch.old_hash,
+                    "handoff_version": patch.version,
+                }))
+            });
         }
         return Err(format!(
             "suite update sin campo de mutación reconocido para {name}; no se regenera {}",
@@ -1628,20 +1743,36 @@ pub fn run_event_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "handoff_version": patch.version,
             }));
         }
-        if let Some(replacements) = inputs.get("markdown_body_replacements") {
-            let (entity_uuid, old_hash, new_hash, version) =
-                patch_artifact_body_replacements(&event_path, replacements)?;
-            let family_index = events_root.join("index.md");
-            let n = sync_event_family_class_count(&family_index)?;
-            sync_events_root_family_count(repo, &effective_family, n)?;
-            return Ok(json!({
-                "artifact_event_md": event_path.strip_prefix(repo).unwrap_or(&event_path).to_string_lossy().replace('\\', "/"),
-                "artifact_events_index": family_index.strip_prefix(repo).unwrap_or(&family_index).to_string_lossy().replace('\\', "/"),
-                "handoff_entity_uuid": entity_uuid,
-                "handoff_hash_signature_new": new_hash,
-                "handoff_hash_signature_old": old_hash,
-                "handoff_version": version,
-            }));
+        let yaml_replacements = inputs.get("artifact_yaml_replacements");
+        let body_replacements = inputs.get("markdown_body_replacements");
+        if yaml_replacements.is_some() || body_replacements.is_some() {
+            return with_file_rollback(&event_path, || {
+                if let Some(replacements) = yaml_replacements {
+                    patch_artifact_yaml_replacements(&event_path, replacements)?;
+                }
+                if let Some(replacements) = body_replacements {
+                    let (entity_uuid, old_hash, new_hash, version) =
+                        patch_artifact_body_replacements(&event_path, replacements)?;
+                    let family_index = events_root.join("index.md");
+                    let n = sync_event_family_class_count(&family_index)?;
+                    sync_events_root_family_count(repo, &effective_family, n)?;
+                    return Ok(json!({
+                        "artifact_event_md": event_path.strip_prefix(repo).unwrap_or(&event_path).to_string_lossy().replace('\\', "/"),
+                        "artifact_events_index": family_index.strip_prefix(repo).unwrap_or(&family_index).to_string_lossy().replace('\\', "/"),
+                        "handoff_entity_uuid": entity_uuid,
+                        "handoff_hash_signature_new": new_hash,
+                        "handoff_hash_signature_old": old_hash,
+                        "handoff_version": version,
+                    }));
+                }
+                let patch = patch_hash_signature_refresh(&event_path)?;
+                Ok(json!({
+                    "handoff_entity_uuid": patch.entity_uuid,
+                    "handoff_hash_signature_new": patch.new_hash,
+                    "handoff_hash_signature_old": patch.old_hash,
+                    "handoff_version": patch.version,
+                }))
+            });
         }
         if inputs.get("implementation_source_git_apply").is_some() {
             let patch = patch_hash_signature_refresh(&event_path)?;
@@ -3241,5 +3372,170 @@ NOTA_BACKFILL
         assert_ne!(kn["handoff_hash_signature_old"], kn["handoff_hash_signature_new"]);
 
         let _ = fs::remove_dir_all(&dir);
+    }
+}
+
+#[cfg(test)]
+mod aut125_forge_rollback_tests {
+    use super::*;
+
+    const ACTION: &str = "---\nuuid: \"11111111-1111-4111-8111-111111111111\"\nname: \"demo\"\nversion: \"1.0.0\"\ncontract: \"actions-contract v1.3.0\"\ncontext: \"filesystem-ops\"\ncapabilities:\n  - \"demo_cap\"\ninputs:\n  - \"path\": \"Ruta objetivo\"\noutputs: []\nhash_signature: \"sha256:00\"\n---\n\n## Propósito\n\nPurga demo.\n\n## Límites\n\nSolo /tmp.\n";
+
+    const INDEX: &str = "## Catálogo\n\n| Name | UUID | Versión | Context | Descripción | Capabilities |\n|------|------|---------|---------|-------------|--------------|\n| demo | `11111111-1111-4111-8111-111111111111` | 1.0.0 | filesystem-ops | Purga demo. | `demo_cap` |\n\n## Integridad (última pasada)\n\nok\n";
+
+    fn action_repo() -> tempfile::TempDir {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("SddIA/actions");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("demo.md"), ACTION).unwrap();
+        fs::write(dir.join("index.md"), INDEX).unwrap();
+        tmp
+    }
+
+    #[test]
+    fn action_update_anemic_body_rolls_back_file_and_index() {
+        let tmp = action_repo();
+        let err = run_action_forge(
+            tmp.path(),
+            &json!({"action_name": "demo", "lifecycle_operation": "update", "action_body": "TODO"}),
+        )
+        .unwrap_err();
+        assert!(err.contains("anti-anemia"), "{err}");
+        let dir = tmp.path().join("SddIA/actions");
+        assert_eq!(fs::read_to_string(dir.join("demo.md")).unwrap(), ACTION);
+        assert_eq!(fs::read_to_string(dir.join("index.md")).unwrap(), INDEX);
+    }
+
+    #[test]
+    fn action_update_preserves_contract_and_index_tail() {
+        let tmp = action_repo();
+        let out = run_action_forge(
+            tmp.path(),
+            &json!({
+                "action_name": "demo",
+                "lifecycle_operation": "update",
+                "action_body": "## Propósito\n\nPurga demo revisada.\n\n## Límites\n\nSolo /tmp.",
+            }),
+        )
+        .unwrap();
+        assert_eq!(out["handoff_version"], "1.0.1");
+        let dir = tmp.path().join("SddIA/actions");
+        let text = fs::read_to_string(dir.join("demo.md")).unwrap();
+        assert!(text.contains("context: \"filesystem-ops\""));
+        assert!(text.contains("contract: \"actions-contract v1.3.0\""));
+        assert!(text.contains("  - \"path\": \"Ruta objetivo\""));
+        let idx = fs::read_to_string(dir.join("index.md")).unwrap();
+        assert!(idx.contains("| demo | `11111111-1111-4111-8111-111111111111` | 1.0.1 | filesystem-ops | Purga demo revisada. | `demo_cap` |"), "{idx}");
+        assert!(idx.ends_with("## Integridad (última pasada)\n\nok\n"), "{idx}");
+    }
+
+    #[test]
+    fn action_update_tolerates_only_preexisting_uuid_not_v4() {
+        let tmp = action_repo();
+        let path = tmp.path().join("SddIA/actions/demo.md");
+        fs::write(&path, ACTION.replace("11111111-1111-4111-8111-111111111111", "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a")).unwrap();
+        let out = run_action_forge(
+            tmp.path(),
+            &json!({
+                "action_name": "demo",
+                "lifecycle_operation": "update",
+                "action_body": "## Propósito\n\nPurga demo.\n\n## Límites\n\nSolo /tmp.",
+            }),
+        )
+        .unwrap();
+        assert_eq!(out["anemia_warnings"][0]["code"], "UUID_NOT_V4");
+    }
+
+    const SUITE: &str = "---\nuuid: \"22222222-2222-4222-8222-222222222222\"\nname: \"demo-suite\"\nversion: \"1.0.0\"\nexecution_strategy: \"run_all\"\nhash_signature: \"sha256:00\"\n---\n\n## Propósito\n\nSuite demo.\n\n## Estrategia\n\nrun_all.\n";
+
+    #[test]
+    fn suite_update_applies_yaml_and_body_together() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("SddIA/suites");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("demo-suite.md"), SUITE).unwrap();
+        run_suite_forge(
+            tmp.path(),
+            &json!({
+                "suite_name": "demo-suite",
+                "lifecycle_operation": "update",
+                "artifact_yaml_replacements": [{"from": "run_all\"", "to": "fail_fast\""}],
+                "markdown_body_replacements": [{"from": "run_all.", "to": "fail_fast."}],
+            }),
+        )
+        .unwrap();
+        let text = fs::read_to_string(dir.join("demo-suite.md")).unwrap();
+        assert!(text.contains("execution_strategy: \"fail_fast\""), "{text}");
+        assert!(text.contains("## Estrategia\n\nfail_fast."), "{text}");
+        assert!(!text.contains("sha256:00"));
+    }
+
+    #[test]
+    fn suite_update_failing_body_rolls_back_yaml() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("SddIA/suites");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("demo-suite.md"), SUITE).unwrap();
+        let err = run_suite_forge(
+            tmp.path(),
+            &json!({
+                "suite_name": "demo-suite",
+                "lifecycle_operation": "update",
+                "artifact_yaml_replacements": [{"from": "run_all\"", "to": "fail_fast\""}],
+                "markdown_body_replacements": [{"from": "inexistente", "to": "x"}],
+            }),
+        )
+        .unwrap_err();
+        assert!(err.contains("no encontrado"), "{err}");
+        assert_eq!(fs::read_to_string(dir.join("demo-suite.md")).unwrap(), SUITE);
+    }
+
+    const AGENT: &str = "---\nuuid: \"33333333-3333-4333-8333-333333333333\"\nname: \"demo-agent\"\nversion: \"1.0.0\"\nrole: \"x\"\nhash_signature: \"sha256:00\"\n---\n\n## Rol\n\nDemo.\n\n## Políticas\n\nNinguna.\n";
+
+    fn agent_repo() -> tempfile::TempDir {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("SddIA/agents");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("demo-agent.md"), AGENT).unwrap();
+        fs::write(dir.join("index.md"), "| name |\n|---|\n| demo-agent |\n").unwrap();
+        tmp
+    }
+
+    #[test]
+    fn agent_update_yaml_only_refreshes_hash() {
+        let tmp = agent_repo();
+        let out = run_agent_forge(
+            tmp.path(),
+            &json!({
+                "agent_name": "demo-agent",
+                "lifecycle_operation": "update",
+                "artifact_yaml_replacements": [{"from": "role: \"x\"", "to": "role: \"y\""}],
+            }),
+        )
+        .unwrap();
+        let text = fs::read_to_string(tmp.path().join("SddIA/agents/demo-agent.md")).unwrap();
+        assert!(text.contains("role: \"y\""));
+        assert!(!text.contains("sha256:00"));
+        assert_eq!(out["handoff_hash_signature_old"], "sha256:00");
+    }
+
+    #[test]
+    fn agent_update_failure_restores_agent() {
+        let tmp = agent_repo();
+        let err = run_agent_forge(
+            tmp.path(),
+            &json!({
+                "agent_name": "demo-agent",
+                "lifecycle_operation": "update",
+                "artifact_yaml_replacements": [{"from": "role: \"x\"", "to": "role: \"y\""}],
+                "markdown_body_replacements": [{"from": "inexistente", "to": "x"}],
+            }),
+        )
+        .unwrap_err();
+        assert!(err.contains("no encontrado"), "{err}");
+        assert_eq!(
+            fs::read_to_string(tmp.path().join("SddIA/agents/demo-agent.md")).unwrap(),
+            AGENT
+        );
     }
 }
