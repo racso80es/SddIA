@@ -1,7 +1,7 @@
 ---
 uuid: "e84218a8-7e40-4436-8ae7-a3fcc3396ad7"
 name: "emit-validation-started-event"
-version: "2.0.0"
+version: "2.0.1"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -9,23 +9,23 @@ capabilities:
   - "event-bus-pending-write"
   - "delegate-crypto-broker"
   - "delegate-filesystem-manager"
-inputs:
-  - "persist_ref": "string; ruta lógica del espacio documental"
-  - "source_process": "string; feature | bug-fix | refactorization"
-  - "project_slug": "string; opcional"
-  - "branch": "string; opcional"
-  - "pbi_ref": "string; opcional"
-  - "tracker_ref": "string; opcional, opaco"
-  - "correlation_id": "string; UUID v4 opcional"
-outputs:
-  - "success": "boolean"
-  - "event_id": "string"
-  - "event_uri": "string"
-hash_signature: "sha256:4e5f90a0aeff2750adbfd016ccf712eedc7445b5309360640ae7d12876343664"
+inputs: []
+outputs: []
+hash_signature: "sha256:4d9eb47c0be4dd1eab75a366007cc8333f6c17ff22f96007e673a060951283a2"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
 
-# Acción: emit-validation-started-event
+## 1. Propósito
 
-Emite **Validation_Started** en `eda_bus.pending` conforme a `SddIA/events/domain/validation-started.md`. Fail-soft en el invocante (motor, post-fase Tekton).
+Emite Validation_Started (fail-soft) al entrar en Verificación.
+
+## 2. Orquestación
+
+1. Validar entradas frente a actions-contract.md.
+2. Resolver cápsulas vía Cúmulo; delegar física en skills/tools autorizados.
+3. Devolver envelope JSON canónico.
+
+## 3. Límites
+
+Sin terminal nativa. Sin bypass de Cerbero ni del bus EDA.

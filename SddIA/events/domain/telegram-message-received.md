@@ -1,5 +1,5 @@
 ---
-uuid: "e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6"
+uuid: "5bfa4f95-c95d-486c-8624-a4eea55abe60"
 name: "telegram-message-received"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
@@ -8,7 +8,7 @@ event_type: "TelegramMessage_Received"
 context: "ecosystem-evolution"
 capabilities:
   - "telegram_message_received"
-hash_signature: "sha256:80eb0e3bb4e1625f28df5c2cefa09137206bdcdc5306693cebdd149edfa11e98"
+hash_signature: "sha256:2153ba89df296ae1bf30d0a48f1e17d83cb44353d0d189e596509b92a5a4d326"
 ---
 
 # Event: TelegramMessage_Received
@@ -39,3 +39,7 @@ Estímulo aferente crudo desde Telegram antes del triaje estructurado. Alimenta 
 ## Suscripciones
 
 - Proceso **`telegram-fallback-responder`** — triaje inverso para entropía no estructurada.
+
+## Propósito (complemento)
+
+Estímulo aferente crudo desde Telegram antes del triaje estructurado. Alimenta la red de seguridad sensorial (triaje inverso).

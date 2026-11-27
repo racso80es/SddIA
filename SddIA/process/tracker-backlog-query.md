@@ -2,7 +2,7 @@
 context:
 - tracker-operations
 contract: process-contract v1.4.0
-hash_signature: sha256:aff56386bdda8c19b1bb569c30d9dbdea6d4edefc8693ff47812e09b1a07352e
+hash_signature: "sha256:aff56386bdda8c19b1bb569c30d9dbdea6d4edefc8693ff47812e09b1a07352e"
 inputs:
 - project_slug: Slug registrado (opcional; ausente = Core-self)
 - kind: hu | pbi | all (default all)
@@ -25,3 +25,11 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # tracker-backlog-query
 
 Consulta de backlog para Kalma2. `context: tracker-operations`. Un `list_issues` de `tracker:lifecycle`. Ejecutor de registro Tekton; runtime invoca el puerto sin LLM.
+
+## Propósito
+
+Consulta de backlog para Kalma2. `context: tracker-operations`. Un `list_issues` de `tracker:lifecycle`. Ejecutor de registro Tekton; runtime invoca el puerto sin LLM.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

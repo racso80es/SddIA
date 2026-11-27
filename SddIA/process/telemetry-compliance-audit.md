@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:3992bbfd29f26e35be28e8fdd4e514ebf59e22f5cc30011866a7902de69154bf
+hash_signature: "sha256:3992bbfd29f26e35be28e8fdd4e514ebf59e22f5cc30011866a7902de69154bf"
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
@@ -27,3 +27,11 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # telemetry-compliance-audit
 
 Proceso laboratorio Fase 5: auditoría asíncrona de cumplimiento termodinámico. Consume `Raw_Execution_Finished` en fan-out paralelo a `radamanto-batch`. **No purga** el JSON fuente — solo sella `delivery_state`.
+
+## Propósito
+
+Proceso laboratorio Fase 5: auditoría asíncrona de cumplimiento termodinámico. Consume `Raw_Execution_Finished` en fan-out paralelo a `radamanto-batch`. **No purga** el JSON fuente — solo sella `delivery_state`.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:c3133c022b917626c396ab0cd4ee45cad001cecda192bc71b02f4d714f4c34cc
+hash_signature: "sha256:c3133c022b917626c396ab0cd4ee45cad001cecda192bc71b02f4d714f4c34cc"
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
@@ -30,3 +30,11 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 Enrutador del bus fractal **telemetry**. Despacha `Raw_Execution_Finished` hacia `telemetry-batch-stub` (Fase 3) / Radamanto (Fase 4).
 
 Implementación: `route_fractal_event_core.route_telemetry_event()`.
+
+## Propósito
+
+Enrutador del bus fractal **telemetry**. Despacha `Raw_Execution_Finished` hacia `telemetry-batch-stub` (Fase 3) / Radamanto (Fase 4).
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

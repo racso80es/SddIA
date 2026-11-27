@@ -1,5 +1,5 @@
 ---
-uuid: "a6b7c8d9-e0f1-4a2b-c3d4-e5f6a7b8c9d0"
+uuid: "fc8f0f9c-7152-4a96-9111-dc6cd0a71d93"
 name: "manual-task-requested"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
@@ -8,7 +8,7 @@ event_type: "Manual_Task_Requested"
 context: "ecosystem-evolution"
 capabilities:
   - "manual_task_requested"
-hash_signature: "sha256:ca8a097dab1f3455f42645bccd3428acb38b8c1abb88855335be0d31fa4c8c40"
+hash_signature: "sha256:04d423f3b38464c5495d719595aa92fb355664560b2e912737dafd837885e901"
 ---
 
 # Event: Manual_Task_Requested
@@ -39,3 +39,7 @@ Voluntad capturada desde canal externo (Telegram) e inyectada al bus local.
 ## Suscripciones
 
 Sin suscriptores obligatorios en MVP; disponible para coreografía Ola C futura.
+
+## Propósito (complemento)
+
+Voluntad capturada desde canal externo (Telegram) e inyectada al bus local.

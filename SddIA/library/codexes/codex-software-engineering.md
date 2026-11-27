@@ -1,7 +1,7 @@
 ---
 uuid: "a69d04b0-1d07-49ef-bcbf-6850e4a70ae2"
 name: "SddIA Codex Software Engineering"
-version: "1.1.0"
+version: "1.0.0"
 nature: "domain-codex"
 author: "tekton-abstract-02"
 target_environment: ["software-engineering", "git", "pull-request"]
@@ -26,7 +26,7 @@ composition:
     path: "../norms/pr-acceptance-protocol.md"
   - norm: "028fb30f-66e7-4811-bfc6-960c808b9517"
     path: "../norms/backlog-item-refinement.md"
-hash_signature: "sha256:d504dcaef5a7994c8dc800860130d9ca39e75d129c745ae175f40ff127aa5d5e"
+hash_signature: "sha256:38f56b36cef5fc81ee3492e466db6502c588d97f8481f4db354195bab6800dcc"
 ---
 
 # SddIA Codex Software Engineering
@@ -58,3 +58,7 @@ Normas tácticas: documentación atómica de tareas, patrones plan→implementac
 | `refine-item` | Refinamiento Mayeuta + DoR |
 
 Relocalización física fuera de `directories.process` = ABSTRACT-03 (**L-PACK-MULTIROOT-SIX-MOVE**): packing canónico `SddIA/library/codexes/codex-software-engineering/process/` vía `directories.process_domain_roots` (Cúmulo ≥1.6.0). Move físico pendiente de AC-RESOLVE evidenciado en ciclo ABSTRACT-03.
+
+## Propósito (complemento)
+
+Entidad `codex-software-engineering` del Core SddIA.

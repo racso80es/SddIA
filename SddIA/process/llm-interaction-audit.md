@@ -1,7 +1,7 @@
 ---
 context: quality-assurance, filesystem-ops, tracker-operations
 contract: process-contract v1.4.0
-hash_signature: sha256:4df227e26344287e48689c9e153c938817c7d133044e23fde7380824c3d56db0
+hash_signature: "sha256:4df227e26344287e48689c9e153c938817c7d133044e23fde7380824c3d56db0"
 inputs:
 - tracker_ref: Identificador opaco AUT-n
 - operation: record_interaction | record_friction | probe_active
@@ -25,3 +25,11 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # llm-interaction-audit
 
 Registro opt-in de interacciones LLM y fricción de ./sddia-run.sh bajo paths.auditsPath/{tracker_ref}.md cuando llm_audit: active en el ítem Linear.
+
+## Propósito
+
+Registro opt-in de interacciones LLM y fricción de ./sddia-run.sh bajo paths.auditsPath/{tracker_ref}.md cuando llm_audit: active en el ítem Linear.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

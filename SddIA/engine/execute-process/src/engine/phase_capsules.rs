@@ -498,9 +498,18 @@ pub fn capsule_index_integrity_audit_gate(
         }));
     }
     let bin = resolve_sddia_qa_bin(repo)?;
-    for cmd in ["verify-process-integrity", "verify-tools-index"] {
+    for cmd in [
+        "verify-process-integrity",
+        "verify-tools-index",
+        "gate-entity-no-anemia",
+    ] {
+        let mut qa_args: Vec<&str> = vec![cmd];
+        if cmd == "gate-entity-no-anemia" {
+            qa_args.push("--if-touched");
+            qa_args.push("--json");
+        }
         let out = std::process::Command::new(&bin)
-            .arg(cmd)
+            .args(qa_args)
             .current_dir(repo)
             .output()
             .map_err(|e| format!("{cmd} spawn: {e}"))?;
@@ -529,7 +538,7 @@ pub fn capsule_index_integrity_audit_gate(
     if let Some(obj) = state.as_object_mut() {
         obj.insert(
             "index_integrity_gate".into(),
-            json!({"status": "pass", "commands": ["verify-process-integrity", "verify-tools-index"]}),
+            json!({"status": "pass", "commands": ["verify-process-integrity", "verify-tools-index", "gate-entity-no-anemia --if-touched"]}),
         );
     }
     Ok(json!({

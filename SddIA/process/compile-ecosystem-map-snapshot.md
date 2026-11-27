@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:d25cb92a290e77a4d264ca2d78e53ca9741eac0aa50fbf2e34162d0c67ad1c44
+hash_signature: "sha256:d25cb92a290e77a4d264ca2d78e53ca9741eac0aa50fbf2e34162d0c67ad1c44"
 inputs:
 - description: Opcional; reservado para recompilación explícita.
   name: force
@@ -29,3 +29,11 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # compile-ecosystem-map-snapshot
 
 Precompila inventario esperado (tools/skills/daemons) en map-snapshot.json para el Espejo de Consciencia.
+
+## Propósito
+
+Precompila inventario esperado (tools/skills/daemons) en map-snapshot.json para el Espejo de Consciencia.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

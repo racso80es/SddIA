@@ -6,7 +6,7 @@ contract: process-contract v1.4.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 context:
 - ecosystem-evolution
-hash_signature: sha256:30acb9f13f5ce5f00cd7399f0319fef2bca403e4c0c9fd3e35dcadac312bb11c
+hash_signature: "sha256:30acb9f13f5ce5f00cd7399f0319fef2bca403e4c0c9fd3e35dcadac312bb11c"
 inputs:
 - core_root: Raíz del Core resuelta por Cumulo (directories / constitution)
 - target_repo: Repositorio o workspace destino de la difusión
@@ -45,3 +45,11 @@ porcentaje_de_exito: null
 # sddia-difusion
 
 Proceso que cubre la **deuda** registrada al purgar la antigua acción de difusión: materializa la propagación controlada del Core SddIA hacia `.cursor/rules`, `.github` y homólogos, sin violar la frontera Acciones/Procesos.
+
+## Propósito
+
+Proceso que cubre la **deuda** registrada al purgar la antigua acción de difusión: materializa la propagación controlada del Core SddIA hacia `.cursor/rules`, `.github` y homólogos, sin violar la frontera Acciones/Procesos.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

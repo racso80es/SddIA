@@ -3,7 +3,7 @@ context:
 - chaos-engineering
 - quality-assurance
 contract: process-contract v1.4.0
-hash_signature: sha256:ddd89de1319444375cd69464c3e121a58391f8e5656911f8f2e466ec47e5d6ac
+hash_signature: "sha256:ddd89de1319444375cd69464c3e121a58391f8e5656911f8f2e466ec47e5d6ac"
 inputs: []
 minteo_maximo: null
 name: audit-thermodynamic-toll-failsoft
@@ -43,3 +43,11 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # audit-thermodynamic-toll-failsoft
 
 Proceso audit atómico **Fase 2 Caos**: estresa E/S vía `io-choke` y certifica que el Peaje Termodinámico fail-soft (D3.13) preserva `exit_code: 0` del negocio.
+
+## Propósito
+
+Proceso audit atómico **Fase 2 Caos**: estresa E/S vía `io-choke` y certifica que el Peaje Termodinámico fail-soft (D3.13) preserva `exit_code: 0` del negocio.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

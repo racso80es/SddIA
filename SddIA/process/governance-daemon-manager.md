@@ -3,7 +3,7 @@ context:
 - system-operations
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:8505e5137c4eeac92c5fb3900ed4bc4a9d5a4dd1d992b591025a2333b1cbf0dc
+hash_signature: "sha256:8505e5137c4eeac92c5fb3900ed4bc4a9d5a4dd1d992b591025a2333b1cbf0dc"
 inputs:
 - operation: 'Enum estricto: `start` | `status` | `kill` — directriz física OS a ejecutar'
 - daemon_id: Identificador kebab-case del Centinela (`name` en `{daemon_id}.md`; debe existir en `SddIA/daemons/index.md`)
@@ -177,3 +177,7 @@ Implementación física: handler nativo `handlers::governance_daemon` en `execut
 * No sustituye al Centinela en emisión `Daemon_Heartbeat`.
 * No modifica definiciones bajo `directories.daemons`.
 * Kill-Switch global del Core (CEN-03) invocará este proceso en iteración sobre índice.
+
+## Propósito (complemento)
+
+Entidad `governance-daemon-manager` del Core SddIA.

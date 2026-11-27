@@ -3,7 +3,7 @@ context:
 - quality-assurance
 - event-routing
 contract: process-contract v1.4.0
-hash_signature: sha256:d2f4930746c53c974afbe3fc2ca354703434517e49dc262a5fee95aafc0d311d
+hash_signature: "sha256:d2f4930746c53c974afbe3fc2ca354703434517e49dc262a5fee95aafc0d311d"
 inputs: []
 minteo_maximo: null
 name: event-bus-audit
@@ -46,3 +46,11 @@ Proceso on-demand de auditoría empírica del bus EDA. El censo lee el store pro
 ## Handler
 
 Cápsula Rust `SddIA/tools/event-bus-audit/` invocada vía `tool:event-bus-audit` en fase única.
+
+## Propósito
+
+Proceso on-demand de auditoría empírica del bus EDA. El censo lee el store productivo vía `EventManagerPort` / `events.redb` (bóveda `SDDIA_EVENT_MANAGER_*`). La auditoría opera exclusivamente sobre `EventManagerPort` / `events.redb` (sin topología legacy en disco) (ver `event-bus-audit` binario, MAN-43 O7). Valida coherencia ECST, detecta anomalías y genera informe. Emite `Kaizen_Alert_Required` vía gate del store (no JSON residual en `redb`) solo si `emit_kaizen_alert` y (`circuit_alert` o pen
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

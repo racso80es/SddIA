@@ -2,7 +2,7 @@
 context: ecosystem-evolution
 contract: process-contract v1.4.0
 deprecated: true
-hash_signature: sha256:06b1f613e7707cb33e4f9cfebf1ff726767b4944a255990d6c83f413d19f39bd
+hash_signature: "sha256:06b1f613e7707cb33e4f9cfebf1ff726767b4944a255990d6c83f413d19f39bd"
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
@@ -27,3 +27,11 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # telemetry-batch-stub
 
 Proceso laboratorio **stub** para suscripción telemetría → Radamanto (Fase 3). Sustituido por agente Radamanto real en Fase 4.
+
+## Propósito
+
+Proceso laboratorio **stub** para suscripción telemetría → Radamanto (Fase 3). Sustituido por agente Radamanto real en Fase 4.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

@@ -1,33 +1,29 @@
 ---
 uuid: "37454c3a-4590-4dfb-a439-2014876a0138"
 name: "purge-sandbox-cache"
-version: "1.0.1"
-contract: "actions-contract v1.3.0"
-context: "filesystem-ops"
+version: "1.0.2"
+contract: "actions-contract v1.2.0"
+context: "ecosystem-evolution"
 capabilities:
   - "purge_sandbox_cache"
   - "delegate-ephemeral-cache-purger"
-inputs:
-  - "simulate_only": "boolean opcional"
-  - "target_dir": "string opcional"
-  - "older_than_hours": "number opcional"
-  - "purge_sandbox_root": "boolean opcional"
-outputs:
-  - "success": "boolean"
-  - "dry_run": "object"
-  - "purge": "object|null"
-hash_signature: "sha256:95c6a167b654929d30fa976dafd2a59158f8d903ff8f5b4bf4043bcedb331160"
+inputs: []
+outputs: []
+hash_signature: "sha256:2c5b60c2294e60eb4f02e01bafc8d82b2de5f8eea0d9cf038024d3cbc2f65096"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
 
-# Acción: purge-sandbox-cache
+## 1. Propósito
 
-Dos tiempos. Cero agentes.
+Orquesta limpieza de caché sandbox autorizada.
 
-1. `tool:ephemeral-cache-purger` `simulate: true` (binario nativo).
-2. Gate determinista: cada `candidate_targets[i]` debe matchear `^/tmp/cursor-sandbox-cache(/[a-f0-9]{16,64}(/.*)?)?$`.
-3. Si `simulate_only` o lista vacía: fin.
-4. Misma invocación `simulate: false`.
+## 2. Orquestación
 
-Handler nativo en `execute-process` (`purge_sandbox_cache`). UUID tool forjada: `8929eeea-5e5b-402a-aafa-4a9b429acaec`.
+1. Validar entradas frente a actions-contract.md.
+2. Resolver cápsulas vía Cúmulo; delegar física en skills/tools autorizados.
+3. Devolver envelope JSON canónico.
+
+## 3. Límites
+
+Sin terminal nativa. Sin bypass de Cerbero ni del bus EDA.

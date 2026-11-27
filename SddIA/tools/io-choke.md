@@ -18,7 +18,7 @@ outputs:
   - "success": "boolean"
   - "exitCode": "integer"
   - "error": "string; diagnóstico si aplica"
-hash_signature: "sha256:22a93d2cdeda779fb8c23ecf8fb88287121b5d95f3dbccad1713496ca6857e19"
+hash_signature: "sha256:2d9398bf7e7f89a0210fb44d7ce81e5b6d166f1a1b02a8bc6acf1d36ef1206ab"
 implementation_path_ref: "SddIA/tools/io-choke"
 ---
 
@@ -33,3 +33,11 @@ Proveedor de capacidad `qa:probe` (PBI-043 H9 · Caos).
 stdin JSON: `workspace_path` (required), `target_file` (optional, default `.io-choke-target`).
 
 Éxito (`success: true`): la escritura fue bloqueada físicamente.
+
+## Propósito
+
+Simula asfixia E/S al escribir dentro del `workspace_path` inyectado (archivo read-only). Vector de estrés para fail-soft Peaje Termodinámico.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

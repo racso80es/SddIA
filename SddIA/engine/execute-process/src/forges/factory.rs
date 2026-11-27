@@ -6,11 +6,13 @@ use super::common::{
     format_dependencies_yaml, handoff_create, idempotent_forge_handoff, optional_str,
     parse_frontmatter, patch_action_content_update, merge_daemon_capabilities,
     patch_daemon_declaration,
-    patch_artifact_body_replacements, patch_hash_signature_refresh, patch_norm_content_update,
+    patch_artifact_body_replacements, patch_artifact_yaml_replacements,
+    patch_hash_signature_refresh, patch_norm_content_update,
     patch_process_outputs_update, patch_process_phases_update, refresh_process_hash, repo_tool_base,
     required_str, resolve_lifecycle_operation, sha256_canon, sha256_text,
-    str_field, sync_action_index_row, sync_daemons_index_census, sync_event_family_class_count,
-    sync_events_root_family_count, update_library_norm_index_version, update_process_index_version,
+    sanitize_action_index_description, str_field, sync_action_index_row, sync_daemons_index_census,
+    sync_event_family_class_count, sync_events_root_family_count, update_library_norm_index_version,
+    update_process_index_version,
     norm_integrity_hash, generate_uuid,
 };
 use crate::core::paths::load_paths_config;
@@ -339,13 +341,35 @@ pub fn run_action_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "handoff_version": patch.version,
             }));
         }
+        if let Some(replacements) = inputs.get("artifact_yaml_replacements") {
+            patch_artifact_yaml_replacements(&action_path, replacements)?;
+        }
         let patch = patch_action_content_update(&action_path, inputs)?;
+        let viols: Vec<_> = crate::engine::entity_no_anemia::validate_entity_file(
+            repo,
+            &action_path,
+            "action",
+        )
+        .into_iter()
+        .filter(|v| v.code != "UUID_NOT_V4")
+        .collect();
+        if !viols.is_empty() {
+            return Err(format!(
+                "action update anti-anemia: {}",
+                viols
+                    .iter()
+                    .map(|v| format!("{}:{}", v.code, v.detail))
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            ));
+        }
         let context = str_field(inputs, "action_context", "ecosystem-evolution");
-        let description = inputs
-            .get("orchestration_logic")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
+        let description = sanitize_action_index_description(
+            inputs
+                .get("orchestration_logic")
+                .and_then(|v| v.as_str())
+                .unwrap_or(""),
+        );
         let capabilities = inputs
             .get("action_capabilities")
             .cloned()
@@ -374,13 +398,15 @@ pub fn run_action_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let context = str_field(inputs, "action_context", "ecosystem-evolution");
     let version = str_field(inputs, "action_version", "1.0.0");
     let contract_ver = str_field(inputs, "actions_contract_version", "1.2.0");
-    let desc = inputs
+    let orchestration = inputs
         .get("orchestration_logic")
         .and_then(|v| v.as_str())
-        .unwrap_or(&format!("Acción {name}"))
-        .chars()
-        .take(80)
-        .collect::<String>();
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            "action create: orchestration_logic requerido con secciones ## contractuales (propósito + orquestación/límites)"
+                .to_string()
+        })?;
     let action_uuid = generate_uuid(repo)?;
     let cap = capability_name(&name);
     let hash_sig = sha256_canon(repo, &json!({"action_name": name, "action_context": context}))?;
@@ -399,13 +425,26 @@ hash_signature: "{hash_sig}"
 
 # Acción: {name}
 
-{desc}
+{orchestration}
 "#
     );
     fs::create_dir_all(action_path.parent().unwrap()).map_err(|e| e.to_string())?;
     fs::write(&action_path, body).map_err(|e| e.to_string())?;
+    let viols = crate::engine::entity_no_anemia::validate_entity_file(repo, &action_path, "action");
+    if !viols.is_empty() {
+        let _ = fs::remove_file(&action_path);
+        return Err(format!(
+            "action forge anti-anemia: {}",
+            viols
+                .iter()
+                .map(|v| format!("{}:{}", v.code, v.detail))
+                .collect::<Vec<_>>()
+                .join("; ")
+        ));
+    }
+    let index_blurb = sanitize_action_index_description(orchestration);
     let row = format!(
-        "| {name} | `{action_uuid}` | {version} | {context} | {desc} | `{cap}` |"
+        "| {name} | `{action_uuid}` | {version} | {context} | {index_blurb} | `{cap}` |"
     );
     append_row(&repo.join("SddIA/actions/index.md"), &row, &name)?;
     Ok(handoff_create(&action_uuid, &hash_sig, &version, json!({})))
@@ -636,6 +675,42 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 root_rel: root_rel.clone(),
                 jurisdiction: jurisdiction.into(),
             };
+            let mut yaml_only = false;
+            if let Some(replacements) = inputs.get("artifact_yaml_replacements") {
+                patch_artifact_yaml_replacements(&process_path, replacements)?;
+                yaml_only = inputs.get("markdown_body_replacements").is_none()
+                    && inputs.get("process_phases").is_none()
+                    && inputs.get("process_outputs").is_none()
+                    && inputs.get("outputs").is_none();
+            }
+            if yaml_only {
+                let fm = parse_frontmatter(&process_path)?;
+                let (old_hash, new_hash) = refresh_process_hash(&process_path)?;
+                let version = fm
+                    .get("version")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("1.0.0")
+                    .to_string();
+                let entity_uuid = fm
+                    .get("uuid")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let mut out = json!({
+                    "handoff_entity_uuid": entity_uuid,
+                    "handoff_hash_signature_new": new_hash,
+                    "handoff_hash_signature_old": old_hash,
+                    "handoff_version": version,
+                });
+                if let (Value::Object(base), Value::Object(ext)) =
+                    (&mut out, forge_outputs_extra(&dest, &name))
+                {
+                    for (k, v) in ext {
+                        base.insert(k, v);
+                    }
+                }
+                return Ok(out);
+            }
             if let Some(replacements) = inputs.get("markdown_body_replacements") {
                 let (entity_uuid, body_old_hash, _, version) =
                     patch_artifact_body_replacements(&process_path, replacements)?;
@@ -1006,6 +1081,9 @@ pub fn run_agent_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 .map_err(|e| e.to_string())?;
             upsert_cognitive_role_index(&repo.join("SddIA/agents/index.md"), &name, descriptor)?;
         }
+        if let Some(replacements) = inputs.get("artifact_yaml_replacements") {
+            patch_artifact_yaml_replacements(&agent_path, replacements)?;
+        }
         if let Some(replacements) = inputs.get("markdown_body_replacements") {
             let (entity_uuid, old_hash, new_hash, version) =
                 patch_artifact_body_replacements(&agent_path, replacements)?;
@@ -1349,6 +1427,16 @@ pub fn run_suite_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "handoff_version": patch.version,
             }));
         }
+        if let Some(replacements) = inputs.get("artifact_yaml_replacements") {
+            patch_artifact_yaml_replacements(&suite_path, replacements)?;
+            let patch = patch_hash_signature_refresh(&suite_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
         if let Some(replacements) = inputs.get("markdown_body_replacements") {
             let (entity_uuid, old_hash, new_hash, version) =
                 patch_artifact_body_replacements(&suite_path, replacements)?;
@@ -1627,6 +1715,18 @@ pub fn run_event_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "handoff_hash_signature_old": patch.old_hash,
                 "handoff_version": patch.version,
             }));
+        }
+        if let Some(replacements) = inputs.get("artifact_yaml_replacements") {
+            patch_artifact_yaml_replacements(&event_path, replacements)?;
+            if inputs.get("markdown_body_replacements").is_none() {
+                let patch = patch_hash_signature_refresh(&event_path)?;
+                return Ok(json!({
+                    "handoff_entity_uuid": patch.entity_uuid,
+                    "handoff_hash_signature_new": patch.new_hash,
+                    "handoff_hash_signature_old": patch.old_hash,
+                    "handoff_version": patch.version,
+                }));
+            }
         }
         if let Some(replacements) = inputs.get("markdown_body_replacements") {
             let (entity_uuid, old_hash, new_hash, version) =

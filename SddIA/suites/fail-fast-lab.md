@@ -1,11 +1,11 @@
 ---
-uuid: "c3d4e5f6-a7b8-4901-c123-456789abcdef"
+uuid: "f073a542-e0ae-4d19-8a01-be18c59de080"
 name: fail-fast-lab
 version: "1.0.0"
 contract: suites-contract v1.0.0
 context:
 - chaos-engineering
-hash_signature: sha256:7c4bc74058ccbe78e202d2c3cd44f68fbb8d5b934c1bcdd11b89f116b7d221b1
+hash_signature: "sha256:47b85993a893fed18ab32cf87fb5bc5ab41a30c2d2c3ee1062a9af8fbf56e74c"
 execution_strategy: fail_fast
 atomic_nodes:
 - process_name: audit-sandbox-isolation-rbac
@@ -19,3 +19,11 @@ atomic_nodes:
 # fail-fast-lab
 
 Suite **laboratorio** para validar estrategia `fail_fast`: el nodo 0 declara `expected_exit_code: 99` pero el proceso audit retorna `0` → veredicto `fail` → aborta antes del nodo 1.
+
+## Propósito
+
+Suite **laboratorio** para validar estrategia `fail_fast`: el nodo 0 declara `expected_exit_code: 99` pero el proceso audit retorna `0` → veredicto `fail` → aborta antes del nodo 1.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

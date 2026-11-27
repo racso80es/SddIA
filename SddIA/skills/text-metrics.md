@@ -10,7 +10,7 @@ telemetry_schema:
   - completion_tokens
 capabilities:
   - "text-metrics"
-hash_signature: "sha256:35655c727052107076e200512466d12ca1de115ba01a07d9b0e82fa25280aa1e"
+hash_signature: "sha256:8db2eca9f1814fa3c3cc965e411fa15690f26bd99c14473b404eb42ae5a8c431"
 inputs:
   - "text_content": "string; texto de entrada UTF-8"
 outputs:
@@ -25,3 +25,11 @@ Calcula métricas básicas de un texto (número de palabras y caracteres).
 ## Ejecución (LLM-native)
 
 Recibir `text_content` y devolver `word_count` y `char_count` en envelope JSON del contrato de skills.
+
+## Propósito
+
+Calcula métricas básicas de un texto (número de palabras y caracteres).
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

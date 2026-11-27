@@ -2,7 +2,7 @@
 context:
 - tracker-operations
 contract: process-contract v1.4.0
-hash_signature: sha256:f290918d2ca12ad50a2287c52b05d729541a3576365a99ad5a7271fc1028a3b6
+hash_signature: "sha256:f290918d2ca12ad50a2287c52b05d729541a3576365a99ad5a7271fc1028a3b6"
 inputs:
 - 'event_uri: Token lógico EventUri (eda://pending/{event_id})'
 - 'issue_ref: Identificador opaco de tracker:lifecycle (payload)'
@@ -27,3 +27,11 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # tracker-sync-replay
 
 Suscriptor de `Tracker_Sync_Failed`. Contexto `tracker-operations`. Fail-soft: segundo fallo delegado al bus (witness dead-letter).
+
+## Propósito
+
+Suscriptor de `Tracker_Sync_Failed`. Contexto `tracker-operations`. Fail-soft: segundo fallo delegado al bus (witness dead-letter).
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

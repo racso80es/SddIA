@@ -13,6 +13,7 @@ composition:
     path: "../norms/patterns-in-planning-implementation-execution.md"
   - norm: "7c18fe07-9567-4f06-8d2b-a58e04608171"
     path: "../norms/pr-acceptance-protocol.md"
+hash_signature: "sha256:d32706811ebcfa6c0def60e408d2f0f5101109ddfd9eb5c3a37214c649b011ce"
 ---
 
 ## Estrategia de Dominio
@@ -24,3 +25,7 @@ Optimización de la integridad DLL y validación estricta de tipos en el ecosist
 1. **`pr-acceptance-protocol`**: prevalece en cierre de rama y PR; ningún merge sin lint/build/tests y nomenclatura válida.
 2. **`patterns-in-planning-implementation-execution`**: en conflicto con atajos de implementación, el `pattern_id` del plan/IMPL manda sobre convenciones locales no documentadas.
 3. **`features-documentation-pattern`**: un `.md` por fase de tarea; no se aceptan artefactos JSON paralelos como SSOT de documentación.
+
+## Propósito (complemento)
+
+Entidad `codex-backend-admin-splus` del Core SddIA.

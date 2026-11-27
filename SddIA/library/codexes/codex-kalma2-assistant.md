@@ -1,7 +1,7 @@
 ---
 uuid: "c43544f3-c557-4cc3-8a03-7175282f2c88"
 name: "SddIA Codex Kalma2 Personal Assistant"
-version: "1.0.2"
+version: "1.0.0"
 nature: "domain-codex"
 author: "codex-creator"
 target_environment: ["personal-assistant", "email", "kalma2"]
@@ -19,10 +19,10 @@ dlt:
   asset_class: "domain-codex"
   mint_status: "pre-mint"
   ledger: "iota-rebased-testnet"
-  canonical_hash: "sha256:e3a9e45e0a030fb359f5343a9505acf86488ba71204e4d8c9ec69b86921cfdf9"
+  canonical_hash: "sha256:af2933d914ca2d201a31f74c3990b99737b327a07bd13a3b7d8347f0968536a2"
   token_id: null
   owner_vertex: "biological-vertex"
-hash_signature: "sha256:e3a9e45e0a030fb359f5343a9505acf86488ba71204e4d8c9ec69b86921cfdf9"
+hash_signature: "sha256:af2933d914ca2d201a31f74c3990b99737b327a07bd13a3b7d8347f0968536a2"
 ---
 
 # SddIA Codex Kalma2 Personal Assistant
@@ -36,3 +36,7 @@ Empaqueta la ley del triaje de correo (`email-triage-matrix`) y los procesos `em
 1. **`email-triage-matrix`**: prevalece sobre cualquier heurística del agente ejecutor o del LLM. Triaje-C determinista cierra antes que Clasificacion.
 2. **`features-documentation-pattern`**: rige la cascada documental de tareas del propio Core; no altera el veredicto de un correo.
 3. Prohibido reintroducir la matriz en `SddIA/process/` o en la cápsula del Centinela.
+
+## Propósito (complemento)
+
+Entidad `codex-kalma2-assistant` del Core SddIA.

@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:91e1248c355fadc7fadd8e26c47fd75422a98ba44425c46b6cec116bf6e4355f
+hash_signature: "sha256:91e1248c355fadc7fadd8e26c47fd75422a98ba44425c46b6cec116bf6e4355f"
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
@@ -36,3 +36,11 @@ Runtime nativo: `memory_evolution_ingest_core` en `execute-process` (despacho fr
 ```
 
 Idempotencia por `origin_stimulus.event_id`. Fail-soft hacia Radamanto (no tumba Self-Healing).
+
+## Propósito
+
+Suscriptor de `Domain_Entity_Telemetry_Captured` (fan-out `route-domain`). Indexa el snapshot de ejecución en el store evolution vía puerto DI `EvolutionIngestPort` → `tool:lancedb-memory-adapter` (`{paths.lancedbStore}`; adapter `lancedb_evolution_repo`). No persiste JSON SSOT paralelo bajo `.SddIA/vector_store/evolution/`.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

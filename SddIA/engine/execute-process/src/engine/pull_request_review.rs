@@ -172,9 +172,25 @@ fn tech_triage(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, 
         Err(errs) => (false, json!({"ok": false, "errors": errs})),
     };
 
+    let anemia = super::entity_no_anemia::scan_changed(repo, "origin/main");
+    let (anemia_ok, anemia_detail) = match anemia {
+        Ok(rep) if rep.ok => (true, json!({"ok": true, "scanned": rep.scanned})),
+        Ok(rep) => (
+            false,
+            json!({
+                "ok": false,
+                "scanned": rep.scanned,
+                "violation_count": rep.violation_count,
+                "violations": rep.violations.iter().take(20).collect::<Vec<_>>(),
+            }),
+        ),
+        Err(e) => (false, json!({"ok": false, "error": e})),
+    };
+
     let mut checks = json!({
         "TECH_FORMAL_EXECUTE_PROCESS": if integrity_ok { "APTO" } else { "NO_APTO" },
         "verify_process_integrity": if integrity_ok { "APTO" } else { "NO_APTO" },
+        "gate_entity_no_anemia": if anemia_ok { "APTO" } else { "NO_APTO" },
     });
 
     // Sensor DIA: script Python podado → SKIPPED_ABSENT (no bloquea peaje).
@@ -193,6 +209,11 @@ fn tech_triage(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, 
     if !integrity_ok {
         return Err(format!(
             "Triaje técnico formal: verify-process-integrity falló: {integrity_detail}"
+        ));
+    }
+    if !anemia_ok {
+        return Err(format!(
+            "Triaje técnico formal: gate-entity-no-anemia falló: {anemia_detail}"
         ));
     }
 

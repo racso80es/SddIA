@@ -17,6 +17,7 @@ composition:
     path: "../norms/nextjs-hydration-client-state.md"
   - norm: "e6ae3df7-9d47-4dd1-8051-025f9fd171c7"
     path: "../norms/openapi-contract-rest-frontend.md"
+hash_signature: "sha256:5a40c186859875a6e9e726c46bba41d572e7cd932cbd2bc8895e01df92f93357"
 ---
 
 ## Estrategia de Dominio
@@ -30,3 +31,7 @@ Foco en rendimiento de cliente, SEO y contratos REST para el portal público de 
 3. **`pr-acceptance-protocol`**: condición necesaria para publicar rama o cerrar tarea.
 4. **`features-documentation-pattern`**: un `.md` por acción; prohibido JSON paralelo.
 5. **`patterns-in-planning-implementation-execution`**: precedencia de `pattern_id` en implementación y ejecución.
+
+## Propósito (complemento)
+
+Entidad `codex-frontend-product-splus` del Core SddIA.

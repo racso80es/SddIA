@@ -18,7 +18,7 @@ outputs:
   - "success": "boolean"
   - "exitCode": "integer"
   - "error": "string; diagnóstico si aplica"
-hash_signature: "sha256:1fbe473222f8ed90fa65d2d3e2bcb7a4f9bac742bf22248212aabf4dab44877e"
+hash_signature: "sha256:dbb42256320ee56f24356394b38d08613db01f469c757f7348d8c943406ce72d"
 implementation_path_ref: "SddIA/tools/sandbox-breacher"
 ---
 
@@ -31,3 +31,11 @@ Proveedor de capacidad `qa:probe` (PBI-043 H9 · Caos).
 ## Interface
 
 stdin JSON: `workspace_path` (required), `escape_target` (optional, default `../breach-marker.txt`).
+
+## Propósito
+
+Intenta escribir fuera del `workspace_path` usando `assert_workspace_bound`. Éxito defensivo: bloqueo con `exitCode: 1`.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

@@ -23,10 +23,18 @@ outputs:
   - exitCode: integer
   - message: string
   - result: object
-hash_signature: "sha256:af1fe3e8168f966b6d79d2f42c52eff6f20b83bb3bb39c75dc1c095a7de33bcd"
+hash_signature: "sha256:b0d708c578d7729f27466857d45722c9ab0283124b1ccfdfd68c133bcbbfa171"
 implementation_path_ref: "SddIA/tools/lancedb-memory-adapter"
 ---
 
 # lancedb-memory-adapter
 
 Satélite nativo unificado de memoria vectorial LanceDB (`evolution`, `user_preferences`, `thought_graph_collection`) bajo contrato `capsule-json-io` v2 (`sddia-io`). Absorbe `thought-graph-access` y desacopla `execute-process` de `lancedb`/`tokio`.
+
+## Propósito
+
+Satélite nativo unificado de memoria vectorial LanceDB (`evolution`, `user_preferences`, `thought_graph_collection`) bajo contrato `capsule-json-io` v2 (`sddia-io`). Absorbe `thought-graph-access` y desacopla `execute-process` de `lancedb`/`tokio`.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

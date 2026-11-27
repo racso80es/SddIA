@@ -1,7 +1,7 @@
 ---
 context: quality-assurance
 contract: process-contract v1.4.0
-hash_signature: sha256:43dc6f73d159486c68cc2d60a2e8f1a7d43316ace2a7c295057035d4187e7ced
+hash_signature: "sha256:43dc6f73d159486c68cc2d60a2e8f1a7d43316ace2a7c295057035d4187e7ced"
 name: system-vitality-probe
 phases:
 - intent: Correr bus.topology, cumulo.tools_index, cerbero.config, kalma2.http con causa física.
@@ -21,3 +21,11 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 # system-vitality-probe
 
 Sondas deterministas de invariantes no-proceso y HTTP de Kalma2 (`bus.topology`, `cumulo.tools_index`, `cerbero.config`, `kalma2.http`). Emite `System_Vitality_Probed` en `eda_fractal.telemetry` y `System_Fracture_Detected` idempotente por `probe_id` (estado `.SddIA/daemons/state/vitality-probe.json`). Cadencia: sweeper `SDDIA_VITALITY_PROBE_SECONDS` (default 300, piso 30). No alimenta el panel Espejo.
+
+## Propósito
+
+Sondas deterministas de invariantes no-proceso y HTTP de Kalma2 (`bus.topology`, `cumulo.tools_index`, `cerbero.config`, `kalma2.http`). Emite `System_Vitality_Probed` en `eda_fractal.telemetry` y `System_Fracture_Detected` idempotente por `probe_id` (estado `.SddIA/daemons/state/vitality-probe.json`). Cadencia: sweeper `SDDIA_VITALITY_PROBE_SECONDS` (default 300, piso 30). No alimenta el panel Espejo.
+
+## Operación
+
+Ejecución conforme al contrato de familia y topología Cúmulo; delegación en cápsulas autorizadas sin rutas cableadas.

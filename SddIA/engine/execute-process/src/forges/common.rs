@@ -749,6 +749,65 @@ porcentaje_de_exito: {pct}
     })
 }
 
+/// Resumen de una línea para `actions/index.md` (evita celdas multilínea en tablas MD).
+pub fn sanitize_action_index_description(orchestration: &str) -> String {
+    let text = orchestration.trim();
+    let purpose_block = text
+        .split("##")
+        .find(|chunk| {
+            let t = chunk.trim().to_lowercase();
+            t.starts_with("propósito") || t.starts_with("proposito") || t.starts_with("1. propósito")
+        })
+        .unwrap_or(text);
+    let mut lines = purpose_block.lines();
+    if let Some(first) = lines.next() {
+        let title = first.trim().to_lowercase();
+        if title.starts_with("propósito") || title.starts_with("proposito") || title.starts_with('1') {
+            // cuerpo bajo el heading
+        } else {
+            lines = purpose_block.lines();
+        }
+    }
+    let para: String = lines
+        .map(str::trim)
+        .filter(|s| !s.is_empty() && !s.starts_with('#'))
+        .take(3)
+        .collect::<Vec<_>>()
+        .join(" ");
+    let para = if para.is_empty() {
+        text.lines()
+            .map(str::trim)
+            .find(|s| !s.is_empty() && !s.starts_with('#'))
+            .unwrap_or("Acción del Core SddIA.")
+            .to_string()
+    } else {
+        para
+    };
+    let collapsed: String = para.split_whitespace().collect::<Vec<_>>().join(" ");
+    let no_pipes = collapsed.replace('|', "/");
+    if no_pipes.chars().count() <= 220 {
+        no_pipes
+    } else {
+        no_pipes.chars().take(217).collect::<String>() + "..."
+    }
+}
+
+fn is_action_catalog_row(line: &str) -> bool {
+    if !line.starts_with('|') {
+        return false;
+    }
+    let cols: Vec<&str> = line.split('|').collect();
+    if cols.len() < 7 {
+        return false;
+    }
+    let name = cols[1].trim();
+    !name.is_empty()
+        && name != "Name"
+        && !name.starts_with('-')
+        && !name.contains('\n')
+        && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+}
+
 fn format_index_capabilities(capabilities: &Value) -> String {
     capabilities
         .as_array()
@@ -782,14 +841,24 @@ pub fn sync_action_index_row(
     let idx = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
     let mut changed = false;
     let mut lines: Vec<String> = Vec::new();
+    let mut skip_garbage = false;
     for line in idx.lines() {
-        if line.starts_with('|') {
+        if skip_garbage {
+            if is_action_catalog_row(line) {
+                skip_garbage = false;
+            } else {
+                changed = true;
+                continue;
+            }
+        }
+        if is_action_catalog_row(line) {
             let cols: Vec<&str> = line.split('|').collect();
-            if cols.len() >= 3 && cols[1].trim() == name {
+            if cols[1].trim() == name {
                 if line != new_row {
                     changed = true;
                 }
                 lines.push(new_row.clone());
+                skip_garbage = true;
                 continue;
             }
         }
@@ -1024,6 +1093,17 @@ pub fn apply_markdown_body_replacements(body: &str, replacements: &Value) -> Res
         out = out.replacen(from, to, 1);
     }
     Ok(out)
+}
+
+pub fn patch_artifact_yaml_replacements(
+    artifact_path: &Path,
+    replacements: &Value,
+) -> Result<(), String> {
+    let text = fs::read_to_string(artifact_path).map_err(|e| e.to_string())?;
+    let (yaml, body) = split_md_frontmatter(&text)?;
+    let new_yaml = apply_markdown_body_replacements(&yaml, replacements)?;
+    fs::write(artifact_path, join_md_frontmatter(&new_yaml, &body)).map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 pub fn patch_artifact_body_replacements(

@@ -7,6 +7,7 @@ author: "norm-creator"
 scope: "frontend"
 category: "architecture"
 dependencies: []
+hash_signature: "sha256:408373ef646a0e669e8ffac1c9ef9775004ac8bb0788ca6456e2b2697b193b17"
 ---
 
 ## Directriz Core
@@ -38,3 +39,7 @@ Implementar un hook canónico `useHasMounted` (primer render `false`, tras monta
 - Prohibido mostrar árboles de componentes distintos servidor/cliente en el primer paint sin patrón `useHasMounted`, `useSyncExternalStore` con `getServerSnapshot`, o equivalente con paridad demostrable.
 - Prohibido usar `suppressHydrationWarning` como sustituto sistemático de paridad SSR/cliente sin justificación técnica documentada.
 - Prohibido usar `defaultValues` estáticos en formularios cuando los datos iniciales llegan de forma asíncrona post-mount sin `reset()` o `values` controlados.
+
+## Propósito (complemento)
+
+Entidad `nextjs-hydration-client-state` del Core SddIA.
