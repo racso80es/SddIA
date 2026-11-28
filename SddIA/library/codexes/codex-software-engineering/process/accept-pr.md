@@ -52,7 +52,13 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # accept-pr
 
+## Propósito
+
 Proceso de **aceptación local soberana** de Pull Requests: auditoría Argos, merge determinista hacia `main`, sello **PullRequest_Merged** en el bus local y sincronización remota con higiene de ramas.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process accept-pr`; fases en frontmatter YAML.
 
 ## Fase 1 — Auditoría Genómica
 
