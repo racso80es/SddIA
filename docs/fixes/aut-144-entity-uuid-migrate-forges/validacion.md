@@ -1,7 +1,7 @@
 ---
 feature_name: aut-144-entity-uuid-migrate-forges
-created: "2026-11-28"
-updated: "2026-11-28T13:35:00Z"
+created: 2026-11-28
+updated: 2026-11-28T13:35:00Z
 process: bug-fix
 phase: Verificación
 branch: fix/aut-144-entity-uuid-migrate-forges
@@ -31,6 +31,9 @@ checks:
   TECH_FORMAL_EXECUTE_PROCESS: APTO
   GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 validated_base_sha: 5b0f4a0b2a5f5a48d78705b34afb52530cc95fc3
+validated_head_sha: d2c1fb6edea21b5895fb4b76237c298735e2c43a
+validated_tree_sha: 99ec10f6a43b50e07b4bd1946e52dd0308fdbb54
+diff_digest: sha256:81c86379dca36317583c129759a04a9b6d49f0ad1430969ecdc2cf0cd873d002
 ---
 
 # Validación — AUT-144
