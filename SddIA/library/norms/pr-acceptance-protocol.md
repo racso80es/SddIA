@@ -1,15 +1,16 @@
 ---
 uuid: "7c18fe07-9567-4f06-8d2b-a58e04608171"
 name: "pr-acceptance-protocol"
-version: "1.1.0"
+version: "1.0.0"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
 category: "workflow"
 dependencies: []
+hash_signature: "sha256:74811ddc9c8e7203d7a860572cf8dba6a1b18ddd41c8cfe7af0d8febece37a67"
 ---
 
-## Directriz Core
+## Propósito
 
 Antes de crear o aceptar cualquier Pull Request deben cumplirse condiciones obligatorias de calidad y gobernanza. Aplica cuando `delivery_mode` es `branch_pr`. Con `trunk_direct` no hay PR: la aduana es el gate pre-commit y esta norma no exige `accept-pr`. Aplica a agentes en la acción `finalize-process`, desarrolladores locales antes de publicar rama, y pipelines CI/CD como condición de bloqueo.
 
@@ -29,7 +30,7 @@ La apertura de PR no es skill atómica: sigue el proceso en `SddIA/norms/pull-re
 
 El incumplimiento implica rechazo automático por CI, bloqueo de `finalize-process` por el agente, y advertencia en el entorno local.
 
-## Restricciones Duras (Aduana de Fricción)
+## Obligaciones de aduana
 
 - Prohibido crear o fusionar un PR si lint, build o tests del proyecto fallan en el estado publicado.
 - Prohibido publicar rama o abrir PR sin cumplir nomenclatura de ramas definida en `git-operations.md` y política del repositorio.

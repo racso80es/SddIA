@@ -1,16 +1,16 @@
 ---
 uuid: "3d8c7e09-6d98-422d-909f-5b233ba7fcf2"
 name: "email-triage-matrix"
-version: "1.1.0"
+version: "1.0.0"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
 category: "workflow"
 dependencies: []
-hash_signature: "sha256:82acf00d3e934b68fb26da5b3c0e9d5aef8a008ab2f8fb77b94f2cfaaf39dbc3"
+hash_signature: "sha256:6c8dd7e50dd8fca0e34f1d7a35a3fbf2ca1017bf544c2b4b006f07b7a89f0eab"
 ---
 
-## Directriz Core
+## Propósito
 
 Matriz de triaje de correo de tres vias para el asistente Kalma2. La semantica vive en la Libreria, no en el Core.
 
@@ -49,7 +49,7 @@ Longitud del cuerpo, tono comercial, mayusculas o urgencia declarada (`URGENT`, 
 
 Triaje-C determinista prevalece sobre mute P y sobre el veredicto LLM cuando C concluye. `decision_path` del evento refleja el camino que **cerro**: `deterministic` si Triaje-C concluyo; `preference` si mute P cerro; `llm` solo si Clasificacion se ejecuto. `P-EXEMPT-C` no es cierre.
 
-## Restricciones Duras (Aduana de Fricción)
+## Obligaciones de aduana
 
 - Prohibido veredicto `actionable` por verbosidad, tono comercial o urgencia declarada.
 - Prohibido ejecutar Clasificacion LLM si Triaje-C concluyo o mute P cerro.
