@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:6449d3d6dec643ccf07f37ead2cbac3d824139ce8e5e3a9c7899552d2de834de
+hash_signature: "sha256:6449d3d6dec643ccf07f37ead2cbac3d824139ce8e5e3a9c7899552d2de834de"
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 - 'event_uris: Lista de tokens lógicos (batch); el ECST se carga por puerto'
@@ -44,7 +44,9 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # route-domain-event
 
-Proceso orquestador del bus EDA local (**Ola C V3+**). Sustituye la acción homónima legacy.
+## Propósito
+
+Orquestador Ola C V3+ del bus de dominio: validación ECST, materialización `processing`, fan-out async de suscriptores y promoción de testigos vía `EventManagerPort` (sustituye acción legacy homónima).
 
 ## Responsabilidades
 

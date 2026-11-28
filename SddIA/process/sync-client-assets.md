@@ -9,7 +9,7 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 context:
 - ecosystem-evolution
 - knowledge-management
-hash_signature: sha256:017fa6b4e7e959dcef92687acca75cb8ff08a8bddbfa04a790dc96e6c8bbac30
+hash_signature: "sha256:017fa6b4e7e959dcef92687acca75cb8ff08a8bddbfa04a790dc96e6c8bbac30"
 inputs:
 - asset_id: UUID del activo solicitado
 - asset_family: library_codexes | library_norms
@@ -46,7 +46,13 @@ porcentaje_de_exito: null
 
 # Proceso — `sync-client-assets`
 
-Sincronización unidireccional `repositorio maestro → instancia cliente`. Simula el entorno DLT futuro (pivote G7).
+## Propósito
+
+Sincronización unidireccional maestro → instancia cliente de activos `library_codexes` / `library_norms` (pivote G7 / DLT), con aduana sha256 antes de escribir en `.SddIA/library/`.
+
+## Orquestación
+
+Fases Manifiesto-Local → Reclamacion (`download-remote-asset`) → Aduana-Integridad → Inyeccion (`fs:persist`). Entradas: `asset_id`, `asset_family`; salidas: `synced`, `local_version`, `hash_verified`.
 
 ## Fases
 

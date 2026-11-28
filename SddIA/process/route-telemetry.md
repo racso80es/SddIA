@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:c3133c022b917626c396ab0cd4ee45cad001cecda192bc71b02f4d714f4c34cc
+hash_signature: "sha256:c3133c022b917626c396ab0cd4ee45cad001cecda192bc71b02f4d714f4c34cc"
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
@@ -27,6 +27,12 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # route-telemetry
 
-Enrutador del bus fractal **telemetry**. Despacha `Raw_Execution_Finished` hacia `telemetry-batch-stub` (Fase 3) / Radamanto (Fase 4).
+## Propósito
 
-Implementación: `route_fractal_event_core.route_telemetry_event()`.
+Fan-out de la familia **telemetry** del bus fractal EDA: consume instancias referenciadas por `event_uri` (`eda://telemetry/{id}`) y despacha suscriptores declarados en `event-telemetry-subscriptions.json` (stub `telemetry-batch-stub` / `radamanto-batch`).
+
+## Orquestación
+
+- Fase `Fan-out telemetría` (`bus:route`): delega en `agent:cumulo` para cargar suscripciones y ejecutar handlers.
+- Implementación nativa: `SddIA/engine/execute-process/src/engine/route_fractal_core.rs` → `route_telemetry_event()`.
+- Entrada: `event_uri`; salidas: `success`, `delivery_status`.

@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:69a24c02347ea433fc65d1e3bef2b0b822e1a3a09c9a5572da0ed55347bb582b
+hash_signature: "sha256:69a24c02347ea433fc65d1e3bef2b0b822e1a3a09c9a5572da0ed55347bb582b"
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
@@ -27,6 +27,12 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # route-orchestration
 
-Enrutador del bus fractal **orchestration**. Consume `Process_Execution_Completed` y eventos tácticos futuros.
+## Propósito
 
-Implementación: `route_fractal_event_core.route_orchestration_event()`.
+Enrutador de la familia **orchestration**: entrega `Process_Execution_Completed` y eventos tácticos de línea de montaje a suscriptores de `event-orchestration-subscriptions.json`.
+
+## Orquestación
+
+- Fase `Fan-out orquestación` con capability `bus:route` y delegación `agent:cumulo`.
+- Handler: `route_fractal_event_core.route_orchestration_event()` en `route_fractal_core.rs`.
+- UUID legacy `c3d4e5f6-…` pendiente de migración v4 (AC-3); contenido independiente del peaje UUID.

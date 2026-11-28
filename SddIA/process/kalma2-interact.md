@@ -2,7 +2,7 @@
 context:
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:0267edbbdc4ce322115cbf1b4935cd92635202cb22a37e398e78f8d4af03de72
+hash_signature: "sha256:0267edbbdc4ce322115cbf1b4935cd92635202cb22a37e398e78f8d4af03de72"
 inputs:
 - prompt: Texto del operador desde el cliente Kalma2
 - project_slug: (Opcional) Slug del proyecto registrado en `instance.projects`; ausente → Core-self
@@ -48,7 +48,14 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # kalma2-interact
 
-Proceso **Kalma2**: recibe `prompt` del cliente web y materializa `response` mediante skill `mayeuta-llm` (CLI local) con fallback determinista compartido (`synthesize_mayeuta_response`).
+## Propósito
+
+Punto de interacción Kalma2: triaje de comandos reservados, clasificación `mayeuta-llm`, enrutamiento async a procesos allowlisted y síntesis de `response` para la WUI.
+
+## Orquestación
+
+- Fases: Triaje-C → Clasificación (`llm:interact`) → Enrutamiento (`Kalma2_Process_Requested`) → Síntesis.
+- Handler nativo `kalma2_interact` en `execute-process`; allowlist: `bug-fix`, `feature`, `refactorization`, `task-queue-manager`.
 
 ## Contrato
 
