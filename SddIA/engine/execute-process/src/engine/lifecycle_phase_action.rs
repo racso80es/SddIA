@@ -99,6 +99,14 @@ pub fn build_cycle_payload(repo: &Path, inputs: &Value) -> Value {
             }
         }
     }
+    if payload.get("tracker_ref").is_none() {
+        if let Some(persist) = str_field(inputs, "persist_ref") {
+            let slim = json!({ "persist_ref": persist });
+            if let Some(tr) = tracker_pbi_meta::resolve_tracker_ref_for_lifecycle(repo, &slim) {
+                payload["tracker_ref"] = json!(tr);
+            }
+        }
+    }
     if payload.get("project_slug").is_none() && project_binding::repo_is_core(repo) {
         payload["project_slug"] = json!("core");
     }
@@ -566,6 +574,27 @@ mod tests {
         }
         let text = fs::read_to_string(root.join("docs/todos/pending/wi.md")).unwrap();
         assert!(text.contains("tracker_column: todo"));
+    }
+
+    #[test]
+    fn build_cycle_payload_resolves_tracker_ref_from_persist_objectives_only() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        write_file(
+            root,
+            "docs/fixes/aut-129-demo/objectives.md",
+            "---\ntracker_ref: AUT-129\n---\n\n# objectives\n",
+        );
+        let inputs = json!({
+            "persist_ref": "docs/fixes/aut-129-demo",
+            "branch_name": "fix/aut-129-demo",
+        });
+        let payload = build_cycle_payload(root, &inputs);
+        assert_eq!(
+            payload.get("tracker_ref").and_then(|v| v.as_str()),
+            Some("AUT-129")
+        );
+        assert!(payload.get("pbi_ref").is_none());
     }
 
     #[test]
