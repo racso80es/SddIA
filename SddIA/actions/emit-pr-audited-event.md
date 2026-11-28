@@ -1,7 +1,7 @@
 ---
-uuid: "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a"
+uuid: "b504fe38-3519-4943-bfcd-5137c3a00f01"
 name: "emit-pr-audited-event"
-version: "2.0.1"
+version: "2.0.2"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -11,9 +11,19 @@ capabilities:
   - "delegate-filesystem-manager"
 inputs: []
 outputs: []
-hash_signature: "sha256:ff5af222bf6288cbaca5d9916a3ca34b954333be5444036416091593c1da7121"
+hash_signature: "sha256:ff8120a0906f6b5a10d6e40e13965ad118cfde033fd4efd948b59c00f3ebdd5a"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
 
-Acción emit-pr-audited-event
+## Propósito
+
+Emitir `PullRequest_Audited` tras fase de auditoría técnica en `pull-request-review` / Argos.
+
+## Orquestación
+
+Handler `actions::emit_pr_audited`: sella payload ECST referenciado en `SddIA/events/domain/pull-request-audited.md` y escribe en `eda_bus.pending` vía crypto-broker + filesystem handoff.
+
+## Límites
+
+No fusiona PR ni invoca `accept-pr`; solo evento de dominio.

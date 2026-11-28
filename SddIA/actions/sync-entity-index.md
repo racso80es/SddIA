@@ -1,7 +1,7 @@
 ---
-uuid: "a3f8c2e1-4b5d-6a7e-8f90-1a2b3c4d5e6f"
+uuid: "d6636f55-7268-48b2-93c8-cf52178c07a1"
 name: "sync-entity-index"
-version: "1.0.0"
+version: "1.0.1"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -22,11 +22,12 @@ outputs:
   - "message": "string; resultado de auditoría o purga"
 minteo_maximo: null
 porcentaje_de_exito: null
+hash_signature: "sha256:196a3052fc0ae44b89623b7440714a309bfdcda33b5d1f53abe2fbaaea475aec"
 ---
 
 # Acción: sync-entity-index
 
-## 1. Propósito
+## Propósito
 
 Acción canónica del Agente **Cúmulo** para reconciliación asíncrona de catálogos (`index.md`) tras eventos `Domain_Entity_*` en el bus EDA.
 
@@ -37,7 +38,7 @@ Acción canónica del Agente **Cúmulo** para reconciliación asíncrona de cat�
 
 No mueve archivos del bus (jurisdicción del proceso `route-domain-event`). En runtime del demonio, delega la lógica determinista en `./sddia-run.sh --action sync-entity-index`, que orquesta `tool:markdown-table-editor`.
 
-## 2. Orquestación
+## Orquestación
 
 Gate **Cerbero** por `context: ecosystem-evolution`. Rutas de índices vía `cumulo.paths.json` → `directories.*` + `/index.md`.
 
@@ -92,7 +93,7 @@ Gate **Cerbero** por `context: ecosystem-evolution`. Rutas de índices vía `cum
 
 En fallo de auditoría: `data.success: false`, `exitCode: 0` (el watcher promueve el testigo del suscriptor a `dead-letter/` según `data.success`).
 
-## 3. Límites
+## Límites
 
 * Sin mutación del bus; sin emisión de eventos.
 * No sustituye la fase Indexación síncrona del creator en create/update.

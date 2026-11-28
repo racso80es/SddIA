@@ -1,7 +1,7 @@
 ---
-uuid: "c4d5e6f7-a8b9-4012-c345-678901234567"
+uuid: "f830d7a4-aa71-4107-b05d-88918bd40fc8"
 name: "enrich-fracture-pbi-kaizen"
-version: "1.5.0"
+version: "1.5.1"
 contract: "actions-contract v1.2.0"
 context: "knowledge-management"
 capabilities:
@@ -23,20 +23,20 @@ outputs:
   - "message": "string; resultado del análisis Kaizen o no_target"
   - "reason": "string; enriched | no_target"
   - "evolution_verdict": "string|null; new_norm | refactor_tool | prompt_adjustment | process_fix"
-hash_signature: "sha256:0ab82805973f62844946b7cdef5b6e183703ac83d29290adab942d4f9982818f"
+hash_signature: "sha256:d8dbfaf81be21c2fb3d67ba33e246dc6103e14a40de1be963d2fde20f9abc618"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
 
 # Acción: enrich-fracture-pbi-kaizen
 
-## 1. Propósito
+## Propósito
 
 Acción canónica del Agente **Mayeuta** ante `System_Fracture_Detected`. **No** crea el PBI (eso es Cúmulo); localiza el PBI abierto vía resolutor Core (`fracture_hash` / `fracture_process` en genoma YAML) y añade la sección **Conclusión Analítica y Propuesta Evolutiva**.
 
 **Laudo `L-ENRICH-KINTSUGI-DETERMINISTA`:** handler nativo + matcher léxico. Misma traza → misma sección. Prohibido `llm:interact` / `skill:mayeuta-llm` en este enrich. Canal LLM asíncrono = `PBI-FEATURE-ASYNC-FRACTURE-CLARIFICATION`.
 
-## 2. Orquestación
+## Orquestación
 
 ### Paso 1 — Resolución de target (Core `fracture_pbi`)
 
@@ -82,7 +82,7 @@ Reemplazar o completar `## Conclusión Analítica y Propuesta Evolutiva` con dia
 
 Envelope con `success`, `target_path`, `reason` (`enriched` | `no_target`), `evolution_verdict`, `message`.
 
-## 3. Límites
+## Límites
 
 * No repara la fractura ni autoriza bypass.
 * No reconstruye ruta del PBI por hash de nombre.

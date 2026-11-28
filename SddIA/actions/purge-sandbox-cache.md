@@ -1,7 +1,7 @@
 ---
 uuid: "37454c3a-4590-4dfb-a439-2014876a0138"
 name: "purge-sandbox-cache"
-version: "1.0.1"
+version: "1.0.2"
 contract: "actions-contract v1.3.0"
 context: "filesystem-ops"
 capabilities:
@@ -16,18 +16,21 @@ outputs:
   - "success": "boolean"
   - "dry_run": "object"
   - "purge": "object|null"
-hash_signature: "sha256:95c6a167b654929d30fa976dafd2a59158f8d903ff8f5b4bf4043bcedb331160"
+hash_signature: "sha256:ccd249073994a86a8c6d645cdf05eeec327b33f60f904af140c54704ac250231"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
 
-# Acción: purge-sandbox-cache
+## Propósito
 
-Dos tiempos. Cero agentes.
+Purgar `/tmp/cursor-sandbox-cache/**` tras simulación con `tool:ephemeral-cache-purger`.
 
-1. `tool:ephemeral-cache-purger` `simulate: true` (binario nativo).
-2. Gate determinista: cada `candidate_targets[i]` debe matchear `^/tmp/cursor-sandbox-cache(/[a-f0-9]{16,64}(/.*)?)?$`.
-3. Si `simulate_only` o lista vacía: fin.
-4. Misma invocación `simulate: false`.
+## Orquestación
 
-Handler nativo en `execute-process` (`purge_sandbox_cache`). UUID tool forjada: `8929eeea-5e5b-402a-aafa-4a9b429acaec`.
+1. `simulate: true` → candidatos.
+2. Gate regex `^/tmp/cursor-sandbox-cache(/[a-f0-9]{16,64}(/.*)?)?$`.
+3. Purga real salvo `simulate_only` o lista vacía.
+
+## Límites
+
+Sin agentes; dos tiempos deterministas.
