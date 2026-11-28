@@ -1,0 +1,9 @@
+{
+  "kind": "post-remediation-gate",
+  "tracker_ref": "AUT-133",
+  "source_command": "sddia-qa gate-entity-no-anemia --json",
+  "violation_count": 0,
+  "exitCode": 0,
+  "genome_tip_sha": "d0f73e74",
+  "base_origin_main": "624b9e9c"
+}

@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `885d1dee-3d46-4e5c-a435-6aaac51b4909` | 2026-11-28 | AUT-133: remediacion genoma anti-anemia a violation_count 0 y migracion UUID v4 | CANONICO | `SddIA/evolution/885d1dee-3d46-4e5c-a435-6aaac51b4909.md` |
 | `9f67afce-39f1-4103-979a-cb5a78360bfb` | 2026-11-28 | AUT-144: entity_uuid_migrate en forjas process/event/agent/skill/suite + tests regresión | CANONICO | `SddIA/evolution/9f67afce-39f1-4103-979a-cb5a78360bfb.md` |
 | `b064cb55-0391-4f53-bdc9-562a22cb486c` | 2026-11-28 | AUT-138: aduana MCP run_check — intersección Cerbero/shell-executor, gobierno sddia-qa/entity-manager, depth | CANONICO | `SddIA/evolution/b064cb55-0391-4f53-bdc9-562a22cb486c.md` |
 | `4393ec29-62aa-43ee-9fc4-4d6d546437a8` | 2026-11-27 | AUT-137: entity-manager update — BOM, contract slug, UUID migrate, suite replacements | CANONICO | `SddIA/evolution/4393ec29-62aa-43ee-9fc4-4d6d546437a8.md` |
