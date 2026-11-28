@@ -8,9 +8,16 @@ tracker_ref: "AUT-133"
 historia_ref: "AUT-125"
 pbi_ref: "PBI-81e91c67"
 execution_id: "5ea79c56-a610-4223-b2b3-7498a510d239"
-closed_phases: "T1 T2 T3 T4 T5 T6 T7"
-pending_phases: "T8-delivery"
-verdict: "ready-for-delivery"
+closed_phases:
+  - "T1-rama"
+  - "T2-ola0-inventario"
+  - "T3-uuid-politica"
+  - "T4-remediacion-olas"
+  - "T5-promocion-ci"
+  - "T6-evolution"
+  - "T7-validacion"
+  - "T8-cierre"
+verdict: "closed"
 ---
 
 # Ejecución — AUT-133
