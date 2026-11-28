@@ -3,7 +3,7 @@ context:
 - system-operations
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:92b010e9d1dd3217c7e26a7fc041645f8a0c0e4643c484bca53329263c36969e
+hash_signature: "sha256:92b010e9d1dd3217c7e26a7fc041645f8a0c0e4643c484bca53329263c36969e"
 inputs:
 - kill_grace_seconds: Opcional; segundos SIGTERM→SIGKILL por Centinela (default `10`)
 - cumulo_topology: Topología SSOT inyectada
@@ -51,13 +51,15 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # daemon-kill-switch
 
-Kill-Switch global (CEN-03). Al apagar el motor SddIA (`SIGTERM`, `SIGINT`, `atexit`) o invocación manual, purga **todos** los Centinelas indexados sin procesos huérfanos.
+## Propósito
+
+Kill-Switch global (CEN-03): al apagar el motor SddIA (`SIGTERM`, `SIGINT`, `atexit`) o por invocación manual, purga **todos** los Centinelas indexados sin dejar locks huérfanos ni PIDs zombie. Handler nativo `handlers::daemon_kill_switch` en `execute-process`.
 
 ```bash
 ./sddia-run.sh --process daemon-kill-switch --inputs '{"repository_path":"<abs>"}'
 ```
 
-## Purga manual
+## Orquestación manual
 
 Invocación explícita vía `./sddia-run.sh --process daemon-kill-switch` o `--process governance-daemon-manager` con `operation: kill`. No depende de intérprete Python.
 

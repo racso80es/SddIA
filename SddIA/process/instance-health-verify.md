@@ -1,7 +1,7 @@
 ---
 context: quality-assurance
 contract: process-contract v1.4.0
-hash_signature: sha256:08a2b9fd1dbc9ed362666268ee6e01f35c1d760b8c8f2db0c918973957343498
+hash_signature: "sha256:08a2b9fd1dbc9ed362666268ee6e01f35c1d760b8c8f2db0c918973957343498"
 inputs:
 - instance_root: Ruta absoluta de la instancia desplegada
 name: instance-health-verify
@@ -19,4 +19,16 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # instance-health-verify
 
-Verificación post-deploy de instancia consumidor: unidades systemd habilitadas, NRestarts, WUI GET /api/system-health, perfil de dominio y bóveda. Emite acta en docs/audits.
+## Propósito
+
+Auditoría post-deploy de una instancia consumidor SddIA: comprueba servicios systemd, reinicios, salud HTTP de la WUI y perfil/bóveda; emite acta `instance-deploy-{ESC}-{ts}.md` bajo `docs/audits` con veredicto `APTO` | `NO-APTO`. Handler nativo `handlers/instance_health_verify.rs`.
+
+## Orquestación
+
+1. Entrada `instance_root` (ruta absoluta de la instancia desplegada).
+2. Fase única `Verificar instancia`: `systemctl`, `GET /api/system-health`, recolección de perfil de dominio.
+3. Salidas: `verdict`, `audit_path` (relativa al repo).
+
+## Entradas y salidas
+
+- Contexto `quality-assurance`; workspace estándar bajo `.SddIA/workspaces/`.

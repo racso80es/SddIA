@@ -1,7 +1,7 @@
 ---
 context: quality-assurance
 contract: process-contract v1.4.0
-hash_signature: sha256:53c6fcafebe88740a46c870aa8d97a5ce26e7059a8c25b385131e4c19b524564
+hash_signature: "sha256:53c6fcafebe88740a46c870aa8d97a5ce26e7059a8c25b385131e4c19b524564"
 inputs:
 - description: Boolean; default true — escribe ecosystem-health.json.
   name: persist
@@ -30,4 +30,16 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # query-ecosystem-health
 
-Fusiona map-snapshot × territorio Argos/Radamanto/Cerbero y persiste ecosystem-health.json.
+## Propósito
+
+Producir un read model JSON de salud del ecosistema fusionando `compile-ecosystem-map-snapshot`, auditoría de heartbeats, estadísticas EDA y entidades revocadas. Entradas opcionales `persist` (default true) y `compile_map` (recompila snapshot antes de fusionar).
+
+## Orquestación
+
+1. Fase `Fusionar salud` delega en `agent:argos` con capacidad `fs:persist`.
+2. Cruza map-snapshot con `heartbeat-audit`, stats de store y `revoked_entities`.
+3. Salidas: `rows` (matriz de salud) y `ecosystem_health_path` (ruta relativa del artefacto persistido, típicamente `ecosystem-health.json`).
+
+## Consumo
+
+Proceso QA consumible desde CLI/Kalma2 para paneles Espejo sin invocar procesos de dominio individuales.
