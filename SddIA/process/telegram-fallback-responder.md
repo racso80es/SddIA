@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - external-ingest
 contract: process-contract v1.4.0
-hash_signature: sha256:4aba293e56f7c2089608ee267bb47a07fa9dbbb736ef807a1e1c698c81cc7235
+hash_signature: "sha256:4aba293e56f7c2089608ee267bb47a07fa9dbbb736ef807a1e1c698c81cc7235"
 inputs:
 - text: Texto del mensaje Telegram (payload.text)
 - chat_id: Chat destino para respuesta eferente
@@ -52,6 +52,8 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # telegram-fallback-responder
 
+## Propósito
+
 Red de seguridad sensorial: **triaje inverso** para entropía conversacional no estructurada en Telegram.
 
 ## Fase 1 — Filtro C
@@ -70,6 +72,6 @@ Prompt inyectado literalmente a Mayeuta:
 [HARD OVERRIDE] Has recibido este estímulo externo: "{payload.text}". Genera una respuesta orgánica de máximo 2 líneas. Habla desde tu identidad arquitectónica (Tormentosa/Aiúa). Acusa recibo, asimila o cuestiona el estímulo. PROHIBIDO: Ser verboso, ofrecer asistencia genérica o actuar como herramienta esclava.
 ```
 
-## Fase 3 — Materialización
+## Operación — Materialización
 
 Invocar **`send-telegram-notification`** con `message` = output Fase 2. Destino: `chat_id` del payload (fallback env `TELEGRAM_ALLOWED_CHAT_ID`).

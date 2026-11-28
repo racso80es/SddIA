@@ -2,7 +2,7 @@
 context:
 - tracker-operations
 contract: process-contract v1.4.0
-hash_signature: sha256:3a22a119a059ae4d84a1a2e960fe042708d10bb5f4e8b42f30b8dd3bdb2a2e81
+hash_signature: "sha256:3a22a119a059ae4d84a1a2e960fe042708d10bb5f4e8b42f30b8dd3bdb2a2e81"
 inputs:
 - sync_all: Volcar los ítems con tracker_ref que devuelve el proveedor (default true)
 - tracker_ref: Identificador opaco de tracker:lifecycle
@@ -24,4 +24,10 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # tracker-description-sync
 
+## Propósito
+
 `update_issue_description` de `tracker:lifecycle` con `tracker_ref` opaco y el cuerpo que el proveedor ya cargó. No crea ítems. Redacta líneas de secretos conocidos antes del envío.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process tracker-description-sync`; handler/fases en frontmatter YAML.

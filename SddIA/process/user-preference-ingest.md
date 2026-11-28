@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:c31248c5458c4e17535ed3118da553315612e2b8976f5e3003e82e57fc13cb8d
+hash_signature: "sha256:c31248c5458c4e17535ed3118da553315612e2b8976f5e3003e82e57fc13cb8d"
 inputs:
 - 'event_uri: Ruta de la instancia ECST User_Preference_Change_Requested'
 name: user-preference-ingest
@@ -31,7 +31,13 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # user-preference-ingest
 
+## Propósito
+
 Consume `User_Preference_Change_Requested`. Handler nativo `user-preference-ingest-core` en `execute-process`.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process user-preference-ingest`; handler/fases en frontmatter YAML.
 
 ```bash
 ./sddia-run.sh --process user-preference-ingest \

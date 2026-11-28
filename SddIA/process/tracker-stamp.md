@@ -2,7 +2,7 @@
 context:
 - tracker-operations
 contract: process-contract v1.4.0
-hash_signature: sha256:bbec62c3a2c5bb4e220b1b88388283390dc4e7466b548ac3b1be7eff7a31f03d
+hash_signature: "sha256:bbec62c3a2c5bb4e220b1b88388283390dc4e7466b548ac3b1be7eff7a31f03d"
 inputs:
 - 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://domain/{event_id})'
 minteo_maximo: null
@@ -25,4 +25,10 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # tracker-stamp
 
+## Propósito
+
 Suscriptor táctico de señales de dominio. Invoca `tracker:lifecycle`. Ciego al markdown. Fail-soft D5.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process tracker-stamp`; handler/fases en frontmatter YAML.
