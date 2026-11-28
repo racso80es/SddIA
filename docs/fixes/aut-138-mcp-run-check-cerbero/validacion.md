@@ -1,7 +1,7 @@
 ---
 feature_name: aut-138-mcp-run-check-cerbero
-created: "2026-11-28"
-updated: "2026-11-28T07:30:00Z"
+created: 2026-11-28
+updated: 2026-11-28T07:30:00Z
 process: bug-fix
 branch: fix/aut-138-mcp-run-check-cerbero
 branch_name: fix/aut-138-mcp-run-check-cerbero
@@ -18,6 +18,10 @@ checks:
   AC-4: APTO
   AC-5: APTO
   global: APTO
+validated_base_sha: 20962e48163973354c2e9211a261b045805d4839
+validated_head_sha: HEAD
+validated_tree_sha: 94640787514c975c0c823356acc1770fe220a0a3
+diff_digest: sha256:b128d5cbbc43f1ed068d0fe1f0a60a984165c417a63e23a546b8cda9c928ac71
 ---
 
 # Validación — AUT-138
