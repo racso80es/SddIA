@@ -710,11 +710,132 @@ fn is_uuid_v4(raw: &str) -> bool {
     uuid::Uuid::parse_str(s).map(|u| u.get_version_num() == 4).unwrap_or(false)
 }
 
+fn index_row_is_separator_or_header(cols: &[&str], match_col: usize) -> bool {
+    if cols.len() <= match_col {
+        return true;
+    }
+    let cell = cols[match_col].trim();
+    if cell.is_empty() {
+        return true;
+    }
+    let looks_sep = cols.iter().skip(1).filter(|c| !c.trim().is_empty()).all(|c| {
+        let t = c.trim();
+        !t.is_empty() && t.chars().all(|ch| ch == '-' || ch == ':' || ch == ' ')
+    });
+    if looks_sep {
+        return true;
+    }
+    matches!(
+        cell,
+        "Name"
+            | "UUID"
+            | "uuid"
+            | "Archivo fuente"
+            | "Versión"
+            | "version"
+    )
+}
+
+fn index_cell_matches(cell: &str, match_value: &str) -> bool {
+    let cell = cell.trim();
+    let mv = match_value.trim();
+    if cell == mv {
+        return true;
+    }
+    let strip_ticks = |s: &str| -> String {
+        s.trim()
+            .trim_matches('`')
+            .trim()
+            .to_string()
+    };
+    let cell_bare = strip_ticks(cell);
+    let mv_bare = strip_ticks(mv);
+    if !cell_bare.is_empty() && cell_bare == mv_bare {
+        return true;
+    }
+    let stem = |s: &str| -> String {
+        let b = strip_ticks(s);
+        b.strip_suffix(".md").unwrap_or(&b).to_string()
+    };
+    let cell_stem = stem(cell);
+    let mv_stem = stem(mv);
+    if !cell_stem.is_empty() && cell_stem == mv_stem {
+        return true;
+    }
+    if cell == format!("`{mv_bare}`") || mv == format!("`{cell_bare}`") {
+        return true;
+    }
+    if cell == format!("`{mv_stem}.md`") || mv == format!("`{cell_stem}.md`") {
+        return true;
+    }
+    if cell_bare == format!("{mv_stem}.md") || mv_bare == format!("{cell_stem}.md") {
+        return true;
+    }
+    false
+}
+
+/// Sustituye la celda UUID de una fila de índice markdown (layout parametrizado).
+/// `match_col` / `uuid_col` son índices tras `split('|')` (col Name/Archivo = 1, UUID = 2).
+pub fn sync_index_entity_uuid(
+    index_path: &Path,
+    match_col: usize,
+    match_value: &str,
+    uuid_col: usize,
+    new_uuid: &str,
+) -> Result<(), String> {
+    if !index_path.is_file() {
+        return Ok(());
+    }
+    let idx = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
+    let mut changed = false;
+    let mut matched = false;
+    let mut lines: Vec<String> = Vec::with_capacity(idx.lines().count());
+    let need = match_col.max(uuid_col);
+    for line in idx.lines() {
+        if !line.starts_with('|') {
+            lines.push(line.to_string());
+            continue;
+        }
+        let cols: Vec<&str> = line.split('|').collect();
+        if cols.len() <= need || index_row_is_separator_or_header(&cols, match_col) {
+            lines.push(line.to_string());
+            continue;
+        }
+        if !index_cell_matches(cols[match_col], match_value) {
+            lines.push(line.to_string());
+            continue;
+        }
+        matched = true;
+        let mut new_cols: Vec<String> = cols.iter().map(|c| (*c).to_string()).collect();
+        new_cols[uuid_col] = format!(" `{new_uuid}` ");
+        let new_row = new_cols.join("|");
+        if line != new_row {
+            changed = true;
+        }
+        lines.push(new_row);
+    }
+    if !matched {
+        return Err(format!(
+            "sync_index_entity_uuid: sin fila para match_value={match_value:?} en {}",
+            index_path.display()
+        ));
+    }
+    if changed {
+        let mut out = lines.join("\n");
+        if idx.ends_with('\n') {
+            out.push('\n');
+        }
+        fs::write(index_path, out).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 /// Migra el UUID de una entidad en disco: frontmatter, fila de índice y matriz `eda-coverage.json`.
 pub fn migrate_entity_uuid_record(
     repo: &Path,
     index_path: &Path,
-    entity_name: &str,
+    match_col: usize,
+    match_value: &str,
     artifact_path: &Path,
     new_uuid: &str,
 ) -> Result<Value, String> {
@@ -753,12 +874,51 @@ pub fn migrate_entity_uuid_record(
     };
     fs::write(artifact_path, join_md_frontmatter(&new_yaml, &body_joined))
         .map_err(|e| e.to_string())?;
-    sync_action_index_entity_uuid(index_path, entity_name, new_uuid)?;
+    sync_index_entity_uuid(index_path, match_col, match_value, 2, new_uuid)?;
     crate::engine::eda_coverage::transfer_entity_coverage(repo, &old_uuid, new_uuid)?;
     Ok(json!({
         "entity_uuid_old": old_uuid,
         "entity_uuid_new": new_uuid,
     }))
+}
+
+/// Aplica `entity_uuid_migrate` del input si está presente.
+pub fn apply_entity_uuid_migrate(
+    repo: &Path,
+    inputs: &Value,
+    index_path: &Path,
+    match_col: usize,
+    match_value: &str,
+    artifact_path: &Path,
+) -> Result<Option<Value>, String> {
+    let Some(new_uuid) = optional_str(inputs, "entity_uuid_migrate") else {
+        return Ok(None);
+    };
+    Ok(Some(migrate_entity_uuid_record(
+        repo,
+        index_path,
+        match_col,
+        match_value,
+        artifact_path,
+        &new_uuid,
+    )?))
+}
+
+/// Propaga metadatos de migración al handoff JSON de forja.
+pub fn merge_migration_handoff(out: &mut Value, migration_meta: &Option<Value>) {
+    if let Some(m) = migration_meta {
+        if let Value::Object(base) = out {
+            base.insert("entity_uuid_migration".into(), m.clone());
+            if let Some(u) = m.get("entity_uuid_new").and_then(|v| v.as_str()) {
+                base.insert("handoff_entity_uuid".into(), json!(u));
+            }
+        }
+    }
+}
+
+/// Match típico de columna Archivo fuente en índices de agent/skill/suite/event.
+pub fn index_archivo_md_match(name: &str) -> String {
+    format!("`{name}.md`")
 }
 
 /// Sustituye la celda UUID de una fila de `actions/index.md` para `name`.
@@ -767,38 +927,7 @@ pub fn sync_action_index_entity_uuid(
     name: &str,
     new_uuid: &str,
 ) -> Result<(), String> {
-    if !index_path.is_file() {
-        return Ok(());
-    }
-    let idx = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
-    let mut changed = false;
-    let mut lines: Vec<String> = Vec::with_capacity(idx.lines().count());
-    for line in idx.lines() {
-        let cols: Vec<&str> = line.split('|').collect();
-        if line.starts_with('|') && cols.len() == 8 && cols[1].trim() == name {
-            let new_row = format!(
-                "| {name} | `{new_uuid}` | {} | {} | {} | {} |",
-                cols[3].trim(),
-                cols[4].trim(),
-                cols[5].trim(),
-                cols[6].trim()
-            );
-            if line != new_row {
-                changed = true;
-            }
-            lines.push(new_row);
-            continue;
-        }
-        lines.push(line.to_string());
-    }
-    if changed {
-        let mut out = lines.join("\n");
-        if idx.ends_with('\n') {
-            out.push('\n');
-        }
-        fs::write(index_path, out).map_err(|e| e.to_string())?;
-    }
-    Ok(())
+    sync_index_entity_uuid(index_path, 1, name, 2, new_uuid)
 }
 
 /// Update canónico de acción: aplica solo los campos presentes en `inputs` y conserva el resto del
@@ -1039,19 +1168,56 @@ pub fn sync_action_index_row(
     Ok(())
 }
 
+/// Ejecuta `f` y, si devuelve `Err`, restaura cada path existente a su snapshot byte a byte.
+/// Paths ausentes al inicio se eliminan si fueron creados durante `f`.
+pub fn with_paths_rollback<T>(
+    paths: &[&Path],
+    f: impl FnOnce() -> Result<T, String>,
+) -> Result<T, String> {
+    let mut snapshots: Vec<(&Path, Option<Vec<u8>>)> = Vec::with_capacity(paths.len());
+    for path in paths {
+        let snap = if path.is_file() {
+            Some(fs::read(path).map_err(|e| format!("rollback snapshot {}: {e}", path.display()))?)
+        } else {
+            None
+        };
+        snapshots.push((*path, snap));
+    }
+    match f() {
+        Ok(v) => Ok(v),
+        Err(e) => {
+            let mut restore_errs = Vec::new();
+            for (path, snap) in snapshots.into_iter().rev() {
+                match snap {
+                    Some(bytes) => {
+                        if let Err(w) = fs::write(path, &bytes) {
+                            restore_errs.push(format!("{}: {w}", path.display()));
+                        }
+                    }
+                    None => {
+                        if path.exists() {
+                            if let Err(w) = fs::remove_file(path) {
+                                restore_errs.push(format!("remove {}: {w}", path.display()));
+                            }
+                        }
+                    }
+                }
+            }
+            if restore_errs.is_empty() {
+                Err(e)
+            } else {
+                Err(format!("{e}; rollback falló: {}", restore_errs.join("; ")))
+            }
+        }
+    }
+}
+
 /// Ejecuta `f` y, si devuelve `Err`, restaura `path` a su contenido previo byte a byte.
 pub fn with_file_rollback<T>(
     path: &Path,
     f: impl FnOnce() -> Result<T, String>,
 ) -> Result<T, String> {
-    let original = fs::read(path).map_err(|e| format!("rollback snapshot {}: {e}", path.display()))?;
-    match f() {
-        Ok(v) => Ok(v),
-        Err(e) => match fs::write(path, &original) {
-            Ok(()) => Err(e),
-            Err(w) => Err(format!("{e}; rollback de {} falló: {w}", path.display())),
-        },
-    }
+    with_paths_rollback(&[path], f)
 }
 
 /// Actualiza columna Versión en `actions/index.md` para `name`.
@@ -1947,6 +2113,25 @@ mod tests {
     }
 
     #[test]
+    fn migrate_entity_uuid_record_rejects_non_v4() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let path = tmp.path().join("x.md");
+        fs::write(&path, "---\nuuid: \"00000000-0000-4000-8000-000000000099\"\n---\n").unwrap();
+        let err = migrate_entity_uuid_record(
+            tmp.path(),
+            &tmp.path().join("index.md"),
+            1,
+            "x",
+            &path,
+            "not-a-v4-uuid",
+        )
+        .unwrap_err();
+        assert!(err.contains("UUID v4"), "{err}");
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(text.contains("00000000-0000-4000-8000-000000000099"));
+    }
+
+    #[test]
     fn migrate_entity_uuid_syncs_index_and_coverage() {
         let tmp = tempfile::tempdir().unwrap();
         let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -1988,6 +2173,7 @@ mod tests {
         migrate_entity_uuid_record(
             tmp.path(),
             &actions.join("index.md"),
+            1,
             "demo",
             &actions.join("demo.md"),
             new,
@@ -2293,5 +2479,45 @@ mod aut131_forge_integrity_tests {
         });
         assert_eq!(r.unwrap_err(), "fallo");
         assert_eq!(fs::read_to_string(&path).unwrap(), "original");
+    }
+
+    #[test]
+    fn with_paths_rollback_restores_all_on_error() {
+        let tmp = tempfile::tempdir().unwrap();
+        let a = tmp.path().join("a.md");
+        let b = tmp.path().join("b.md");
+        fs::write(&a, "A0").unwrap();
+        fs::write(&b, "B0").unwrap();
+        let r: Result<(), String> = with_paths_rollback(&[&a, &b], || {
+            fs::write(&a, "A1").unwrap();
+            fs::write(&b, "B1").unwrap();
+            Err("boom".into())
+        });
+        assert_eq!(r.unwrap_err(), "boom");
+        assert_eq!(fs::read_to_string(&a).unwrap(), "A0");
+        assert_eq!(fs::read_to_string(&b).unwrap(), "B0");
+    }
+
+    #[test]
+    fn sync_index_entity_uuid_skills_archivo_fuente_layout() {
+        let tmp = tempfile::tempdir().unwrap();
+        let idx = tmp.path().join("index.md");
+        let old = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let new = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+        fs::write(
+            &idx,
+            format!(
+                "| Archivo fuente | uuid | name | version | contract | context | Capabilities |\n|----------------|------|------|---------|----------|---------|--------------|\n| `cryptography-manager.md` | `{old}` | cryptography-manager | 1.0.0 | skills-contract v1.1.0 | x | `cap` |\n"
+            ),
+        )
+        .unwrap();
+        sync_index_entity_uuid(&idx, 1, "`cryptography-manager.md`", 2, new).unwrap();
+        let text = fs::read_to_string(&idx).unwrap();
+        assert!(text.contains(new), "{text}");
+        assert!(!text.contains(old), "{text}");
+        // resilient: bare name.md also matches
+        sync_index_entity_uuid(&idx, 1, "cryptography-manager.md", 2, old).unwrap();
+        let text2 = fs::read_to_string(&idx).unwrap();
+        assert!(text2.contains(old), "{text2}");
     }
 }
