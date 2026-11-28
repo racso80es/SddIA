@@ -10,7 +10,10 @@ execution_id: "d0b4e016-3133-4fdd-ba51-38cd393156cc"
 
 # Ejecución — AUT-144
 
-1. `SDDIA_ALLOW_STALE_RUNTIME=0 ./sddia-run.sh --process bug-fix` (`execution_id` `d0b4e016-3133-4fdd-ba51-38cd393156cc`) — workspace-init + Dedalo OK; Tekton subagent timeout 600s (`PROVIDER_TIMEOUT`).
-2. Continuación IDE (Tekton): call sites migrate en cinco forjas + tests; `cargo build -p execute-process --release`.
-3. `cargo test -p execute-process --lib migrate_entity_uuid suite_forge_entity_uuid_migrate sync_index_entity_uuid` — verde.
-4. Reanudación `bug-fix` pendiente (fases Verificación / DCC).
+1. `bug-fix` `d0b4e016…` — init+Dedalo; Tekton subagent timeout; continuación IDE commit `73909016`.
+2. Tests forja process/event/agent + negativos UUID + rollback suite.
+3. `cargo test -p execute-process` (974 OK; 2 done_gate Linear env).
+4. `cargo build -p execute-process --release` + `SDDIA_ALLOW_STALE_RUNTIME=0`.
+5. `tracker-description-sync` — AC-5 acotado a motor/regresiones.
+6. Evolución `9f67afce-39f1-4103-979a-cb5a78360bfb`.
+7. Commits vía `skill:git-manager` + `delivery-close-cycle`.

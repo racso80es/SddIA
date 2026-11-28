@@ -2113,6 +2113,25 @@ mod tests {
     }
 
     #[test]
+    fn migrate_entity_uuid_record_rejects_non_v4() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let path = tmp.path().join("x.md");
+        fs::write(&path, "---\nuuid: \"00000000-0000-4000-8000-000000000099\"\n---\n").unwrap();
+        let err = migrate_entity_uuid_record(
+            tmp.path(),
+            &tmp.path().join("index.md"),
+            1,
+            "x",
+            &path,
+            "not-a-v4-uuid",
+        )
+        .unwrap_err();
+        assert!(err.contains("UUID v4"), "{err}");
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(text.contains("00000000-0000-4000-8000-000000000099"));
+    }
+
+    #[test]
     fn migrate_entity_uuid_syncs_index_and_coverage() {
         let tmp = tempfile::tempdir().unwrap();
         let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

@@ -3677,6 +3677,183 @@ mod aut131_forge_rollback_tests {
         assert_eq!(fs::read_to_string(dir.join("demo-suite.md")).unwrap(), SUITE);
     }
 
+    fn copy_repo_cumulo_and_eda(repo: &Path, old: &str) {
+        let core = repo.join("SddIA/core");
+        fs::create_dir_all(&core).unwrap();
+        let roots_json: Value = json!([]);
+        let cfg = json!({
+            "version": "1.6.0",
+            "directories": {
+                "process": "SddIA/process",
+                "process_domain_roots": roots_json
+            }
+        });
+        fs::write(
+            core.join("cumulo.paths.json"),
+            serde_json::to_string_pretty(&cfg).unwrap(),
+        )
+        .unwrap();
+        fs::write(
+            core.join("eda-coverage.json"),
+            format!(
+                "{{\"version\":\"1.0.0\",\"coverage_matrix\":{{\"{old}\":{{\"is_covered\":true,\"last_hash\":\"sha256:ab\"}}}}}}"
+            ),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn process_forge_entity_uuid_migrate_syncs_index_and_coverage() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let old = "d4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0";
+        let new = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+        let process_dir = repo.join("SddIA/process");
+        fs::create_dir_all(&process_dir).unwrap();
+        fs::write(
+            process_dir.join("demo-process.md"),
+            format!(
+                "---\nname: \"demo-process\"\nuuid: \"{old}\"\nversion: \"1.0.0\"\ncontract: process-contract v1.4.0\ncontext: ecosystem-evolution\nhash_signature: sha256:00\nphases: []\n---\n\n# demo-process\n"
+            ),
+        )
+        .unwrap();
+        fs::write(
+            process_dir.join("index.md"),
+            format!(
+                "| Name | UUID | Versión | Context | Aliases | Descripción |\n|------|------|---------|---------|---------|-------------|\n| demo-process | `{old}` | 1.0.0 | ecosystem-evolution | — | Demo. |\n"
+            ),
+        )
+        .unwrap();
+        copy_repo_cumulo_and_eda(repo, old);
+        let out = run_process_forge(
+            repo,
+            &json!({
+                "process_name": "demo-process",
+                "lifecycle_operation": "update",
+                "entity_uuid_migrate": new,
+            }),
+        )
+        .expect("migrate process");
+        assert_eq!(out["handoff_entity_uuid"], json!(new));
+        let idx = fs::read_to_string(process_dir.join("index.md")).unwrap();
+        assert!(idx.contains(new));
+        let cov: Value =
+            serde_json::from_str(&fs::read_to_string(repo.join("SddIA/core/eda-coverage.json")).unwrap())
+                .unwrap();
+        assert!(cov["coverage_matrix"].get(new).is_some());
+        assert!(cov["coverage_matrix"].get(old).is_none());
+    }
+
+    #[test]
+    fn agent_forge_entity_uuid_migrate_syncs_index_and_coverage() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let old = "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b";
+        let new = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+        let agents = repo.join("SddIA/agents");
+        fs::create_dir_all(&agents).unwrap();
+        fs::write(
+            agents.join("demo-agent.md"),
+            format!(
+                "---\nuuid: \"{old}\"\nname: demo-agent\nversion: \"1.0.0\"\nhash_signature: sha256:00\n---\n\n# demo-agent\n"
+            ),
+        )
+        .unwrap();
+        fs::write(
+            agents.join("index.md"),
+            format!(
+                "| Archivo fuente | uuid | name | version | contract | Allowed policies | Cognitive role |\n|----------------|------|------|---------|----------|------------------|------------------|\n| `demo-agent.md` | `{old}` | demo-agent | 1.0.0 | agents-contract v1.0.0 | `ecosystem-evolution` | Demo |\n"
+            ),
+        )
+        .unwrap();
+        copy_repo_cumulo_and_eda(repo, old);
+        let out = run_agent_forge(
+            repo,
+            &json!({
+                "agent_name": "demo-agent",
+                "lifecycle_operation": "update",
+                "entity_uuid_migrate": new,
+            }),
+        )
+        .expect("migrate agent");
+        assert_eq!(out["handoff_entity_uuid"], json!(new));
+        let idx = fs::read_to_string(agents.join("index.md")).unwrap();
+        assert!(idx.contains(new));
+    }
+
+    #[test]
+    fn event_forge_entity_uuid_migrate_syncs_index_and_coverage() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let domain = "SddIA/events/domain";
+        fs::create_dir_all(repo.join(domain)).unwrap();
+        let old = "a6b7c8d9-e0f1-4a2b-c3d4-e5f6a7b8c9d0";
+        let new = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+        fs::write(
+            repo.join(domain).join("demo-event.md"),
+            format!(
+                "---\nuuid: \"{old}\"\nname: demo-event\nversion: \"1.0.0\"\nhash_signature: sha256:00\n---\n\n# demo-event\n"
+            ),
+        )
+        .unwrap();
+        fs::write(
+            repo.join(domain).join("index.md"),
+            format!(
+                "| Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |\n|----------------|------|------|------------|---------|----------|---------|--------------|\n| `demo-event.md` | `{old}` | demo-event | Domain | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | — |\n"
+            ),
+        )
+        .unwrap();
+        copy_repo_cumulo_and_eda(repo, old);
+        let out = run_event_forge(
+            repo,
+            &json!({
+                "entity_class": "event",
+                "event_name": "demo-event",
+                "event_family": "domain",
+                "lifecycle_operation": "update",
+                "entity_uuid_migrate": new,
+            }),
+        )
+        .expect("migrate event");
+        assert_eq!(out["handoff_entity_uuid"], json!(new));
+        let idx = fs::read_to_string(repo.join(domain).join("index.md")).unwrap();
+        assert!(idx.contains(new));
+    }
+
+    #[test]
+    fn suite_forge_migrate_rolls_back_artifact_on_index_sync_failure() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let dir = repo.join("SddIA/suites");
+        fs::create_dir_all(&dir).unwrap();
+        let old = "c3d4e5f6-a7b8-4901-c123-456789abcdef";
+        fs::write(
+            dir.join("orphan-suite.md"),
+            format!(
+                "---\nuuid: \"{old}\"\nname: orphan-suite\nversion: \"1.0.0\"\nhash_signature: sha256:00\n---\n\n# orphan-suite\n"
+            ),
+        )
+        .unwrap();
+        fs::write(
+            dir.join("index.md"),
+            "| Archivo | uuid | name | version | execution_strategy | node_count | Descripción |\n|---------|------|------|---------|-------------------|------------|-------------|\n",
+        )
+        .unwrap();
+        copy_repo_cumulo_and_eda(repo, old);
+        let before = fs::read_to_string(dir.join("orphan-suite.md")).unwrap();
+        let err = run_suite_forge(
+            repo,
+            &json!({
+                "suite_name": "orphan-suite",
+                "lifecycle_operation": "update",
+                "entity_uuid_migrate": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+            }),
+        )
+        .unwrap_err();
+        assert!(err.contains("sync_index_entity_uuid") || err.contains("sin fila"), "{err}");
+        assert_eq!(fs::read_to_string(dir.join("orphan-suite.md")).unwrap(), before);
+    }
+
     #[test]
     fn suite_forge_entity_uuid_migrate_syncs_index_and_coverage() {
         let tmp = tempfile::tempdir().unwrap();
