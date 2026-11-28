@@ -17,4 +17,6 @@ relacionado:
 
 En `build_cycle_payload`, tras resolver `pbi_ref`, se enriquece `tracker_ref` con la misma semántica que `resolve_tracker_ref_for_lifecycle` sobre `persist_ref` únicamente, alineando el milestone `PrOpened` con `attach_tracker_ref_from_persist` usado en la emisión de `PullRequest_Presented`.
 
-Test de regresión: `build_cycle_payload_resolves_tracker_ref_from_persist_objectives_only`.
+En `apply_remote` (remoto): `update_issue_state` antes del sello de descripción y verificación post-`fetch_issue` contra `state_map` (AC2 workflow *In Review*).
+
+Tests: `build_cycle_payload_resolves_tracker_ref_from_persist_objectives_only`, `verify_workflow_state_rejects_mismatch`.

@@ -21,3 +21,8 @@ En `build_cycle_payload`, bloque adicional:
 ## Regresión
 
 Test unitario `build_cycle_payload_resolves_tracker_ref_from_persist_objectives_only` (objectives con `tracker_ref: AUT-129`, sin `pbi_ref` en inputs).
+
+## AC2 — workflow Linear en PrOpened
+
+- `apply_remote` (remoto): primero `tool_update_state`, luego `update_issue_description` (evita desfase `tracker_column: in_review` con workflow aún en *In Progress*).
+- `tool_update_state`: tras adapter OK, `fetch_issue` y `verify_workflow_state_after_update` (falla explícita si `state` ≠ `state_map` esperado).
