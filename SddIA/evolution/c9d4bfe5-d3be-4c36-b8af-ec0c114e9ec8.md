@@ -4,7 +4,7 @@ id_cambio: "c9d4bfe5-d3be-4c36-b8af-ec0c114e9ec8"
 fecha: "2026-11-28"
 tipo_operacion: alta
 descripcion_breve: "AUT-129: build_cycle_payload resuelve tracker_ref desde persist_ref (resolve_tracker_ref_for_lifecycle) en milestone PrOpened"
-hash_integrity: "sha256:pending"
+hash_integrity: "sha256:d44093705689c8045e91b1d36536c8bc37272aeb49236e0da7ae51ff36967115"
 relacionado:
   - "AUT-129"
   - "AUT-120"
