@@ -1,13 +1,13 @@
 ---
 feature_name: aut-129-dcc-pr-opened-tracker-ref-persist
-created: "2026-11-28"
+created: 2026-11-28
 process: bug-fix
 branch: fix/aut-129-dcc-pr-opened-tracker-ref-persist
 branch_name: fix/aut-129-dcc-pr-opened-tracker-ref-persist
 persist_ref: docs/fixes/aut-129-dcc-pr-opened-tracker-ref-persist
 pbi_ref: AUT-129
 tracker_ref: AUT-129
-execution_id: "f491f6fc-fa55-488a-8299-742b816a254c"
+execution_id: f491f6fc-fa55-488a-8299-742b816a254c
 global: APTO
 checks:
   ac1_payload_tracker_ref: APTO
@@ -21,6 +21,10 @@ git_changes:
 - SddIA/evolution/Evolution_log.md
 - docs/fixes/aut-129-dcc-pr-opened-tracker-ref-persist/
 git_evidence_source: skill:git-manager (cápsula directa)
+validated_base_sha: aeac3a42f6444bd6656260869c7bf46f24247275
+validated_head_sha: 3077b0d1a3917d7317497d178934c3a7250bbe33
+validated_tree_sha: e89434d386c3f985ceda297b2d4198975137f8bb
+diff_digest: sha256:9da0b9e95725a54217a4de337a1732eb5a07da856599d09ea1780d24c7f56a6a
 ---
 
 # Validación — AUT-129
