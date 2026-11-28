@@ -23,9 +23,9 @@ git_changes:
 - docs/fixes/aut-129-dcc-pr-opened-tracker-ref-persist/
 git_evidence_source: skill:git-manager (cápsula directa)
 validated_base_sha: aeac3a42f6444bd6656260869c7bf46f24247275
-validated_head_sha: 364e7de5619f99963eb19bfae75279dc4b5d3b25
-validated_tree_sha: b4468cf4fe2c0ea88f513af28e592bcb72807549
-diff_digest: sha256:6794055455c57f1082031f7d25d4cab890d4c5870380f6bd14bf7c4bf7365545
+validated_head_sha: d1625b4593fbcc7f72a9b50d44da31d6537c9219
+validated_tree_sha: 79d9ba90cdb57982a87bd069ed385f54061cde5b
+diff_digest: sha256:340b7d8a4920aa541c4b223e5d452b9be97b42182ef83dc54042e80a49276d7a
 ---
 
 # Validación — AUT-129
