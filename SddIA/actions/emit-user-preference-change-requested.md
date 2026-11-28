@@ -1,7 +1,7 @@
 ---
-uuid: "c3d4e5f6-a7b8-4901-c234-567890ab004"
+uuid: "4548fdd5-7c77-4589-a289-73e622bf63df"
 name: "emit-user-preference-change-requested"
-version: "2.0.1"
+version: "2.0.2"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -9,9 +9,19 @@ capabilities:
   - "event-bus-domain-write"
 inputs: []
 outputs: []
-hash_signature: "sha256:e8ca864ec3b520ef8503d92bd351a81262d67806c13ec739ee94791f03b1bc07"
+hash_signature: "sha256:f7486c0c9a0a2abfbcb3aea057e1cc34b5e69847a66cca33af36b92c00bb59ed"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
 
-Acción emit-user-preference-change-requested
+## Propósito
+
+`User_Preference_Change_Requested` (domain) para cambios de preferencia Kalma2/AIUA.
+
+## Orquestación
+
+`user_preference_change_requested.rs`: `operation`, `channel`, `payload`; mint UUID; usado por `dispatch-aiua-intent` y handlers email.
+
+## Límites
+
+Sin `raw_utterance` en ECST.

@@ -1,7 +1,7 @@
-﻿---
+---
 uuid: "3f8c2b1a-9d0e-4f7a-b2c1-0e9d8c7b6a50"
 name: "policy-validator"
-version: "1.0.0"
+version: "1.0.1"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -20,22 +20,17 @@ outputs:
   - "normative_ref": "Referencia estable al artefacto normativo resuelto vÃ­a SSOT (p. ej. clave `directories.norms` + `execution-contexts.md`)"
 minteo_maximo: null
 porcentaje_de_exito: null
+hash_signature: "sha256:91ecaefb14418c20cfc64c710c48910b6cb930aed687de44cd5de1bffd931240"
 ---
 
-# AcciÃ³n: policy-validator
+## Propósito
 
-## 1. PropÃ³sito
-Emitir un **dictamen normativo** contrastando entradas de forja (agentes, tools) con la matriz de contextos S+ definida en `execution-contexts.md`, sin rutas hardcodeadas: la norma se localiza exclusivamente vÃ­a topologÃ­a CÃºmulo (`directories.norms`). Es la acciÃ³n invocada por procesos como `agent-creator` y `tool-creator` en fases de auditorÃ­a previas a la forja material.
+Dictamen Cerbero vs `execution-contexts.md` vía Cúmulo (`policy_validator.rs`).
 
-## 2. OrquestaciÃ³n lÃ³gica
-1. **ResoluciÃ³n SSOT:** Obtener la ruta canÃ³nica de normas desde `cumulo.paths.json` (clave `directories.norms`) y componer la referencia a `execution-contexts.md`. Si el mapa o el archivo no son accesibles, devolver `exitCode: 1` y `findings` con causa de integridad espacial (alineado a tolerancia cero de Cerbero).
-2. **Conjunto permitido:** Extraer el conjunto cerrado de contextos vÃ¡lidos: `source-control`, `filesystem-ops`, `knowledge-management`, `quality-assurance`, `ecosystem-evolution` (identificadores de la normativa vigente; cualquier otro valor en solicitud implica bloqueo).
-3. **Perfil `AGENT_POLICIES`:** Para cada elemento de `allowed_policies`, comprobar pertenencia al conjunto permitido. Faltante de clave cuando el perfil la exige â†’ `exitCode: 1`.
-4. **Perfil `TOOL_DOMAIN`:** Comprobar que `tool_context` pertenece al conjunto permitido. Si se entrega `required_secrets`, comprobar que es una lista bien formada (p. ej. lista de strings no vacÃ­a si la forja declara secretos obligatorios; polÃ­tica exacta acordada con el proceso invocante).
-5. **Perfil `BOTH`:** Ejecutar las reglas 3 y 4 con los campos presentes.
-6. **Salida:** Armar `dictamen` con `valid: true` solo si ninguna regla falla; en caso contrario `valid: false` y `exitCode: 1`. Incluir `normative_ref` para trazabilidad del dictamen.
+## Orquestación
 
-## 3. LÃ­mites
-* No invoca `skill:cryptography-manager` ni opera criptografÃ­a; no sustituye a `action:crypto-broker`.
-* No lee valores secretos del entorno: solo validaciones declarativas acordadas; el cruce con el runtime del Vértice Biológico es responsabilidad de `skill:shell-executor` (comandos acotados, sin volcar secretos) o del operador humano en la fase del proceso que corresponda.
-* No modifica normativas ni `allowed_policies` de terceros: solo lectura normativa y emisiÃ³n de dictamen.
+Perfiles `AGENT_POLICIES` | `TOOL_DOMAIN` | `BOTH` → `dictamen` + `normative_ref`.
+
+## Límites
+
+Sin crypto ni lectura de secretos.
