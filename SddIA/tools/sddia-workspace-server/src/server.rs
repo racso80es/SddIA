@@ -1,5 +1,8 @@
 use crate::capsules::{git_invoke, invoke_skill};
-use crate::cerbero::{cerbero_allow_tool, whitelist_executable};
+use crate::cerbero::{
+    cerbero_allow_tool, child_runtime_depth, executable_basename, manifest_shell_intersection,
+    validate_governed_run_check, whitelist_executable, ENV_RUNTIME_DEPTH,
+};
 use crate::project::load_project_config;
 use crate::sandbox::{parse_project_uri, resolve_under_root, SandboxError};
 use crate::telemetry::{emit_raw_execution_finished, write_capsule_envelope};
@@ -230,6 +233,20 @@ impl WorkspaceServer {
                     let _ = self.finish_tool(name, &args, &json!({"whitelist": "deny"}), 1, 0);
                     return Ok(tool_error("CERBERO_DENY: executable not in whitelist"));
                 }
+                let inter = manifest_shell_intersection(&self.allowed_executables);
+                let base = executable_basename(executable);
+                if !inter.contains(&base) {
+                    let _ = self.finish_tool(
+                        name,
+                        &args,
+                        &json!({"intersection": "empty", "executable": base}),
+                        1,
+                        0,
+                    );
+                    return Ok(tool_error(
+                        "CERBERO_DENY: executable not in manifest ∩ shell-executor allowlist",
+                    ));
+                }
                 let arguments = args.get("arguments").cloned().unwrap_or(json!([]));
                 let args_vec = arguments
                     .as_array()
@@ -237,13 +254,26 @@ impl WorkspaceServer {
                     .iter()
                     .filter_map(|v| v.as_str().map(String::from))
                     .collect::<Vec<_>>();
+                if let Err(deny) = validate_governed_run_check(executable, &args_vec) {
+                    let _ = self.finish_tool(name, &args, &json!({"governed": "deny"}), 1, 0);
+                    return Ok(tool_error(&deny));
+                }
+                let parent_depth = std::env::var(ENV_RUNTIME_DEPTH)
+                    .ok()
+                    .and_then(|v| v.trim().parse::<u32>().ok())
+                    .unwrap_or(0);
+                let mut env_for_shell = self.child_env.clone();
+                env_for_shell.insert(
+                    ENV_RUNTIME_DEPTH.to_string(),
+                    child_runtime_depth(parent_depth).to_string(),
+                );
                 let req = json!({
                     "executable": executable,
                     "arguments": args_vec,
                     "working_directory": root.to_string_lossy(),
-                    "environment_vars": self.child_env,
+                    "environment_vars": env_for_shell,
                 });
-                invoke_skill(&self.cfg.sddia_repo, "shell-executor", &req, &self.child_env)?
+                invoke_skill(&self.cfg.sddia_repo, "shell-executor", &req, &env_for_shell)?
             }
             _ => {
                 let _ = self.finish_tool(name, &args, &json!({"error": "unknown"}), 1, 0);
@@ -531,6 +561,19 @@ mod tests {
         let allow = HashSet::from([String::from("npm")]);
         assert!(!whitelist_executable(&allow, "curl"));
         assert!(whitelist_executable(&allow, "npm"));
+    }
+
+    #[test]
+    fn manifest_shell_intersection_includes_governed_tools() {
+        use crate::cerbero::{manifest_shell_intersection, shell_executor_base_allowlist};
+        let manifest = HashSet::from([
+            String::from("sddia-qa"),
+            String::from("sddia-run.sh"),
+        ]);
+        let inter = manifest_shell_intersection(&manifest);
+        assert!(!inter.is_empty());
+        assert!(inter.contains("sddia-qa"));
+        assert!(shell_executor_base_allowlist().contains("sddia-run.sh"));
     }
 
     #[test]

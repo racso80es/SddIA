@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 160
+universe_total: 161
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `b064cb55-0391-4f53-bdc9-562a22cb486c` | 2026-11-28 | AUT-138: aduana MCP run_check — intersección Cerbero/shell-executor, gobierno sddia-qa/entity-manager, depth | CANONICO | `SddIA/evolution/b064cb55-0391-4f53-bdc9-562a22cb486c.md` |
 | `4393ec29-62aa-43ee-9fc4-4d6d546437a8` | 2026-11-27 | AUT-137: entity-manager update — BOM, contract slug, UUID migrate, suite replacements | CANONICO | `SddIA/evolution/4393ec29-62aa-43ee-9fc4-4d6d546437a8.md` |
 | `8cc2a86d-a2fc-49f0-b18d-dc4d92a54f4b` | 2026-11-27 | AUT-136: PPR promueve verdict y qa-attestation antes de handoff F7 tras Veredicto y bloqueo | CANONICO | `SddIA/evolution/8cc2a86d-a2fc-49f0-b18d-dc4d92a54f4b.md` |
 | `e563c318-7bc7-4940-ac8f-44262d3da19a` | 2026-11-27 | AUT-135: refine-item execution_report.phases alineado con data.status | CANONICO | `SddIA/evolution/e563c318-7bc7-4940-ac8f-44262d3da19a.md` |

@@ -35,14 +35,9 @@ docs_layout:
   todos_done: docs/todos/done
 mcp:
   allowed_executables:
-    - cargo
-    - rustc
+    - sddia-qa
     - ./sddia-run.sh
     - sddia-run.sh
-    - rm
-    - ls
-    - test
-    - git
 ---
 
 # Manifiesto Core-self
