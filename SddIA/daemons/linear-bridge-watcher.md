@@ -4,7 +4,7 @@ name: "linear-bridge-watcher"
 version: "1.0.0"
 contract: "daemons-contract v1.0.0"
 context: "tracker-operations"
-hash_signature: "sha256:fc466f60e1d59b1449fe9f568a543d3d27a803ab0ffdd61f6eb8d6551704bfaa"
+hash_signature: "sha256:ce80a2052b7dfc19c47b9e08f9009d39b671c81f686022906f4db29eeb1b95b1"
 capabilities:
   - "linear-tracker-poll"
   - "eda-bus-inject"
@@ -22,7 +22,13 @@ telemetry_schema:
 
 # linear-bridge-watcher
 
+## Propósito
+
 Sensor Linear: polling list_issues y POST webhook lab (bind local, firma HMAC); materializa Tracker_Issue_Changed (`source`: poll | webhook); anti-eco vía tracker-outbound; sin apply markdown.
+
+## Ciclo de ejecución
+
+Latido/tick vía entrypoint en frontmatter; binario nativo en `SddIA/target/release/<daemon>`.
 
 Variables lab (no en manifiesto): `SDDIA_LINEAR_WEBHOOK_PORT`, `SDDIA_LINEAR_WEBHOOK_BIND` (default `127.0.0.1`), `LINEAR_WEBHOOK_SECRET`.
 

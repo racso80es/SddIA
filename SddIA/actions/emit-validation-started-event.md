@@ -1,7 +1,7 @@
 ---
 uuid: "e84218a8-7e40-4436-8ae7-a3fcc3396ad7"
 name: "emit-validation-started-event"
-version: "2.0.0"
+version: "2.0.1"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -21,11 +21,19 @@ outputs:
   - "success": "boolean"
   - "event_id": "string"
   - "event_uri": "string"
-hash_signature: "sha256:4e5f90a0aeff2750adbfd016ccf712eedc7445b5309360640ae7d12876343664"
+hash_signature: "sha256:063d68282b75cef68261c673840c96775528a724a50c9baa2dccfa68880ae953"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
 
-# Acción: emit-validation-started-event
+## Propósito
 
-Emite **Validation_Started** en `eda_bus.pending` conforme a `SddIA/events/domain/validation-started.md`. Fail-soft en el invocante (motor, post-fase Tekton).
+Sellar `Validation_Started` tras fases Tekton previas a validación Argos.
+
+## Orquestación
+
+`emit_validation_started` + hook `maybe_emit_validation_started_after_tekton_agent`; payload según `validation-started.md`.
+
+## Límites
+
+Fail-soft; no escribe `validacion.md`.

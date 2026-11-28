@@ -1,5 +1,5 @@
 ---
-uuid: "b7c8d9e0-f1a2-4b3c-d4e5-f6a7b8c9d0e1"
+uuid: "2662f3ae-53e8-48ff-9617-072b9ee15e5a"
 name: "kaizen-idea-captured"
 version: "1.1.0"
 contract: "events-contract v1.1.0"
@@ -8,7 +8,7 @@ event_type: "Kaizen_Idea_Captured"
 context: "ecosystem-evolution"
 capabilities:
   - "kaizen_idea_captured"
-hash_signature: "sha256:cd7a16d5a59d3821878f594a61c5f96f9b2527bbc0d19c36c4766fbcec463fb6"
+hash_signature: "sha256:ba8e3e416eaf30ce88bde641de2085d4a03bbfa843549cf9fe31b2b28d1aad95"
 ---
 
 # Event: Kaizen_Idea_Captured

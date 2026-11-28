@@ -17,13 +17,14 @@ composition:
     path: "../norms/nextjs-hydration-client-state.md"
   - norm: "e6ae3df7-9d47-4dd1-8051-025f9fd171c7"
     path: "../norms/openapi-contract-rest-frontend.md"
+hash_signature: "sha256:0d16f3c791161e4b59c413bc294c07e20ec6541623a656fc831ee1ae3de04404"
 ---
 
 ## Estrategia de Dominio
 
 Foco en rendimiento de cliente, SEO y contratos REST para el portal público de GesFer (laboratorio **SddIA_4**). El códice combina documentación atómica de tareas, patrones en el ciclo de feature, barrera de PR, hidratación segura en App Router y contrato OpenAPI del API de producto.
 
-## Instrucciones de Prioridad
+## Catálogo de normas
 
 1. **`openapi-contract-rest-frontend`**: prevalece sobre rutas y tipos del cliente producto; origen vía `NEXT_PUBLIC_API_URL` (o equivalente documentado).
 2. **`nextjs-hydration-client-state`**: prevalece en SSR/primer render sobre estado solo-cliente en componentes `"use client"`.

@@ -18,17 +18,17 @@ outputs:
   - "success": "boolean"
   - "exitCode": "integer"
   - "error": "string; diagnóstico si aplica"
-hash_signature: "sha256:22a93d2cdeda779fb8c23ecf8fb88287121b5d95f3dbccad1713496ca6857e19"
+hash_signature: "sha256:b8e0dbd7d9a291729c0a045f6418940438445d67f5d782c6728acc053913b820"
 implementation_path_ref: "SddIA/tools/io-choke"
 ---
 
 # io-choke
 
-Simula asfixia E/S al escribir dentro del `workspace_path` inyectado (archivo read-only). Vector de estrés para fail-soft Peaje Termodinámico.
+## Propósito
 
-Proveedor de capacidad `qa:probe` (PBI-043 H9 · Caos).
+Cápsula de caos que fuerza fallo E/S escribiendo un archivo read-only dentro del `workspace_path` (golden `capsule-invoke-smoke` / D-P5.2). Provee `qa:probe`.
 
-## Interface
+## Interfaz de entrada y salida
 
 stdin JSON: `workspace_path` (required), `target_file` (optional, default `.io-choke-target`).
 

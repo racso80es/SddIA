@@ -7,10 +7,16 @@ domain_origin: "SddIA"
 context: "system-operations"
 capabilities:
   - "llm_router"
-hash_signature: "sha256:f4627c7316153eb6741b5838e507d935b5339867c01228763be08a6fa9a6d7a9"
+hash_signature: "sha256:9571c39ff6b3c88c3a5a1038bd8b668c96b037a516b9dc3ac695d5301d2a4670"
 implementation_path_ref: "SddIA/tools/llm-router"
 ---
 
 # llm-router
 
-Router de oráculos de instancia: selecciona adapter_ref por oracle_id/affinity y salta ante rate_limited/timeout/upstream_unavailable/network. Consume llm:infer; no lo provides.
+## Propósito
+
+Enrutamiento de inferencia LLM entre adapters declarados en runtime local.
+
+## Operación
+
+Selecciona `adapter_ref`; fail-over por afinidad documentada; consume `llm:infer`.

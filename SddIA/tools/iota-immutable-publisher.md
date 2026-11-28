@@ -7,7 +7,7 @@ context: system-operations
 contract: tools-contract v1.2.0
 contract_ref: SddIA/tools/tools-contract.md
 domain_origin: SddIA
-hash_signature: sha256:70aead12f27397609daecc0243f011121f079120626ea515e4199da5bcb1da02
+hash_signature: "sha256:188a8aab1859dd7e6c6f5dbf166d4433e94fa53607ed75d2e90f7ce8506e89d1"
 implementation_path_ref: SddIA/tools/iota-immutable-publisher
 name: iota-immutable-publisher
 source_sha256: sha256:9df649f0bc95be6ab5a91dfd30e63a38c0ca00f0a3e48ae70ffb70cc2e1b9922
@@ -17,9 +17,15 @@ version: 1.0.0
 
 # iota-immutable-publisher
 
-**Descripción:** Cápsula de ejecución atómica para anclar un dato inmutable en la red IOTA Rebased (Testnet).
+## Propósito
 
-## Interface
+Ancla payloads inmutables en IOTA Rebased (testnet) vía cápsula nativa en `SddIA/tools/iota-immutable-publisher`.
+
+## Operación
+
+Envelope `capsule-json-io` v2; capability `iota-publish` / `immutable-anchor`.
+
+## Interfaz de entrada y salida
 
 Define las entradas y salidas de la herramienta, siguiendo el estándar `capsule-json-io`.
 

@@ -4,7 +4,7 @@ name: "email-watcher"
 version: "1.0.0"
 contract: "daemons-contract v1.0.0"
 context: "peripheral-sensing"
-hash_signature: "sha256:617878592acfba18922faf463fb94e1c035617b55ce6e3f7ac56704c6131a9b0"
+hash_signature: "sha256:bd8fb3631ebe947c5952dec16c8022f10a2f38db2821063f72b057dff731485b"
 capabilities:
   - "imap-mailbox-poll"
   - "email-stimulus-injection"
@@ -22,6 +22,12 @@ telemetry_schema:
 
 # email-watcher
 
+## Propósito
+
 Centinela Capa 0: sondeo IMAP **read-only** (`EXAMINE` + `BODY.PEEK`) → instancia `Email_Received` en `eda_fractal.domain`. No invoca orquestador. No interpreta veredicto. Watermark UID en estado de instancia (`.SddIA/daemons/state/email-watcher.json`) con `imap_identity_sha256` sobre `{host}|{port}|{mailbox}|{user}`. Ante cambio de cuenta IMAP o watermark por encima del techo del buzón, bootstrap automático (F-07, lote ≤50). Emite `Daemon_Heartbeat` cada 30s.
+
+## Ciclo de ejecución
+
+Latido/tick vía entrypoint en frontmatter; binario nativo en `SddIA/target/release/<daemon>`.
 
 Forja de definición: in-ciclo (F-01: `entity-manager` no declara clase `daemon`; `daemon-creator` sin porte nativo). UUID vía `action:crypto-broker`.

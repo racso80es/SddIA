@@ -45,4 +45,10 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # aiua-stimulus-processing
 
+## Propósito
+
 Latido ontológico de la Aiúa: contexto LanceDB, inyección de genoma, combustión vía tool:llm-router (affinity aiua; oráculos de instancia), despacho motor EDA opcional (action:dispatch-aiua-intent → eda_fractal.domain), persistencia de pensamiento. Sin agente titular. Sin Kalma2. Cero join a TQM.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process <name>`; fases en frontmatter YAML.

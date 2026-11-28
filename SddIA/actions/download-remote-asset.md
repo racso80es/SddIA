@@ -2,11 +2,11 @@
 uuid: "6175f5cd-7844-4d0c-aa93-d2ce3a41d18e"
 id: download-remote-asset
 name: download-remote-asset
-version: "1.0.0"
+version: "1.0.1"
 type: action
-contract: actions-contract
+contract: "actions-contract v1.2.0"
 context: knowledge-management
-hash_signature: "sha256:1129f8a7ba24716caca3fa213ad6f829547aa2c37106ae3cc61221e30b59046e"
+hash_signature: "sha256:a41761ebd2c6a6d7547147656d4d544d59e6c05fe41c4c8ec9f66c752eb4bbc0"
 capabilities:
   - "remote-asset-reclamation"
   - "asset-integrity-declaration"
@@ -16,33 +16,16 @@ requires_capability:
     version: ">=1.0.0"
 ---
 
-# Acción — `download-remote-asset`
+## Propósito
 
-Reclamación de activos del repositorio maestro con declaración de integridad. La acción no nombra ni inspecciona al proveedor concreto de `asset:fetch`; la abstracción es total (pivote DLT G7).
+Reclamar activos `library_codexes` / `library_norms` del origen remoto vía DI `asset:fetch` sin nombrar proveedor (G7). Retorna `content`, `declared_hash`, `origin_kind`.
 
-## Contrato de interfaz
+## Orquestación
 
-### Input
+1. Resolver path lógico desde `asset_id` + `asset_family` (cumulo).
+2. Invocar `asset:fetch` (binding en `capability-bindings.md`).
+3. Propagar salida al llamador (`sync-client-assets` aduana sha256).
 
-| Campo | Obligatorio | Descripción |
-|-------|:-----------:|-------------|
-| `asset_id` | Sí | UUID del activo solicitado |
-| `asset_family` | Sí | `library_codexes` \| `library_norms` |
+## Límites
 
-### Output
-
-| Campo | Descripción |
-|-------|-------------|
-| `content` | Texto plano del activo |
-| `declared_hash` | `sha256:<hex>` declarado por el origen |
-| `origin_kind` | Etiqueta opaca del proveedor (`git-raw`, `dlt-ipfs`, …) — solo telemetría |
-
-## Restricción de acero (G7)
-
-La acción **no** nombra al proveedor concreto de `asset:fetch` en ningún punto. No ramifica lógica según `origin_kind`. Verificable por construcción: el documento no referencia tools de fetch directos (G7).
-
-## Flujo lógico
-
-1. Resolver `asset_path` desde `asset_id` + `asset_family` consultando `cumulo.paths.json`.
-2. Invocar `asset:fetch` (motor resuelve proveedor vía `capability-bindings.md`).
-3. Propagar `{ content, declared_hash, origin_kind }` al llamador.
+Sin ramificar por `origin_kind`; sin referencias a tools de fetch directos.

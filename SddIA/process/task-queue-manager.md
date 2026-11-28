@@ -9,7 +9,7 @@ aliases:
 context:
 - ecosystem-evolution
 - filesystem-ops
-hash_signature: sha256:2b5840fbcacd824dfc8a3a956ab5822f2d5c63b081f0440ee6dec5f693205778
+hash_signature: "sha256:2b5840fbcacd824dfc8a3a956ab5822f2d5c63b081f0440ee6dec5f693205778"
 inputs:
 - tasks_path: Raíz de cola de tareas resuelta vía Cumulo
 outputs:
@@ -55,7 +55,15 @@ porcentaje_de_exito: null
 
 # task-queue-manager
 
-Meta-orquestación de **cola de tareas** para el Core SddIA. Expone el alias canónico legacy **`automatic_task`** (`process-contract v1.4.0`) hacia el mismo archivo físico.
+## Propósito
+
+Meta-orquestación de cola filesystem bajo `tasks_path` (Cúmulo): triaje, activación, despacho a `feature`/`bug-fix`/`refactorization` y cierre en DONE/.
+
+## Orquestación
+
+- Alias legacy `automatic_task` resuelto al mismo `.md`.
+- Fases: Triaje → Activación (`filesystem-manager`, `git-manager`) → Despacho (`execute-process`, `tekton`) → Finalización FS/Git.
+- Salida: `processed_task_ref`, `evolution_entry` opcional.
 
 ## Identidad
 

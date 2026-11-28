@@ -8,7 +8,7 @@ context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:8c6b8e3a6815e4660add4a8baecaf9da74f3d6e1e13c6767015c5ae8904f2c37
+hash_signature: "sha256:8c6b8e3a6815e4660add4a8baecaf9da74f3d6e1e13c6767015c5ae8904f2c37"
 inputs:
 - bug_summary: Semilla o reporte del defecto detectado
 - cumulo_topology: Topología SSOT inyectada (paths, contratos, directorios)
@@ -61,7 +61,13 @@ porcentaje_de_exito: null
 
 # bug-fix
 
+## Propósito
+
 Proceso V5 para corrección de defectos: cadena **Inicialización → Diseño del fix → Ejecución → Verificación → delivery-close-cycle**. Este flujo opera bajo una asimetría táctica respecto a procesos de mayor envergadura: carece de la fase obligatoria de "Estabilización", priorizando la intervención directa y focalizada del Nodo Dedalo.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process bug-fix`; fases en frontmatter YAML.
 
 ## Puente Documental y Frontmatter
 

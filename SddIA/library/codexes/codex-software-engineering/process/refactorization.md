@@ -8,7 +8,7 @@ context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:3c7c76158e5ae4d9e31a4e15402ea8057ab7a9e9123d318ee017dc14a13945a1
+hash_signature: "sha256:3c7c76158e5ae4d9e31a4e15402ea8057ab7a9e9123d318ee017dc14a13945a1"
 inputs:
 - refactor_goal: Propósito central de la refactorización
 - refined_constraints: Restricciones de alcance complementarias y límites
@@ -67,7 +67,13 @@ porcentaje_de_exito: null
 
 # refactorization
 
+## Propósito
+
 Proceso V5 para refactorización de deuda técnica y arquitectura: cadena **Inicialización → Estabilización de alcance → Diseño de refactor → Ejecución → Verificación → delivery-close-cycle**. Este flujo opera bajo el mismo puente ontológico documental que `feature`, obligando a los agentes a cumplir con la aduana de `features-documentation-pattern`.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process refactorization`; fases en frontmatter YAML.
 
 ## Puente Documental y Frontmatter
 

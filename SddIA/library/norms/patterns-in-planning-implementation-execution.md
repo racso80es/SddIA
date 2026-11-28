@@ -7,9 +7,10 @@ author: "norm-creator"
 scope: "agnostic"
 category: "workflow"
 dependencies: []
+hash_signature: "sha256:5f09333c28e2a5e01602fae7dc99feb4188b894816d54f03300b1900db83a7c1"
 ---
 
-## Directriz Core
+## Propósito
 
 Los patrones de diseño (`directories.patterns`, resueltos vía Cúmulo) se aplican en tres fases del ciclo de tarea que tocan diseño y código: **planning**, **implementation** y **execution**. El contrato estructural de patrones es `SddIA/patterns/patterns-contract.md`; cada patrón vive en `directories.patterns/<uuid>/` con `spec.md` (frontmatter YAML conforme al contrato) y metadatos de apoyo según el contrato vigente.
 
@@ -35,7 +36,7 @@ Los patrones de diseño (`directories.patterns`, resueltos vía Cúmulo) se apli
 
 Los principios (`directories.principles`) guían *cómo* pensar el diseño; los patrones guían *qué* estructuras y convenciones aplicar en plan, implementación y código.
 
-## Restricciones Duras (Aduana de Fricción)
+## Obligaciones de aduana
 
 - Prohibido referenciar en plan, implementation o execution un `pattern_id` que no exista físicamente bajo `directories.patterns/<uuid>/` con `spec.md` conforme a `patterns-contract.md`.
 - Prohibido inventar patrones o UUID ficticios en `plan.md`; toda referencia debe ser resoluble vía Cúmulo.

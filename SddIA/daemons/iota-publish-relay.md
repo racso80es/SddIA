@@ -4,7 +4,7 @@ name: "iota-publish-relay"
 version: "1.0.0"
 contract: "daemons-contract v1.0.0"
 context: "ecosystem-evolution"
-hash_signature: "sha256:861904a9c1f290a9619832d907dd67d46625041237b1f583963c5c441d31234a"
+hash_signature: "sha256:3ef6fe4cb25057d417d800aeba853a43107d9b6b7c5e7446db480a1470e47f2f"
 capabilities:
   - "iota-relay-supervise"
   - "dlt-publish-http"
@@ -22,6 +22,12 @@ telemetry_schema:
 
 # iota-publish-relay
 
+## Propósito
+
 Supervisor Rust de la aduana DLT: lock, Daemon_Heartbeat y spawn/reap del hijo Node (server.mjs). Ceguencia lógica absoluta.
+
+## Ciclo de ejecución
+
+Latido/tick vía entrypoint en frontmatter; binario nativo en `SddIA/target/release/<daemon>`.
 
 Forja: `daemon-creator` (porte nativo `run_daemon_forge`). UUID vía `action:crypto-broker`.

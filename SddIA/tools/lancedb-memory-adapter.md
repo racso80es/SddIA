@@ -23,10 +23,16 @@ outputs:
   - exitCode: integer
   - message: string
   - result: object
-hash_signature: "sha256:af1fe3e8168f966b6d79d2f42c52eff6f20b83bb3bb39c75dc1c095a7de33bcd"
+hash_signature: "sha256:e450f74052c78ca1d77058c54b044cfcc3b09bbbbb6af843a7f1aabc29f501e1"
 implementation_path_ref: "SddIA/tools/lancedb-memory-adapter"
 ---
 
 # lancedb-memory-adapter
 
-Satélite nativo unificado de memoria vectorial LanceDB (`evolution`, `user_preferences`, `thought_graph_collection`) bajo contrato `capsule-json-io` v2 (`sddia-io`). Absorbe `thought-graph-access` y desacopla `execute-process` de `lancedb`/`tokio`.
+## Propósito
+
+Proveedor unificado LanceDB para `memory:evolution-store`, `memory:pref_vector`, `memory:thought_graph` (crate en `implementation_path_ref`).
+
+## Operación
+
+Invocado vía DI desde `execute-process`; sin embedding `lancedb` en el orquestador.

@@ -1,7 +1,7 @@
-﻿---
+---
 uuid: "9b3259be-e7a0-4fb1-b5d9-620a46fbc18b"
 name: "crypto-broker"
-version: "1.0.0"
+version: "1.0.1"
 contract: "actions-contract v1.2.0"
 context: "quality-assurance"
 capabilities:
@@ -14,19 +14,19 @@ outputs:
   - "exitCode": "0 si la cÃ¡psula reporta Ã©xito; 1 en caso contrario"
 minteo_maximo: null
 porcentaje_de_exito: null
+hash_signature: "sha256:4a73b3b59071f02b5bbb864e7d362f65072f926af62fe7d08f16a339e49bcda4"
 ---
 
-# AcciÃ³n: crypto-broker
+## Propósito
 
-## 1. PropÃ³sito
-Ser la **única puerta autorizada** hacia `skill:cryptography-manager` cuando el orquestador principal (p. ej. `execute-process` bajo contexto `ecosystem-evolution`) no posee en su `allowed_policies` el contexto `quality-assurance` de la skill. Cerbero evalúa esta acción con su propio `context`; la acción delega la física exclusivamente en la cápsula nativa resuelta vía `cumulo.paths.json` → `compiled_capsules` → `cryptography-manager`.
+Única puerta Cerbero hacia `skill:cryptography-manager` cuando el orquestador carece de `quality-assurance` en `allowed_policies`; pipe JSON stdin/stdout sin criptografía en prosa.
 
-## 2. Orquestación
-1. Resolver el binario `cryptography-manager` desde `compiled_capsules` (sin rutas absolutas inventadas).
-2. Pasar `crypto_request` como **Ãºnico JSON por stdin** al proceso de la cÃ¡psula.
-3. Leer **exclusivamente** la respuesta JSON de stdout; reenviarla como `crypto_response`.
-4. Propagar `exitCode` igual al `exitCode` devuelto por la cÃ¡psula (o 1 si el proceso falla).
+## Orquestación
 
-## 3. LÃ­mites
-* No implementar SHA-256, UUID ni validaciÃ³n en prosa dentro de esta acciÃ³n: solo pipe stdin/stdout hacia la skill.
-* No invocar terminal cruda arbitraria del host salvo el lanzamiento acotado de la cÃ¡psula declarada en cumulo.
+1. Resolver binario vía `compiled_capsules` → `cryptography-manager`.
+2. Pasar `crypto_request` (`GENERATE_SHA256` | `VALIDATE_HASH` | `GENERATE_UUID`) por stdin.
+3. Propagar `crypto_response` y `exitCode` de la cápsula.
+
+## Límites
+
+Prohibido SHA/UUID local; solo delegación acotada a la skill.

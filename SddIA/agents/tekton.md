@@ -1,5 +1,5 @@
 ---
-uuid: "b3a4c5d6-7e8f-9a0b-1c2d-3e4f5a6b7c8d"
+uuid: "fc3f3098-8edf-4a4a-87f1-561e6b6e7e16"
 name: "tekton"
 version: "1.2.0"
 contract: "agents-contract v1.1.0"
@@ -10,7 +10,7 @@ allowed_policies:
   - "system-operations"
   - "chaos-engineering"
   - "tracker-operations"
-hash_signature: "sha256:12489c0145bd1fec01d8891dd2506a656d15f7d3f2ea38c84b16224aed1e297e"
+hash_signature: "sha256:70c499335d59c85cbb1c14a672187afcd2fbf929d18efd8cfd283d5432a08388"
 llm_profile:
   thinking_profile: "execution"
   tier: "low"

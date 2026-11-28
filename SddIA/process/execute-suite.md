@@ -4,7 +4,7 @@ context:
 - quality-assurance
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:b02d2b43a9cbd77235f66224edf660362ce5ccdb7a34f279838bf27038b355f2
+hash_signature: "sha256:b02d2b43a9cbd77235f66224edf660362ce5ccdb7a34f279838bf27038b355f2"
 inputs:
 - suite_id: Identificador kebab-case de la Suite (required)
 - execution_strategy: Override opcional fail_fast | run_all
@@ -47,4 +47,10 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # execute-suite
 
+## Propósito
+
 Orquestador de **Suites Caos** (Fase 3–4): resuelve `suite_id`, ejecuta nodos atómicos con sub-workspaces aislados, compila `survival-manifest.md` (D0.7) y, si la campaña es exitosa, emite `System_Immunity_Certified` (Fase 4).
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process <name>`; fases en frontmatter YAML.

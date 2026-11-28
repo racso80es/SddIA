@@ -1,11 +1,11 @@
 ---
-uuid: d0e1f2a3-b4c5-46d7-e8f9-0a1b2c3d4e5f
+uuid: "b7e5be4e-83f2-4da4-a7f6-10eabb626715"
 name: action-creator
 version: 1.1.0
 contract: process-contract v1.4.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 context: ecosystem-evolution
-hash_signature: sha256:ccf20403f3000e5189afdfc9d749d803646d1811002de4b9c69bfb68d657a78f
+hash_signature: "sha256:ccf20403f3000e5189afdfc9d749d803646d1811002de4b9c69bfb68d657a78f"
 inputs:
 - action_name: Identificador kebab-case de la acción (`{name}` del archivo `{name}.md` en `cumulo.directories.actions`)
 - action_context: Contexto RBAC Cerbero válido según `execution-contexts.md`

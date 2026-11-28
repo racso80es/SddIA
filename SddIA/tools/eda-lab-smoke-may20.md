@@ -7,10 +7,16 @@ domain_origin: "SddIA"
 context: "ecosystem-evolution"
 capabilities:
   - "eda_lab_smoke_may20"
-hash_signature: "sha256:5451805d9ece7d306cb4da0fdf19985485347f0721da3f048b7ee4b5f7d8b771"
+hash_signature: "sha256:92711740936002e70d90b989ffc9e3ab760438515370225fa8983fb357b9d415"
 implementation_path_ref: "SddIA/tools/eda-lab-smoke-may20"
 ---
 
 # eda-lab-smoke-may20
 
-Smoke EDA S+ lab
+## Propósito
+
+Smoke regresión EDA (lab Mayo 2020 / S+).
+
+## Operación
+
+Herramienta no productiva; validación de invariantes bus en laboratorio.

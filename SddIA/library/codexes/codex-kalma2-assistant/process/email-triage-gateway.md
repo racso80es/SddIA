@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:f5ea8a75fcf48a7053a3487ef77cd9a42bf0d8063f2af32945ba12d46ae60ad1
+hash_signature: "sha256:f5ea8a75fcf48a7053a3487ef77cd9a42bf0d8063f2af32945ba12d46ae60ad1"
 inputs:
 - 'event_uri: Ruta de la instancia ECST Email_Received'
 name: email-triage-gateway
@@ -46,6 +46,12 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # email-triage-gateway
 
+## Propósito
+
 Aduana cognitiva del canal aferente de correo. Triaje-P (memory:pref-query) + muro Triaje-C + mute P + Clasificacion LLM condicionada; asiento de agenda; emision Email_Triaged. `decision_path`: `deterministic` | `llm` | `preference` (quien cerro).
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process email-triage-gateway`; handler nativo en `execute-process`.
 
 **Gate G5:** si Triaje-C concluye o mute P cierra (`P-MUTE-SENDER`), la fase `Clasificacion` no se ejecuta (`skipped`, `reason: triaje-c-concluded` | `p-mute-sender`). Query P y `P-EXEMPT-C` no son Clasificacion. Handler nativo en `execute-process`.

@@ -6,7 +6,7 @@ version: "1.0.0"
 type: tool
 contract: tools-contract
 context: system-operations
-hash_signature: "sha256:1830e89b0dc4bd16bad810e6f88c1edd3e79a002e6a754d46b1aff89ebf17e46"
+hash_signature: "sha256:4c7d8119cdf8d23c86e53409c6b9215bb6f409b4b83f22331544d35b2931cce5"
 capabilities:
   - "github-raw-fetcher"
   - "asset-fetch"
@@ -20,9 +20,15 @@ deprecation_pivot: "tool:iota-ipfs-fetcher (fase DLT)"
 
 # Tool — `github-raw-fetcher`
 
-Cápsula temporal (simulador DLT G7). Descarga un activo desde el repositorio maestro vía HTTPS public-raw y declara su SHA-256.
+## Propósito
 
-## Contrato E/S (`capsule-json-io` schema 2.0)
+Proveedor `asset:fetch` G7: descarga raw HTTPS del maestro con `declared_hash` sha256.
+
+## Operación
+
+Consumida por `action:download-remote-asset`; pivot futuro `iota-ipfs-fetcher`.
+
+## Interfaz de entrada y salida (`capsule-json-io` 2.0)
 
 ### Petición (stdin)
 

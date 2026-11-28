@@ -7,9 +7,10 @@ author: "norm-creator"
 scope: "frontend"
 category: "workflow"
 dependencies: []
+hash_signature: "sha256:d401eba75ac0ce4530870b3ba079a5af886f7e176d8e4dd58464964eb6221a38"
 ---
 
-## Directriz Core
+## Propósito
 
 La fuente de verdad de rutas HTTP, parámetros, códigos de respuesta y modelos expuestos al cliente es el **documento OpenAPI** publicado por el API backend (p. ej. `{origen}/swagger/v1/swagger.json` o endpoint equivalente del stack). El frontend **se adecúa** al contrato del backend; no al revés.
 
@@ -26,7 +27,7 @@ La fuente de verdad de rutas HTTP, parámetros, códigos de respuesta y modelos 
 - Comparar `paths`, `components.schemas` y métodos con implementación actual del frontend.
 - Actualizar clientes, tipos, mocks de test y documentación de configuración en el mismo cambio o PR que consume la nueva API.
 
-## Restricciones Duras (Aduana de Fricción)
+## Obligaciones de aduana
 
 - Prohibido definir rutas HTTP, métodos o modelos de request/response en el frontend que contradigan el OpenAPI vigente del backend.
 - Prohibido modificar el contrato OpenAPI del backend desde el frontend para “adaptar” el cliente sin acuerdo y despliegue coordinado en el API.

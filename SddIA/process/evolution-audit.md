@@ -7,7 +7,7 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 context:
 - quality-assurance
 - filesystem-ops
-hash_signature: sha256:97520b5140bccc2de551c9dfce2144d9374a6858088d31cdf0188b7866641192
+hash_signature: "sha256:97520b5140bccc2de551c9dfce2144d9374a6858088d31cdf0188b7866641192"
 inputs:
 - audit_date: Fecha ISO de corte de la auditoría
 - mode: 'Enum estricto: full | since_last'
@@ -51,7 +51,13 @@ phases:
 
 # evolution-audit
 
+## Propósito
+
 Auditoría periódica del registro evolution: inventario, relevancia, validación contra evidencia vigente y persistencia oficial.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process <name>`; fases en frontmatter YAML.
 
 ## Rúbrica R1–R5
 

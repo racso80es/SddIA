@@ -7,7 +7,7 @@ context: "ecosystem-evolution"
 capabilities:
   - "evolution-verdict"
   - "evolution-record-compute"
-hash_signature: "sha256:ace41f8c47670326616113de0055c27d7859c1537cd7935a770324d16dbf44be"
+hash_signature: "sha256:52215e87c70cffdf84821a43dd3ceb2e7c9e05111714e9262d3f3f94ef2b52bb"
 inputs:
   - "operation": "verdict | alta | modificacion | baja | rehash"
   - "diff": "object inyectado por CLI nativo (paths+status); obligatorio en verdict. La cápsula no calcula Git."
@@ -29,7 +29,13 @@ outputs:
 
 # Skill: sddia-evolution-register
 
-Cápsula **WASI** (`wasm32-wasip1`) de dominio evolution.
+## Propósito
+
+Registro evolution (verdict/alta/modificación) sobre registry inyectado; cápsula WASI.
+
+## Operación
+
+`verdict` coteja diff+registry sin Git; `rehash` vía canonical_hash.
 
 - `verdict`: coteja `request.diff` contra `request.registry` (JSON inyectado). Cero Git. `audit: universe` valida todos los registros inyectados.
 - `rehash`: re-ancla `hash_integrity` in situ vía `canonical_hash`; no regenera el cuerpo.

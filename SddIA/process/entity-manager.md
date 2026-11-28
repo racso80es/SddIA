@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:233e78c453256af436ebb5d72be1e63876899ef9e1cc45502dbe13f75cf0e8b4
+hash_signature: "sha256:233e78c453256af436ebb5d72be1e63876899ef9e1cc45502dbe13f75cf0e8b4"
 inputs:
 - entity_class: 'string; enum: process | agent | skill | tool | action | norm | codex | event | suite | daemon | capability-contract'
 - entity_name: string; identificador kebab-case de la entidad
@@ -43,7 +43,16 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # entity-manager
 
-Proceso orquestador (**Gestor de Entidad**) que envuelve los `*-creator` del genoma y cierra siempre con el sello EDA `emit-domain-mutation`. Patrón de delegación análogo a `feature` → `delivery-close-cycle`.
+## Propósito
+
+Gestor DA-2: envuelve `*-creator` / forja nativa de `capability-contract`, mapea `semantic_seed` → inputs del hijo y cierra con `emit-domain-mutation` (patrón análogo a `feature` → `delivery-close-cycle`).
+
+## Orquestación
+
+1. Fase delegación al creator (`lifecycle_operation`: create|update|delete).
+2. Delete físico (solo delete).
+3. Sello universal `Domain_Entity_*` vía `action:emit-domain-mutation`.
+- Implementación: `engine/entity_manager.rs`; piloto todas las clases de la tabla de delegación.
 
 ## Tabla de delegación
 

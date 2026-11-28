@@ -7,9 +7,10 @@ author: "norm-creator"
 scope: "frontend"
 category: "architecture"
 dependencies: []
+hash_signature: "sha256:f70653c838f38570b64cfabeee92530d5c57fe77e78fd1503a4dea50fa23f7c1"
 ---
 
-## Directriz Core
+## Propósito
 
 En componentes `"use client"` pre-renderizados en servidor (Next.js App Router), el HTML del servidor debe coincidir con el **primer render del cliente** (antes de `useEffect`). Si el primer render del cliente usa APIs solo disponibles en navegador (`localStorage`, `sessionStorage`, `window` con datos distintos al SSR) para **decidir qué árbol mostrar**, React produce hydration mismatch (`Expected server HTML to contain a matching …`).
 
@@ -30,7 +31,7 @@ En componentes `"use client"` pre-renderizados en servidor (Next.js App Router),
 
 Implementar un hook canónico `useHasMounted` (primer render `false`, tras montaje `true`) y usarlo antes de leer storage para ramas de UI que deben coincidir con SSR. `suppressHydrationWarning` solo como último recurso; preferir paridad real.
 
-## Restricciones Duras (Aduana de Fricción)
+## Obligaciones de aduana
 
 - Prohibido leer `localStorage`, `sessionStorage` o ramificar UI por su valor en el cuerpo del render de un componente `"use client"` pre-renderizado en servidor.
 - Prohibido usar `window.location` en render para decidir locale, ruta o contenido visible cuando el SSR resuelve esos valores por otra vía (middleware, `next-intl`, props de servidor).

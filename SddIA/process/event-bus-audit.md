@@ -3,7 +3,7 @@ context:
 - quality-assurance
 - event-routing
 contract: process-contract v1.4.0
-hash_signature: sha256:d2f4930746c53c974afbe3fc2ca354703434517e49dc262a5fee95aafc0d311d
+hash_signature: "sha256:d2f4930746c53c974afbe3fc2ca354703434517e49dc262a5fee95aafc0d311d"
 inputs: []
 minteo_maximo: null
 name: event-bus-audit
@@ -30,7 +30,15 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # event-bus-audit
 
-Proceso on-demand de auditoría empírica del bus EDA. El censo lee el store productivo vía `EventManagerPort` / `events.redb` (bóveda `SDDIA_EVENT_MANAGER_*`). La auditoría opera exclusivamente sobre `EventManagerPort` / `events.redb` (sin topología legacy en disco) (ver `event-bus-audit` binario, MAN-43 O7). Valida coherencia ECST, detecta anomalías y genera informe. Emite `Kaizen_Alert_Required` vía gate del store (no JSON residual en `redb`) solo si `emit_kaizen_alert` y (`circuit_alert` o pending estancados accionables no fractura). El volumen histórico de dead-letter no dispara Kaizen.
+## Propósito
+
+Auditoría on-demand del bus EDA productivo (`EventManagerPort` / `events.redb`, bóveda `SDDIA_EVENT_MANAGER_*`): censo de estados DLT, validación ECST, informe en workspace y Kaizen condicionado (MAN-43 O7).
+
+## Orquestación
+
+- Fase `Auditoría empírica del bus`: delega en `tool:event-bus-audit` con `qa:probe`.
+- Sin lectura legacy en disco; DLQ histórico no dispara Kaizen por sí solo.
+- Salidas: `audit_summary`, `anomalies`, `report_path`, `kaizen_event_id` opcional.
 
 ```bash
 # Auditoría completa con emisión Kaizen (default)

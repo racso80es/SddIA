@@ -13,14 +13,20 @@ capabilities:
   - "markdown-table-persist"
   - "capsule-json-io"
 implementation_path_ref: "SddIA/tools/markdown-table-editor"
-hash_signature: "sha256:3c4f515161437c57d7f9adc5dfc1643b0cb5c60d8ccf13b2ddb6e2288181973d"
+hash_signature: "sha256:b9a5fda4b4025e6815b3babdb71dc0431a97e1829e5b6a62a6d6a040901373d8"
 ---
 
 # markdown-table-editor
 
-**Descripción:** Cápsula determinista para parsear, consultar, mutar y persistir filas de tablas Markdown en catálogos `index.md` y artefactos tabulares del ecosistema. Diseñada para delegación de Cúmulo y acciones de dominio (`sync-entity-index`).
+## Propósito
 
-## Interface
+Mutación determinista de tablas Markdown en índices de catálogo (`index.md`).
+
+## Operación
+
+Invocada por `action:sync-entity-index` y Cúmulo; envelope `capsule-json-io` 2.0.
+
+## Interfaz de entrada y salida
 
 Entrada por **stdin** (JSON) o `--request-file`. Salida: envelope `tools-contract v1.2.0`.
 

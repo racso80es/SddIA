@@ -1,7 +1,7 @@
 ---
 uuid: "b0c1d2e3-f4a5-4678-9012-3456789abcde"
 name: "emit-tracker-sync-failed"
-version: "2.0.0"
+version: "2.0.1"
 contract: "actions-contract v1.2.0"
 context: "tracker-operations"
 capabilities:
@@ -25,11 +25,19 @@ outputs:
   - "success": "boolean"
   - "event_id": "string"
   - "event_uri": "string"
-hash_signature: "sha256:53ca6de7e782059e662b787e9bd8a850235f3cab62987c128aeefdb02eec56a3"
+hash_signature: "sha256:3b54358fbd3b7c2340593e6711656bc8304f282ecf497555a036ba163b6898f7"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
 
-# Acción: emit-tracker-sync-failed
+## Propósito
 
-Emite **Tracker_Sync_Failed** en `eda_bus.pending`. Sin secretos ni cuerpos HTTP de Linear.
+Fallo tracker → Tracker_Sync_Failed sin secretos HTTP en ECST.
+
+## Orquestación
+
+emit_tracker_sync_failed en actions.rs: issue_ref, operation, error_code, source_process.
+
+## Límites
+
+Sin tokens Linear.

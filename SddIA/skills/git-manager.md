@@ -13,7 +13,7 @@ capabilities:
   - "git-branching"
   - "git-commit"
   - "git-sync-remote"
-hash_signature: "sha256:50f7ec30bf514c9153fead435f9c356a61d156f99d3979d4749e27eac1f34b48"
+hash_signature: "sha256:3dff3f79f19d7c7489350f4f374805664a63613cfcb70f1f7db09703ce93bd05"
 inputs:
   - "operation_type": "Enum congelado (minúsculas): status | checkout | commit | push | pull | fetch | branch_list | get_last_commit | merge | delete_branch | diff_name_only | commit_summary. SSOT: normative_documents.skill_io_git_manager_frozen v1.2.0 en cumulo.paths.json. Homónimo remote: string (push/pull/fetch) ≠ boolean (delete_branch)."
   - "repository_path": "string; ruta absoluta del repositorio Git, resuelta previamente por Cúmulo (sin path traversal)."
@@ -27,14 +27,14 @@ outputs:
 
 # Skill: git-manager (definición + cápsula Fase B)
 
-## 1. Propósito y naturaleza
+## Propósito
 Motor unificado y ciego para interacciones **exclusivas** con el binario nativo **`git`**. No aplica reglas de negocio ni nomenclatura de ramas; solo traduce un JSON determinista a invocaciones `git` permitidas. Mapeo de capabilities a operaciones: **git-read-state** (`status`, `branch_list`, `get_last_commit`, `diff_name_only`, `commit_summary`), **git-branching** (`checkout`, `delete_branch` local), **git-commit** (`commit`, `merge`), **git-sync-remote** (`fetch`, `pull`, `push`, `delete_branch` remoto).
 
 ## 2. Alcance y prohibidos
 - **Solo** el ejecutable `git` del sistema. Queda prohibido enrutar aquí `gh`, `npm`, `docker`, scripts ad hoc, etc. (véase `SddIA/norms/pull-request-orchestration.md` y `skill-io-shell-executor-frozen.md`).
 - La validación de política (p. ej. prefijos `feat/`) es previa a la invocación; norma: `SddIA/norms/git-operations.md`.
 
-## 3. Motor de ejecución (cápsula física)
+## Interfaz de entrada y salida
 Cápsula nativa **`git-manager`** resuelta vía `cumulo.paths.json` → `compiled_capsules` → `SddIA/target/{release|debug}/git-manager` (preferente WASM en `compiled_capsules.wasm_root`). Un único objeto JSON por **stdin**; respuesta JSON en **stdout** (`success`, `exitCode`, `data`, `error` si fallo).
 
 Invocación orientativa: `./sddia-run.sh --tool git-manager`

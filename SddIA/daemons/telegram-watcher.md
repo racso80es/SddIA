@@ -4,7 +4,7 @@ name: "telegram-watcher"
 version: "1.1.0"
 contract: "daemons-contract v1.0.0"
 context: "peripheral-sensing"
-hash_signature: "sha256:07bf4191783afa4a818300273dd4e48a885b01e0faa71ea63fbd3062bcd2fe40"
+hash_signature: "sha256:abdf0b15a38dbb0c869ad508ba9d64f3360cfeae04b492abb443c6530b755d30"
 capabilities:
   - "telegram-long-poll"
 execution:
@@ -21,4 +21,10 @@ telemetry_schema:
 
 # telegram-watcher
 
+## Propósito
+
 Centinela Capa 0: long polling Telegram → `telegram-gateway` vía `execute-process`. Intercepta `message`/`edited_message` y `callback_query`; cierra spinner con `answerCallbackQuery`. No interpreta preferencias. Binario Rust en `SddIA/target/{release|debug}/telegram-watcher`; launcher `SddIA/daemons/telegram-watcher.sh`. Emite `Daemon_Heartbeat` cada 30s.
+
+## Ciclo de ejecución
+
+Latido/tick vía entrypoint en frontmatter; binario nativo en `SddIA/target/release/<daemon>`.

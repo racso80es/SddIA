@@ -332,7 +332,7 @@ jobs:
           git fetch --no-tags origin main
           SddIA/target/debug/sddia-qa gate-evolution --json --range --require-synced-base
           SddIA/target/debug/sddia-qa gate-evolution --json --all
-          SddIA/target/debug/sddia-qa gate-entity-no-anemia --if-touched --base origin/main --json
+          SddIA/target/debug/sddia-qa gate-entity-no-anemia --json
 
   eda-bus-e2e-smoke:
     needs: [wasi-build, changes]

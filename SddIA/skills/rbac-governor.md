@@ -11,7 +11,7 @@ provides:
   - id: "gov:rbac"
     contract: "gov.rbac"
     version: "1.0.0"
-hash_signature: "sha256:6184655dd46a4d91663794122fafedc307dd2e45ed5b6e3b26c41d77252e0a9e"
+hash_signature: "sha256:eddd7a57a19b0093864f75805533e59cb86d712285fd7a9f5348fad03c1432fb"
 inputs:
   - "operation": "string; enum: REACT_RBAC_GOVERNANCE"
   - "operation_payload": "object; event_uri / event_type"
@@ -24,6 +24,10 @@ outputs:
 
 # Skill: rbac-governor
 
-Proveedor canónico de `gov:rbac` (PBI-045 H11-C · laudo Racso). Ancla semántica DI para gobernanza RBAC Self-Healing.
+## Propósito
 
-La ejecución residual nativa permanece en `cerbero_governance_react_core`; esta skill declara el contrato DI. Ortogonal a `audit:compliance`.
+Contrato DI `gov:rbac` (PBI-045 H11-C); gobernanza RBAC self-healing.
+
+## Operación
+
+`REACT_RBAC_GOVERNANCE`; lógica residual en `cerbero_governance_react_core`.

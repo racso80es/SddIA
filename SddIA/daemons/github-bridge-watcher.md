@@ -4,7 +4,7 @@ name: "github-bridge-watcher"
 version: "1.1.0"
 contract: "daemons-contract v1.0.0"
 context: "source-control"
-hash_signature: "sha256:9b8dd9ce2497134e40530c607e1a1cdd40c6e140934181a864830c5802c08179"
+hash_signature: "sha256:30c7aa3357e63408ba45b1a6ea8ca8bf220376fd388ff12f8840b86082154f21"
 capabilities:
   - "github-pr-bridge"
   - "dlt-oracle"
@@ -22,4 +22,10 @@ telemetry_schema:
 
 # github-bridge-watcher
 
+## Propósito
+
 Oráculo sensor DLT: detecta PRs remotos (GitHub API o fixture lab), delega anclaje IOTA en handler nativo `github_bridge::process_pr`, materializa `PullRequest_Presented`. Binario Rust en `SddIA/target/{release|debug}/github-bridge-watcher`; launcher `SddIA/daemons/github-bridge-watcher.sh`. Emite `Daemon_Heartbeat` cada 60s.
+
+## Ciclo de ejecución
+
+Latido/tick vía entrypoint en frontmatter; binario nativo en `SddIA/target/release/<daemon>`.

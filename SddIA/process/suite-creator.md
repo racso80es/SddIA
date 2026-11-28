@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:d0cfef5fa1e775233e61298b755234207f9bf6c92d817682d216a7be3154151d
+hash_signature: "sha256:d0cfef5fa1e775233e61298b755234207f9bf6c92d817682d216a7be3154151d"
 inputs:
 - suite_name: Identificador kebab-case de la Suite (`{name}.md` bajo `directories.suites`)
 - suite_context: Contexto RBAC (default `chaos-engineering`)
@@ -67,4 +67,10 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # suite-creator
 
+## Propósito
+
 Proceso maestro para instanciar **Suites** (ED Caos) en `SddIA/suites/` y mantener el índice del genoma. Simetría con `tool-creator` / `norm-creator`. Invocable vía `entity-manager` con `entity_class: suite`.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process suite-creator`; fases en frontmatter YAML.

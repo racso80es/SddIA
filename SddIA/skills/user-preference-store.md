@@ -1,5 +1,5 @@
 ---
-uuid: "f1a2b3c4-d5e6-4789-a012-3456789ab01"
+uuid: "2fa83fc2-9897-498a-bda8-4eb155212a0d"
 name: "user-preference-store"
 version: "1.0.0"
 contract: "skills-contract v1.1.0"
@@ -13,7 +13,7 @@ provides:
   - id: "memory:pref-query"
     contract: "memory.pref_query"
     version: "1.0.0"
-hash_signature: "sha256:45f128ce99ee838398316d5b990792c6c52f1b058ffe87b83d4638dc52e119c6"
+hash_signature: "sha256:96f44d8fc47a8536765c241b4c59c76f62cf4c9533ab22b934e69897220837de"
 inputs:
   - "op": "PUT | REVOKE | PURGE | QUERY | EXPORT"
   - "revision": "objeto UserPreference (PUT)"
@@ -26,6 +26,10 @@ outputs:
 
 # Skill: user-preference-store
 
-Store local de preferencias del Vértice Biológico bajo `paths.userPreferencesStore` (`.SddIA/vector_store/user_preferences/`).
+## Propósito
 
-Cápsula nativa/WASI (`SddIA/skills/user-preference-store/`) sobre crate `user-preference-core`. `execute-process` conserva ingest/fractal y fallback inline si la cápsula no está compilada. Ortogonal a `ThoughtNode` y `EvolutionEvent`.
+Store local de preferencias en `paths.userPreferencesStore`; capabilities `memory:pref-write` / `memory:pref-query`.
+
+## Operación
+
+Ops PUT|REVOKE|PURGE|QUERY|EXPORT vía cápsula `user-preference-store` (crate `user-preference-core`).

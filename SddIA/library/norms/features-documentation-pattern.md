@@ -1,16 +1,16 @@
 ---
 uuid: "4c448c82-de41-460f-b24f-82a84fa5ed69"
 name: "features-documentation-pattern"
-version: "1.3.3"
+version: "1.0.0"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
 category: "workflow"
 dependencies: []
-hash_signature: "sha256:d87f2d748d327157295b0ce1608921c313f4fca06632db335248e8f2563b1699"
+hash_signature: "sha256:a3d16200e668992f5e23b9adefd3d1d71748f398656faf616780a4254d2f70f8"
 ---
 
-## Directriz Core
+## Propósito
 
 La documentación de tareas (features y fixes) sigue el mismo patrón que skills, tools, actions y process del ecosistema SddIA: **un único archivo `.md` por fase de acción**, con **frontmatter YAML** (metadatos machine-readable) y **cuerpo Markdown** (contenido legible). Los datos estructurados residen en el frontmatter; no se mantienen artefactos `.json` paralelos.
 
@@ -89,7 +89,7 @@ La aduana de coherencia (`apto_coherence`) invalida `global: APTO` si detecta es
 - **Oráculo primero (`spec.md` / `plan.md`):** Cada `AC-1..AC-N` debe declarar su **Oráculo mecánico ejecutable** (test unitario/integración o subcomando `sddia-qa`) y contar con captura en rojo (`oracle-red.log` bajo `persist_ref`) **antes** de autorizar cambios productivos en Ola 1. Ningún AC puede tener como único método de verificación un `grep` manual ad-hoc al cierre.
 - **Baseline hermético Ola 0 (`execution.md`):** Antes de modificar código productivo, registrar en `execution.md`: (1) `git status --porcelain` vacío; (2) ausencia física de `.events`, `orchestration`, `telemetry` y `_lab` en la raíz; (3) estado de `systemctl --user list-units 'sddia-*'`; (4) baseline de tests con entorno limpio (`env -u SDDIA_EVENT_STORE -u SDDIA_EXECUTE_PROCESS_BIN cargo test ...`).
 
-## Restricciones Duras (Aduana de Fricción)
+## Obligaciones de aduana
 
 - Prohibido generar o mantener `spec.json`, `clarify.json`, `plan.json`, `implementation.json`, `execution.json`, `validacion.json` o `finalize-process.json` como fuente de verdad paralela al `.md` de la misma acción.
 - Prohibido omitir el bloque frontmatter YAML (`---` … `---`) en cualquier artefacto de tarea.

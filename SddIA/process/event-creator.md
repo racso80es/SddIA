@@ -5,7 +5,7 @@ version: 1.3.0
 contract: process-contract v1.4.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 context: ecosystem-evolution
-hash_signature: sha256:548da4566d0c3bcd6381b0f150125a2951684932dc94209c8c949fe5f30952c3
+hash_signature: "sha256:548da4566d0c3bcd6381b0f150125a2951684932dc94209c8c949fe5f30952c3"
 inputs:
 - event_name: Identificador kebab-case de la Clase (`{name}` del archivo `{name}.md` en `cumulo.directories.events`)
 - event_type: Identificador ECST PascalCase_Snake (p. ej. PullRequest_Merged); único en catálogo
@@ -98,9 +98,15 @@ Antes de ejecutar fases de forja, el runtime IDE **debe** anteponer al contexto 
 
 Prohibido delegar forja manual en el agente cuando exista proceso creator aplicable.
 
-Proceso maestro para instanciar nuevas **Clases de Evento** (genoma ECST) en `SddIA/events/` y mantener el índice del directorio `events`.
+## Propósito
 
-Invocable directamente o desde **`entity-manager`** (cuando `entity_class: event` esté en piloto). Tras indexación síncrona, el gestor emite `emit-domain-mutation` con `emitter_agent: entity-manager` usando los outputs de handoff declarados en cabecera YAML.
+Forja de Clases ECST bajo `SddIA/events/{telemetry|orchestration|domain}/`: validación Trinidad, payload REQUIRED/OPTIONAL/FORBIDDEN y gobernanza de `index.md`.
+
+## Orquestación
+
+- Invocable directo o vía `entity-manager` (`entity_class: event`).
+- Fases: Validación de Arquitectura (Cumulo+Cerbero) → Forja (`crypto-broker` uuid/hash) → Índice de familia.
+- Emisión de dominio delegada al `entity-manager` post-handoff.
 
 ## Fase 1 — Validación de Arquitectura
 

@@ -1,0 +1,2183 @@
+{
+  "kind": "pre-remediation-inventory",
+  "norm": "KA-DOC-1",
+  "tracker_ref": "AUT-133",
+  "historia_ref": "AUT-125",
+  "remediation_ref": "AUT-133",
+  "pbi_ref": "PBI-81e91c67",
+  "execution_id": "5ea79c56-a610-4223-b2b3-7498a510d239",
+  "source_command": "SddIA/target/debug/sddia-qa gate-entity-no-anemia --json",
+  "source_inventory": "docs/refactors/gate-anti-anemia-entidades-dominio/audit-inventory.json",
+  "seed_genome_tip_sha": "fd7ef31b51e795d1aaea2aba53b7cae693a019db",
+  "genome_tip_sha": "3aaaa2668bfb040bf6cce37a9b145b7ca8e4dbcd",
+  "tip_match_seed": false,
+  "aggregates_match_seed": true,
+  "live_gate_capture": "captured",
+  "oracle_red_log": "docs/refactors/aut-133-remediacion-entidades-anemicas/oracle-red.log",
+  "oracle_red_sha256": "3467f906fa9ff4474a4c5e931772147880430dcb7d9c4f9dc997ee651da03561",
+  "captured_at": "2026-11-27T12:42:06Z",
+  "capture_mode": "live-gate",
+  "scanned": 207,
+  "entities_with_violations": 142,
+  "violation_count": 322,
+  "by_code": {
+    "CONTRACT_SECTION_MISSING": 218,
+    "SECTIONS_INSUFFICIENT": 79,
+    "UUID_NOT_V4": 19,
+    "UUID_INVALID": 6
+  },
+  "by_family": {
+    "action": 47,
+    "agent": 4,
+    "daemon": 21,
+    "event": 7,
+    "codex": 5,
+    "process": 146,
+    "norm": 10,
+    "skill": 29,
+    "suite": 7,
+    "tool": 46
+  },
+  "entities": [
+    {
+      "path": "SddIA/actions/crypto-broker.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/dispatch-aiua-intent.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/download-remote-asset.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/emit-domain-mutation.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/emit-pr-audited-event.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a"
+        },
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/emit-pr-merged-event.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/emit-pr-presented-event.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/emit-pr-resealed-event.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/emit-suite-execution-requested.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/emit-tracker-sync-failed.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/emit-user-preference-change-requested.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "UUID_INVALID",
+          "detail": "uuid inválido: c3d4e5f6-a7b8-4901-c234-567890ab004"
+        },
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/emit-validation-started-event.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/emit-work-initiated-event.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/enrich-fracture-pbi-kaizen.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: c4d5e6f7-a8b9-4012-c345-678901234567"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/materialize-ci-chronic-failure-pbi.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/policy-validator.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/purge-repo-retention.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/purge-sandbox-cache.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: orquest | límite | limite | interfaz | flujo | destino | hábito | habito | contenido)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/actions/sync-entity-index.md",
+      "family": "action",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: a3f8c2e1-4b5d-6a7e-8f90-1a2b3c4d5e6f"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/agents/cerbero.md",
+      "family": "agent",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/agents/radamanto.md",
+      "family": "agent",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: 4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f8a"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: polít | polit | deleg | orquest | límite | limite)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/agents/tekton.md",
+      "family": "agent",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: b3a4c5d6-7e8f-9a0b-1c2d-3e4f5a6b7c8d"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/daemons/email-watcher.md",
+      "family": "daemon",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | centinela | daemon)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: ejecu | ciclo | tick | suscri | operaci | latido | binario)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/daemons/event-watcher.md",
+      "family": "daemon",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | centinela | daemon)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: ejecu | ciclo | tick | suscri | operaci | latido | binario)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/daemons/github-bridge-watcher.md",
+      "family": "daemon",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | centinela | daemon)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: ejecu | ciclo | tick | suscri | operaci | latido | binario)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/daemons/iota-publish-relay.md",
+      "family": "daemon",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | centinela | daemon)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: ejecu | ciclo | tick | suscri | operaci | latido | binario)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/daemons/kalma2-bridge.md",
+      "family": "daemon",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | centinela | daemon)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: ejecu | ciclo | tick | suscri | operaci | latido | binario)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/daemons/linear-bridge-watcher.md",
+      "family": "daemon",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | centinela | daemon)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: ejecu | ciclo | tick | suscri | operaci | latido | binario)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/daemons/telegram-watcher.md",
+      "family": "daemon",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | centinela | daemon)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: ejecu | ciclo | tick | suscri | operaci | latido | binario)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/events/domain/domain-entity-deprecated.md",
+      "family": "event",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: 9c3d4e5f-6a7b-4c8d-0e1f-2a3b4c5d6e7f"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/events/domain/kaizen-idea-captured.md",
+      "family": "event",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: b7c8d9e0-f1a2-4b3c-d4e5-f6a7b8c9d0e1"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/events/domain/manual-task-requested.md",
+      "family": "event",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: a6b7c8d9-e0f1-4a2b-c3d4-e5f6a7b8c9d0"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/events/domain/telegram-message-received.md",
+      "family": "event",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/events/domain/user-preference-change-requested.md",
+      "family": "event",
+      "violations": [
+        {
+          "code": "UUID_INVALID",
+          "detail": "uuid inválido: a1b2c3d4-e5f6-4789-a012-3456789ab02"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/events/domain/user-preference-changed.md",
+      "family": "event",
+      "violations": [
+        {
+          "code": "UUID_INVALID",
+          "detail": "uuid inválido: b2c3d4e5-f6a7-4890-b123-456789ab003"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-backend-admin-splus.md",
+      "family": "codex",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: dominio | proceso | invent | norma | catálogo | catalogo)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-frontend-admin-splus.md",
+      "family": "codex",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: dominio | proceso | invent | norma | catálogo | catalogo)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-frontend-product-splus.md",
+      "family": "codex",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: dominio | proceso | invent | norma | catálogo | catalogo)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-kalma2-assistant/process/email-digest-preference-reply.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-kalma2-assistant/process/email-noise-digest.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-kalma2-assistant/process/email-quick-action-ingest.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-kalma2-assistant/process/email-triage-gateway.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-kalma2-assistant.md",
+      "family": "codex",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: dominio | proceso | invent | norma | catálogo | catalogo)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-software-engineering/events/hu-forged.md",
+      "family": "event",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: c4e5f6a7-8b9c-4d0e-1f2a-3b4c5d6e7f80"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-software-engineering/process/accept-pr.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-software-engineering/process/bug-fix.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-software-engineering/process/delivery-close-cycle.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-software-engineering/process/feature.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-software-engineering/process/forge-hu.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-software-engineering/process/forge-pbi.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-software-engineering/process/pull-request-review.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-software-engineering/process/refactorization.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-software-engineering/process/refine-item.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/codexes/codex-software-engineering.md",
+      "family": "codex",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: dominio | proceso | invent | norma | catálogo | catalogo)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/norms/backlog-item-refinement.md",
+      "family": "norm",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/norms/capability-taxonomy.md",
+      "family": "norm",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/norms/email-triage-matrix.md",
+      "family": "norm",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/norms/features-documentation-pattern.md",
+      "family": "norm",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/norms/nextjs-hydration-client-state.md",
+      "family": "norm",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/norms/openapi-contract-rest-admin-frontend.md",
+      "family": "norm",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/norms/openapi-contract-rest-frontend.md",
+      "family": "norm",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/norms/patterns-in-planning-implementation-execution.md",
+      "family": "norm",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/norms/pr-acceptance-protocol.md",
+      "family": "norm",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/library/norms/todos-jurisdiction.md",
+      "family": "norm",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/action-creator.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: d0e1f2a3-b4c5-46d7-e8f9-0a1b2c3d4e5f"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/aiua-stimulus-processing.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/audit-sandbox-isolation-rbac.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/audit-telemetry-compliance-breach.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/audit-thermodynamic-toll-failsoft.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/capsule-invoke-smoke.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/cerbero-governance-react.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: 3b4c5d6e-7f8a-4b9c-0d1e-2f3a4b5c6d7e"
+        },
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/compile-ecosystem-map-snapshot.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/daemon-heartbeat-audit.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/daemon-kill-switch.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/entity-manager.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/event-bus-audit.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 1)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/event-creator.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/evolution-audit.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/execute-suite.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/fix-tool-process.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: 4c5d6e7f-8a9b-4c0d-1e2f-3a4b5c6d7e8f"
+        },
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/governance-daemon-manager.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/instance-creator.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/instance-health-verify.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/kalma2-interact.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/llm-interaction-audit.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/memory-evolution-ingest.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/phagocyte-recovered-fracture-pbis.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/query-ecosystem-health.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/radamanto-batch.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/route-domain-event.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/route-domain.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: d4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0"
+        },
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/route-orchestration.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9"
+        },
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/route-telemetry.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/sddia-difusion.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/skill-creator.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/suite-creator.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/sync-client-assets.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/system-vitality-probe.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/task-queue-manager.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/telegram-fallback-responder.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/telegram-gateway.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 1)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/telemetry-batch-stub.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/telemetry-compliance-audit.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/tracker-backlog-query.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/tracker-description-sync.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/tracker-markdown-apply.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/tracker-stamp.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/tracker-sync-replay.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/user-preference-ingest.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "UUID_INVALID",
+          "detail": "uuid inválido: d4e5f6a7-b8c9-4d0e-1f2a-3b4c5ab005"
+        },
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/process/workspace-smoke.md",
+      "family": "process",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose | fase | línea | linea | montaje | handler)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: entrada | salida | orquest | cierre | handoff | registro | sellado | recepción | recepcion | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/agenda-manager.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | entrada | salida | i/o | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/antigravity-cli-executor.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | entrada | salida | i/o | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/bus-operator.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/compliance-auditor.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | entrada | salida | i/o | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/cryptography-manager.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "UUID_INVALID",
+          "detail": "uuid inválido: a1f2e3d4-c5b6-4789-a012-3456789abc0"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/filesystem-manager.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: f4a5b6c7-d8e9-4f0a-1b2c-3d4e5f6a7b8c"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | entrada | salida | i/o | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/git-manager.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | entrada | salida | i/o | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/intent-transpiler.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | entrada | salida | i/o | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/mayeuta-llm.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/rbac-governor.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | entrada | salida | i/o | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/sddia-evolution-register.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | entrada | salida | i/o | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/text-metrics.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 1)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | entrada | salida | i/o | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/skills/user-preference-store.md",
+      "family": "skill",
+      "violations": [
+        {
+          "code": "UUID_INVALID",
+          "detail": "uuid inválido: f1a2b3c4-d5e6-4789-a012-3456789ab01"
+        },
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | entrada | salida | i/o | operaci)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/suites/core-full-stress.md",
+      "family": "suite",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: estrateg | nodo | ejecu)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/suites/fail-fast-lab.md",
+      "family": "suite",
+      "violations": [
+        {
+          "code": "UUID_NOT_V4",
+          "detail": "uuid presente pero no v4: c3d4e5f6-a7b8-4901-c123-456789abcdef"
+        },
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: estrateg | nodo | ejecu)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/eda-lab-smoke-may20.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/ephemeral-cache-purger.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/event-bus-audit.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/gemini-http-infer.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/github-raw-fetcher.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/io-choke.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 1)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/iota-immutable-publisher.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/lancedb-memory-adapter.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/linear-tracker-adapter.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/llm-router.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/markdown-table-editor.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/repo-retention-purger.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/sandbox-breacher.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 1)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/schema-corruptor.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 1)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/sddia-workspace-server.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/send-telegram-notification.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    },
+    {
+      "path": "SddIA/tools/telegram-gateway.md",
+      "family": "tool",
+      "violations": [
+        {
+          "code": "SECTIONS_INSUFFICIENT",
+          "detail": "secciones ## < 2 (tiene 0)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## de propósito (heading con: propósito | proposito | purpose)"
+        },
+        {
+          "code": "CONTRACT_SECTION_MISSING",
+          "detail": "falta sección ## operativa distinta del propósito (heading con: interfaz | operaci | entrada | salida)"
+        }
+      ]
+    }
+  ]
+}

@@ -8,7 +8,7 @@ context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:b1714ab5b1814257a8223a7751cb8880be754c9367b04ae6c67082b2e28bf3bb
+hash_signature: "sha256:b1714ab5b1814257a8223a7751cb8880be754c9367b04ae6c67082b2e28bf3bb"
 inputs:
 - feature_name: Nombre kebab-case o etiqueta humana de la feature
 - refined_requirements: Requisitos crudos o semi-refinados de entrada
@@ -67,7 +67,13 @@ porcentaje_de_exito: null
 
 # feature
 
+## Propósito
+
 Proceso V5 para desarrollo de **features**: cadena **Inicialización → Mayeuta → Dedalo → Tekton → Argos → delivery-close-cycle** (`source_process: feature`). Sustituye el linaje legacy purgado y actúa como el puente ontológico que obliga a los agentes V5 a cumplir con la aduana documental de `features-documentation-pattern`.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process feature`; fases en frontmatter YAML.
 
 ## Puente Documental y Frontmatter
 

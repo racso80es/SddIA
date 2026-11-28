@@ -1,7 +1,7 @@
 ---
 uuid: "c8d9e0f1-a2b3-4c5d-8e7f-6a5b4c3d2e1f"
 name: "emit-work-initiated-event"
-version: "2.0.0"
+version: "2.0.1"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -21,11 +21,19 @@ outputs:
   - "success": "boolean"
   - "event_id": "string"
   - "event_uri": "string"
-hash_signature: "sha256:346a864d98a0731ee74d877364972b072aad88fb16e8c6203c75b66a63d20099"
+hash_signature: "sha256:a0370fbf37aeb3a33b196de01a9e082abdfe40efa37a01af43a41c508b2e821e"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
 
-# Acción: emit-work-initiated-event
+## Propósito
 
-Emite **Work_Initiated** en `eda_bus.pending` conforme a `SddIA/events/domain/work-initiated.md`. Fail-soft en el invocante (`workspace-init`).
+Emitir ECST `Work_Initiated` al abrir workspace-init (feature/bug-fix/refactorization).
+
+## Orquestación
+
+Handler `actions.rs`: payload con `branch`, `persist_ref`, `source_process`, refs tracker; escribe `pending`. Fail-soft en invocante.
+
+## Límites
+
+No crea rama ni documentación; solo evento.

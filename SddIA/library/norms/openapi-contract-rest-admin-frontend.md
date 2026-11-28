@@ -7,9 +7,10 @@ author: "norm-creator"
 scope: "frontend"
 category: "workflow"
 dependencies: []
+hash_signature: "sha256:a5c6cb12e93f0b4988048a1fd0357e7f8f3856744fdc85a9d94a449f03930098"
 ---
 
-## Directriz Core
+## Propósito
 
 La fuente de verdad de rutas HTTP, parámetros, códigos de respuesta y modelos del **Frontend Admin GesFer** es el **OpenAPI** publicado por el **API backend Admin** (p. ej. `{origen}/swagger/v1/swagger.json` o endpoint equivalente del servicio administrativo). El frontend admin **se adecúa** al contrato del backend admin; no al revés.
 
@@ -26,7 +27,7 @@ La fuente de verdad de rutas HTTP, parámetros, códigos de respuesta y modelos 
 - Comparar `paths`, `components.schemas` y métodos con la implementación actual del frontend admin.
 - Actualizar clientes, tipos, mocks y documentación de configuración en el mismo cambio o PR que consume la nueva API admin.
 
-## Restricciones Duras (Aduana de Fricción)
+## Obligaciones de aduana
 
 - Prohibido definir rutas HTTP, métodos o modelos en el frontend admin que contradigan el OpenAPI vigente del backend admin.
 - Prohibido usar `NEXT_PUBLIC_API_URL` (u origen de producto) como base de llamadas al API administrativo cuando el contrato exige `ADMIN_API_URL`.

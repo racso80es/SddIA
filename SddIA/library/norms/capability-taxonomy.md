@@ -1,12 +1,12 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.13"
+version: "1.0.0"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
 category: "architecture"
-hash_signature: "sha256:75f526fd3d66b58fe59f92da72f4752bb62f05104f67362a62eb99d607afdd20"
+hash_signature: "sha256:fdb04b61b8abcf8910b5a1bef27578a89d162e31dd55a26ebb98feac70c437a8"
 catalog:
   - id: "doc:closure"
     contract: "doc.closure"
@@ -86,7 +86,7 @@ catalog:
     description: "AgentRuntimePort 1.0 — ejecución cognitiva de fases de agentes del Core por thinking_profile y proveedor DI sin auto-failover (AUT-122)."
 ---
 
-## Directriz Core
+## Propósito
 
 **Códice de la Lengua** — Taxonomía Universal de Capacidades SddIA.
 
@@ -118,7 +118,7 @@ Alta y mutación del `catalog` (incluido bump de versión por capacidad): única
 | `eda:event-manager` | `eda.event_manager` | 2.0.0 | EventManagerPort 2.0 / host Redb (MAN-43) |
 | `agent:runtime` | `agent.runtime` | 1.0.0 | AgentRuntimePort 1.0 / proveedor LLM activo sin auto-failover (AUT-122) |
 
-## Restricciones Duras
+## Obligaciones de aduana
 
 - Prohibido declarar capacidades no indexadas en `catalog`.
 - Prohibido usar `spec.json` como soporte de `provides`/`requires_capability`; SSOT = `{name}.md`.

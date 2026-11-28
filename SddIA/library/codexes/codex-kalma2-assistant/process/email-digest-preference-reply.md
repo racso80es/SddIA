@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:aee02cfbff888a184235d46545d65b2fb6cf35ec23e1716150e20255cf6c3fb1
+hash_signature: "sha256:aee02cfbff888a184235d46545d65b2fb6cf35ec23e1716150e20255cf6c3fb1"
 inputs:
 - 'event_uri: Ruta de la instancia ECST TelegramCallback_Received'
 name: email-digest-preference-reply
@@ -30,4 +30,10 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # email-digest-preference-reply
 
+## Propósito
+
 Consume TelegramCallback_Received dpref:*; correlaciona token del digest y emite User_Preference_Change_Requested. Cero IMAP. Cero LLM.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process email-digest-preference-reply`; fases en frontmatter YAML.
