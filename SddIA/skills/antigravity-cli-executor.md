@@ -11,7 +11,7 @@ provides:
   - id: "llm:infer"
     contract: "llm.infer"
     version: "1.0.0"
-hash_signature: "sha256:eb736da363dd072c84172682f709d8c801d2db202ca88aa467b4b4a0cf9ff4cb"
+hash_signature: "sha256:f364da3d3223232c5c4a775f62795b59c3ccc07ad8e466d329d9e132a159ee89"
 inputs:
   - "prompt": "texto de inferencia"
   - "model": "opcional; override"
@@ -23,4 +23,10 @@ outputs:
 
 # Skill: antigravity-cli-executor
 
-Transductor nativo de agy en print/headless. Request `llm.infer` + legacy (`parameters`). Argv --output-format json; prompt en -p. Binario SDDIA_AGY_PATH o PATH. Default --sandbox; skip-permissions solo doble opt-in. Lab mock/stub. Sobre capsule-json-io 2.0. Sin provides llm:interact. Provides llm:infer.
+## Propósito
+
+Transductor CLI agy (headless) para capability `llm:infer`; envelope capsule-json-io v2.
+
+## Operación
+
+Argv `--output-format json`, `-p` prompt; sandbox por defecto; crate nativo bajo skills.

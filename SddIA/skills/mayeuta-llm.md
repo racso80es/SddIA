@@ -12,7 +12,7 @@ provides:
   - id: "llm:interact"
     contract: "llm.interact"
     version: "1.0.0"
-hash_signature: "sha256:4462bf4473e0d4b4b5fedcdf86153887bfd340c3f95b353f55d15f8794906cf7"
+hash_signature: "sha256:91f775e7759518a4db96581202045c9563f920bb3355fa75edf020a4b39e8b49"
 execution_contexts:
   - "local-subprocess"
 inputs:
@@ -28,11 +28,15 @@ outputs:
 
 # Skill: mayeuta-llm
 
-Transductor CLI local para síntesis conversacional y clasificación de intención hacia procesos del Core. Motor de inferencia: comando externo inyectado por instancia (`SDDIA_LLM_CLI_COMMAND`); sin red ni SDK en el Genoma (C3).
+## Propósito
 
-Proveedor canónico de `llm:interact` (PBI-043 H10-A · laudo Racso).
+Transductor CLI local `llm:interact` (PBI-043 H10-A); comando `SDDIA_LLM_CLI_COMMAND`, sin red en genoma.
 
-## Operaciones
+## Operación
+
+SYNTHESIZE | CLASSIFY_INTENT sobre stdin JSON capsule-json-io.
+
+## Interfaz de entrada y salida
 
 | Operación | Salida `data` |
 |-----------|---------------|

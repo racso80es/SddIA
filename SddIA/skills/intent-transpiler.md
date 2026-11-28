@@ -8,7 +8,7 @@ capabilities:
   - "intent-structuring"
   - "ssot-path-resolution"
   - "feature-topology-gate"
-hash_signature: "sha256:3377f6c07800a17e4d4f67e8f57a1af94a0ac9025eb885fbf977cd9f3b9f32d5"
+hash_signature: "sha256:45213b2a116ac38aa505d5273844d7ba5ca4cb2d4d227c91809493a5d3a1ba6e"
 inputs:
   - "raw_instruction": "string; texto libre del Vértice Biológico (UTF-8)"
   - "intent_hints": "array<string>; pistas opcionales: develop, fix, refactor, feature, bug-fix"
@@ -28,7 +28,7 @@ outputs:
 
 Skill intermediaria de **prevención cognitiva** (PBI Snapshot Fricción Jules): procesa la instrucción del Vértice Biológico antes del núcleo de ejecución de la IA obrera. Mantiene ceguera espacial sobre negocio del cliente; estructura, enruta y condiciona según SSOT SddIA.
 
-## Ejecución (LLM-native)
+## Operación
 
 1. Recibir `raw_instruction` y opcionalmente `intent_hints`.
 2. Resolver `required_process` cruzando `SddIA/norms/interaction-triggers.json`.

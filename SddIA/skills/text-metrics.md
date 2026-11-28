@@ -10,7 +10,7 @@ telemetry_schema:
   - completion_tokens
 capabilities:
   - "text-metrics"
-hash_signature: "sha256:35655c727052107076e200512466d12ca1de115ba01a07d9b0e82fa25280aa1e"
+hash_signature: "sha256:0bbe1eb5bbb2ca4a6a3132e0f6fb07a0246dd6741a74f4e8ca110fbd725374fc"
 inputs:
   - "text_content": "string; texto de entrada UTF-8"
 outputs:
@@ -20,8 +20,14 @@ outputs:
 
 # Skill: text-metrics
 
-Calcula métricas básicas de un texto (número de palabras y caracteres).
+## Propósito
 
-## Ejecución (LLM-native)
+Métricas léxicas deterministas (palabras y caracteres) sobre UTF-8.
+
+## Operación
+
+Entrada `text_content`; salida `word_count`, `char_count` en envelope skill.
+
+## Interfaz de entrada y salida
 
 Recibir `text_content` y devolver `word_count` y `char_count` en envelope JSON del contrato de skills.

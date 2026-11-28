@@ -10,7 +10,7 @@ provides:
   - id: "agenda:persist"
     contract: "agenda.persist"
     version: "1.0.0"
-hash_signature: "sha256:195ab0330d1a3b72eb37f16c52ae3d5618ac368a16f17270349974fdc4983af4"
+hash_signature: "sha256:e79d924e70c39202e13f897d9d54fe0be20ebbe9007de85d38109b0e4079b7a0"
 inputs:
   - "operation": "CREATE | LIST"
   - "title": "string; CREATE"
@@ -23,6 +23,10 @@ outputs:
 
 # Skill: agenda-manager
 
-Agenda local de instancia. Persistencia en `{instancia}/.SddIA/agenda/`. Cero calendarios externos en MVP.
+## Propósito
 
-MVP: el asiento lo materializa el handler nativo `email-triage-gateway` bajo `requires_capability: agenda:persist`. Esta skill es el contrato DI (pivote de proveedor).
+Agenda local de instancia en `{instancia}/.SddIA/agenda/`; contrato DI `agenda:persist` (MVP sin calendarios externos).
+
+## Operación
+
+CREATE/LIST vía cápsula; asiento materializado por `email-triage-gateway`.

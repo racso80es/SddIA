@@ -11,7 +11,7 @@ provides:
   - id: "audit:compliance"
     contract: "audit.compliance"
     version: "1.0.0"
-hash_signature: "sha256:d1bace4c6364491a020e13fe57cb22b702e09e3d2848fce2ed3e705e725df715"
+hash_signature: "sha256:afc20daf0b15d81dc4b712fa76fa286a673853062ffee0e6d3a7a4d548257116"
 inputs:
   - "operation": "string; enum: AUDIT_TELEMETRY_COMPLIANCE"
   - "operation_payload": "object; event_uri y contexto de cruce"
@@ -24,6 +24,10 @@ outputs:
 
 # Skill: compliance-auditor
 
-Proveedor canónico de `audit:compliance` (PBI-043 H9-D). Capacidad de **Gobernanza/cumplimiento** — ortogonal a `qa:probe` (Caos).
+## Propósito
 
-Usado por DI en `telemetry-compliance-audit` (path ciego / inyección). La ejecución residual nativa del proceso permanece en el handler Rust; esta skill ancla el contrato semántico DI.
+Contrato DI `audit:compliance` (PBI-043 H9-D); ortogonal a caos `qa:probe`.
+
+## Operación
+
+Operación `AUDIT_TELEMETRY_COMPLIANCE`; handler Rust residual en proceso telemetry-compliance-audit.
