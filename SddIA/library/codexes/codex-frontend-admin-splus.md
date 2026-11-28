@@ -17,13 +17,14 @@ composition:
     path: "../norms/nextjs-hydration-client-state.md"
   - norm: "c93387f0-d4c8-41ae-8d1a-12f2239d2710"
     path: "../norms/openapi-contract-rest-admin-frontend.md"
+hash_signature: "sha256:a30bf3ceed4dd6e837ae9044ddd15a45ff781b2cf17ca4baa697bf689ad51c5f"
 ---
 
 ## Estrategia de Dominio
 
 Gestión de estado pesada y validación de contratos administrativos con Next.js App Router (laboratorio **SddIA_2**). El códice asegura documentación de tarea unificada, patrones trazables en el ciclo feature, calidad de PR, paridad SSR/cliente en UI admin y alineación estricta con el Swagger del backend administrativo vía `ADMIN_API_URL`.
 
-## Instrucciones de Prioridad
+## Catálogo de normas
 
 1. **`openapi-contract-rest-admin-frontend`**: prevalece sobre cualquier URL o tipo de cliente admin; `ADMIN_API_URL` es el único origen del API administrativo.
 2. **`nextjs-hydration-client-state`**: prevalece en render/hidratación sobre lecturas de `localStorage`/`window` en primer paint.

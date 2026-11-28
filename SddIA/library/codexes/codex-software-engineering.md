@@ -1,7 +1,7 @@
 ---
 uuid: "a69d04b0-1d07-49ef-bcbf-6850e4a70ae2"
 name: "SddIA Codex Software Engineering"
-version: "1.1.0"
+version: "1.0.0"
 nature: "domain-codex"
 author: "tekton-abstract-02"
 target_environment: ["software-engineering", "git", "pull-request"]
@@ -26,7 +26,7 @@ composition:
     path: "../norms/pr-acceptance-protocol.md"
   - norm: "028fb30f-66e7-4811-bfc6-960c808b9517"
     path: "../norms/backlog-item-refinement.md"
-hash_signature: "sha256:d504dcaef5a7994c8dc800860130d9ca39e75d129c745ae175f40ff127aa5d5e"
+hash_signature: "sha256:8864e3bc4d6c3836bf928f68382cfaad4be24779d4c2e40ccb7a1af9d97ae504"
 ---
 
 # SddIA Codex Software Engineering
@@ -37,14 +37,14 @@ Empaqueta el ciclo de vida de ingeniería de software (feature / bug-fix / refac
 
 Normas tácticas: documentación atómica de tareas, patrones plan→implementación→ejecución, protocolo de aceptación de PR y refinamiento unificado de backlog (`backlog-item-refinement`).
 
-## Instrucciones de Prioridad
+## Catálogo de normas
 
 1. **`pr-acceptance-protocol`**: prevalece para cierre/fusión de entregas software.
 2. **`features-documentation-pattern`**: un `.md` por fase; prohibido JSON paralelo de fase.
 3. **`patterns-in-planning-implementation-execution`**: precedencia de `pattern_id` en implementación/ejecución.
 4. **`backlog-item-refinement`**: proceso canónico `refine-item`; prohibido `refine-pbi` / `refine-hu`.
 
-## Process membership (SSOT)
+## Procesos miembros (SSOT)
 
 | Process | Rol |
 |---------|-----|

@@ -13,13 +13,14 @@ composition:
     path: "../norms/patterns-in-planning-implementation-execution.md"
   - norm: "7c18fe07-9567-4f06-8d2b-a58e04608171"
     path: "../norms/pr-acceptance-protocol.md"
+hash_signature: "sha256:189c7d49b2ae668d7cfcc237acd0bbbd95cb658620af18cbe47d46c84a3d65f1"
 ---
 
 ## Estrategia de Dominio
 
 Optimización de la integridad DLL y validación estricta de tipos en el ecosistema Admin .NET (laboratorios **SddIA_1** y **SddIA_3**). El códice prioriza trazabilidad de tareas, aplicación de patrones en planificación/implementación/ejecución y barrera de calidad en PR antes de integrar cambios en el dominio administrativo backend.
 
-## Instrucciones de Prioridad
+## Catálogo de normas
 
 1. **`pr-acceptance-protocol`**: prevalece en cierre de rama y PR; ningún merge sin lint/build/tests y nomenclatura válida.
 2. **`patterns-in-planning-implementation-execution`**: en conflicto con atajos de implementación, el `pattern_id` del plan/IMPL manda sobre convenciones locales no documentadas.

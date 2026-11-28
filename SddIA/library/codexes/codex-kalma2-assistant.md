@@ -1,7 +1,7 @@
 ---
 uuid: "c43544f3-c557-4cc3-8a03-7175282f2c88"
 name: "SddIA Codex Kalma2 Personal Assistant"
-version: "1.0.2"
+version: "1.0.0"
 nature: "domain-codex"
 author: "codex-creator"
 target_environment: ["personal-assistant", "email", "kalma2"]
@@ -19,10 +19,10 @@ dlt:
   asset_class: "domain-codex"
   mint_status: "pre-mint"
   ledger: "iota-rebased-testnet"
-  canonical_hash: "sha256:e3a9e45e0a030fb359f5343a9505acf86488ba71204e4d8c9ec69b86921cfdf9"
+  canonical_hash: "sha256:b88de3b6c28d77a6c8ded2db2db4b92c081f1f34afe27725bff7fba7f83f35b8"
   token_id: null
   owner_vertex: "biological-vertex"
-hash_signature: "sha256:e3a9e45e0a030fb359f5343a9505acf86488ba71204e4d8c9ec69b86921cfdf9"
+hash_signature: "sha256:b88de3b6c28d77a6c8ded2db2db4b92c081f1f34afe27725bff7fba7f83f35b8"
 ---
 
 # SddIA Codex Kalma2 Personal Assistant
@@ -31,7 +31,7 @@ hash_signature: "sha256:e3a9e45e0a030fb359f5343a9505acf86488ba71204e4d8c9ec69b86
 
 Empaqueta la ley del triaje de correo (`email-triage-matrix`) y los procesos `email-triage-gateway`, `email-noise-digest` y `email-digest-preference-reply` como activo tokenizable de asistente personal. El Core permanece ciego: solo transporta ECST y resuelve capacidades. La semántica de ruido/pasivo/accionable vive aquí.
 
-## Instrucciones de Prioridad
+## Catálogo de normas
 
 1. **`email-triage-matrix`**: prevalece sobre cualquier heurística del agente ejecutor o del LLM. Triaje-C determinista cierra antes que Clasificacion.
 2. **`features-documentation-pattern`**: rige la cascada documental de tareas del propio Core; no altera el veredicto de un correo.
