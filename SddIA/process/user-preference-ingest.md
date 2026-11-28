@@ -24,7 +24,7 @@ phases:
 - intent: Emitir User_Preference_Changed sin value sensible.
   name: Sellar
   id: sellar
-uuid: d4e5f6a7-b8c9-4d0e-1f2a-3b4c5ab005
+uuid: "37f956c2-a8c2-4134-80bb-5d724169fbf9"
 version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---

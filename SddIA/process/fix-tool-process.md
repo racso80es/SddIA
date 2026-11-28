@@ -27,7 +27,7 @@ phases:
   name: Verificación estructural Argos
   id: verificacion_estructural_argos
 porcentaje_de_exito: null
-uuid: 4c5d6e7f-8a9b-4c0d-1e2f-3a4b5c6d7e8f
+uuid: "1d9ef9a0-27c0-427b-b0d2-6d0292a6f553"
 version: 2.0.0
 workspace_template: .SddIA/sandbox/{target_entity_id}/{recovery_attempt}/
 ---

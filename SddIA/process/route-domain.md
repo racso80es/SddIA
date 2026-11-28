@@ -20,7 +20,7 @@ phases:
     version: '>=1.0.0'
   id: fan_out_dominio_fractal
 porcentaje_de_exito: null
-uuid: d4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0
+uuid: "e7ef42a4-c845-4414-9a40-fefbeafcf2ca"
 version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---

@@ -22,7 +22,7 @@ phases:
     version: '>=1.0.0'
   id: reaccion_rbac_gobernanza
 porcentaje_de_exito: null
-uuid: 3b4c5d6e-7f8a-4b9c-0d1e-2f3a4b5c6d7e
+uuid: "8d40f01c-799d-4d47-9c17-dee74d970bc3"
 version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---

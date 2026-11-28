@@ -20,7 +20,7 @@ phases:
     version: '>=1.0.0'
   id: fan_out_orquestacion
 porcentaje_de_exito: null
-uuid: c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9
+uuid: "04a6e28b-133b-4f21-9c7d-5de6d2c72ffe"
 version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
