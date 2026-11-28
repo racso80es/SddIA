@@ -22,16 +22,20 @@ outputs:
   - "success": "boolean"
   - "exitCode": "integer"
   - "error": "string; diagnóstico si aplica"
-hash_signature: "sha256:84e5c9b0042f59f078f17db02478b1bbd2d716d18cb0f024b08502aa49a3a629"
+hash_signature: "sha256:39cffa43a54995a830e8e917c168b6dbd02901bac6fb3a77f074b23fb2dce079"
 implementation_path_ref: "SddIA/tools/schema-corruptor"
 ---
 
 # schema-corruptor
 
-Declara `telemetry_provided: true` pero emite envelope stdout sin recibo válido. Vector para `telemetry-compliance-audit` → `Telemetry_Compliance_Breached`.
+## Propósito
 
-Proveedor de capacidad `qa:probe` (PBI-043 H9 · Caos).
+Caos telemetría: envelope inválido pese a `telemetry_provided: true` (PBI-043 H9).
 
-## Interface
+## Operación
+
+Modos `corruption_mode`: empty | invalid_json | partial.
+
+## Interfaz de entrada y salida
 
 stdin JSON: `corruption_mode` — `empty` | `invalid_json` | `partial`.

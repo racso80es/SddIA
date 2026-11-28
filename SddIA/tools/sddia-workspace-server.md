@@ -12,12 +12,18 @@ capabilities:
   - "capsule-adapters"
 implementation_path_ref: "SddIA/tools/sddia-workspace-server"
 telemetry_provided: false
-hash_signature: "sha256:e4b1b65d7a877ef5b4d3ca33a7c610a935667e4f91f362a97d2a63f5ceece2b6"
+hash_signature: "sha256:31743ae97db8ebdc4a06c03cb7a8f6808884e7ae26014276d5a2a6e9b5241af3"
 ---
 
 # sddia-workspace-server
 
-Servidor **MCP** (JSON-RPC 2.0 sobre stdio) spawn por fase de agente. Expone `resources/read` sandboxeados y `tools/call` que delegan en `filesystem-manager` 2.0.0, `git-manager` y `shell-executor` (whitelist `mcp.allowed_executables` del `project.md`).
+## Propósito
+
+Servidor MCP stdio (Cerbero `run_check`, recursos sandbox, delegación a cápsulas allowlisted post AUT-138).
+
+## Operación
+
+Crate `sddia-workspace-server`; binario `SddIA/target/release/sddia-workspace-server`.
 
 ## Delivery
 

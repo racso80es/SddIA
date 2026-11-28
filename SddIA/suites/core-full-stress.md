@@ -5,7 +5,7 @@ version: "1.0.0"
 contract: suites-contract v1.0.0
 context:
 - chaos-engineering
-hash_signature: sha256:9a2c9edf19e0daceffd73659a4f99fb2961c0742b60c0079207e9143a0d65c6c
+hash_signature: "sha256:42e5ca2beaaf2da05905919753ae23d7e904c118e83b59c9316ecf93e4e73f42"
 execution_strategy: run_all
 atomic_nodes:
 - process_name: audit-thermodynamic-toll-failsoft
@@ -21,4 +21,10 @@ atomic_nodes:
 
 # core-full-stress
 
-**Códice de Asedio** — Suite referencia Fase 3 Caos. Orquesta los tres procesos audit atómicos de Fase 2 en campaña `run_all` antes del manifiesto de supervivencia Argos.
+## Propósito
+
+Suite referencia Caos Fase 3: campaña `run_all` sobre procesos audit Fase 2.
+
+## Estrategia de ejecución
+
+Nodos: `audit-thermodynamic-toll-failsoft`, `audit-telemetry-compliance-breach`, `audit-sandbox-isolation-rbac`; timeout 120s cada uno.

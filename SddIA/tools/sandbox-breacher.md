@@ -18,16 +18,20 @@ outputs:
   - "success": "boolean"
   - "exitCode": "integer"
   - "error": "string; diagnóstico si aplica"
-hash_signature: "sha256:1fbe473222f8ed90fa65d2d3e2bcb7a4f9bac742bf22248212aabf4dab44877e"
+hash_signature: "sha256:b04f0ddbb1f4fe99e0765185f5fdedf2a365d8d74b1d7a6b817cc1dff04e74f8"
 implementation_path_ref: "SddIA/tools/sandbox-breacher"
 ---
 
 # sandbox-breacher
 
-Intenta escribir fuera del `workspace_path` usando `assert_workspace_bound`. Éxito defensivo: bloqueo con `exitCode: 1`.
+## Propósito
 
-Proveedor de capacidad `qa:probe` (PBI-043 H9 · Caos).
+Caos RBAC: intento de escape del workspace; éxito = rechazo con `exitCode: 1` (`qa:probe`).
 
-## Interface
+## Operación
+
+stdin `workspace_path`, `escape_target`; crate `sandbox-breacher`.
+
+## Interfaz de entrada y salida
 
 stdin JSON: `workspace_path` (required), `escape_target` (optional, default `../breach-marker.txt`).

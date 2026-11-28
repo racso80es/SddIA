@@ -7,7 +7,7 @@ context: ecosystem-evolution
 contract: tools-contract v1.2.0
 contract_ref: SddIA/tools/tools-contract.md
 domain_origin: SddIA
-hash_signature: sha256:ee764b1cb22c42cf4132061ee3b91947f6180432ec74bc92e1f039fca303e923
+hash_signature: "sha256:bfd10c287bfa089581ebd6ae0ee4163ad8b18401cf445c8252cf9e5495bf35fc"
 implementation_path_ref: SddIA/tools/send-telegram-notification
 name: send-telegram-notification
 source_sha256: sha256:1fd4af47e8a46b8cbf34eba95462cbfe5a626cb900ac6da126fb13dcdba4ff6f
@@ -17,7 +17,13 @@ version: 1.0.0
 
 # send-telegram-notification
 
-Tool inerte de salida hacia Telegram (`/sendMessage`). **Ceguera espacial:** no conoce el motivo del aviso ni el bus EDA.
+## Propósito
+
+Envío Telegram Bot API `/sendMessage` sin semántica EDA (cápsula `send-telegram-notification`).
+
+## Operación
+
+Refugio parsing: reintento sin `parse_mode` ante HTTP 400.
 
 ## Táctica del Refugio (obligatoria)
 
