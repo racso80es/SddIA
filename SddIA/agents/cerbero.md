@@ -1,5 +1,5 @@
 ---
-uuid: "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b"
+uuid: "a1b2c3d4-e5f6-4789-a12b-3c4d5e6f7890"
 name: "cerbero"
 version: "1.0.0"
 contract: "agents-contract v1.0.0"
@@ -16,7 +16,7 @@ llm_profile:
   tier: "none"
   description: "RBAC determinista; prohibido LLM"
 cognitive_role_descriptor: "Peaje RBAC determinista"
-hash_signature: "sha256:c2e2f71aea6a9386f297fbca8add64f442be3a7075e192ae2f00de24e01765ed"
+hash_signature: "sha256:cad5e89bc4ab7762123f4b7f76865f5ec8dfc21ac29f51ae0e9ccbc8f9501b39"
 ---
 
 # Agente Cerbero: Motor de Gobernanza y Compliance

@@ -1,5 +1,5 @@
 ---
-uuid: "4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f8a"
+uuid: "846a0abc-09d5-4591-9a74-5d6eace6530e"
 name: "radamanto"
 version: "1.1.0"
 contract: "agents-contract v1.0.0"
@@ -18,7 +18,7 @@ llm_profile:
   tier: "none"
   description: "Actuario de umbrales; prohibido LLM"
 cognitive_role_descriptor: "Actuario de umbrales sobre telemetría"
-hash_signature: "sha256:84c4d642a8230894e020889493c9987d808130b737b6812aa41344e869cf5a4b"
+hash_signature: "sha256:616ef7e656472af9af6089a744de430b40df19ee62474db7795e643016f726ec"
 ---
 
 # Agente Radamanto: Certificador / Actuario
