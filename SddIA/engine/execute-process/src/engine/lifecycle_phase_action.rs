@@ -99,6 +99,14 @@ pub fn build_cycle_payload(repo: &Path, inputs: &Value) -> Value {
             }
         }
     }
+    if payload.get("tracker_ref").is_none() {
+        if let Some(persist) = str_field(inputs, "persist_ref") {
+            let slim = json!({ "persist_ref": persist });
+            if let Some(tr) = tracker_pbi_meta::resolve_tracker_ref_for_lifecycle(repo, &slim) {
+                payload["tracker_ref"] = json!(tr);
+            }
+        }
+    }
     if payload.get("project_slug").is_none() && project_binding::repo_is_core(repo) {
         payload["project_slug"] = json!("core");
     }
@@ -251,6 +259,30 @@ fn tool_update_description(
     .map(|_| ())
 }
 
+fn expected_workflow_state_name(tc: &TrackerConfig, state_key: &str) -> Result<String, String> {
+    tc.state_map
+        .get(state_key)
+        .cloned()
+        .ok_or_else(|| format!("state_map sin {state_key}"))
+}
+
+/// Tras `update_issue_state`, exige que `fetch_issue.state` coincida (evita éxito silencioso).
+fn verify_workflow_state_after_update(
+    fetch: &Value,
+    expected_state_name: &str,
+) -> Result<(), String> {
+    let actual = fetch
+        .get("state")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if actual.eq_ignore_ascii_case(expected_state_name) {
+        return Ok(());
+    }
+    Err(format!(
+        "linear workflow state mismatch tras update_issue_state: esperado '{expected_state_name}', observado '{actual}'"
+    ))
+}
+
 fn tool_update_state(
     repo: &Path,
     tc: &TrackerConfig,
@@ -258,14 +290,16 @@ fn tool_update_state(
     state_key: &str,
     process_name: &str,
 ) -> Result<(), String> {
+    let expected_state_name = expected_workflow_state_name(tc, state_key)?;
     let req = tracker_stamp::update_issue_state_request(tc, issue_ref, state_key)?;
     super::capsules::invoke_tool_for_process(
         repo,
         &tracker_stamp::lifecycle_tool_name(repo)?,
         &json!({ "request": req }),
         Some(process_name),
-    )
-    .map(|_| ())
+    )?;
+    let fetch = tool_fetch_issue(repo, issue_ref, tc)?;
+    verify_workflow_state_after_update(&fetch, &expected_state_name)
 }
 
 fn apply_remote(
@@ -296,6 +330,9 @@ fn apply_remote(
     } else {
         item_lifecycle_frontmatter::seal_markdown(desc, patch)?
     };
+    if let Err(e) = tool_update_state(repo, tc, &issue_ref, state_key, process_name) {
+        return Ok(json!({"success": false, "error": e}));
+    }
     tool_update_description(
         repo,
         &issue_ref,
@@ -303,9 +340,6 @@ fn apply_remote(
         tc,
         str_field(payload, "project_slug").as_deref(),
     )?;
-    if let Err(e) = tool_update_state(repo, tc, &issue_ref, state_key, process_name) {
-        return Ok(json!({"success": false, "error": e}));
-    }
     let _ = super::capsules::invoke_tool_for_process(
         repo,
         &tracker_stamp::lifecycle_tool_name(repo)?,
@@ -566,6 +600,39 @@ mod tests {
         }
         let text = fs::read_to_string(root.join("docs/todos/pending/wi.md")).unwrap();
         assert!(text.contains("tracker_column: todo"));
+    }
+
+    #[test]
+    fn verify_workflow_state_rejects_mismatch() {
+        let fetch = json!({ "state": "In Progress" });
+        let err = super::verify_workflow_state_after_update(&fetch, "In Review").unwrap_err();
+        assert!(err.contains("mismatch"));
+        assert!(super::verify_workflow_state_after_update(
+            &json!({ "state": "In Review" }),
+            "In Review"
+        )
+        .is_ok());
+    }
+
+    #[test]
+    fn build_cycle_payload_resolves_tracker_ref_from_persist_objectives_only() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        write_file(
+            root,
+            "docs/fixes/aut-129-demo/objectives.md",
+            "---\ntracker_ref: AUT-129\n---\n\n# objectives\n",
+        );
+        let inputs = json!({
+            "persist_ref": "docs/fixes/aut-129-demo",
+            "branch_name": "fix/aut-129-demo",
+        });
+        let payload = build_cycle_payload(root, &inputs);
+        assert_eq!(
+            payload.get("tracker_ref").and_then(|v| v.as_str()),
+            Some("AUT-129")
+        );
+        assert!(payload.get("pbi_ref").is_none());
     }
 
     #[test]
