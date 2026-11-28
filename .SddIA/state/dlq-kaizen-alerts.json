@@ -1,6 +1,13 @@
 {
   "schema": "dlq-kaizen-alerts/1.0",
   "signatures": {
+    "01fd5a0033c2aa6e158cad69e2692717cbab442bca90aef87b435feaded10879": {
+      "alerted_at": "2026-11-28T16:22:02.686829034+00:00",
+      "error_trace": "apto_coherence_execution_blocked: no se pudo leer validacion.md: mapping values are not allowed in this context at line 42 column 309 (validacion_unreadable)",
+      "event_type": "PullRequest_Presented",
+      "first_event_id": "bd82d2b3-d23d-45c8-a809-8e906bce6dfb",
+      "subscriber_id": "argos.pull-request-review"
+    },
     "4740a4a99b5d27e0088c62d2eaced92f77abdaaab1d4ce25e4cd53d59c82391e": {
       "alerted_at": "2026-11-26T17:43:54.997973419+00:00",
       "error_trace": "storage error: storage error: redb open: Database already open. Cannot acquire lock.",
