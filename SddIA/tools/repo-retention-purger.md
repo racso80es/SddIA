@@ -7,10 +7,16 @@ domain_origin: "SddIA"
 context: "filesystem-ops"
 capabilities:
   - "repo_retention_purger"
-hash_signature: "sha256:f832d15be74fe17ed52b99c56c8aacb79dacb1088560049177d11241b1d58855"
+hash_signature: "sha256:997e604bbdb1c3586227bda7c6310d91425407775cf1f61ea181ef6d8ef17577"
 implementation_path_ref: "SddIA/tools/repo-retention-purger"
 ---
 
 # repo-retention-purger
 
-Cápsula nativa: plan JSON (simulate) y apply acusado por plan_digest. Jail repo-root; slices target, residuo .events FS en redb, scratch, dist. Envelope sddia-io.
+## Propósito
+
+Planifica y aplica purga de retención bajo el repo con jail de candidatos (`repo-retention-purger` crate).
+
+## Operación
+
+Modo `simulate` → plan JSON; apply exige `plan_digest` acusado. Consumida por `action:purge-repo-retention`.

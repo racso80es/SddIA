@@ -15,13 +15,19 @@ outputs:
   - "success": "boolean"
   - "exitCode": "integer"
   - "error": "string; diagnóstico si aplica"
-hash_signature: "sha256:aaac9d073c2e3c5a39a561f322b8645fade507e790ac9226ea98ee5c3a34aa83"
+hash_signature: "sha256:1403075c9258460171d5059ca9551fce4796f91c2e2fedea7f7c9f222085f457"
 implementation_path_ref: "SddIA/tools/event-bus-audit"
 ---
 
 # event-bus-audit
 
-Auditoría empírica del bus EDA: escaneo .events, validación ECST, informe y emisión `Kaizen_Alert_Required` **solo** si `needs_kaizen` es accionable.
+## Propósito
+
+Cápsula QA de auditoría EDA (store vía `EventManagerPort`). Emite Kaizen solo si `circuit_alert` o pending stale accionable.
+
+## Operación
+
+Binario bajo `SddIA/tools/event-bus-audit`; fase de proceso homónimo delega aquí con `qa:probe`.
 
 `needs_kaizen = circuit_alert || actionable_stale_pending_count > 0`. No dispara por volumen histórico de dead-letter, dumps no-ECST (`github-bridge` / `FALLBACK_LOCAL_SIGNATURE`), testigos huérfanos ni pending `System_Fracture_Detected` (ya materializados). Flag `emit_kaizen_alert` (default `true`) no se duplica.
 

@@ -12,10 +12,16 @@ provides:
   - id: "llm:infer"
     contract: "llm.infer"
     version: "1.0.0"
-hash_signature: "sha256:68392e22c31186a3f2f2612af6bcf2c1c740666c6b36bfb1372e3249836ee19d"
+hash_signature: "sha256:347053b46b6cbdfae90bf4354d3c25e964e2319ad14ce1d3d08b2d0351c3c0a5"
 implementation_path_ref: "SddIA/tools/gemini-http-infer"
 ---
 
 # gemini-http-infer
 
-POST generateContent (Gemini AI Studio). Request `llm.infer` + legacy. `error_code` tipado. Env GEMINI_API_KEY + SDDIA_GEMINI_API_BASE_URL opcional. Lab: SDDIA_LAB_MOCK_OUTBOUND / SDDIA_LAB_MOCK_GEMINI_URL. Sobre capsule-json-io 2.0. Sin Vertex. Sin provides llm:interact. Provides llm:infer.
+## Propósito
+
+Inferencia HTTP Gemini (`llm:infer`) para notificaciones y skills delegadas.
+
+## Operación
+
+POST `generateContent`; mocks de lab vía `SDDIA_LAB_MOCK_GEMINI_URL`. Implementación `SddIA/tools/gemini-http-infer`.
