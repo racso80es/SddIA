@@ -45,10 +45,21 @@ fn resolve_working_dir(path_str: &str) -> PathBuf {
 }
 
 fn allowlist() -> HashSet<String> {
-    let mut base: HashSet<String> = ["gh", "npm", "node", "python", "python3", "pwsh", "dotnet", "docker"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
+    let mut base: HashSet<String> = [
+        "gh",
+        "npm",
+        "node",
+        "python",
+        "python3",
+        "pwsh",
+        "dotnet",
+        "docker",
+        "sddia-qa",
+        "sddia-run.sh",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
 
     if let Ok(extra) = env::var("SDDIA_SHELL_EXECUTOR_ALLOWLIST") {
         let extra = extra.trim();
