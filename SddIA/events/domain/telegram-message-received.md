@@ -1,5 +1,5 @@
 ---
-uuid: "e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6"
+uuid: "9ffe78df-728b-4d11-8663-e6aed291720c"
 name: "telegram-message-received"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
@@ -8,7 +8,7 @@ event_type: "TelegramMessage_Received"
 context: "ecosystem-evolution"
 capabilities:
   - "telegram_message_received"
-hash_signature: "sha256:80eb0e3bb4e1625f28df5c2cefa09137206bdcdc5306693cebdd149edfa11e98"
+hash_signature: "sha256:7bead5146e93811a95fd831efb3c87aa158167afb8e8d5c806c4badf1ab393cb"
 ---
 
 # Event: TelegramMessage_Received

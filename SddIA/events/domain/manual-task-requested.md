@@ -1,5 +1,5 @@
 ---
-uuid: "a6b7c8d9-e0f1-4a2b-c3d4-e5f6a7b8c9d0"
+uuid: "8e3d6ca1-6fc0-46a8-a3dc-b69b1856f613"
 name: "manual-task-requested"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
@@ -8,7 +8,7 @@ event_type: "Manual_Task_Requested"
 context: "ecosystem-evolution"
 capabilities:
   - "manual_task_requested"
-hash_signature: "sha256:ca8a097dab1f3455f42645bccd3428acb38b8c1abb88855335be0d31fa4c8c40"
+hash_signature: "sha256:11ee237fcd58f44505fee9fc7766ecff9f687b1eb05e2e1f3233e574a6fb9b6d"
 ---
 
 # Event: Manual_Task_Requested

@@ -1,5 +1,5 @@
 ---
-uuid: "b2c3d4e5-f6a7-4890-b123-456789ab003"
+uuid: "52979b2f-d360-4ff1-ad06-ede046f870d3"
 name: "user-preference-changed"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
@@ -8,7 +8,7 @@ event_type: "User_Preference_Changed"
 context: "ecosystem-evolution"
 capabilities:
   - "user_preference_changed"
-hash_signature: "sha256:pending-forge"
+hash_signature: "sha256:2629e0fdbbfae3299ca2f7c289c6106f40476c9765c820c289f884a8eeaf6639"
 ---
 
 # Event: User_Preference_Changed

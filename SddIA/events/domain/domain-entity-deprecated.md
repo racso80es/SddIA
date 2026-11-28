@@ -1,5 +1,5 @@
 ---
-uuid: "9c3d4e5f-6a7b-4c8d-0e1f-2a3b4c5d6e7f"
+uuid: "4b5391d9-39ed-450c-8658-2fc3c8d7ec1b"
 name: "domain-entity-deprecated"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
@@ -9,7 +9,7 @@ context: "quality-assurance"
 capabilities:
   - "domain_entity_deprecated"
   - "self_healing_death"
-hash_signature: "sha256:879c5ff4604412f4fa266004bb79a50a946a664772059715250e5f9cfac20c9d"
+hash_signature: "sha256:3d0a2f397cc258b114df44818bed0f16409278a88b9f0ce6562984dc3fdc29ab"
 ---
 
 # Event: Domain_Entity_Deprecated
