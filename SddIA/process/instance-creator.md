@@ -4,7 +4,7 @@ context:
 - filesystem-ops
 - system-operations
 contract: process-contract v1.4.0
-hash_signature: sha256:72b77625e8c6ba0967639ae9ce57feef65c34744271091100533492a6a8df7d5
+hash_signature: "sha256:72b77625e8c6ba0967639ae9ce57feef65c34744271091100533492a6a8df7d5"
 inputs:
 - instance_root: Ruta absoluta o relativa (al repo) de la carpeta instancia objetivo
 name: instance-creator
@@ -35,7 +35,13 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # instance-creator
 
+## Propósito
+
 Despliegue hermético de instancia consumidor: topología `.SddIA/` (starter-kit `local.paths.json`; sustituye stub `{}`), vault, systemd `%f` (`WorkingDirectory=%f`, `ExecStart=%f/SddIA/…` sin path de host horneado), ignición perfilada y smoke de topología **sin** `Local_QA_Requested` (`route-domain-event` si ignición no skipped). Complementa `sync-client-assets`; no inventa CLI `sddia`.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process <name>`; fases en frontmatter YAML.
 
 ## Invocación
 

@@ -3,7 +3,7 @@ context:
 - quality-assurance
 - event-routing
 contract: process-contract v1.4.0
-hash_signature: sha256:e9fc279907f07d3f38e4c7e0088444ae3b0749ef1472c226b96b457b38364f94
+hash_signature: "sha256:e9fc279907f07d3f38e4c7e0088444ae3b0749ef1472c226b96b457b38364f94"
 inputs:
 - event_uri: Opcional; URI canónica eda://telemetry/<event_id> de Daemon_Heartbeat
 - sweep: Opcional boolean; si true y sin event_uri, audita staleness de todos los Centinelas con lock vivo
@@ -49,9 +49,15 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # daemon-heartbeat-audit
 
+## Propósito
+
 Triaje Argos (CEN-05). Fan-out suscriptor de `Daemon_Heartbeat`. Emite `System_Fracture_Detected` si no hay `host_suspend` y `missed_cycles >= missed_cycles_threshold` (SSOT), o si hay lock con PID muerto y `started_at` (o latido) **posterior o igual** al `btime` de `/proc/stat`. Locks anteriores al arranque del host se clasifican `host_reboot_stale_lock` **sin** fractura; el fichero de lock se elimina solo si el PID está muerto.
 
 **Macrófago empírico:** Argos exclusivo. Radamanto excluido (sin medición directa de PID).
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process <name>`; fases en frontmatter YAML.
 
 ```bash
 ./sddia-run.sh --process daemon-heartbeat-audit --inputs '{"sweep":true}'

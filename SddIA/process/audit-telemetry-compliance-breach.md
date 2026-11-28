@@ -4,7 +4,7 @@ context:
 - quality-assurance
 - event-routing
 contract: process-contract v1.4.0
-hash_signature: sha256:3908d05da912dc3386c96f23e15f38fc63319e79123da563ff1f8bd813a08b70
+hash_signature: "sha256:3908d05da912dc3386c96f23e15f38fc63319e79123da563ff1f8bd813a08b70"
 inputs: []
 minteo_maximo: null
 name: audit-telemetry-compliance-breach
@@ -41,4 +41,10 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # audit-telemetry-compliance-breach
 
+## Propósito
+
 Proceso audit atómico **Fase 2 Caos**: ejecuta `schema-corruptor` y certifica emisión de `Telemetry_Compliance_Breached` tras fan-out `telemetry-compliance-audit`.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process <name>`; fases en frontmatter YAML.

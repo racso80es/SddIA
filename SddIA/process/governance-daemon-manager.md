@@ -3,7 +3,7 @@ context:
 - system-operations
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:8505e5137c4eeac92c5fb3900ed4bc4a9d5a4dd1d992b591025a2333b1cbf0dc
+hash_signature: "sha256:8505e5137c4eeac92c5fb3900ed4bc4a9d5a4dd1d992b591025a2333b1cbf0dc"
 inputs:
 - operation: 'Enum estricto: `start` | `status` | `kill` — directriz física OS a ejecutar'
 - daemon_id: Identificador kebab-case del Centinela (`name` en `{daemon_id}.md`; debe existir en `SddIA/daemons/index.md`)
@@ -66,13 +66,15 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # governance-daemon-manager
 
-## Directriz de ejecución obrera
+## Propósito
 
 Antes de ejecutar fases, el runtime IDE **debe** anteponer:
 
 > [EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. DO NOT BYPASS EDA BUS. USE SddIA CLI.]
 
-Actuador OS puro del ciclo de vida de **Centinelas** indexados. No interpreta necesidad de negocio; traduce `operation` + `daemon_id` en acciones físicas sobre el sistema operativo.
+## Operación
+
+Actuador OS del ciclo de vida de Centinelas indexados; traduce `operation` + `daemon_id` en acciones físicas.
 
 Invocación canónica:
 
