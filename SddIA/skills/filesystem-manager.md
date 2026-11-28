@@ -29,14 +29,15 @@ outputs:
   - "exitCode": "0 para éxito, 1 para error"
   - "data": "Contenido del archivo (READ_FILE) o array de strings (LIST_DIR)"
   - "error_log": "Descripción detallada si exitCode es 1"
+hash_signature: "sha256:22f1aed7c99939660ee6657a9b6994d76dd909decdb653dfb51a57f940de6c37"
 ---
 
 # Skill: Filesystem Manager (cápsula física)
 
-## 1. Propósito
+## Propósito
 Interfaz física con el disco bajo `workspace_root`, sin depender del IDE. Operaciones acotadas por Cerbero (`filesystem-ops`).
 
-## 2. Motor de ejecución
+## Interfaz de entrada y salida
 Cápsula nativa **`filesystem-manager`**: `SddIA/target/{debug,release}/filesystem-manager`. JSON por stdin; respuesta JSON en stdout (`success`, `exitCode`, `data`).
 
 Invocación: `./sddia-run.sh` con DI hacia `skill:filesystem-manager`.

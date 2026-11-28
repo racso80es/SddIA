@@ -18,18 +18,18 @@ llm_profile:
   tier: "none"
   description: "Actuario de umbrales; prohibido LLM"
 cognitive_role_descriptor: "Actuario de umbrales sobre telemetría"
-hash_signature: "sha256:b78dc609757752b46a7a065e12ae52551683d1fca6549364ac1702c7c6e440f1"
+hash_signature: "sha256:84c4d642a8230894e020889493c9987d808130b737b6812aa41344e869cf5a4b"
 ---
 
 # Agente Radamanto: Certificador / Actuario
 
-## 1. Propósito y Naturaleza
+## Propósito
 
 Radamanto es el **actuario de confianza** del ecosistema SddIA: procesa el acumulado estadístico de telemetría CLI (batching), aplica umbrales deterministas, registra cambios de estatus de entidades en IOTA Rebased y emite **snapshots de ejecución** para ingesta vectorial.
 
 No evalúa código ni interpreta intenciones. Opera bajo **genoma determinista** — solo métricas agregadas.
 
-## 2. Prohibiciones contractuales (AC4.2)
+## Políticas y límites
 
 | Prohibido | Motivo |
 |-----------|--------|
