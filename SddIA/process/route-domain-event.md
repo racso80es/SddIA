@@ -56,7 +56,7 @@ Orquestador Ola C V3+ del bus de dominio: validación ECST, materialización `pr
 4. Fan-out **asíncrono** por suscriptor (modo sync solo en lab/regresión).
 5. Promoción/purga vía sweeper sobre entregas del puerto cuando todos los suscriptores aplicables están terminales.
 
-## Implementación física
+## Operación
 
 Handler: `route_domain_event_core::route_domain_event()` resuelve el ECST vía `EventManagerPort`; `event_uri` es token lógico, no lectura de JSON en disco.
 

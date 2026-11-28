@@ -8,7 +8,7 @@ context:
 - quality-assurance
 - source-control
 - pr-lifecycle
-hash_signature: sha256:c568c83066df0e1b12b5832695308f64ee03717520ac54389f7df95b3cf13b2d
+hash_signature: "sha256:c568c83066df0e1b12b5832695308f64ee03717520ac54389f7df95b3cf13b2d"
 inputs:
 - pr_id_or_path: Identificador o ruta lógica del PR
 - pr_branch: Rama asociada al PR
@@ -73,7 +73,13 @@ porcentaje_de_exito: null
 
 # pull-request-review
 
+## Propósito
+
 Proceso V5 **Aduana de Fricción** reactiva al estímulo **`PullRequest_Presented`**. Transmuta el legacy `validate-pull-requests` sin recrear agentes fósiles (`architect`, `qa-judge`, `security-engineer`): escrutinio absorbido por **Argos** (documental, técnico, veredicto), **Cerbero** (RBAC) y **Cúmulo** (Kaizen async).
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process pull-request-review`; fases en frontmatter YAML.
 
 ## Disparo EDA
 

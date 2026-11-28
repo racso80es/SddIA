@@ -4,7 +4,7 @@ context:
 - quality-assurance
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:406fa957a63d9797eb6fe0c8101014ea50615c184fc402223072dbb50e0433b9
+hash_signature: "sha256:406fa957a63d9797eb6fe0c8101014ea50615c184fc402223072dbb50e0433b9"
 inputs:
 - event_uri: URI canónica eda://telemetry/<event_id> (vía EventManagerPort)
 minteo_maximo: null
@@ -29,7 +29,13 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # radamanto-batch
 
+## Propósito
+
 Proceso laboratorio del agente **Radamanto**: sustituye `telemetry-batch-stub` (Fase 4). Consume `Raw_Execution_Finished`, actualiza acumulador en `.SddIA/radamanto/`, emite gobernanza Self-Healing y **siempre** (consumo OK no duplicado) emite `Domain_Entity_Telemetry_Captured` para ingesta vectorial.
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process radamanto-batch`; fases en frontmatter YAML.
 
 ```bash
 SDDIA_LAB_ROUTE_SYNC=1 ./sddia-run.sh --process radamanto-batch \

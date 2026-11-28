@@ -3,7 +3,7 @@ context:
 - quality-assurance
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:c7e0c6f2955662f6f5eb2fa794afb86d4af60c3a23ea3c8283f181741297e73d
+hash_signature: "sha256:c7e0c6f2955662f6f5eb2fa794afb86d4af60c3a23ea3c8283f181741297e73d"
 inputs:
 - sweep: Opcional boolean; reservado para paridad con audit (default true)
 - apply: Opcional boolean; si true mueve PBIs pending→done (default false; env SDDIA_PHAGOCYTE_APPLY=1)
@@ -37,7 +37,13 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # phagocyte-recovered-fracture-pbis
 
+## Propósito
+
 Auto-poda de PBIs `PBI-FIX-FRACTURE-*` cuya traza `last_heartbeat` sea anterior al `lock.started_at` vigente con PID vivo. Laudo B automático (`B-automatic-phagocyte`).
+
+## Operación
+
+Invocación vía `./sddia-run.sh --process phagocyte-recovered-fracture-pbis`; fases en frontmatter YAML.
 
 ```bash
 # Dry-run (lista candidatos + ledger)

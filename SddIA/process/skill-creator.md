@@ -5,7 +5,7 @@ version: 1.1.0
 contract: process-contract v1.4.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 context: ecosystem-evolution
-hash_signature: sha256:c4cdcbc023ac4f865d292f062775d76736563fe3ba7a918b5d2c41af376888d4
+hash_signature: "sha256:c4cdcbc023ac4f865d292f062775d76736563fe3ba7a918b5d2c41af376888d4"
 inputs:
 - skill_name: Identificador kebab-case de la skill (`{name}` del archivo `{name}.md` en `cumulo.directories.skills`)
 - skill_context: Contexto RBAC Cerbero (debe existir en `execution-contexts.md`)
@@ -83,7 +83,7 @@ porcentaje_de_exito: null
 
 # skill-creator
 
-## Directriz de ejecución obrera
+## Propósito
 
 Antes de ejecutar fases de forja, el runtime IDE **debe** anteponer al contexto de Tekton el prefijo definido en `SddIA/norms/external-ai-constraints.md` § Prefijo creator:
 
@@ -102,7 +102,7 @@ Invocable directamente o desde **`entity-manager`** (piloto v1). Tras indexació
 3. Validar `skill_version` y `skills_contract_version` frente a `skills-contract.md` vigente (`cumulo.contracts.skills`).
 4. Auditar que `skill_inputs_schema` y `skill_outputs_schema` cubren el contrato de I/O JSON estricto (stdin / stdout).
 
-## Fase 2 — Forja del Markdown
+## Operación de forja
 
 1. Ejecutar `phase_invocations`: `child_skill_uuid` y `child_skill_integrity_hex` vía `action:crypto-broker`; asignar `hash_signature` como `sha256:` + hex cuando la política de skills lo exija sobre el sujeto canónico definido por las claves listadas.
 2. Asignar `contract` como `skills-contract v{skills_contract_version}`, `context` igual a `skill_context` validado y `capabilities` obligatorio según contrato.
